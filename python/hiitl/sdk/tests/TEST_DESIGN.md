@@ -11,7 +11,7 @@ The SDK test suite validates that the Python SDK for HIITL local/edge mode:
 1. **Provides a correct, developer-friendly API** for policy evaluation
 2. **Integrates components correctly** (PolicyLoader → Evaluator → RateLimiter → AuditLogger)
 3. **Meets performance requirements** (< 10ms end-to-end latency)
-4. **Handles errors gracefully** with helpful messages per CLAUDE.md Principle #11
+4. **Handles errors gracefully** with helpful, actionable error messages
 5. **Validates configuration** and prevents misconfiguration
 6. **Maintains data integrity** (audit hashing, envelope signing)
 
@@ -175,7 +175,7 @@ This suite is **separate from conformance tests** (which validate evaluator corr
 
 **What must work:**
 - All SDK exceptions inherit from HIITLError (easy catching)
-- Helpful error messages per CLAUDE.md Principle #11
+- Helpful, actionable error messages
 - Error messages point to documentation
 - EnvelopeValidationError includes validation_errors list
 
@@ -195,7 +195,7 @@ This suite is **separate from conformance tests** (which validate evaluator corr
 
 ## Performance Requirements
 
-### Latency (HARD REQUIREMENT per CLAUDE.md line 540)
+### Latency (HARD REQUIREMENT)
 
 **Requirement:** < 10ms end-to-end (evaluate + audit write) in local mode
 
@@ -290,7 +290,7 @@ This suite is **separate from conformance tests** (which validate evaluator corr
 - ✅ RateLimit metadata structure correct
 - ✅ allowed flag computed correctly
 
-### Security Tier 1 Requirements (CLAUDE.md lines 631-638)
+### Security Tier 1 Requirements
 - ✅ Audit record content hashing (SHA-256)
 - ✅ Envelope signing (HMAC-SHA256, dummy "0"*64 in dev)
 - ⏸ Policy content hashing (designed, not enforced in local mode)

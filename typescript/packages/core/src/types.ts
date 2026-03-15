@@ -432,7 +432,7 @@ export type MatchedRule = z.infer<typeof MatchedRuleSchema>;
 /**
  * Error details for failed evaluations.
  *
- * Per decision_response.md spec and CLAUDE.md principle #11:
+ * Per decision_response.md spec:
  * Errors must include both machine-readable codes and human-readable messages
  * to provide helpful guidance to developers.
  */

@@ -2,7 +2,7 @@
 
 **Purpose**: Synthetic data for testing, development observation, and demos.
 
-**Per CLAUDE.md lines 455-476**: Synthetic data is a product requirement, not an afterthought.
+Synthetic data is a product requirement, not an afterthought.
 
 ---
 
@@ -309,7 +309,6 @@ PolicyGrader (data collection — always deterministic)
 
 ## Related Documents
 
-- [CLAUDE.md](../CLAUDE.md) - Synthetic Data Requirements (lines 455-476)
 - [Envelope Schema](../docs/specs/envelope_schema.json) - Action structure
 - [Policy Format](../docs/specs/policy_format.md) - Policy structure for scenarios
 - [Decision Response](../docs/specs/decision_response.md) - Decision output format

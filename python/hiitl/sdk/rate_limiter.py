@@ -10,7 +10,7 @@ Design principles:
 - Automatic cleanup: Old events are removed automatically
 - Scope-based keys: Support for different rate limit scopes
 
-Per CLAUDE.md Security Tier 1:
+Security tier 1 requirements:
 - Rate limiting prevents abuse in local mode
 - Configurable limits per policy metadata
 

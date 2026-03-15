@@ -8,7 +8,6 @@ What does this PR do? Why?
 - [ ] TypeScript evaluator (`typescript/packages/core/`)
 - [ ] Python SDK (`python/hiitl/sdk/`)
 - [ ] TypeScript SDK (`typescript/packages/sdk/`)
-- [ ] Backend server (`backend/`)
 - [ ] Conformance tests (`tests/conformance/`)
 - [ ] Documentation (`docs/`)
 - [ ] Examples (`examples/`)
@@ -17,7 +16,6 @@ What does this PR do? Why?
 
 - [ ] Conformance tests pass (both languages)
 - [ ] Unit tests pass for affected components
-- [ ] Backend tests pass (if server changes)
 - [ ] New behavior has test coverage
 
 ## Checklist

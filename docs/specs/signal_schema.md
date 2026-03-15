@@ -10,7 +10,7 @@
 
 This document defines the **signal schema** for external systems to push risk signals, anomaly flags, compliance state changes, and eval metrics into HIITL Execution Control Plane.
 
-**Signal ingestion is a core integration surface** (CLAUDE.md line 109). It enables ecosystem partners (security platforms, eval tools, monitoring systems) to inform ECP's policy decisions at runtime.
+**Signal ingestion is a core integration surface.** It enables ecosystem partners (security platforms, eval tools, monitoring systems) to inform ECP's policy decisions at runtime.
 
 **Phase 1**: Interface designed, policy format supports signal references
 **Phase 2**: Full implementation of signal ingestion API
@@ -628,7 +628,7 @@ Signal-aware policy conformance tests:
 ## Related Documents
 
 - [Policy Format Spec](policy_format.md) - Layer 4: Signal-aware conditions
-- [CLAUDE.md](../CLAUDE.md) - Ecosystem Integration Design (lines 367-391)
+- [Ecosystem Integration](../architecture/ecosystem_integration.md) - Ecosystem integration design
 - [Infrastructure Analysis](../technical/ecp_infrastructure_analysis.md) - Integration surfaces
 
 ---

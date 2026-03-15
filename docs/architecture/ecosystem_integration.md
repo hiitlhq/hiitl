@@ -7,15 +7,13 @@
 
 ## Overview
 
-HIITL ECP is **connective infrastructure** (CLAUDE.md line 22). It does not compete with the AI ecosystem — it gives the ecosystem a deterministic enforcement layer to plug into.
+HIITL ECP is **connective infrastructure**. It does not compete with the AI ecosystem — it gives the ecosystem a deterministic enforcement layer to plug into.
 
 This document describes how ECP integrates with each ecosystem category and the value it provides to each.
 
 ---
 
 ## Integration Philosophy
-
-Per CLAUDE.md lines 12-21:
 
 > **Where ECP Sits in the Ecosystem**
 >
@@ -579,7 +577,6 @@ This keeps the core event system simple while enabling partner-specific formatti
 
 ## Related Documents
 
-- [CLAUDE.md](../CLAUDE.md) - Ecosystem Integration Design (lines 367-391)
 - [Signal Schema Spec](../specs/signal_schema.md) - Signal ingestion format
 - [Event Format Spec](../specs/event_format.md) - Outbound event format
 - [North Star](../product_planning/hiitl_north_star.md) - Where HIITL Sits in the Ecosystem

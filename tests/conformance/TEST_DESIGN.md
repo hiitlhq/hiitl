@@ -10,7 +10,7 @@
 
 ## Testing Philosophy
 
-Per CLAUDE.md line 784: **"Test it, don't trust it."** Every feature needs tests and synthetic data to prove it works.
+**"Test it, don't trust it."** Every feature needs tests and synthetic data to prove it works.
 
 Conformance tests validate **behavioral equivalence** across all language implementations (Python, TypeScript, future languages).
 
@@ -38,7 +38,7 @@ Conformance tests validate **behavioral equivalence** across all language implem
 ---
 
 ### 2. **Performance Requirements** ✅ VALIDATED
-**Requirement**: < 1ms evaluation time for typical policies (per CLAUDE.md line 538)
+**Requirement**: < 1ms evaluation time for typical policies
 
 **How Validated**:
 - Evaluator includes timing instrumentation (evaluation_ms in Decision response)

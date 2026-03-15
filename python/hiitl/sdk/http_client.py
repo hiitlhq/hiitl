@@ -88,7 +88,7 @@ class HostedClient:
             ServerError: Server returned an error response
             NetworkError: Cannot reach the server
         """
-        # Build request body (matches backend/schemas.py EvaluateRequest)
+        # Build request body (EvaluateRequest format)
         body: dict = {
             "action": action,
             "operation": operation,

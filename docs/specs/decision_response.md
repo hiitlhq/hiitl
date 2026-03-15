@@ -24,8 +24,6 @@ All SDK implementations (TypeScript, Python, and future languages) must conform 
 
 ## Design Principles
 
-Per CLAUDE.md:
-
 1. **Deterministic** - Same (envelope, policy) always produces same decision
 2. **Transparent** - Include timing metadata so developers can measure latency impact
 3. **Auditable** - Include policy version and reason codes for debugging
@@ -732,8 +730,6 @@ Free-form remediation for policy-specific guidance that doesn't fit the standard
 
 ## Timing Metadata (Transparency)
 
-Per CLAUDE.md line 411:
-
 **Every decision response includes timing metadata**. Developers must never wonder "is this slowing me down?"
 
 **Timing fields**:
@@ -751,8 +747,6 @@ If `total_ms` exceeds these targets consistently, it's a performance bug.
 ---
 
 ## Policy Version Inclusion (Auditability)
-
-Per CLAUDE.md line 336:
 
 **Every decision includes the policy version** used in evaluation.
 
@@ -774,8 +768,6 @@ If multiple policy sets were evaluated (hierarchy), include all versions:
 ---
 
 ## Rate Limit Counter State
-
-Per CLAUDE.md Infrastructure Spec #6 (line 354):
 
 **Decision includes counter state** when rate limit is checked.
 
@@ -906,7 +898,7 @@ All evaluator implementations must produce decision responses matching the expec
 
 ## Error Handling
 
-**All errors produce structured decision responses** (CLAUDE.md line 496).
+**All errors produce structured decision responses.**
 
 Never return generic 500 errors without a decision response body.
 
@@ -921,7 +913,7 @@ Never return generic 500 errors without a decision response body.
 - `error.message` - Human-readable explanation
 - `reason_codes` - Reason codes (e.g., `["SIGNATURE_VERIFICATION_FAILED"]`)
 
-**Audit requirement**: Even error decisions produce audit records (CLAUDE.md line 496).
+**Audit requirement**: Even error decisions produce audit records.
 
 ---
 
@@ -929,7 +921,7 @@ Never return generic 500 errors without a decision response body.
 
 **Decision response schema version**: `v1.0`
 
-**Backward compatibility** (CLAUDE.md lines 341-346):
+**Backward compatibility**:
 - New optional fields may be added (minor version bump)
 - Existing fields cannot be removed (major version bump)
 - Field types cannot change (major version bump)
@@ -956,7 +948,6 @@ Never return generic 500 errors without a decision response body.
 - [Policy Format Spec](policy_format.md) - Policy evaluation semantics
 - [Route Spec](routes.md) - Route schema (external communication — outbound, inbound, bidirectional)
 - [Event Format Spec](event_format.md) - Audit record format
-- [CLAUDE.md](../../CLAUDE.md) - Design principles and requirements
 
 ---
 

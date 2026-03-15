@@ -14,13 +14,11 @@ Events are produced for:
 - **Audit log** (immutable, append-only record of all actions)
 - **Ecosystem outbound** (structured events emitted to observability, GRC, and monitoring platforms via webhooks)
 
-The format is designed with **OpenTelemetry compatibility** in mind (CLAUDE.md Infrastructure Analysis line 103).
+The format is designed with **OpenTelemetry compatibility** in mind.
 
 ---
 
 ## Design Principles
-
-Per CLAUDE.md Infrastructure Spec #3 (lines 322-330):
 
 1. **Immutable audit trail** - Append-only, no mutation, no soft-delete
 2. **Every attempted action produces a record** - Even if blocked
@@ -494,8 +492,6 @@ Per CLAUDE.md Infrastructure Spec #3 (lines 322-330):
 
 ## OpenTelemetry Compatibility
 
-Per CLAUDE.md Infrastructure Analysis line 103:
-
 Event format is designed to **map cleanly to OpenTelemetry spans and events**.
 
 ### OTel Span Mapping
@@ -527,8 +523,6 @@ Phase 1: Event structure supports OTel mapping but export is via webhooks, not n
 ---
 
 ## Audit Log Storage
-
-Per CLAUDE.md Infrastructure Spec #3 (lines 322-330):
 
 ### Append-Only Requirement
 
@@ -590,8 +584,6 @@ Old partitions can be dropped for retention.
 
 ## Redaction
 
-Per CLAUDE.md Security Requirements (line 170):
-
 Sensitive parameters must be redactable before audit log storage.
 
 ### Redaction Policy
@@ -639,8 +631,6 @@ Redacted:
 ---
 
 ## Webhook Emission (Outbound Events)
-
-Per CLAUDE.md Ecosystem Integration (lines 375-382):
 
 ### Webhook Configuration
 
@@ -698,8 +688,6 @@ This prevents sending irrelevant events to consumers.
 ---
 
 ## Retention Policy
-
-Per CLAUDE.md Infrastructure Spec #3 (line 330):
 
 - **Configurable retention per org**
 - Default: 7-30 days (free tier)
@@ -760,7 +748,6 @@ All implementations produce events matching specification.
 - [Route Spec](routes.md) - Route schema (escalation, routing, SLA)
 - [HITL Config Spec](hitl_config.md) - *(Deprecated — replaced by routes.md)*
 - [Security Requirements](../security/security_requirements.md) - Redaction requirements
-- [CLAUDE.md](../../CLAUDE.md) - Audit trail requirements
 
 ---
 

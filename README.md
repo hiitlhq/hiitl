@@ -1,3 +1,8 @@
+[![PyPI](https://img.shields.io/pypi/v/hiitl)](https://pypi.org/project/hiitl/)
+[![CI](https://github.com/hiitlhq/hiitl/actions/workflows/ci.yml/badge.svg)](https://github.com/hiitlhq/hiitl/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://pypi.org/project/hiitl/)
+
 # hiitl
 
 The control point for AI agents.
@@ -336,9 +341,6 @@ cd python && python -m pytest hiitl/core/tests/conformance/
 # TypeScript conformance tests
 cd typescript/packages/core && npx vitest run
 
-# Backend tests (103 tests)
-cd backend && python -m pytest tests/
-
 # All Python tests
 cd python && python -m pytest
 ```
@@ -359,7 +361,6 @@ hiitl/
 ├── typescript/packages/
 │   ├── core/           # Policy evaluator + types
 │   └── sdk/            # TypeScript SDK (local + hosted)
-├── backend/            # Python/FastAPI server
 ├── tests/conformance/  # 75 cross-language conformance tests
 ├── patterns/           # 25 action pattern templates
 ├── docs/

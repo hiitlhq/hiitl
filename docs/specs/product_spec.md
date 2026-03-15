@@ -54,7 +54,6 @@ These are **language-neutral specifications**. All implementations (TypeScript, 
 
 ## Other Key Documents
 
-- **[CLAUDE.md](../CLAUDE.md)** - Project control document (how we work, architectural principles)
 - **[North Star](../product_planning/hiitl_north_star.md)** - Vision and decision principles
 - **[Infrastructure Analysis](../technical/ecp_infrastructure_analysis.md)** - Technical architecture decisions
 - **[Security Requirements](../security/security_requirements.md)** - Security requirements and review checklist
@@ -71,9 +70,8 @@ When implementing features:
 
 1. **Read the product spec** to understand requirements
 2. **Read the relevant technical specs** for contract details
-3. **Read CLAUDE.md** for architectural constraints and principles
-4. **Implement against the specs** (specs are source of truth)
-5. **Validate with conformance tests** (in `/tests/conformance/`)
+3. **Implement against the specs** (specs are source of truth)
+4. **Validate with conformance tests** (in `/tests/conformance/`)
 
 ---
 

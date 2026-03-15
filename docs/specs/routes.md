@@ -1236,7 +1236,6 @@ correlation:
 - [Event Format Spec](event_format.md) - Outbound route event format
 - [HITL Config Spec](hitl_config.md) - *(Deprecated — predecessor to this spec)*
 - [Strategic Evolution v2](../product_planning/ecp_strategic_evolution_feb_2026_v2.md) - Section 5: full route model design
-- [CLAUDE.md](../../CLAUDE.md) - Three-artifact model, design principles
 
 ---
 

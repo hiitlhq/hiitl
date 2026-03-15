@@ -2,7 +2,7 @@
 
 **Purpose**: Language-neutral conformance tests that validate all policy evaluator implementations produce identical decisions for identical inputs.
 
-**Per CLAUDE.md line 625**: Every evaluator implementation (TypeScript, Python, and future languages) must pass this conformance suite.
+Every evaluator implementation (TypeScript, Python, and future languages) must pass this conformance suite.
 
 ---
 
@@ -250,7 +250,6 @@ If a test fails in one implementation:
 - [Envelope Schema](../../specs/envelope_schema.json) - Input format
 - [Policy Format Spec](../../docs/specs/policy_format.md) - Policy structure and evaluation
 - [Decision Response Spec](../../docs/specs/decision_response.md) - Expected output format
-- [CLAUDE.md](../../CLAUDE.md) - Conformance testing requirement
 
 ---
 

@@ -10,7 +10,7 @@ Design principles:
 - Timezone-aware: ISO 8601 timestamps with UTC
 - Thread-safe: SQLite handles concurrent writes via locking
 
-Security tier 1 features (per CLAUDE.md):
+Security tier 1 features:
 - Content hashing for integrity verification
 - Immutable records (append-only)
 - Denormalized data for audit queries

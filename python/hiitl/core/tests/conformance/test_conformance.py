@@ -206,7 +206,7 @@ def test_conformance(test_file: Path, test_case: Dict[str, Any]):
     except Exception as e:
         pytest.fail(f"Evaluator raised exception for test {test_id}: {e}")
 
-    # Check performance requirement (< 1ms evaluation time per CLAUDE.md line 538)
+    # Check performance requirement (< 1ms evaluation time)
     if actual_decision.timing.evaluation_ms > 1.0:
         warnings.warn(
             f"Performance requirement violated for test {test_id}: "

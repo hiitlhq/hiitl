@@ -16,8 +16,6 @@ All policy evaluator implementations (TypeScript, Python, and future languages) 
 
 ## Design Principles
 
-Per CLAUDE.md lines 198-226:
-
 1. **Simple for basic rules, expressive for complex policies**
 2. **Four-layer design** (designed together, implemented incrementally):
    - Layer 1: Rules (atomic conditions and outcomes)
@@ -455,13 +453,11 @@ The UI renders policies attractively using these hints. A policy file should loo
 
 ### Evaluation Order (Deterministic)
 
-Per CLAUDE.md lines 332-338:
-
 Rules are evaluated in **priority order (highest to lowest)**. The first matching rule produces the decision.
 
 **Exception**: DENY/BLOCK always wins. If any rule produces BLOCK, the action is blocked regardless of other rules.
 
-### Precedence Rules (CLAUDE.md lines 334-336)
+### Precedence Rules
 
 Fixed evaluation sequence (cannot be reconfigured):
 
@@ -475,15 +471,13 @@ Fixed evaluation sequence (cannot be reconfigured):
 
 ### Conflict Resolution
 
-**Rule**: **DENY wins**. (CLAUDE.md line 335)
+**Rule**: **DENY wins**.
 
 If multiple rules match and any produces BLOCK, KILL_SWITCH, or other denial decision, the action is blocked.
 
 This is **not configurable**. It is a design invariant.
 
 ### Evaluation is Side-Effect Free
-
-Per CLAUDE.md line 338:
 
 Policy evaluation **reads state** (counters, config) but **never mutates it**.
 
@@ -567,8 +561,6 @@ Signals are:
 
 ## Policy Versioning & Immutability
 
-Per CLAUDE.md lines 340-346:
-
 ### Version Requirements
 
 - All policy sets carry a **version identifier** (semver: `v{major}.{minor}.{patch}`)
@@ -593,8 +585,6 @@ Every decision includes the **policy version(s)** used in evaluation. This enabl
 ---
 
 ## Storage
-
-Per CLAUDE.md Infrastructure Spec #3 (lines 322-330):
 
 ### Local Mode
 - Policies loaded from **YAML/JSON files on disk**
@@ -663,7 +653,7 @@ policy_set:
 ### Example 2: Rate Limiting
 
 Rate limits are configured at the policy set level in `metadata.rate_limits`, not as individual rules.
-They are applied post-evaluation to ALLOW decisions only (per CLAUDE.md: "evaluation is side-effect free").
+They are applied post-evaluation to ALLOW decisions only (evaluation is side-effect free).
 
 ```yaml
 policy_set:
@@ -822,7 +812,6 @@ Every evaluator implementation runs the full suite. All must produce identical d
 - [Envelope Schema](envelope_schema.json) - Field paths referenced in conditions
 - [Decision Response Spec](decision_response.md) - Decision output format
 - [Route Spec](routes.md) - Route schema (external communication — outbound, inbound, bidirectional)
-- [CLAUDE.md](../../CLAUDE.md) - Design principles and requirements
 - [Infrastructure Analysis](../technical/ecp_infrastructure_analysis.md) - Custom evaluator decision
 
 ---

@@ -57,8 +57,8 @@ The SDK has three internal components:
 
 | Document | Required Updates |
 |---|---|
-| **CLAUDE.md — SDK Requirements** | Rewrite SDK architecture to describe three components (evaluator, sync engine, local cache). Update deployment modes (hybrid/local/hosted). Update latency requirements (microsecond evaluation in hybrid mode). |
-| **CLAUDE.md — Infrastructure Specs** | Update "Control Plane Outage Behavior" — hybrid mode means outages don't affect evaluation, only sync. Update "Storage & Durability" — local cache persistence requirements. |
+| **Project requirements — SDK Requirements** | Rewrite SDK architecture to describe three components (evaluator, sync engine, local cache). Update deployment modes (hybrid/local/hosted). Update latency requirements (microsecond evaluation in hybrid mode). |
+| **Project requirements — Infrastructure Specs** | Update "Control Plane Outage Behavior" — hybrid mode means outages don't affect evaluation, only sync. Update "Storage & Durability" — local cache persistence requirements. |
 | **Infrastructure Analysis** | Rewrite "What Kind of System Is ECP" — it's a local evaluator with a cloud intelligence backend, not just an inline enforcement gateway. Update deployment topology diagrams. |
 | **Product Spec — Adoption/Integration Path** | Update to reflect that the SDK is self-contained with cloud sync, not a client that calls a server. |
 | **Decision Response Spec** | No change — decision format is the same regardless of where evaluation happens. |
@@ -162,10 +162,10 @@ This means the barrier to initial adoption is truly one line of code and an API 
 
 | Document | Required Updates |
 |---|---|
-| **CLAUDE.md — Developer Onboarding & Trust** | Rewrite the onboarding flow around observe-first. The quickstart is "see what your agents are doing in 5 minutes," not "add runtime control." No policies in the initial quickstart. |
-| **CLAUDE.md — Phase 1 Scope** | Add telemetry pipeline as a Phase 1 requirement. Add basic suggestion capability (rule-based heuristics). Add dashboard behavior visibility as a Phase 1 UI feature. |
-| **CLAUDE.md -- SDK Requirements** | The `evaluate()` function with no policies should allow-all and log. The SDK should work meaningfully with zero configuration beyond an API key. |
-| **CLAUDE.md — Phase 1 UI** | Add agent behavior visibility (tool usage patterns, frequency, parameter distributions) as a dashboard feature. Add suggested policies display with accept/modify/dismiss actions. |
+| **Project requirements — Developer Onboarding & Trust** | Rewrite the onboarding flow around observe-first. The quickstart is "see what your agents are doing in 5 minutes," not "add runtime control." No policies in the initial quickstart. |
+| **Project requirements — Phase 1 Scope** | Add telemetry pipeline as a Phase 1 requirement. Add basic suggestion capability (rule-based heuristics). Add dashboard behavior visibility as a Phase 1 UI feature. |
+| **Project requirements — SDK Requirements** | The `evaluate()` function with no policies should allow-all and log. The SDK should work meaningfully with zero configuration beyond an API key. |
+| **Project requirements — Phase 1 UI** | Add agent behavior visibility (tool usage patterns, frequency, parameter distributions) as a dashboard feature. Add suggested policies display with accept/modify/dismiss actions. |
 | **North Star — Right-Now Product** | Update to reflect the observe-first value proposition. The immediate value is visibility, not control. Control follows from visibility. |
 | **GTM Plan** | Messaging overhaul — see "GTM Messaging" section below. The primary message becomes "see what your AI agents are doing" with control as the natural next step. |
 | **Product Spec** | Add policy suggestion engine as a product capability. Define the telemetry pipeline requirements. Define the suggestion generation and delivery workflow. |
