@@ -1,0 +1,218 @@
+# Example Payment Policy for HIITL ECP
+# This is a sample policy demonstrating common payment control patterns
+# Copy and customize for your organization
+
+policy_set:
+  name: "payment-policy"
+  version: "v1.0.0"
+  description: "Production payment processing controls"
+  scope:
+    org_id: "org_your_org_id"  # Replace with your org ID
+    environment: "prod"          # dev, stage, or prod
+
+  rules:
+    # ============================================
+    # Layer 1: Kill Switches (Priority 1000+)
+    # ============================================
+
+    - name: "kill-switch-all-payments"
+      description: "Emergency stop for all payment processing"
+      enabled: false  # Disabled by default, enable during incident
+      priority: 1000
+      conditions:
+        all_of:
+          - field: "tool_name"
+            operator: "equals"
+            value: "process_payment"
+      decision: "KILL_SWITCH"
+      reason_code: "PAYMENTS_KILL_SWITCH_ACTIVE"
+      metadata:
+        emergency_contact: "ops-team@example.com"
+        escalation_required: true
+
+    # ============================================
+    # Layer 2: Deny Rules (Priority 900-999)
+    # ============================================
+
+    - name: "block-suspended-agents"
+      description: "Block payments from suspended agents"
+      enabled: true
+      priority: 900
+      conditions:
+        all_of:
+          - field: "tool_name"
+            operator: "equals"
+            value: "process_payment"
+          - field: "agent_id"
+            operator: "in"
+            value: []  # Empty list, populated when agent is suspended
+      decision: "BLOCK"
+      reason_code: "AGENT_SUSPENDED"
+
+    - name: "block-negative-amounts"
+      description: "Block payments with negative amounts"
+      enabled: true
+      priority: 900
+      conditions:
+        all_of:
+          - field: "tool_name"
+            operator: "equals"
+            value: "process_payment"
+          - field: "parameters.amount"
+            operator: "less_than_or_equal"
+            value: 0
+      decision: "BLOCK"
+      reason_code: "INVALID_AMOUNT"
+
+    # ============================================
+    # Layer 3: Rate Limits (Priority 500-899)
+    # ============================================
+
+    - name: "rate-limit-payments-per-agent"
+      description: "Limit each agent to 100 payments per hour"
+      enabled: true
+      priority: 500
+      conditions:
+        all_of:
+          - field: "tool_name"
+            operator: "equals"
+            value: "process_payment"
+      decision: "RATE_LIMIT"
+      reason_code: "AGENT_PAYMENT_RATE_LIMIT"
+      metadata:
+        rate_limit:
+          scope: "agent_id"
+          window: "hour"
+          limit: 100
+          window_type: "sliding"
+
+    - name: "rate-limit-large-payments"
+      description: "Stricter limit for high-value payments (>$1000)"
+      enabled: true
+      priority: 510
+      conditions:
+        all_of:
+          - field: "tool_name"
+            operator: "equals"
+            value: "process_payment"
+          - field: "parameters.amount"
+            operator: "greater_than"
+            value: 1000
+      decision: "RATE_LIMIT"
+      reason_code: "HIGH_VALUE_PAYMENT_RATE_LIMIT"
+      metadata:
+        rate_limit:
+          scope: "agent_id"
+          window: "hour"
+          limit: 20
+          window_type: "sliding"
+
+    # ============================================
+    # Layer 4: Approval Requirements (Priority 100-399)
+    # ============================================
+
+    - name: "require-approval-very-high-value"
+      description: "Executive approval for payments over $10,000"
+      enabled: true
+      priority: 200
+      conditions:
+        all_of:
+          - field: "tool_name"
+            operator: "equals"
+            value: "process_payment"
+          - field: "parameters.amount"
+            operator: "greater_than"
+            value: 10000
+      decision: "REQUIRE_APPROVAL"
+      reason_code: "EXECUTIVE_APPROVAL_REQUIRED"
+      metadata:
+        sla_hours: 2
+        reviewer_role: "cfo"
+        escalation_path: ["finance_director", "cfo"]
+
+    - name: "require-approval-high-value"
+      description: "Manager approval for payments over $1,000"
+      enabled: true
+      priority: 150
+      conditions:
+        all_of:
+          - field: "tool_name"
+            operator: "equals"
+            value: "process_payment"
+          - field: "parameters.amount"
+            operator: "greater_than"
+            value: 1000
+      decision: "REQUIRE_APPROVAL"
+      reason_code: "HIGH_VALUE_PAYMENT"
+      metadata:
+        sla_hours: 4
+        reviewer_role: "finance_manager"
+
+    - name: "require-approval-low-confidence"
+      description: "Approval required for low-confidence payments"
+      enabled: true
+      priority: 120
+      conditions:
+        all_of:
+          - field: "tool_name"
+            operator: "equals"
+            value: "process_payment"
+          - field: "parameters.amount"
+            operator: "greater_than"
+            value: 500
+          - field: "confidence"
+            operator: "less_than"
+            value: 0.8
+      decision: "REQUIRE_APPROVAL"
+      reason_code: "LOW_CONFIDENCE_PAYMENT"
+      metadata:
+        sla_hours: 2
+        reviewer_role: "risk_team"
+
+    # ============================================
+    # Layer 5: Threshold Checks (Priority 100-399)
+    # ============================================
+
+    - name: "escalate-unusual-currency"
+      description: "Escalate payments in unusual currencies"
+      enabled: true
+      priority: 100
+      conditions:
+        all_of:
+          - field: "tool_name"
+            operator: "equals"
+            value: "process_payment"
+          - field: "parameters.currency"
+            operator: "not_in"
+            value: ["usd", "eur", "gbp"]
+      decision: "ESCALATE"
+      reason_code: "UNUSUAL_CURRENCY"
+      metadata:
+        escalation_team: "finance_ops"
+
+    # ============================================
+    # Layer 6: Default Allow (Priority 1-49)
+    # ============================================
+
+    - name: "allow-standard-payments"
+      description: "Allow normal payments that passed all checks"
+      enabled: true
+      priority: 1
+      conditions:
+        all_of:
+          - field: "tool_name"
+            operator: "equals"
+            value: "process_payment"
+      decision: "ALLOW"
+      reason_code: "STANDARD_PAYMENT"
+
+  metadata:
+    created_at: "2026-02-14T12:00:00Z"
+    created_by: "admin@example.com"
+    tags: ["payments", "production", "financial"]
+    documentation_url: "https://docs.example.com/policies/payment-policy"
+    change_log:
+      - version: "v1.0.0"
+        date: "2026-02-14"
+        changes: "Initial payment policy for production"
+        author: "admin@example.com"

@@ -1,0 +1,47 @@
+{
+  "test_id": "test_060_floating_point_numbers",
+  "description": "Test handling of floating point numbers",
+  "envelope": {
+    "schema_version": "v1.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_finance_bot",
+    "action_id": "act_test0600000000000000",
+    "timestamp": "2026-02-14T10:00:00Z",
+    "operation": "execute",
+    "parameters": {
+      "amount": 99.99,
+      "currency": "USD"
+    },
+    "idempotency_key": "idem_test_060_floating_point_numbers",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "transfer_money"
+  },
+  "policy_set": {
+    "version": "1.0.0",
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "allow_under_hundred",
+        "priority": 100,
+        "enabled": true,
+        "conditions": {
+          "field": "parameters.amount",
+          "operator": "less_than",
+          "value": 100.0
+        },
+        "decision": "ALLOW",
+        "reason_code": "UNDER_HUNDRED_DOLLARS",
+        "description": "Rule: allow_under_hundred"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "ALLOW",
+    "allowed": true,
+    "reason_codes": [
+      "UNDER_HUNDRED_DOLLARS"
+    ]
+  }
+}

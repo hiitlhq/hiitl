@@ -1,0 +1,156 @@
+pattern_id: "data_access/delete_records"
+category: "data_access"
+name: "Delete Records"
+description: >
+  Record deletion is a destructive, irreversible operation. Automated agents should
+  never delete data without oversight. Controls must enforce environment-specific
+  behavior, require human approval for production deletions, block bulk operations,
+  and provide a kill switch for emergencies.
+tags: ["delete", "data-access", "irreversible", "destructive"]
+
+evaluate_examples:
+  python: |
+    result = hiitl.evaluate("delete_records", {
+        "table": "customer_sessions",
+        "record_count": 15,
+        "reason": "expired_session_cleanup",
+    })
+    if result.ok:
+        delete_records(table="customer_sessions", record_count=15)
+  typescript: |
+    const result = hiitl.evaluate({
+      action: 'delete_records',
+      params: {
+        table: 'customer_sessions',
+        record_count: 15,
+        reason: 'expired_session_cleanup',
+      },
+    });
+    if (result.ok) {
+      await deleteRecords({ table: 'customer_sessions', recordCount: 15 });
+    }
+
+context_enrichment:
+  - field: "user_id"
+    why: "Identifies who initiated the deletion for audit attribution and accountability"
+    example: "user_6pR2mK8nQ3"
+  - field: "sensitivity"
+    why: "Deletions are inherently irreversible — this sensitivity tag triggers the strictest controls"
+    example: "irreversible"
+  - field: "target.table"
+    why: "The target table determines data classification and which compliance requirements apply to the deletion"
+    example: "customer_sessions"
+  - field: "parameters.deletion_type"
+    why: "Hard delete vs. soft delete distinction affects reversibility and compliance (some regulations require hard deletion)"
+    example: "soft_delete"
+  - field: "parameters.backup_confirmed"
+    why: "Whether a backup exists before deletion affects the risk profile and recoverability"
+    example: true
+
+starter_policies:
+  - name: "sandbox-dev-deletes"
+    description: "Route all deletion operations in dev to sandbox to prevent accidental data loss during development"
+    priority: 200
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "delete_records"
+        - field: "environment"
+          operator: "equals"
+          value: "dev"
+    decision: "SANDBOX"
+    reason_code: "DEV_DELETE_SANDBOXED"
+    remediation:
+      type: "static"
+      message: "Deletion operations in the dev environment are sandboxed to prevent accidental data loss"
+      suggestion: "Your deletion will execute against the sandbox environment. This protects shared development data from accidental deletion. If you need to test actual deletions, use a dedicated test database."
+
+  - name: "approve-prod-deletes"
+    description: "Require human approval for all deletion operations in production — no exceptions"
+    priority: 150
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "delete_records"
+        - field: "environment"
+          operator: "equals"
+          value: "prod"
+    decision: "REQUIRE_APPROVAL"
+    reason_code: "PROD_DELETE_NEEDS_APPROVAL"
+    remediation:
+      type: "static"
+      message: "All record deletions in production require explicit human approval"
+      suggestion: "Submit a deletion request with the target table, record count, reason, and confirmation that a backup exists. A database administrator must approve before the deletion can proceed."
+
+  - name: "block-bulk-deletes"
+    description: "Block deletion of more than 100 records — bulk deletions must go through the data lifecycle management process"
+    priority: 100
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "delete_records"
+        - field: "parameters.record_count"
+          operator: "greater_than"
+          value: 100
+    decision: "BLOCK"
+    reason_code: "BULK_DELETE_BLOCKED"
+    remediation:
+      type: "static"
+      message: "Automated agents cannot delete more than 100 records at a time"
+      suggestion: "Bulk deletions must go through the data lifecycle management process with DBA oversight. For large cleanup jobs, submit a data maintenance request that includes the scope, justification, backup plan, and rollback procedure."
+
+  - name: "block-protected-tables"
+    description: "Block automated deletion from core business tables that require special handling"
+    priority: 110
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "delete_records"
+        - field: "parameters.table"
+          operator: "in"
+          value: ["customers", "transactions", "audit_log", "policies", "accounts"]
+    decision: "BLOCK"
+    reason_code: "PROTECTED_TABLE_DELETE_BLOCKED"
+    remediation:
+      type: "static"
+      message: "Automated deletion from protected business tables is not permitted"
+      suggestion: "The tables 'customers', 'transactions', 'audit_log', 'policies', and 'accounts' are protected from automated deletion. These records must be managed through the data retention workflow with appropriate compliance review."
+
+  - name: "delete-kill-switch"
+    description: "Emergency kill switch to halt all automated deletion operations immediately"
+    priority: 10
+    enabled: false
+    conditions:
+      field: "action"
+      operator: "equals"
+      value: "delete_records"
+    decision: "KILL_SWITCH"
+    reason_code: "DELETIONS_SUSPENDED"
+    remediation:
+      type: "static"
+      message: "All automated record deletion has been suspended by an administrator"
+      suggestion: "Contact the database operations team to check the status of the deletion kill switch. This is typically activated during incident response when uncontrolled data loss is suspected."
+
+remediation:
+  block_message: "This deletion was blocked because it either targets a protected table, exceeds the bulk deletion limit, or has been suspended by an administrator. Record deletion is irreversible and requires careful oversight."
+  developer_action: "Verify you are targeting the correct table and the record count is within limits. For production deletions, submit an approval request. For bulk deletions, use the data lifecycle management process. Check whether the deletion kill switch has been activated."
+  approval_message: "This record deletion requires human approval because it targets a production database. The reviewer will see the target table, record count, deletion reason, and whether a backup has been confirmed."
+
+compliance:
+  - regulation: "GDPR"
+    relevance: "GDPR Article 17 establishes the right to erasure (right to be forgotten), requiring organizations to delete personal data upon valid request"
+    note: "While this pattern controls automated deletion to prevent data loss, it must not prevent legitimate GDPR erasure requests. Configure a dedicated deletion workflow for privacy-related deletions that bypasses bulk limits but still requires approval and audit logging."
+  - regulation: "Data Retention Policies"
+    relevance: "Most industries have regulations specifying minimum and maximum retention periods for different data types"
+    note: "Deletions must be verified against applicable retention schedules. Deleting data before the retention period expires may violate regulatory requirements. The audit trail must capture the retention policy justification for each deletion."
+  - regulation: "SOX"
+    relevance: "Sarbanes-Oxley requires that financial records be retained and protected from unauthorized destruction"
+    note: "The 'transactions' and 'accounts' tables in the protected table list are blocked from automated deletion specifically to support SOX record retention requirements. Any deletion of financial records must go through a compliance-reviewed process."

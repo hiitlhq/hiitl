@@ -1,0 +1,69 @@
+{
+  "name": "payment-policy",
+  "version": "1.0.0",
+  "description": "Payment agent policy with approval thresholds and kill switch",
+  "rules": [
+    {
+      "name": "kill-switch-payments",
+      "description": "Emergency stop all payments",
+      "enabled": false,
+      "priority": 1000,
+      "conditions": {
+        "field": "tool_name",
+        "operator": "equals",
+        "value": "process_payment"
+      },
+      "decision": "KILL_SWITCH",
+      "reason_code": "KILL_SWITCH_PAYMENTS"
+    },
+    {
+      "name": "high-value-approval",
+      "description": "Payments over $1000 require human approval",
+      "enabled": true,
+      "priority": 100,
+      "conditions": {
+        "all_of": [
+          {
+            "field": "tool_name",
+            "operator": "equals",
+            "value": "process_payment"
+          },
+          {
+            "field": "parameters.amount",
+            "operator": "greater_than",
+            "value": 1000
+          }
+        ]
+      },
+      "decision": "REQUIRE_APPROVAL",
+      "reason_code": "HIGH_VALUE_PAYMENT",
+      "hitl_config": "payment-approval"
+    },
+    {
+      "name": "allow-standard-operations",
+      "description": "Allow normal payment agent operations",
+      "enabled": true,
+      "priority": 50,
+      "conditions": {
+        "field": "tool_name",
+        "operator": "in",
+        "value": ["process_payment", "process_refund", "check_balance", "verify_account"]
+      },
+      "decision": "ALLOW",
+      "reason_code": "STANDARD_OPERATION"
+    },
+    {
+      "name": "block-unknown-tools",
+      "description": "Block any unrecognized tools",
+      "enabled": true,
+      "priority": 10,
+      "conditions": {
+        "field": "tool_name",
+        "operator": "not_in",
+        "value": ["process_payment", "process_refund", "check_balance", "verify_account"]
+      },
+      "decision": "BLOCK",
+      "reason_code": "UNKNOWN_TOOL"
+    }
+  ]
+}

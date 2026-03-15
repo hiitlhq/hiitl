@@ -1,0 +1,101 @@
+---
+title: "How hiitl Works"
+description: "Architecture, evaluation flow, and deployment modes"
+---
+
+## The control point
+
+hiitl is a single deterministic checkpoint that sits between an AI agent's decision and the actual execution of that action. Every action passes through `evaluate()` before anything happens in the real world.
+
+```
+Agent decides to act
+        |
+        v
+  hiitl.evaluate()
+        |
+   +---------+
+   | Policy  |
+   | Engine  |
+   +---------+
+        |
+   +----+----+
+   |         |
+ALLOW     BLOCK / PAUSE / ESCALATE ...
+   |         |
+Execute   Don't execute
+```
+
+The evaluation is deterministic: the same envelope and the same policy always produce the same decision. There is no LLM inference, no probabilistic reasoning, and no model calls at decision time.
+
+## The four internal planes
+
+Every piece of hiitl code belongs to one of four internal planes.
+
+<AccordionGroup>
+  <Accordion title="SDK / Ingest Plane">
+    Developer-facing SDKs that construct envelopes, submit them for evaluation, and return decisions. This is the integration surface — the code your application calls.
+  </Accordion>
+  <Accordion title="Decision Plane">
+    The deterministic policy evaluation engine. Receives an envelope, evaluates it against the active policy set in priority order, and returns a decision. Side-effect free — evaluation never mutates state.
+  </Accordion>
+  <Accordion title="Execution Plane">
+    Optional adapters that execute or pass-through actions after an ALLOW decision. In most integrations, your application handles execution directly based on the decision.
+  </Accordion>
+  <Accordion title="Audit / Ops Plane">
+    Immutable logging, policy management, and observability. Every action produces an audit record — even blocked ones. Records are append-only and tamper-evident.
+  </Accordion>
+</AccordionGroup>
+
+## Evaluation flow
+
+When your code calls `evaluate()`, here is what happens internally:
+
+<Steps>
+  <Step title="Envelope construction">
+    The SDK builds a full [execution envelope](/concepts/envelope) from the minimal arguments you provide. It fills in `org_id`, `agent_id`, `action_id`, timestamps, and an HMAC signature automatically.
+  </Step>
+  <Step title="Policy evaluation">
+    The evaluator loads the active [policy set](/concepts/policies) and evaluates rules in priority order (highest first). Kill switches and deny rules are checked before allow rules. The first matching rule produces the decision.
+  </Step>
+  <Step title="Decision returned">
+    A [decision object](/concepts/decisions) is returned with the outcome (`ALLOW`, `BLOCK`, `REQUIRE_APPROVAL`, etc.), reason codes, timing metadata, and the policy version used. Your code inspects `decision.allowed` or `decision.ok` and acts accordingly.
+  </Step>
+  <Step title="Audit record written">
+    An immutable [audit record](/concepts/audit-trail) is written for every evaluation — including blocked actions. In fail-closed mode, if the audit write fails, the action is blocked.
+  </Step>
+</Steps>
+
+## Multi-language native evaluators
+
+hiitl has native policy evaluators in both Python and TypeScript. These are not wrappers around each other — each is a full implementation in its target language.
+
+<CardGroup cols={2}>
+  <Card title="Python evaluator" icon="python">
+    Runs in-process in your Python application. No subprocess, no Node.js dependency. Same evaluator powers both the SDK (local mode) and the hosted server.
+  </Card>
+  <Card title="TypeScript evaluator" icon="js">
+    Runs in-process in your Node.js application. No Python dependency. Validated against the same conformance test suite as the Python evaluator.
+  </Card>
+</CardGroup>
+
+Both evaluators are validated by a shared **conformance test suite** — a set of `(envelope, policy, expected_decision)` tuples defined in JSON. If the two evaluators ever disagree on a decision, the spec is right and the divergent implementation has a bug.
+
+## Deployment modes
+
+hiitl supports three deployment modes, auto-detected from how you construct the client.
+
+| Mode | Config | Evaluator | Audit | Latency |
+|------|--------|-----------|-------|---------|
+| **Local** | No `api_key` | In-process | SQLite | Sub-millisecond |
+| **Hosted** | `api_key` + `server_url` | Server-side | PostgreSQL | Low tens of ms |
+| **Hybrid** | `api_key` only | In-process | Local + sync | Sub-millisecond |
+
+Learn more in [Deployment Modes](/concepts/deployment-modes).
+
+## What hiitl does not do
+
+hiitl is connective infrastructure. It does not replace the AI ecosystem — it gives the ecosystem a deterministic enforcement layer.
+
+- **Does not orchestrate.** hiitl does not decide what agents should do or coordinate multi-step workflows.
+- **Does not use LLMs at decision time.** The decision plane is deterministic. No model inference during evaluation.
+- **Does not compete with observability tools.** Observability platforms detect. hiitl enforces. They work together via structured event emission.

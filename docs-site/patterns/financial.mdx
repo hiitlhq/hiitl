@@ -1,0 +1,197 @@
+---
+title: "Financial Patterns"
+description: "Payment processing, invoicing, refunds, and fund transfers"
+---
+
+## process_payment
+
+Process a payment against a customer account.
+
+```python
+decision = hiitl.evaluate(
+    tool="process_payment",
+    operation="execute",
+    target={"account_id": "acct_123"},
+    parameters={"amount": 150.00, "currency": "usd"}
+)
+```
+
+**Starter policy:**
+
+```yaml
+- name: "require-approval-high-value-payment"
+  enabled: true
+  priority: 100
+  conditions:
+    all_of:
+      - field: "action"
+        operator: "equals"
+        value: "process_payment"
+      - field: "parameters.amount"
+        operator: "greater_than"
+        value: 500
+  decision: "REQUIRE_APPROVAL"
+  reason_code: "HIGH_VALUE_PAYMENT"
+  remediation:
+    message: "Payment exceeds $500 threshold."
+    suggestion: "Reduce amount or request approval from finance team."
+    type: "threshold"
+    details:
+      threshold: 500
+  metadata:
+    sla_hours: 4
+    reviewer_role: "finance_approver"
+```
+
+<Note>
+**Compliance:** PCI-DSS requires audit trails for all payment transactions. hiitl's immutable audit log satisfies this requirement. SOX compliance may require tiered approval thresholds -- see the [Policy Cookbook](/patterns/policy-cookbook) for tiered examples.
+</Note>
+
+---
+
+## create_invoice
+
+Generate and send an invoice to a customer.
+
+```python
+decision = hiitl.evaluate(
+    tool="create_invoice",
+    operation="create",
+    target={"customer_id": "cust_456"},
+    parameters={"amount": 2500.00, "currency": "usd", "due_days": 30}
+)
+```
+
+**Starter policy:**
+
+```yaml
+- name: "block-large-invoices"
+  enabled: true
+  priority: 900
+  conditions:
+    all_of:
+      - field: "action"
+        operator: "equals"
+        value: "create_invoice"
+      - field: "parameters.amount"
+        operator: "greater_than"
+        value: 10000
+  decision: "BLOCK"
+  reason_code: "INVOICE_EXCEEDS_LIMIT"
+  remediation:
+    message: "Invoice amount exceeds $10,000 auto-generation limit."
+    suggestion: "Create invoices over $10,000 manually through the billing portal."
+    type: "threshold"
+    details:
+      threshold: 10000
+```
+
+<Note>
+**Compliance:** SOX Section 302 -- automated invoice generation should have approval controls for amounts above organizational thresholds. Revenue recognition timing (ASC 606) may also be relevant.
+</Note>
+
+---
+
+## issue_refund
+
+Refund a previous payment.
+
+```python
+decision = hiitl.evaluate(
+    tool="issue_refund",
+    operation="execute",
+    target={"transaction_id": "txn_789", "account_id": "acct_123"},
+    parameters={"amount": 75.00, "reason": "defective_product"}
+)
+```
+
+**Starter policy:**
+
+```yaml
+- name: "require-approval-large-refund"
+  enabled: true
+  priority: 100
+  conditions:
+    all_of:
+      - field: "action"
+        operator: "equals"
+        value: "issue_refund"
+      - field: "parameters.amount"
+        operator: "greater_than"
+        value: 200
+  decision: "REQUIRE_APPROVAL"
+  reason_code: "LARGE_REFUND"
+  remediation:
+    message: "Refund exceeds $200 auto-approval limit."
+    suggestion: "Submit for manager review or reduce refund amount."
+    type: "threshold"
+    details:
+      threshold: 200
+  metadata:
+    sla_hours: 2
+    reviewer_role: "cs_manager"
+```
+
+<Note>
+**Compliance:** Refund controls are a common SOX audit point. Maintain separation of duties -- the agent issuing the refund should not be the same entity that approved the original transaction.
+</Note>
+
+---
+
+## transfer_funds
+
+Move funds between accounts.
+
+```python
+decision = hiitl.evaluate(
+    tool="transfer_funds",
+    operation="execute",
+    target={"from_account": "acct_123", "to_account": "acct_456"},
+    parameters={"amount": 5000.00, "currency": "usd"}
+)
+```
+
+**Starter policy:**
+
+```yaml
+- name: "block-large-transfers"
+  enabled: true
+  priority: 900
+  conditions:
+    all_of:
+      - field: "action"
+        operator: "equals"
+        value: "transfer_funds"
+      - field: "parameters.amount"
+        operator: "greater_than"
+        value: 10000
+  decision: "BLOCK"
+  reason_code: "TRANSFER_EXCEEDS_LIMIT"
+  remediation:
+    message: "Transfer exceeds $10,000 automated limit."
+    suggestion: "Use the wire transfer portal for amounts over $10,000."
+    type: "threshold"
+    details:
+      threshold: 10000
+
+- name: "require-approval-medium-transfer"
+  enabled: true
+  priority: 100
+  conditions:
+    all_of:
+      - field: "action"
+        operator: "equals"
+        value: "transfer_funds"
+      - field: "parameters.amount"
+        operator: "greater_than"
+        value: 1000
+  decision: "REQUIRE_APPROVAL"
+  reason_code: "MEDIUM_TRANSFER"
+  metadata:
+    sla_hours: 1
+    reviewer_role: "treasury"
+```
+
+<Warning>
+**AML/KYC:** Fund transfers above regulatory thresholds (e.g., $10,000 USD) may trigger Currency Transaction Report (CTR) requirements. Ensure your compliance team reviews transfer policies against local AML regulations.
+</Warning>

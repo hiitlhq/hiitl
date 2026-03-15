@@ -1,0 +1,6 @@
+version: "1.0.0"
+name: invalid_policy
+rules:
+  - name: test_rule
+  priority: 100  # Wrong indentation - should be under the list item
+  enabled: true

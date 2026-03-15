@@ -1,0 +1,46 @@
+{
+  "test_id": "test_010_operation_field",
+  "description": "Test matching operation field",
+  "envelope": {
+    "schema_version": "v1.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_finance_bot",
+    "action_id": "act_test0100000000000000",
+    "timestamp": "2026-02-14T10:00:00Z",
+    "operation": "delete",
+    "parameters": {
+      "filename": "temp.txt"
+    },
+    "idempotency_key": "idem_test_010_operation_field",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "file_manager"
+  },
+  "policy_set": {
+    "version": "1.0.0",
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "require_approval_for_deletions",
+        "priority": 100,
+        "enabled": true,
+        "conditions": {
+          "field": "operation",
+          "operator": "equals",
+          "value": "delete"
+        },
+        "decision": "REQUIRE_APPROVAL",
+        "reason_code": "DELETE_NEEDS_APPROVAL",
+        "description": "Rule: require_approval_for_deletions"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "REQUIRE_APPROVAL",
+    "allowed": false,
+    "reason_codes": [
+      "DELETE_NEEDS_APPROVAL"
+    ]
+  }
+}

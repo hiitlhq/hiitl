@@ -1,0 +1,59 @@
+{
+  "test_id": "test_032_first_match_wins",
+  "description": "First matching rule wins (highest priority evaluated first)",
+  "envelope": {
+    "schema_version": "v1.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_finance_bot",
+    "action_id": "act_test0320000000000000",
+    "timestamp": "2026-02-14T10:00:00Z",
+    "operation": "execute",
+    "parameters": {
+      "amount": 800
+    },
+    "idempotency_key": "idem_test_032_first_match_wins",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "transfer_money"
+  },
+  "policy_set": {
+    "version": "1.0.0",
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "first_matching_rule",
+        "priority": 100,
+        "enabled": true,
+        "conditions": {
+          "field": "parameters.amount",
+          "operator": "greater_than",
+          "value": 500
+        },
+        "decision": "REQUIRE_APPROVAL",
+        "reason_code": "FIRST_MATCH",
+        "description": "Rule: first_matching_rule"
+      },
+      {
+        "name": "second_matching_rule",
+        "priority": 90,
+        "enabled": true,
+        "conditions": {
+          "field": "parameters.amount",
+          "operator": "less_than",
+          "value": 1000
+        },
+        "decision": "ALLOW",
+        "reason_code": "SECOND_MATCH",
+        "description": "Rule: second_matching_rule"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "REQUIRE_APPROVAL",
+    "allowed": false,
+    "reason_codes": [
+      "FIRST_MATCH"
+    ]
+  }
+}

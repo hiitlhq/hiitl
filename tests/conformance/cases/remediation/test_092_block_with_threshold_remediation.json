@@ -1,0 +1,69 @@
+{
+  "test_id": "test_092_block_with_threshold_remediation",
+  "description": "BLOCK decision passes through threshold remediation from matched rule",
+  "envelope": {
+    "schema_version": "v1.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_finance_bot",
+    "action_id": "act_payment0920000000000",
+    "timestamp": "2026-02-25T10:00:00Z",
+    "operation": "execute",
+    "parameters": {
+      "amount": 15000,
+      "currency": "USD"
+    },
+    "idempotency_key": "idem_test_092",
+    "target": {
+      "account_id": "acct_123"
+    },
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "process_payment"
+  },
+  "policy_set": {
+    "version": "1.0.0",
+    "name": "payment_policy",
+    "rules": [
+      {
+        "name": "block_large_payments",
+        "priority": 100,
+        "enabled": true,
+        "conditions": {
+          "field": "parameters.amount",
+          "operator": "greater_than",
+          "value": 10000
+        },
+        "decision": "BLOCK",
+        "reason_code": "PAYMENT_EXCEEDS_THRESHOLD",
+        "description": "Block payments exceeding threshold",
+        "remediation": {
+          "message": "Payment amount $15,000 exceeds the maximum single-transaction limit of $10,000.",
+          "suggestion": "Split into multiple transactions under $10,000, or request a temporary limit increase via the finance portal.",
+          "type": "threshold",
+          "details": {
+            "threshold": 10000,
+            "current_value": 15000,
+            "field": "parameters.amount"
+          }
+        }
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "BLOCK",
+    "allowed": false,
+    "reason_codes": [
+      "PAYMENT_EXCEEDS_THRESHOLD"
+    ],
+    "remediation": {
+      "message": "Payment amount $15,000 exceeds the maximum single-transaction limit of $10,000.",
+      "suggestion": "Split into multiple transactions under $10,000, or request a temporary limit increase via the finance portal.",
+      "type": "threshold",
+      "details": {
+        "threshold": 10000,
+        "current_value": 15000,
+        "field": "parameters.amount"
+      }
+    }
+  }
+}

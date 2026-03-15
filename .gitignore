@@ -1,0 +1,33 @@
+# General
+.DS_Store
+*.log
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.db
+.venv/
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node / TypeScript
+node_modules/
+dist/
+*.tsbuildinfo
+.vite/
+.eslintcache
+
+# Local env files
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~

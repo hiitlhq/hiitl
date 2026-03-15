@@ -1,0 +1,55 @@
+{
+  "test_id": "test_022_any_of_operator",
+  "description": "Test any_of (OR) - at least one condition must match",
+  "envelope": {
+    "schema_version": "v1.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "stage",
+    "agent_id": "agent_test_bot",
+    "action_id": "act_test0220000000000000",
+    "timestamp": "2026-02-14T10:00:00Z",
+    "operation": "execute",
+    "parameters": {
+      "query": "SELECT * FROM users"
+    },
+    "idempotency_key": "idem_test_022_any_of_operator",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "database_query"
+  },
+  "policy_set": {
+    "version": "1.0.0",
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "allow_non_prod_environments",
+        "priority": 100,
+        "enabled": true,
+        "conditions": {
+          "any_of": [
+            {
+              "field": "environment",
+              "operator": "equals",
+              "value": "dev"
+            },
+            {
+              "field": "environment",
+              "operator": "equals",
+              "value": "stage"
+            }
+          ]
+        },
+        "decision": "ALLOW",
+        "reason_code": "NON_PRODUCTION_ENV",
+        "description": "Rule: allow_non_prod_environments"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "ALLOW",
+    "allowed": true,
+    "reason_codes": [
+      "NON_PRODUCTION_ENV"
+    ]
+  }
+}

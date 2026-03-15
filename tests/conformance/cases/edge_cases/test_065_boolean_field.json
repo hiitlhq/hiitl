@@ -1,0 +1,47 @@
+{
+  "test_id": "test_065_boolean_field",
+  "description": "Test matching boolean field values",
+  "envelope": {
+    "schema_version": "v1.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_finance_bot",
+    "action_id": "act_test0650000000000000",
+    "timestamp": "2026-02-14T10:00:00Z",
+    "operation": "execute",
+    "parameters": {
+      "amount": 1000,
+      "verified": true
+    },
+    "idempotency_key": "idem_test_065_boolean_field",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "transfer_money"
+  },
+  "policy_set": {
+    "version": "1.0.0",
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "allow_verified_transfers",
+        "priority": 100,
+        "enabled": true,
+        "conditions": {
+          "field": "parameters.verified",
+          "operator": "equals",
+          "value": true
+        },
+        "decision": "ALLOW",
+        "reason_code": "VERIFIED_TRANSFER",
+        "description": "Rule: allow_verified_transfers"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "ALLOW",
+    "allowed": true,
+    "reason_codes": [
+      "VERIFIED_TRANSFER"
+    ]
+  }
+}

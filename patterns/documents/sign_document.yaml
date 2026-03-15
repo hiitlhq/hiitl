@@ -1,0 +1,158 @@
+pattern_id: "documents/sign_document"
+category: "documents"
+name: "Sign Document"
+description: >
+  Controls AI-initiated document and contract signing actions. Enforces approval thresholds
+  based on document value and type, prevents unauthorized legal commitments, and escalates
+  high-stakes agreements like NDAs and employment contracts for human review.
+tags: ["documents", "signature", "legal", "contract"]
+
+evaluate_examples:
+  python: |
+    result = hiitl.evaluate("sign_document", {
+        "document_type": "service_agreement",
+        "value": 25000.00,
+        "counterparty": "Acme Corp",
+    })
+    if result.ok:
+        execute_document_signing()
+  typescript: |
+    const result = hiitl.evaluate({
+      action: 'sign_document',
+      params: {
+        document_type: 'service_agreement',
+        value: 25000.00,
+        counterparty: 'Acme Corp',
+      },
+    });
+    if (result.ok) {
+      await executeDocumentSigning();
+    }
+
+context_enrichment:
+  - field: "user_id"
+    why: "Identifies the signing authority — must match authorized signatories for the document type and value"
+    example: "user_8a3f2c"
+  - field: "sensitivity"
+    why: "Document signing is irreversible once executed; set to 'irreversible' to trigger stricter controls"
+    example: "irreversible"
+  - field: "cost_estimate"
+    why: "The financial value of the contract determines which approval threshold applies"
+    example: 25000.00
+  - field: "target.document_type"
+    why: "Different document types (NDA, employment, vendor agreement) route to different approval chains"
+    example: "service_agreement"
+  - field: "parameters.counterparty"
+    why: "Counterparty identity affects risk assessment and may trigger enhanced due diligence requirements"
+    example: "Acme Corp"
+
+starter_policies:
+  - name: "allow-low-value-documents"
+    description: "Allow automatic signing for low-value documents under the delegation threshold"
+    priority: 500
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "sign_document"
+        - field: "parameters.value"
+          operator: "less_than"
+          value: 5000
+        - field: "parameters.document_type"
+          operator: "not_in"
+          value: ["nda", "employment_contract", "partnership_agreement"]
+    decision: "ALLOW"
+    reason_code: "LOW_VALUE_SIGNING_ALLOWED"
+    remediation:
+      type: "static"
+      message: "Document signing permitted under delegation threshold"
+      suggestion: "No action needed"
+
+  - name: "require-approval-high-value"
+    description: "Require human approval for contracts exceeding the auto-sign threshold"
+    priority: 200
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "sign_document"
+        - field: "parameters.value"
+          operator: "greater_than_or_equal"
+          value: 5000
+    decision: "REQUIRE_APPROVAL"
+    reason_code: "HIGH_VALUE_CONTRACT_REQUIRES_APPROVAL"
+    remediation:
+      type: "static"
+      message: "Contracts valued at $5,000 or above require authorized human approval before signing"
+      suggestion: "Route the signing request to a manager or authorized signatory with the appropriate delegation of authority. Include the contract summary and counterparty details in the approval request."
+
+  - name: "block-without-legal-review"
+    description: "Block signing of contracts over $50,000 that have not been flagged as legally reviewed"
+    priority: 100
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "sign_document"
+        - field: "parameters.value"
+          operator: "greater_than"
+          value: 50000
+    decision: "BLOCK"
+    reason_code: "LEGAL_REVIEW_REQUIRED"
+    remediation:
+      type: "static"
+      message: "Contracts exceeding $50,000 cannot be signed without legal review. This is a hard block — no override is available."
+      suggestion: "Submit the contract to your legal team for review before attempting to sign. Once legal review is complete, update the document metadata to reflect the review status and re-submit."
+
+  - name: "escalate-sensitive-document-types"
+    description: "Escalate NDAs, employment contracts, and partnership agreements to senior leadership regardless of value"
+    priority: 150
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "sign_document"
+        - field: "parameters.document_type"
+          operator: "in"
+          value: ["nda", "employment_contract", "partnership_agreement"]
+    decision: "ESCALATE"
+    reason_code: "SENSITIVE_DOCUMENT_ESCALATED"
+    remediation:
+      type: "static"
+      message: "NDAs, employment contracts, and partnership agreements are automatically escalated for senior review due to their legal and organizational significance"
+      suggestion: "This document type requires senior leadership approval. The request has been escalated. Monitor the escalation queue or configure a webhook to receive the decision notification."
+
+  - name: "rate-limit-signing"
+    description: "Prevent burst signing activity that may indicate compromised credentials or runaway automation"
+    priority: 300
+    enabled: true
+    conditions:
+      field: "action"
+      operator: "equals"
+      value: "sign_document"
+    decision: "RATE_LIMIT"
+    reason_code: "SIGNING_RATE_LIMITED"
+    remediation:
+      type: "static"
+      message: "Document signing rate limit exceeded. Unusual signing volume may indicate a security issue."
+      suggestion: "If this is legitimate batch signing, contact your administrator to temporarily increase the rate limit. Otherwise, investigate whether the signing agent's credentials have been compromised."
+
+remediation:
+  block_message: "Document signing was blocked by policy. The most common reason is that the contract value exceeds the threshold requiring legal review. Check the reason_code for specifics."
+  developer_action: "Read the decision response reason_codes to determine the block cause. For value-based blocks, ensure the contract has been through the required review process. For document type escalations, implement a callback handler for the escalation decision."
+  approval_message: "This document signing requires human approval. The request has been routed based on the document type and value. Approval routing: contracts over $5K go to authorized signatories; NDAs and employment contracts go to senior leadership."
+
+compliance:
+  - regulation: "E-Sign Act / UETA"
+    relevance: "Electronic signatures on contracts must meet E-Sign Act and UETA requirements for legal validity"
+    note: "Ensure the signing process captures intent to sign, consent to electronic format, and association of the signature with the record. The audit trail provides evidence of all three."
+  - regulation: "Contract Law — Delegation of Authority"
+    relevance: "AI agents signing contracts must operate within documented delegation of authority limits"
+    note: "Configure the value thresholds in starter policies to match your organization's delegation of authority matrix. Automated signing beyond delegated authority is void or voidable."
+  - regulation: "SOX (if applicable)"
+    relevance: "For publicly traded companies, contracts with financial commitments may fall under SOX internal controls"
+    note: "Ensure the approval chain for high-value contracts satisfies your SOX control requirements. The immutable audit trail provides the evidence needed for SOX audits."

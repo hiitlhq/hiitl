@@ -1,0 +1,92 @@
+---
+title: "TypeScript Installation"
+description: "Install the @hiitl/sdk package and run your first evaluation"
+---
+
+## Requirements
+
+- Node.js 18 or later
+- TypeScript 5.0+ (recommended, not required)
+
+## Install
+
+<CodeGroup>
+```bash npm
+npm install @hiitl/sdk
+```
+
+```bash pnpm
+pnpm add @hiitl/sdk
+```
+
+```bash yarn
+yarn add @hiitl/sdk
+```
+</CodeGroup>
+
+## Verify installation
+
+```typescript
+import { HIITL } from '@hiitl/sdk';
+
+const hiitl = new HIITL();
+const decision = hiitl.evaluate({ action: 'hello_world' });
+
+console.log(decision.allowed);   // true
+console.log(decision.decision);  // "OBSERVE"
+```
+
+Zero-config initialization uses local evaluation in OBSERVE mode. No API key, no server, no policy files required.
+
+## Import
+
+The main entry point is the `HIITL` class:
+
+```typescript
+import { HIITL } from '@hiitl/sdk';
+```
+
+For type annotations, you can import types from the core package (included as a dependency):
+
+```typescript
+import type { Decision, Sensitivity, Operation } from '@hiitl/core';
+```
+
+Or import SDK-specific types:
+
+```typescript
+import type { EvaluateOptions, CostEstimate } from '@hiitl/sdk';
+```
+
+## What's included
+
+The `@hiitl/sdk` package includes:
+
+| Component | Description |
+|-----------|-------------|
+| `HIITL` client | Main SDK class with `evaluate()` method |
+| `@hiitl/core` | Embedded deterministic policy engine (peer dependency) |
+| Audit logger | Local SQLite-backed append-only audit trail |
+| Rate limiter | In-process rate limiting with sliding/fixed windows |
+| Route loader | Escalation route configuration |
+
+All components are initialized automatically. No additional infrastructure required for local mode.
+
+## CommonJS and ESM
+
+The package ships as ESM. If you need CommonJS support, use dynamic import:
+
+```javascript
+const { HIITL } = await import('@hiitl/sdk');
+```
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Configuration" icon="gear" href="/sdk/typescript-configuration">
+    Configure deployment mode, policies, and audit
+  </Card>
+  <Card title="evaluate()" icon="play" href="/sdk/typescript-evaluate">
+    Full evaluate() reference with examples
+  </Card>
+</CardGroup>

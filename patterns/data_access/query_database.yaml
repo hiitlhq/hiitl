@@ -1,0 +1,166 @@
+pattern_id: "data_access/query_database"
+category: "data_access"
+name: "Query Database"
+description: >
+  Database query execution by automated agents. Controls must distinguish between
+  read and write operations, protect PII and regulated data, enforce environment
+  isolation, and rate-limit queries to prevent resource exhaustion or data scraping.
+tags: ["database", "query", "data-access", "pii"]
+
+evaluate_examples:
+  python: |
+    result = hiitl.evaluate("query_database", {
+        "query_type": "select",
+        "table": "customers",
+        "fields": ["name", "email", "phone"],
+    })
+    if result.ok:
+        rows = execute_query(
+            query_type="select",
+            table="customers",
+            fields=["name", "email", "phone"],
+        )
+  typescript: |
+    const result = hiitl.evaluate({
+      action: 'query_database',
+      params: {
+        query_type: 'select',
+        table: 'customers',
+        fields: ['name', 'email', 'phone'],
+      },
+    });
+    if (result.ok) {
+      const rows = await executeQuery({
+        queryType: 'select',
+        table: 'customers',
+        fields: ['name', 'email', 'phone'],
+      });
+    }
+
+context_enrichment:
+  - field: "user_id"
+    why: "Identifies the user on whose behalf the query runs for access control and per-user rate limits"
+    example: "user_5jR9mK2nP7"
+  - field: "sensitivity"
+    why: "Marks queries against regulated tables so data protection policies apply automatically"
+    example: "regulated"
+  - field: "target.database"
+    why: "Database identifier enables environment-specific controls and prevents cross-environment access"
+    example: "production_main"
+  - field: "target.table"
+    why: "Table name is the primary scope for data classification and access control policies"
+    example: "customers"
+  - field: "parameters.row_limit"
+    why: "Row limits help policies distinguish between targeted lookups and bulk data access patterns"
+    example: 100
+
+starter_policies:
+  - name: "allow-read-queries"
+    description: "Auto-approve SELECT queries in production — standard read path"
+    priority: 200
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "query_database"
+        - field: "parameters.query_type"
+          operator: "equals"
+          value: "select"
+    decision: "ALLOW"
+    reason_code: "QUERY_READ_APPROVED"
+    remediation:
+      type: "static"
+      message: "Read query auto-approved"
+      suggestion: "No action needed"
+
+  - name: "sandbox-dev-queries"
+    description: "Route all queries in dev environment to sandbox to prevent accidental production data access"
+    priority: 180
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "query_database"
+        - field: "environment"
+          operator: "equals"
+          value: "dev"
+    decision: "SANDBOX"
+    reason_code: "DEV_QUERY_SANDBOXED"
+    remediation:
+      type: "static"
+      message: "Queries in the dev environment are routed to the sandbox database to prevent accidental production data access"
+      suggestion: "This is expected behavior. Your query will execute against the sandbox database with synthetic data. To query production, change your environment configuration."
+
+  - name: "approve-pii-access"
+    description: "Require approval when querying tables or fields that contain personally identifiable information"
+    priority: 120
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "query_database"
+        - field: "parameters.table"
+          operator: "in"
+          value: ["customers", "users", "employees", "contacts", "patients"]
+        - field: "sensitivity"
+          operator: "equals"
+          value: "regulated"
+    decision: "REQUIRE_APPROVAL"
+    reason_code: "PII_ACCESS_NEEDS_APPROVAL"
+    remediation:
+      type: "static"
+      message: "Queries against PII-containing tables require data protection officer approval"
+      suggestion: "Submit a data access request explaining the business need. If possible, use anonymized or aggregated data instead. Consider whether you can achieve your goal by querying a non-PII view."
+
+  - name: "block-write-operations"
+    description: "Block all write operations (INSERT, UPDATE, DELETE) by automated agents — writes must go through dedicated mutation APIs"
+    priority: 100
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "query_database"
+        - field: "parameters.query_type"
+          operator: "in"
+          value: ["insert", "update", "delete", "drop", "truncate", "alter"]
+    decision: "BLOCK"
+    reason_code: "WRITE_QUERY_BLOCKED"
+    remediation:
+      type: "static"
+      message: "Automated agents cannot execute write operations directly against the database"
+      suggestion: "Use the dedicated mutation APIs (create_record, update_record, delete_records) instead of raw database queries. These APIs have their own access controls and audit trails."
+
+  - name: "rate-limit-queries"
+    description: "Limit each agent to 500 queries per minute to prevent resource exhaustion and data scraping"
+    priority: 50
+    enabled: true
+    conditions:
+      field: "action"
+      operator: "equals"
+      value: "query_database"
+    decision: "RATE_LIMIT"
+    reason_code: "QUERY_RATE_EXCEEDED"
+    remediation:
+      type: "static"
+      message: "This agent has exceeded the maximum of 500 database queries per minute"
+      suggestion: "Reduce query frequency or batch your data needs. If you need higher throughput, consider using a cached data source or request a rate limit increase for this agent."
+
+remediation:
+  block_message: "This database operation was blocked because automated agents are not permitted to execute write queries directly. This prevents unaudited data mutations and ensures all changes go through controlled APIs."
+  developer_action: "For read operations, ensure your query type is 'select' and the target table is not restricted. For write operations, use the dedicated mutation APIs which provide proper access control and audit trails."
+  approval_message: "This query requires approval because it accesses a table containing personally identifiable information. The approver will see the query type, target table, requested fields, and the stated business justification."
+
+compliance:
+  - regulation: "GDPR"
+    relevance: "The General Data Protection Regulation requires controls on access to personal data including purpose limitation, data minimization, and access logging"
+    note: "All queries against PII tables must be logged with the accessing user, purpose, and fields retrieved. The approval requirement for PII access supports GDPR Article 25 (data protection by design) and Article 30 (records of processing)."
+  - regulation: "CCPA"
+    relevance: "The California Consumer Privacy Act requires businesses to track who accesses consumer personal information and for what purpose"
+    note: "The audit trail captures every data access attempt, supporting CCPA requirements for disclosure of data access practices and responding to consumer access requests."
+  - regulation: "HIPAA"
+    relevance: "If the database contains protected health information, HIPAA requires strict access controls, minimum necessary access, and audit logging"
+    note: "Queries against health data tables should require the highest level of approval. The 'patients' table in the PII access policy is an example. Customize the table list to match your PHI storage patterns."

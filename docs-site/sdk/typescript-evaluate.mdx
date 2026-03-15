@@ -1,0 +1,230 @@
+---
+title: "evaluate() — TypeScript"
+description: "Submit an action for policy evaluation and get a decision"
+---
+
+## Signature
+
+```typescript
+hiitl.evaluate(options: EvaluateOptions): Decision | Promise<Decision>
+```
+
+In local mode, `evaluate()` returns a `Decision` synchronously. In hosted mode, it returns a `Promise<Decision>`. For consistent usage across modes, always `await` the result:
+
+```typescript
+const decision = await hiitl.evaluate({ action: 'send_email' });
+```
+
+## Options
+
+Only `action` is required. Everything else has sensible defaults.
+
+```typescript
+interface EvaluateOptions {
+  action: string;
+  operation?: Operation | string;
+  target?: Record<string, unknown>;
+  parameters?: Record<string, unknown>;
+  user_id?: string;
+  session_id?: string;
+  agent_id?: string;
+  confidence?: number;
+  reason?: string;
+  sensitivity?: Sensitivity[];
+  cost_estimate?: CostEstimate;
+  idempotency_key?: string;
+}
+```
+
+## Parameters
+
+<ParamField path="action" type="string" required>
+  Action name. This is the tool or operation being evaluated (e.g., `"process_payment"`, `"send_email"`, `"delete_user"`).
+</ParamField>
+
+<ParamField path="parameters" type="Record<string, unknown>" default="{}">
+  Action parameters as an object. Policy conditions can reference these via `parameters.*` field paths.
+
+  ```typescript
+  parameters: { amount: 150.00, currency: 'usd' }
+  ```
+</ParamField>
+
+<ParamField path="target" type="Record<string, unknown>" default="{}">
+  Target resource identifiers. Describes what the action acts on.
+
+  ```typescript
+  target: { accountId: 'acct_123', region: 'us-east-1' }
+  ```
+</ParamField>
+
+<ParamField path="operation" type="Operation | string" default='"execute"'>
+  Operation type. One of: `"read"`, `"write"`, `"create"`, `"delete"`, `"execute"`, `"update"`.
+</ParamField>
+
+<ParamField path="user_id" type="string">
+  User identifier. Used for per-user rate limiting and audit attribution.
+</ParamField>
+
+<ParamField path="session_id" type="string">
+  Session identifier. Groups related actions for audit and debugging.
+</ParamField>
+
+<ParamField path="agent_id" type="string">
+  Override the `agent_id` set during initialization. Useful when a single SDK instance serves multiple agents.
+</ParamField>
+
+<ParamField path="confidence" type="number">
+  Agent confidence score between 0 and 1. Policies can use this to route low-confidence actions to human review.
+</ParamField>
+
+<ParamField path="reason" type="string">
+  Free-text reasoning for the action. Recorded in the audit trail. Maximum 500 characters.
+</ParamField>
+
+<ParamField path="sensitivity" type="Sensitivity[]">
+  Sensitivity labels for the action. Values: `"money"`, `"identity"`, `"permissions"`, `"regulated"`, `"irreversible"`, `"pii"`, `"sensitive_data"`.
+</ParamField>
+
+<ParamField path="cost_estimate" type="CostEstimate">
+  Estimated cost of the action.
+
+  ```typescript
+  cost_estimate: { tokens: 5000, usd_cents: 2 }
+  ```
+</ParamField>
+
+<ParamField path="idempotency_key" type="string">
+  Idempotency key for deduplication. Auto-generated if not provided. Use this to prevent duplicate evaluations on retries.
+</ParamField>
+
+## Returns
+
+A [`Decision`](/sdk/typescript-decision) object (or `Promise<Decision>` in hosted mode). See the Decision reference for all fields.
+
+## Examples
+
+### Minimal call
+
+```typescript
+import { HIITL } from '@hiitl/sdk';
+
+const hiitl = new HIITL();
+
+const decision = hiitl.evaluate({ action: 'send_email' });
+if (decision.allowed) {
+  sendEmail();
+}
+```
+
+### With parameters and target
+
+```typescript
+const decision = await hiitl.evaluate({
+  action: 'process_payment',
+  parameters: { amount: 500.00, currency: 'usd' },
+  target: { account_id: 'acct_123' },
+  operation: 'execute',
+  user_id: 'user_456',
+});
+```
+
+### Full call with all options
+
+```typescript
+const decision = await hiitl.evaluate({
+  action: 'deploy_infrastructure',
+  parameters: {
+    region: 'us-east-1',
+    instance_type: 'm5.xlarge',
+    count: 3,
+  },
+  target: { cluster_id: 'prod-main' },
+  operation: 'create',
+  user_id: 'user_ops_lead',
+  session_id: 'deploy-session-001',
+  confidence: 0.95,
+  reason: 'Scheduled capacity increase for Black Friday',
+  sensitivity: ['money', 'irreversible'],
+  cost_estimate: { usd_cents: 250 },
+  idempotency_key: 'deploy-bf-2025-001',
+});
+```
+
+### Handling different decisions
+
+```typescript
+const decision = await hiitl.evaluate({
+  action: 'process_payment',
+  parameters: { amount: 10000.00, currency: 'usd' },
+});
+
+if (decision.allowed) {
+  // ALLOW or SANDBOX — safe to proceed
+  processPayment();
+} else if (decision.decision === 'REQUIRE_APPROVAL') {
+  // Needs human review
+  console.log(`Needs review: ${decision.reason_codes}`);
+  if (decision.escalation_context) {
+    console.log('Route to:', decision.escalation_context);
+  }
+} else if (decision.decision === 'RATE_LIMIT') {
+  // Rate limited — check when to retry
+  if (decision.rate_limit) {
+    console.log(`${decision.rate_limit.current}/${decision.rate_limit.limit}`);
+    console.log(`Resets at: ${decision.rate_limit.reset_at}`);
+  }
+} else {
+  // BLOCK, KILL_SWITCH, or other denial
+  console.log(`Blocked: ${decision.reason_codes}`);
+  if (decision.remediation) {
+    console.log(`Suggestion: ${decision.remediation.suggestion}`);
+  }
+}
+```
+
+### Observe mode awareness
+
+In OBSERVE_ALL mode (the default), actions are never blocked. The decision tells you what *would* happen under enforcement:
+
+```typescript
+const hiitl = new HIITL(); // OBSERVE_ALL by default
+
+const decision = hiitl.evaluate({
+  action: 'process_payment',
+  parameters: { amount: 10000 },
+});
+
+console.log(decision.allowed);               // true (observe mode)
+console.log(decision.decision);              // "OBSERVE"
+console.log(decision.would_be);              // "BLOCK"
+console.log(decision.would_be_reason_codes); // ["PAYMENT_TOO_HIGH"]
+```
+
+## Errors
+
+| Exception | When |
+|-----------|------|
+| `EnvelopeValidationError` | Invalid field values (e.g., confidence > 1) |
+| `PolicyLoadError` | Policy file cannot be loaded or parsed (local mode) |
+| `AuditLogError` | Audit log write fails (local mode, fail-closed) |
+
+```typescript
+import { EnvelopeValidationError } from '@hiitl/sdk';
+
+try {
+  const decision = hiitl.evaluate({
+    action: 'process_payment',
+    confidence: 5.0, // Invalid: must be 0-1
+  });
+} catch (e) {
+  if (e instanceof EnvelopeValidationError) {
+    console.error('Validation failed:', e.message);
+    console.error('Field errors:', e.validationErrors);
+  }
+}
+```
+
+<Tip>
+  In fail-closed mode (the default for high-stakes routes), audit write failures block the action. This ensures no action executes without a durable record.
+</Tip>

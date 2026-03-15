@@ -1,0 +1,48 @@
+{
+  "test_id": "test_093_block_without_remediation",
+  "description": "BLOCK decision without remediation on rule \u2014 remediation absent from decision",
+  "envelope": {
+    "schema_version": "v1.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_admin_bot",
+    "action_id": "act_deleteuser0930000000",
+    "timestamp": "2026-02-25T10:00:00Z",
+    "operation": "delete",
+    "parameters": {
+      "user_id": "usr_456"
+    },
+    "idempotency_key": "idem_test_093",
+    "target": {
+      "resource": "users"
+    },
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "delete_user"
+  },
+  "policy_set": {
+    "version": "1.0.0",
+    "name": "admin_policy",
+    "rules": [
+      {
+        "name": "block_user_deletion",
+        "priority": 100,
+        "enabled": true,
+        "conditions": {
+          "field": "action",
+          "operator": "equals",
+          "value": "delete_user"
+        },
+        "decision": "BLOCK",
+        "reason_code": "USER_DELETION_BLOCKED",
+        "description": "Block all user deletion operations"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "BLOCK",
+    "allowed": false,
+    "reason_codes": [
+      "USER_DELETION_BLOCKED"
+    ]
+  }
+}

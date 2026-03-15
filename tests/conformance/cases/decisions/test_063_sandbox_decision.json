@@ -1,0 +1,55 @@
+{
+  "test_id": "test_063_sandbox_decision",
+  "description": "SANDBOX decision with allowed=true (isolated execution)",
+  "envelope": {
+    "schema_version": "v1.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "stage",
+    "agent_id": "agent_test_bot",
+    "action_id": "act_test0630000000000000",
+    "timestamp": "2026-02-14T10:00:00Z",
+    "operation": "execute",
+    "parameters": {
+      "code": "print('hello world')"
+    },
+    "idempotency_key": "idem_test_063_sandbox_decision",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "execute_code"
+  },
+  "policy_set": {
+    "version": "1.0.0",
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "sandbox_staging_code",
+        "priority": 100,
+        "enabled": true,
+        "conditions": {
+          "all_of": [
+            {
+              "field": "environment",
+              "operator": "equals",
+              "value": "stage"
+            },
+            {
+              "field": "action",
+              "operator": "equals",
+              "value": "execute_code"
+            }
+          ]
+        },
+        "decision": "SANDBOX",
+        "reason_code": "STAGING_CODE_SANDBOXED",
+        "description": "Rule: sandbox_staging_code"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "SANDBOX",
+    "allowed": true,
+    "reason_codes": [
+      "STAGING_CODE_SANDBOXED"
+    ]
+  }
+}

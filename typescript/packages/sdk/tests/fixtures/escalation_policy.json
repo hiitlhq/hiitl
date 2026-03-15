@@ -1,0 +1,33 @@
+{
+  "name": "escalation-policy",
+  "version": "1.0",
+  "rules": [
+    {
+      "name": "require-approval-large",
+      "description": "Require approval for amounts over 1000",
+      "priority": 10,
+      "enabled": true,
+      "decision": "REQUIRE_APPROVAL",
+      "reason_code": "HIGH_AMOUNT",
+      "route": "finance-review",
+      "conditions": {
+        "field": "parameters.amount",
+        "operator": "greater_than",
+        "value": 1000
+      }
+    },
+    {
+      "name": "allow-small",
+      "description": "Allow small amounts",
+      "priority": 100,
+      "enabled": true,
+      "decision": "ALLOW",
+      "reason_code": "SMALL_AMOUNT",
+      "conditions": {
+        "field": "parameters.amount",
+        "operator": "less_than_or_equal",
+        "value": 1000
+      }
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "name": "invalid-json",
+  "rules": [
+    {
+      "name": "broken-rule",
+      "priority": 100,
+      // This comment breaks JSON
+      "enabled": true,
+    }
+  ]
+}

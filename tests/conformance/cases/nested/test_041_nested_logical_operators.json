@@ -1,0 +1,75 @@
+{
+  "test_id": "test_041_nested_logical_operators",
+  "description": "Test nested logical operators (all_of with any_of)",
+  "envelope": {
+    "schema_version": "v1.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_finance_bot",
+    "action_id": "act_test0410000000000000",
+    "timestamp": "2026-02-14T10:00:00Z",
+    "operation": "execute",
+    "parameters": {
+      "amount": 500,
+      "currency": "USD",
+      "country": "US"
+    },
+    "idempotency_key": "idem_test_041_nested_logical_operators",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "transfer_money"
+  },
+  "policy_set": {
+    "version": "1.0.0",
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "complex_nested_rule",
+        "priority": 100,
+        "enabled": true,
+        "conditions": {
+          "all_of": [
+            {
+              "field": "parameters.amount",
+              "operator": "less_than_or_equal",
+              "value": 1000
+            },
+            {
+              "any_of": [
+                {
+                  "field": "parameters.currency",
+                  "operator": "equals",
+                  "value": "USD"
+                },
+                {
+                  "field": "parameters.currency",
+                  "operator": "equals",
+                  "value": "EUR"
+                }
+              ]
+            },
+            {
+              "field": "parameters.country",
+              "operator": "in",
+              "value": [
+                "US",
+                "UK",
+                "CA"
+              ]
+            }
+          ]
+        },
+        "decision": "ALLOW",
+        "reason_code": "COMPLEX_NESTED_MATCH",
+        "description": "Rule: complex_nested_rule"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "ALLOW",
+    "allowed": true,
+    "reason_codes": [
+      "COMPLEX_NESTED_MATCH"
+    ]
+  }
+}

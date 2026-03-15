@@ -1,0 +1,143 @@
+pattern_id: "communication/send_sms"
+category: "communication"
+name: "Send SMS"
+description: >
+  SMS sending action covering transactional alerts, verification codes, and marketing
+  messages. Controls cost, international routing, premium number blocking, and rate
+  limiting to prevent abuse, unexpected charges, and regulatory violations.
+tags: ["sms", "communication", "notification", "cost"]
+
+evaluate_examples:
+  python: |
+    result = hiitl.evaluate("send_sms", {
+        "to": "+14155551234",
+        "message_length": 140,
+        "country_code": "US",
+    })
+    if result.ok:
+        send_sms(to=phone_number, message=message)
+  typescript: |
+    const result = hiitl.evaluate({
+      action: 'send_sms',
+      params: {
+        to: '+14155551234',
+        message_length: 140,
+        country_code: 'US',
+      },
+    });
+    if (result.ok) {
+      await sendSms({ to: phoneNumber, message });
+    }
+
+context_enrichment:
+  - field: "user_id"
+    why: "Tracks which user or process initiated the SMS for rate limiting and abuse detection"
+    example: "user_8xKp2mNq"
+  - field: "cost_estimate"
+    why: "SMS costs vary by destination country; cost controls prevent unexpected spend"
+    example: 0.0075
+  - field: "sensitivity"
+    why: "SMS containing verification codes or account details require stricter handling"
+    example: "identity"
+  - field: "parameters.message_type"
+    why: "Differentiates transactional (OTP, alerts) from marketing messages for compliance routing"
+    example: "transactional"
+  - field: "agent_id"
+    why: "Different agents have different SMS budgets and permitted destination regions"
+    example: "verification-agent"
+
+starter_policies:
+  - name: "allow-domestic-sms"
+    description: "Allow SMS to domestic numbers within standard message length"
+    priority: 500
+    enabled: true
+    conditions:
+      all_of:
+        - field: "parameters.country_code"
+          operator: "equals"
+          value: "US"
+        - field: "parameters.message_length"
+          operator: "less_than_or_equal"
+          value: 1600
+    decision: "ALLOW"
+    reason_code: "SMS_DOMESTIC_ALLOWED"
+    remediation:
+      type: "static"
+      message: "Domestic SMS send permitted under standard policy"
+      suggestion: "No action required"
+
+  - name: "require-approval-international"
+    description: "Require approval for international SMS due to higher cost and regulatory complexity"
+    priority: 150
+    enabled: true
+    conditions:
+      field: "parameters.country_code"
+      operator: "not_equals"
+      value: "US"
+    decision: "REQUIRE_APPROVAL"
+    reason_code: "SMS_INTERNATIONAL_APPROVAL_REQUIRED"
+    remediation:
+      type: "static"
+      message: "International SMS requires approval due to variable carrier costs and regional regulations."
+      suggestion: "Submit for approval with business justification. Include the destination country, expected volume, and purpose. Consider whether email or push notification would be a suitable alternative."
+
+  - name: "rate-limit-per-user"
+    description: "Limit each user to 30 SMS messages per hour to control costs and prevent abuse"
+    priority: 200
+    enabled: true
+    conditions:
+      field: "user_id"
+      operator: "exists"
+      value: true
+    decision: "RATE_LIMIT"
+    reason_code: "SMS_RATE_LIMIT_USER"
+    remediation:
+      type: "static"
+      message: "SMS rate limit exceeded for this user. Maximum 30 messages per hour."
+      suggestion: "Wait for the rate limit window to reset. If higher volume is needed, request a rate limit increase through your platform team or batch notifications where possible."
+
+  - name: "block-premium-numbers"
+    description: "Block SMS to premium-rate numbers to prevent toll fraud and unexpected charges"
+    priority: 50
+    enabled: true
+    conditions:
+      field: "parameters.to"
+      operator: "starts_with"
+      value: "+1900"
+    decision: "BLOCK"
+    reason_code: "SMS_PREMIUM_NUMBER_BLOCKED"
+    remediation:
+      type: "static"
+      message: "SMS to premium-rate numbers (1-900-xxx) is blocked to prevent toll fraud."
+      suggestion: "Verify the recipient phone number is correct. Premium-rate numbers are not permitted. If this is a legitimate business need, contact your platform team to request an exception."
+
+  - name: "cost-threshold-approval"
+    description: "Require approval when estimated SMS cost exceeds $1.00 per message (high-cost destinations)"
+    priority: 120
+    enabled: true
+    conditions:
+      field: "cost_estimate"
+      operator: "greater_than"
+      value: 1.00
+    decision: "REQUIRE_APPROVAL"
+    reason_code: "SMS_HIGH_COST_APPROVAL"
+    remediation:
+      type: "static"
+      message: "This SMS exceeds the $1.00 per-message cost threshold for automatic sending."
+      suggestion: "Verify the destination number and cost estimate are correct. Submit for approval with business justification, or consider an alternative communication channel for this destination."
+
+remediation:
+  block_message: "This SMS send was blocked by policy. Common causes include premium-rate destination numbers or messages exceeding cost thresholds. Check the reason_code for specific details."
+  developer_action: "Review the decision response reason_codes. For premium number blocks, verify the recipient number. For rate limits, implement exponential backoff. For international sends, submit for approval with business justification."
+  approval_message: "This SMS requires human approval before sending. High-cost destinations, international routing, or volume thresholds triggered the approval requirement."
+
+compliance:
+  - regulation: "TCPA (Telephone Consumer Protection Act)"
+    relevance: "Requires prior express consent for non-emergency automated SMS messages"
+    note: "Maintain consent records for all marketing SMS recipients. Transactional messages (account alerts, OTPs) have different consent requirements than marketing. Honor opt-out requests immediately."
+  - regulation: "Carrier Regulations"
+    relevance: "Mobile carriers enforce throughput limits and content restrictions on A2P messaging"
+    note: "Register sending numbers with carrier registries (10DLC, toll-free verification). Exceeding carrier rate limits results in message filtering or number suspension."
+  - regulation: "Opt-Out Requirements"
+    relevance: "Recipients must be able to opt out of SMS communications at any time"
+    note: "Include STOP instructions in marketing messages. Process opt-out requests within the carrier-mandated timeframe. Maintain a suppression list and check it before every send."

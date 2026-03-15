@@ -1,0 +1,68 @@
+{
+  "scenario_id": "basic-allow-block",
+  "name": "Basic Allow and Block Decisions",
+  "description": "Smoke test: verifies standard operations are allowed and unknown tools are blocked",
+  "category": "smoke_test",
+  "difficulty": "basic",
+  "policy_path": "../policies/payment-policy.json",
+  "steps": [
+    {
+      "step": 1,
+      "name": "Low-value payment is allowed",
+      "action": "evaluate",
+      "agent_id": "payment-agent",
+      "envelope": {
+        "tool": "process_payment",
+        "operation": "execute",
+        "target": {"account_id": "acct_test_001"},
+        "parameters": {"amount": 50.00, "currency": "usd"}
+      },
+      "expected_decision": "ALLOW",
+      "expected_reason_codes": ["STANDARD_OPERATION"],
+      "assertions": [
+        {"field": "decision.allowed", "equals": true},
+        {"field": "decision.decision", "equals": "ALLOW"},
+        {"field": "decision.timing.evaluation_ms", "less_than": 10}
+      ]
+    },
+    {
+      "step": 2,
+      "name": "Check balance is allowed",
+      "action": "evaluate",
+      "agent_id": "payment-agent",
+      "envelope": {
+        "tool": "check_balance",
+        "operation": "read",
+        "target": {"account_id": "acct_test_001"},
+        "parameters": {}
+      },
+      "expected_decision": "ALLOW",
+      "expected_reason_codes": ["STANDARD_OPERATION"],
+      "assertions": [
+        {"field": "decision.allowed", "equals": true}
+      ]
+    },
+    {
+      "step": 3,
+      "name": "Unknown tool is blocked",
+      "action": "evaluate",
+      "agent_id": "payment-agent",
+      "envelope": {
+        "tool": "drop_database",
+        "operation": "delete",
+        "target": {"database": "production"},
+        "parameters": {"confirm": true}
+      },
+      "expected_decision": "BLOCK",
+      "expected_reason_codes": ["UNKNOWN_TOOL"],
+      "assertions": [
+        {"field": "decision.allowed", "equals": false},
+        {"field": "decision.decision", "equals": "BLOCK"}
+      ]
+    }
+  ],
+  "success_criteria": {
+    "all_steps_complete": true,
+    "all_assertions_passed": true
+  }
+}

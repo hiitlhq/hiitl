@@ -1,0 +1,357 @@
+---
+title: "Observe-First Guide"
+description: "See what your agents are doing before writing any policies"
+---
+
+Your AI agents are taking actions right now — sending emails, processing payments, querying databases. You can't see what they're doing until something goes wrong.
+
+hiitl gives you instant visibility. Add one line per action, and see every tool call your agents make. No configuration. No rules to write. Just visibility.
+
+## Start observing in 2 minutes
+
+<Steps>
+  <Step title="Install">
+    <CodeGroup>
+
+    ```bash Python
+    pip install hiitl
+    ```
+
+    ```bash TypeScript
+    npm install @hiitl/sdk
+    ```
+
+    </CodeGroup>
+  </Step>
+
+  <Step title="Initialize with zero config">
+    <CodeGroup>
+
+    ```python Python
+    from hiitl import HIITL
+
+    hiitl = HIITL()
+    ```
+
+    ```typescript TypeScript
+    import { HIITL } from '@hiitl/sdk';
+
+    const hiitl = new HIITL();
+    ```
+
+    </CodeGroup>
+
+    No API key, no policy file, no environment variables. The SDK starts in OBSERVE mode automatically.
+  </Step>
+
+  <Step title="Wrap your tool calls">
+    Add `evaluate()` before each action your agent takes.
+
+    <CodeGroup>
+
+    ```python Python
+    def handle_agent_action(action_name, params):
+        decision = hiitl.evaluate(action_name, parameters=params)
+        if decision.allowed:
+            return execute_tool(action_name, params)
+    ```
+
+    ```typescript TypeScript
+    async function handleAgentAction(actionName: string, params: Record<string, unknown>) {
+      const decision = hiitl.evaluate({ action: actionName, parameters: params });
+      if (decision.allowed) {
+        return await executeTool(actionName, params);
+      }
+    }
+    ```
+
+    </CodeGroup>
+
+    Every call is now recorded. Your application runs exactly as before.
+  </Step>
+</Steps>
+
+## What OBSERVE mode returns
+
+With no policies loaded, every action is allowed. The decision object tells you it was observed, not enforced:
+
+<CodeGroup>
+
+```python Python
+decision = hiitl.evaluate("send_email", parameters={
+    "to": "user@example.com",
+    "subject": "Order update",
+})
+
+print(decision.allowed)    # True
+print(decision.decision)   # "ALLOW"
+print(decision.observed)   # True — this action was observed, not enforced
+print(decision.timing)     # {"evaluation_ms": 0.3, "total_ms": 0.6}
+```
+
+```typescript TypeScript
+const decision = hiitl.evaluate({
+  action: 'send_email',
+  parameters: { to: 'user@example.com', subject: 'Order update' },
+});
+
+console.log(decision.allowed);    // true
+console.log(decision.decision);   // "ALLOW"
+console.log(decision.observed);   // true — this action was observed, not enforced
+console.log(decision.timing);     // { evaluation_ms: 0.3, total_ms: 0.6 }
+```
+
+</CodeGroup>
+
+<Note>
+  OBSERVE mode adds negligible latency — under 1ms locally. Every response includes timing metadata so you can verify this yourself.
+</Note>
+
+## What you'll learn
+
+Run your application normally. Every tool call is recorded.
+
+**Within the first hour:**
+- Which tools your agents use most
+- What parameter ranges are normal (payment amounts, email counts, query sizes)
+- How frequently each tool is called
+- Which agents are most active
+
+**Within the first day:**
+- Normal operating ranges for amounts, volumes, and frequencies
+- Peak activity windows
+- The full catalog of tools your agents are using
+
+## Real-world example
+
+A customer service agent with three tool calls, each wrapped with `evaluate()`:
+
+<CodeGroup>
+
+```python Python
+from hiitl import HIITL
+
+hiitl = HIITL()
+
+async def handle_customer_request(request):
+    # Look up the customer
+    decision = hiitl.evaluate("query_customer", parameters={
+        "customer_id": request.customer_id,
+        "fields": ["name", "email", "account_status"],
+    })
+    if not decision.allowed:
+        return "Unable to look up customer"
+    customer = await db.get_customer(request.customer_id)
+
+    # Send a response email
+    decision = hiitl.evaluate("send_email", parameters={
+        "to": customer.email,
+        "subject": f"Re: {request.subject}",
+        "template": "support_response",
+    })
+    if not decision.allowed:
+        return "Unable to send email"
+    await email.send(customer.email, subject=f"Re: {request.subject}", body=response_text)
+
+    # Issue a refund if requested
+    if request.wants_refund:
+        decision = hiitl.evaluate("issue_refund", parameters={
+            "amount": request.refund_amount,
+            "order_id": request.order_id,
+            "reason": "customer_request",
+        })
+        if not decision.allowed:
+            return f"Refund requires review: {decision.reason_codes}"
+        await payments.refund(request.order_id, request.refund_amount)
+
+    return "Request handled successfully"
+```
+
+```typescript TypeScript
+import { HIITL } from '@hiitl/sdk';
+
+const hiitl = new HIITL();
+
+async function handleCustomerRequest(request: CustomerRequest) {
+  // Look up the customer
+  const d1 = hiitl.evaluate({
+    action: 'query_customer',
+    parameters: {
+      customerId: request.customerId,
+      fields: ['name', 'email', 'accountStatus'],
+    },
+  });
+  if (!d1.allowed) return 'Unable to look up customer';
+  const customer = await db.getCustomer(request.customerId);
+
+  // Send a response email
+  const d2 = hiitl.evaluate({
+    action: 'send_email',
+    parameters: {
+      to: customer.email,
+      subject: `Re: ${request.subject}`,
+      template: 'support_response',
+    },
+  });
+  if (!d2.allowed) return 'Unable to send email';
+  await email.send(customer.email, { subject: `Re: ${request.subject}`, body: responseText });
+
+  // Issue a refund if requested
+  if (request.wantsRefund) {
+    const d3 = hiitl.evaluate({
+      action: 'issue_refund',
+      parameters: {
+        amount: request.refundAmount,
+        orderId: request.orderId,
+        reason: 'customer_request',
+      },
+    });
+    if (!d3.allowed) return `Refund requires review: ${d3.reason_codes}`;
+    await payments.refund(request.orderId, request.refundAmount);
+  }
+
+  return 'Request handled successfully';
+}
+```
+
+</CodeGroup>
+
+After running for a day, your audit trail shows:
+- `query_customer` called 340 times, all ALLOW
+- `send_email` called 280 times, all ALLOW
+- `issue_refund` called 45 times, amounts range $5 -- $890
+
+Now you have the data to make informed decisions about what guardrails to add.
+
+## From observation to enforcement
+
+After observing, you'll naturally spot patterns that need guardrails. Common first rules:
+
+<CardGroup cols={2}>
+  <Card title="Refunds over $500 need approval" icon="money-bill">
+    Your agent issued refunds up to $890 automatically. That feels too high.
+  </Card>
+  <Card title="Max 50 emails per hour" icon="envelope">
+    Your agent sent 200 emails in one hour during a busy period. That's close to spam.
+  </Card>
+  <Card title="Block direct table queries" icon="database">
+    Your agent is querying the users table directly. That should go through the API.
+  </Card>
+  <Card title="Require approval for admin access" icon="shield">
+    Your agent granted admin roles 12 times yesterday. Those should be reviewed.
+  </Card>
+</CardGroup>
+
+When you're ready, add a policy file. Here's the refund example:
+
+```yaml policy.yaml
+policy_set:
+  name: "refund-controls"
+  version: "v1.0.0"
+  rules:
+    - name: "approve-large-refunds"
+      enabled: true
+      priority: 100
+      conditions:
+        all_of:
+          - field: "parameters.amount"
+            operator: "greater_than"
+            value: 500
+      decision: "REQUIRE_APPROVAL"
+      reason_code: "LARGE_REFUND"
+```
+
+<CodeGroup>
+
+```python Python
+hiitl = HIITL(policy_path="./policy.yaml")
+```
+
+```typescript TypeScript
+const hiitl = new HIITL({ policyPath: './policy.yaml' });
+```
+
+</CodeGroup>
+
+The `evaluate()` calls in your application code don't change at all. The policy is applied automatically.
+
+## Adding more context over time
+
+Start simple. Add more context to `evaluate()` as you need it:
+
+<CodeGroup>
+
+```python Python
+# Basic: action name and parameters
+decision = hiitl.evaluate("process_payment", parameters={"amount": 150.00})
+
+# With user context: enables per-user rate limits
+decision = hiitl.evaluate("process_payment", parameters={"amount": 150.00},
+    user_id="user_123",
+)
+
+# With target: enables resource-level policies
+decision = hiitl.evaluate("process_payment", parameters={"amount": 150.00},
+    user_id="user_123",
+    target={"account_id": "acct_456"},
+)
+```
+
+```typescript TypeScript
+// Basic: action name and parameters
+const d1 = hiitl.evaluate({
+  action: 'process_payment',
+  parameters: { amount: 150.00 },
+});
+
+// With user context: enables per-user rate limits
+const d2 = hiitl.evaluate({
+  action: 'process_payment',
+  parameters: { amount: 150.00 },
+  userId: 'user_123',
+});
+
+// With target: enables resource-level policies
+const d3 = hiitl.evaluate({
+  action: 'process_payment',
+  parameters: { amount: 150.00 },
+  userId: 'user_123',
+  target: { accountId: 'acct_456' },
+});
+```
+
+</CodeGroup>
+
+<Tip>
+  None of the extra context is required upfront. Start with just the action name and parameters. Add `user_id`, `target`, and `sensitivity` when your policies need them.
+</Tip>
+
+## Local mode vs hosted
+
+Observe mode works in both local and hosted configurations:
+
+| Mode | Setup | Audit storage | Best for |
+|------|-------|---------------|----------|
+| **Local** | `HIITL()` | SQLite on disk | Development, quick evaluation |
+| **Hosted** | `HIITL(api_key=..., server_url=...)` | Managed PostgreSQL | Team visibility, production |
+
+<Warning>
+  Local audit records are stored in SQLite. For team-wide observability and production use, switch to hosted mode by adding an API key and server URL.
+</Warning>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Policy Cookbook" icon="book" href="/patterns/policy-cookbook">
+    Starter policies for common scenarios
+  </Card>
+  <Card title="Python Quickstart" icon="python" href="/getting-started/quickstart-python">
+    Deep dive into the Python SDK
+  </Card>
+  <Card title="TypeScript Quickstart" icon="js" href="/getting-started/quickstart-typescript">
+    Deep dive into the TypeScript SDK
+  </Card>
+  <Card title="How It Works" icon="lightbulb" href="/concepts/how-it-works">
+    Understand envelopes, policies, and decisions
+  </Card>
+</CardGroup>

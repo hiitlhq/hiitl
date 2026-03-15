@@ -1,0 +1,84 @@
+{
+  "test_id": "test_091_block_with_field_restriction_remediation",
+  "description": "BLOCK decision passes through field_restriction remediation from matched rule",
+  "envelope": {
+    "schema_version": "v1.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_data_bot",
+    "action_id": "act_dataexport0910000000",
+    "timestamp": "2026-02-25T10:00:00Z",
+    "operation": "read",
+    "parameters": {
+      "fields": [
+        "name",
+        "email",
+        "ssn",
+        "dob"
+      ],
+      "format": "csv"
+    },
+    "idempotency_key": "idem_test_091",
+    "target": {
+      "table": "customers"
+    },
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "export_data"
+  },
+  "policy_set": {
+    "version": "1.0.0",
+    "name": "data_export_policy",
+    "rules": [
+      {
+        "name": "block_pii_export",
+        "priority": 100,
+        "enabled": true,
+        "conditions": {
+          "field": "action",
+          "operator": "equals",
+          "value": "export_data"
+        },
+        "decision": "BLOCK",
+        "reason_code": "PII_FIELDS_BLOCKED",
+        "description": "Block exports containing PII fields",
+        "remediation": {
+          "message": "Export contains restricted PII fields that cannot be exported in bulk.",
+          "suggestion": "Remove 'ssn' and 'dob' from the fields list, or request an approved PII export workflow.",
+          "type": "field_restriction",
+          "details": {
+            "blocked_fields": [
+              "ssn",
+              "dob"
+            ],
+            "allowed_fields": [
+              "name",
+              "email"
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "BLOCK",
+    "allowed": false,
+    "reason_codes": [
+      "PII_FIELDS_BLOCKED"
+    ],
+    "remediation": {
+      "message": "Export contains restricted PII fields that cannot be exported in bulk.",
+      "suggestion": "Remove 'ssn' and 'dob' from the fields list, or request an approved PII export workflow.",
+      "type": "field_restriction",
+      "details": {
+        "blocked_fields": [
+          "ssn",
+          "dob"
+        ],
+        "allowed_fields": [
+          "name",
+          "email"
+        ]
+      }
+    }
+  }
+}

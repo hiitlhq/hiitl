@@ -1,0 +1,371 @@
+---
+title: "Policy Cookbook"
+description: "Practical policy examples for common scenarios"
+---
+
+Copy-paste policy patterns for common scenarios. Customize thresholds and deploy.
+
+## Payment approval workflows
+
+### Simple amount threshold
+
+Require approval for payments over $500. Auto-approve below.
+
+```yaml
+rules:
+  - name: "require-approval-high-value"
+    enabled: true
+    priority: 100
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "process_payment"
+        - field: "parameters.amount"
+          operator: "greater_than"
+          value: 500
+    decision: "REQUIRE_APPROVAL"
+    reason_code: "HIGH_VALUE_PAYMENT"
+    metadata:
+      sla_hours: 4
+      reviewer_role: "finance_approver"
+
+  - name: "allow-low-value-payments"
+    enabled: true
+    priority: 1
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "process_payment"
+    decision: "ALLOW"
+    reason_code: "LOW_VALUE_PAYMENT"
+```
+
+### Tiered approval thresholds
+
+Different reviewers at different amounts.
+
+```yaml
+rules:
+  - name: "executive-approval"
+    enabled: true
+    priority: 200
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "process_payment"
+        - field: "parameters.amount"
+          operator: "greater_than"
+          value: 10000
+    decision: "REQUIRE_APPROVAL"
+    reason_code: "EXECUTIVE_APPROVAL_REQUIRED"
+    metadata:
+      sla_hours: 2
+      reviewer_role: "cfo"
+
+  - name: "manager-approval"
+    enabled: true
+    priority: 150
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "process_payment"
+        - field: "parameters.amount"
+          operator: "greater_than"
+          value: 1000
+    decision: "REQUIRE_APPROVAL"
+    reason_code: "MANAGER_APPROVAL_REQUIRED"
+    metadata:
+      sla_hours: 4
+      reviewer_role: "finance_manager"
+
+  - name: "allow-small-payments"
+    enabled: true
+    priority: 1
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "process_payment"
+    decision: "ALLOW"
+    reason_code: "SMALL_PAYMENT_AUTO_APPROVED"
+```
+
+---
+
+## Rate limiting
+
+Rate limits are configured at the **policy-set level** via `metadata.rate_limits`, not as individual rules. They apply post-evaluation to ALLOW decisions only.
+
+### Per-agent rate limit
+
+```yaml
+policy_set:
+  name: "agent-rate-limited"
+  version: "v1.0.0"
+  scope:
+    org_id: "org_abc123def456ghi7"
+    environment: "prod"
+
+  metadata:
+    rate_limits:
+      - scope: "agent_id"
+        window: "hour"
+        limit: 100
+
+  rules:
+    - name: "allow-payments"
+      enabled: true
+      priority: 1
+      conditions:
+        all_of:
+          - field: "action"
+            operator: "equals"
+            value: "process_payment"
+      decision: "ALLOW"
+      reason_code: "PAYMENT_ALLOWED"
+```
+
+When an action is ALLOW'd by the rules, the rate limiter checks if the agent has exceeded 100 actions in the current hour. If so, the decision is overridden to `RATE_LIMIT`.
+
+### Multiple simultaneous limits
+
+Apply both per-agent and org-wide limits. The first exceeded limit wins.
+
+```yaml
+metadata:
+  rate_limits:
+    - scope: "agent_id"
+      window: "minute"
+      limit: 60
+    - scope: "org"
+      window: "hour"
+      limit: 5000
+```
+
+---
+
+## Kill switches
+
+Kill switches are regular policy rules with `decision: "KILL_SWITCH"` and `priority: 1000`. Set `enabled: false` by default and toggle to `true` during incidents.
+
+### Emergency payment stop
+
+```yaml
+- name: "kill-switch-all-payments"
+  enabled: false
+  priority: 1000
+  conditions:
+    all_of:
+      - field: "action"
+        operator: "equals"
+        value: "process_payment"
+  decision: "KILL_SWITCH"
+  reason_code: "KILL_SWITCH_PAYMENTS_ACTIVE"
+```
+
+### Stop a specific agent
+
+```yaml
+- name: "kill-switch-agent-123"
+  enabled: false
+  priority: 1000
+  conditions:
+    all_of:
+      - field: "agent_id"
+        operator: "equals"
+        value: "agent-123"
+  decision: "KILL_SWITCH"
+  reason_code: "AGENT_SUSPENDED"
+```
+
+See the [Kill Switch Runbook](/patterns/kill-switch-runbook) for operational procedures.
+
+---
+
+## Permission escalation
+
+### Block admin grants
+
+```yaml
+- name: "require-approval-admin-grants"
+  enabled: true
+  priority: 200
+  conditions:
+    all_of:
+      - field: "action"
+        operator: "equals"
+        value: "grant_access"
+      - field: "parameters.role"
+        operator: "in"
+        value: ["admin", "superuser", "root"]
+  decision: "REQUIRE_APPROVAL"
+  reason_code: "ADMIN_PERMISSION_GRANT"
+  metadata:
+    sla_hours: 2
+    reviewer_role: "security_team"
+```
+
+### Restrict PII access to trusted agents
+
+```yaml
+- name: "block-pii-from-untrusted-agents"
+  enabled: true
+  priority: 900
+  conditions:
+    all_of:
+      - field: "sensitivity"
+        operator: "contains"
+        value: "pii"
+      - field: "agent_id"
+        operator: "not_in"
+        value: ["customer-service-agent", "compliance-agent"]
+  decision: "BLOCK"
+  reason_code: "PII_ACCESS_RESTRICTED"
+```
+
+---
+
+## Environment-based controls
+
+### Sandbox everything in dev
+
+```yaml
+- name: "sandbox-all-in-dev"
+  enabled: true
+  priority: 10
+  conditions:
+    all_of:
+      - field: "environment"
+        operator: "equals"
+        value: "dev"
+  decision: "SANDBOX"
+  reason_code: "DEV_ENVIRONMENT_SANDBOX"
+```
+
+### Block irreversible actions in dev
+
+```yaml
+- name: "block-irreversible-in-dev"
+  enabled: true
+  priority: 900
+  conditions:
+    all_of:
+      - field: "environment"
+        operator: "equals"
+        value: "dev"
+      - field: "sensitivity"
+        operator: "contains"
+        value: "irreversible"
+  decision: "BLOCK"
+  reason_code: "IRREVERSIBLE_BLOCKED_IN_DEV"
+```
+
+---
+
+## Comprehensive example
+
+A complete payment policy with all layers.
+
+```yaml
+policy_set:
+  name: "comprehensive-payment-policy"
+  version: "v2.0.0"
+  scope:
+    org_id: "org_abc123def456ghi7"
+    environment: "prod"
+
+  metadata:
+    rate_limits:
+      - scope: "agent_id"
+        window: "hour"
+        limit: 100
+
+  rules:
+    # Layer 1: Kill switch (priority 1000)
+    - name: "kill-switch-all-payments"
+      enabled: false
+      priority: 1000
+      conditions:
+        all_of:
+          - field: "action"
+            operator: "equals"
+            value: "process_payment"
+      decision: "KILL_SWITCH"
+      reason_code: "PAYMENTS_KILL_SWITCH_ACTIVE"
+
+    # Layer 2: Block suspended agents (priority 900)
+    - name: "block-suspended-agents"
+      enabled: true
+      priority: 900
+      conditions:
+        all_of:
+          - field: "action"
+            operator: "equals"
+            value: "process_payment"
+          - field: "agent_id"
+            operator: "in"
+            value: []
+      decision: "BLOCK"
+      reason_code: "AGENT_SUSPENDED"
+
+    # Layer 3: Approval for high-value (priority 100)
+    - name: "require-approval-high-value"
+      enabled: true
+      priority: 100
+      conditions:
+        all_of:
+          - field: "action"
+            operator: "equals"
+            value: "process_payment"
+          - field: "parameters.amount"
+            operator: "greater_than"
+            value: 1000
+      decision: "REQUIRE_APPROVAL"
+      reason_code: "HIGH_VALUE_PAYMENT"
+      metadata:
+        sla_hours: 4
+        reviewer_role: "finance_approver"
+
+    # Layer 4: Default allow (priority 1)
+    - name: "allow-standard-payments"
+      enabled: true
+      priority: 1
+      conditions:
+        all_of:
+          - field: "action"
+            operator: "equals"
+            value: "process_payment"
+      decision: "ALLOW"
+      reason_code: "STANDARD_PAYMENT"
+```
+
+Rules evaluate top-to-bottom by priority: kill switch, then blocks, then approvals, then allow. Only ALLOW decisions are checked against rate limits.
+
+---
+
+## Priority guide
+
+| Priority range | Category | Examples |
+|----------------|----------|----------|
+| 1000+ | Kill switches | Emergency stop |
+| 900 - 999 | Deny / Block | Suspended agents, blocked tools |
+| 100 - 399 | Threshold checks | Amount limits, approval workflows |
+| 1 - 99 | Allow rules | Default allow, standard operations |
+
+<Note>
+Rate limiting is configured at the policy-set level via `metadata.rate_limits`, not as individual rules with priorities.
+</Note>
+
+## Policy deployment workflow
+
+1. **Write** -- author policy as YAML
+2. **Test locally** -- validate with synthetic data in local mode
+3. **Review** -- policy is code, use Git pull requests
+4. **Deploy to dev** -- test with real agents
+5. **Deploy to stage** -- validate with production-like traffic
+6. **Deploy to prod** -- monitor audit trail closely
+7. **Iterate** -- adjust based on observed decisions

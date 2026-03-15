@@ -1,0 +1,85 @@
+---
+title: "Python Installation"
+description: "Install the hiitl Python SDK and run your first evaluation"
+---
+
+## Requirements
+
+- Python 3.12 or later
+
+## Install
+
+<CodeGroup>
+```bash pip
+pip install hiitl
+```
+
+```bash poetry
+poetry add hiitl
+```
+
+```bash uv
+uv add hiitl
+```
+</CodeGroup>
+
+## Verify installation
+
+```python
+from hiitl import HIITL
+
+hiitl = HIITL()
+decision = hiitl.evaluate("hello_world")
+
+print(decision.allowed)   # True
+print(decision.decision)  # OBSERVE
+```
+
+Zero-config initialization uses local evaluation in OBSERVE mode. No API key, no server, no policy files required.
+
+## Import
+
+The main entry point is the `HIITL` class:
+
+```python
+from hiitl import HIITL
+```
+
+For type annotations, you can import the core types directly:
+
+```python
+from hiitl.core.types import Decision, Sensitivity, CostEstimate, Operation
+```
+
+## What's included
+
+The `hiitl` package includes:
+
+| Component | Description |
+|-----------|-------------|
+| `HIITL` client | Main SDK class with `evaluate()` method |
+| Policy evaluator | Embedded deterministic policy engine |
+| Audit logger | Local SQLite-backed append-only audit trail |
+| Rate limiter | In-process rate limiting with sliding/fixed windows |
+| Route loader | Escalation route configuration |
+
+All components are initialized automatically. No additional infrastructure required for local mode.
+
+## Dependencies
+
+The SDK has minimal dependencies:
+
+- `pydantic` and `pydantic-settings` for configuration and type validation
+- `pyyaml` for YAML policy file support
+- `httpx` for hosted mode HTTP client (only used when connecting to an ECP server)
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Configuration" icon="gear" href="/sdk/python-configuration">
+    Configure deployment mode, policies, and audit
+  </Card>
+  <Card title="evaluate()" icon="play" href="/sdk/python-evaluate">
+    Full evaluate() reference with examples
+  </Card>
+</CardGroup>

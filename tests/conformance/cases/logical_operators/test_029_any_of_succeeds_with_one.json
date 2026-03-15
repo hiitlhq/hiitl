@@ -1,0 +1,60 @@
+{
+  "test_id": "test_029_any_of_succeeds_with_one",
+  "description": "Test any_of succeeds when only one condition matches",
+  "envelope": {
+    "schema_version": "v1.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "dev",
+    "agent_id": "agent_test_bot",
+    "action_id": "act_test0290000000000000",
+    "timestamp": "2026-02-14T10:00:00Z",
+    "operation": "execute",
+    "parameters": {
+      "query": "SELECT * FROM users"
+    },
+    "idempotency_key": "idem_test_029_any_of_succeeds_with_one",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "database_query"
+  },
+  "policy_set": {
+    "version": "1.0.0",
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "allow_non_prod",
+        "priority": 100,
+        "enabled": true,
+        "conditions": {
+          "any_of": [
+            {
+              "field": "environment",
+              "operator": "equals",
+              "value": "dev"
+            },
+            {
+              "field": "environment",
+              "operator": "equals",
+              "value": "stage"
+            },
+            {
+              "field": "environment",
+              "operator": "equals",
+              "value": "testing"
+            }
+          ]
+        },
+        "decision": "ALLOW",
+        "reason_code": "NON_PROD_ENV",
+        "description": "Rule: allow_non_prod"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "ALLOW",
+    "allowed": true,
+    "reason_codes": [
+      "NON_PROD_ENV"
+    ]
+  }
+}

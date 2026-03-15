@@ -1,0 +1,66 @@
+{
+  "scenario_id": "multi-rule-priority",
+  "name": "Rule Priority Ordering",
+  "description": "Verifies that higher-priority rules take precedence: delete operations are blocked even though execute operations are allowed",
+  "category": "rule_ordering",
+  "difficulty": "basic",
+  "policy_path": "../policies/multi-rule-policy.json",
+  "steps": [
+    {
+      "step": 1,
+      "name": "Delete operation blocked (high priority)",
+      "action": "evaluate",
+      "agent_id": "data-access-agent",
+      "envelope": {
+        "tool": "manage_records",
+        "operation": "delete",
+        "target": {"table": "users", "record_id": "rec_001"},
+        "parameters": {"cascade": true}
+      },
+      "expected_decision": "BLOCK",
+      "expected_reason_codes": ["DANGEROUS_DELETE"],
+      "assertions": [
+        {"field": "decision.allowed", "equals": false},
+        {"field": "decision.decision", "equals": "BLOCK"}
+      ]
+    },
+    {
+      "step": 2,
+      "name": "Read operation allowed (medium priority)",
+      "action": "evaluate",
+      "agent_id": "data-access-agent",
+      "envelope": {
+        "tool": "query_database",
+        "operation": "read",
+        "target": {"table": "users"},
+        "parameters": {"limit": 100}
+      },
+      "expected_decision": "ALLOW",
+      "expected_reason_codes": ["READ_ALLOWED"],
+      "assertions": [
+        {"field": "decision.allowed", "equals": true}
+      ]
+    },
+    {
+      "step": 3,
+      "name": "Execute operation allowed (low priority)",
+      "action": "evaluate",
+      "agent_id": "automation-agent",
+      "envelope": {
+        "tool": "run_batch_job",
+        "operation": "execute",
+        "target": {"job_id": "job_nightly_cleanup"},
+        "parameters": {"dry_run": false}
+      },
+      "expected_decision": "ALLOW",
+      "expected_reason_codes": ["EXECUTE_ALLOWED"],
+      "assertions": [
+        {"field": "decision.allowed", "equals": true}
+      ]
+    }
+  ],
+  "success_criteria": {
+    "all_steps_complete": true,
+    "all_assertions_passed": true
+  }
+}

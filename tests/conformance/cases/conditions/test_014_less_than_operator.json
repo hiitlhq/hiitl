@@ -1,0 +1,46 @@
+{
+  "test_id": "test_014_less_than_operator",
+  "description": "Test less_than operator",
+  "envelope": {
+    "schema_version": "v1.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_finance_bot",
+    "action_id": "act_test0140000000000000",
+    "timestamp": "2026-02-14T10:00:00Z",
+    "operation": "execute",
+    "parameters": {
+      "amount": 50
+    },
+    "idempotency_key": "idem_test_014_less_than_operator",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "transfer_money"
+  },
+  "policy_set": {
+    "version": "1.0.0",
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "allow_tiny_transfers",
+        "priority": 100,
+        "enabled": true,
+        "conditions": {
+          "field": "parameters.amount",
+          "operator": "less_than",
+          "value": 100
+        },
+        "decision": "ALLOW",
+        "reason_code": "TINY_TRANSFER",
+        "description": "Rule: allow_tiny_transfers"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "ALLOW",
+    "allowed": true,
+    "reason_codes": [
+      "TINY_TRANSFER"
+    ]
+  }
+}

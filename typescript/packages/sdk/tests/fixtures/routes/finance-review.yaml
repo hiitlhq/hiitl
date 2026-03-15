@@ -1,0 +1,46 @@
+name: "finance-review"
+version: "v1.0.0"
+direction: "bidirectional"
+timing: "sync"
+description: "Route for finance team review of high-value payments"
+purpose:
+  - "review"
+
+endpoint: "https://review.example.com/api/v1/review"
+protocol: "webhook"
+
+auth:
+  type: "api_key"
+  secret_ref: "env:REVIEW_API_KEY"
+
+context:
+  fields:
+    - field_path: "parameters.amount"
+      label: "Amount"
+      format: "currency"
+    - field_path: "parameters.currency"
+      label: "Currency"
+    - field_path: "target.account_id"
+      label: "Account"
+  include_policy_ref: true
+  risk_framing:
+    severity: "high"
+    summary: "Large payment requires finance team approval"
+    consequences:
+      if_approved: "Payment will be processed immediately"
+      if_denied: "Payment will be rejected and agent notified"
+
+response_schema:
+  decision_options:
+    - "approve"
+    - "deny"
+    - "modify"
+  required_fields:
+    - "decision"
+    - "reason"
+  reason_required_for:
+    - "deny"
+
+sla:
+  timeout: "4h"
+  timeout_action: "escalate"

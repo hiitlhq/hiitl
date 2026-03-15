@@ -1,0 +1,53 @@
+{
+  "test_id": "test_094_allow_with_remediation_ignored",
+  "description": "ALLOW rule with remediation \u2014 remediation is NOT passed to decision (only meaningful on blocking decisions)",
+  "envelope": {
+    "schema_version": "v1.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "dev",
+    "agent_id": "agent_reader_bot",
+    "action_id": "act_readdata094000000000",
+    "timestamp": "2026-02-25T10:00:00Z",
+    "operation": "read",
+    "parameters": {
+      "table": "products"
+    },
+    "idempotency_key": "idem_test_094",
+    "target": {
+      "database": "catalog"
+    },
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "read_data"
+  },
+  "policy_set": {
+    "version": "1.0.0",
+    "name": "read_policy",
+    "rules": [
+      {
+        "name": "allow_reads_with_note",
+        "priority": 100,
+        "enabled": true,
+        "conditions": {
+          "field": "operation",
+          "operator": "equals",
+          "value": "read"
+        },
+        "decision": "ALLOW",
+        "reason_code": "READ_ALLOWED",
+        "description": "Allow read operations (remediation should be ignored on ALLOW)",
+        "remediation": {
+          "message": "This remediation should never appear in the decision.",
+          "suggestion": "If you see this, the evaluator has a bug.",
+          "type": "custom"
+        }
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "ALLOW",
+    "allowed": true,
+    "reason_codes": [
+      "READ_ALLOWED"
+    ]
+  }
+}

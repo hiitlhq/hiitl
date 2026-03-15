@@ -1,0 +1,167 @@
+pattern_id: "financial/issue_refund"
+category: "financial"
+name: "Issue Refund"
+description: >
+  Refund processing for returning funds to customers. Refunds carry fraud risk from
+  both external bad actors and internal misuse. Controls must verify refunds against
+  original transactions, enforce amount limits, and rate-limit per agent to catch
+  automated refund loops.
+tags: ["refund", "financial", "money", "chargeback"]
+
+evaluate_examples:
+  python: |
+    result = hiitl.evaluate("issue_refund", {
+        "amount": 75.00,
+        "original_transaction_id": "txn_Rk3mN8pQ2wX7",
+        "reason": "customer_request",
+    })
+    if result.ok:
+        issue_refund(
+            amount=75.00,
+            transaction_id="txn_Rk3mN8pQ2wX7",
+            reason="customer_request",
+        )
+  typescript: |
+    const result = hiitl.evaluate({
+      action: 'issue_refund',
+      params: {
+        amount: 75.00,
+        original_transaction_id: 'txn_Rk3mN8pQ2wX7',
+        reason: 'customer_request',
+      },
+    });
+    if (result.ok) {
+      await issueRefund({
+        amount: 75.00,
+        transactionId: 'txn_Rk3mN8pQ2wX7',
+        reason: 'customer_request',
+      });
+    }
+
+context_enrichment:
+  - field: "user_id"
+    why: "Identifies the customer service agent or end-user requesting the refund for fraud detection and audit"
+    example: "user_7hK3nP9mQ2"
+  - field: "sensitivity"
+    why: "Marks the action as a money movement so financial controls apply automatically"
+    example: "money"
+  - field: "parameters.original_amount"
+    why: "The original transaction amount enables policies that prevent refunds exceeding what was paid"
+    example: 150.00
+  - field: "parameters.refund_type"
+    why: "Full vs. partial refund distinction drives different approval thresholds and risk assessment"
+    example: "partial"
+  - field: "target.payment_method"
+    why: "Refund destination affects processing time, reversibility, and fraud risk profile"
+    example: "original_payment_method"
+
+starter_policies:
+  - name: "allow-small-refunds"
+    description: "Auto-approve refunds under $50 — low risk, improves customer satisfaction speed"
+    priority: 200
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "issue_refund"
+        - field: "parameters.amount"
+          operator: "less_than"
+          value: 50
+    decision: "ALLOW"
+    reason_code: "REFUND_AUTO_APPROVED"
+    remediation:
+      type: "static"
+      message: "Refund auto-approved (under $50 threshold)"
+      suggestion: "No action needed"
+
+  - name: "approve-large-refunds"
+    description: "Require approval for refunds of $50 or more to prevent unauthorized returns"
+    priority: 150
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "issue_refund"
+        - field: "parameters.amount"
+          operator: "greater_than_or_equal"
+          value: 50
+        - field: "parameters.amount"
+          operator: "less_than_or_equal"
+          value: 500
+    decision: "REQUIRE_APPROVAL"
+    reason_code: "REFUND_NEEDS_APPROVAL"
+    remediation:
+      type: "static"
+      message: "Refunds of $50 or more require supervisor approval before processing"
+      suggestion: "Submit this refund for supervisor review. Include the original transaction ID and reason for the refund."
+
+  - name: "block-excessive-refunds"
+    description: "Block refunds over $500 — must be processed through manual dispute resolution"
+    priority: 100
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "issue_refund"
+        - field: "parameters.amount"
+          operator: "greater_than"
+          value: 500
+    decision: "BLOCK"
+    reason_code: "REFUND_EXCEEDS_LIMIT"
+    remediation:
+      type: "static"
+      message: "Refunds over $500 cannot be issued by automated agents"
+      suggestion: "Route this refund through the dispute resolution team. Refunds of this size require manual verification of the original transaction and management approval."
+
+  - name: "block-refund-exceeds-original"
+    description: "Block any refund where the amount exceeds the original transaction value"
+    priority: 90
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "issue_refund"
+        - field: "parameters.amount"
+          operator: "greater_than"
+          value: 0
+        - field: "parameters.reason"
+          operator: "equals"
+          value: "overpayment_correction"
+    decision: "BLOCK"
+    reason_code: "REFUND_EXCEEDS_ORIGINAL"
+    remediation:
+      type: "static"
+      message: "This refund was flagged because overpayment corrections must be handled manually to verify the discrepancy"
+      suggestion: "Verify the refund amount against the original transaction. Overpayment corrections require a finance team member to confirm the discrepancy before any refund is issued."
+
+  - name: "rate-limit-refunds-per-agent"
+    description: "Limit each agent to 20 refunds per hour to catch automated refund loops"
+    priority: 50
+    enabled: true
+    conditions:
+      field: "action"
+      operator: "equals"
+      value: "issue_refund"
+    decision: "RATE_LIMIT"
+    reason_code: "REFUND_RATE_EXCEEDED"
+    remediation:
+      type: "static"
+      message: "This agent has exceeded the maximum of 20 refunds per hour"
+      suggestion: "This limit exists to prevent automated refund loops. If bulk refunds are legitimately needed, use the batch refund workflow with explicit authorization."
+
+remediation:
+  block_message: "This refund was blocked because it exceeds the automated processing limits. Large refunds and overpayment corrections require manual handling to prevent fraud and ensure accuracy."
+  developer_action: "Check the refund amount against the original transaction. For large refunds, use the manual dispute resolution workflow. For refund loops, investigate whether the agent logic is causing repeated refund attempts."
+  approval_message: "This refund requires supervisor approval. The reviewer will see the refund amount, original transaction details, and the stated reason for the refund."
+
+compliance:
+  - regulation: "PCI-DSS"
+    relevance: "Refunds to payment cards must follow the same data protection standards as the original transaction"
+    note: "Never include full card numbers in refund parameters. Use the original transaction ID to reference the payment method. Audit trail must capture the link between refund and original charge."
+  - regulation: "Consumer Protection"
+    relevance: "Consumer protection laws in most jurisdictions require that refunds be processed within defined timeframes and in a fair manner"
+    note: "Blocking or delaying refunds must be justified and documented. The audit trail provides evidence that refund controls are applied consistently and not used to unreasonably delay customer refunds."

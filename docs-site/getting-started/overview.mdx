@@ -1,0 +1,103 @@
+---
+title: "What is hiitl?"
+description: "The control point for AI agents. Observe, enforce, intervene, record."
+---
+
+## The problem
+
+AI systems are taking real actions — approving claims, issuing payments, granting access, sending emails, modifying data. But there's no standard way to:
+
+- **See** what agents are doing across your system
+- **Enforce** rules before actions execute
+- **Intervene** when something goes wrong
+- **Record** an audit trail of every attempted action
+
+## What hiitl does
+
+hiitl is a deterministic control point that sits between AI decision and execution.
+
+```
+Agent decides → hiitl evaluates → Action executes (or doesn't)
+```
+
+Every action passes through `evaluate()` before execution. hiitl checks it against policy, logs it, and returns a decision — all in single-digit milliseconds.
+
+<CodeGroup>
+
+```python Python
+from hiitl import HIITL
+
+hiitl = HIITL()
+
+decision = hiitl.evaluate("send_email", parameters={
+    "to": "user@example.com",
+    "subject": "Order update",
+})
+
+if decision.allowed:
+    send_email(...)
+```
+
+```typescript TypeScript
+import { HIITL } from '@hiitl/sdk';
+
+const hiitl = new HIITL();
+
+const decision = hiitl.evaluate({
+  action: 'send_email',
+  parameters: { to: 'user@example.com', subject: 'Order update' },
+});
+
+if (decision.allowed) {
+  await sendEmail(...);
+}
+```
+
+</CodeGroup>
+
+## How adoption works
+
+<Steps>
+  <Step title="Observe">
+    Drop in the SDK with zero config. Every action is logged in OBSERVE mode — you get visibility without changing any behavior.
+  </Step>
+  <Step title="Enforce">
+    Write policies when you're ready. hiitl evaluates every action against policy and returns a decision: allow, block, require approval, rate limit, and more.
+  </Step>
+  <Step title="Scale">
+    Move from local evaluation to hosted mode for team collaboration, shared policies, and managed audit logs. Same `evaluate()` call, different backend.
+  </Step>
+</Steps>
+
+## What hiitl is not
+
+- **Not an orchestration framework.** hiitl doesn't decide what agents should do — it governs what they attempt.
+- **Not a monitoring dashboard.** hiitl is the enforcement layer that monitoring tools can consume events from.
+- **Not LLM-based.** Policy evaluation is deterministic — fixed rules and explicit signals, never model inference at decision time.
+
+## Key properties
+
+| Property | Detail |
+|----------|--------|
+| **Latency** | Sub-millisecond locally, low tens of ms hosted |
+| **Deterministic** | Same envelope + same policy = same decision, every time |
+| **Language-native** | Python and TypeScript evaluators, no cross-language deps |
+| **Fail-safe** | Fail-closed by default, configurable per route |
+| **Audit** | Immutable trail for every action, even blocked ones |
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Python Quickstart" icon="python" href="/getting-started/quickstart-python">
+    Install to first evaluated action in 5 minutes
+  </Card>
+  <Card title="TypeScript Quickstart" icon="js" href="/getting-started/quickstart-typescript">
+    Install to first evaluated action in 5 minutes
+  </Card>
+  <Card title="Observe-First Guide" icon="eye" href="/getting-started/observe-first">
+    Start with visibility, add policies later
+  </Card>
+  <Card title="Core Concepts" icon="book" href="/concepts/how-it-works">
+    Understand envelopes, policies, and decisions
+  </Card>
+</CardGroup>

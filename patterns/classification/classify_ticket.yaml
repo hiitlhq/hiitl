@@ -1,0 +1,136 @@
+pattern_id: "classification/classify_ticket"
+category: "classification"
+name: "Classify Ticket"
+description: >
+  Controls AI-driven support ticket classification and triage actions. Enforces confidence
+  thresholds to ensure low-confidence classifications receive human review, escalates critical
+  priority tickets, and rate-limits to prevent bulk misclassification from model drift.
+tags: ["classification", "ticket", "support", "triage"]
+
+evaluate_examples:
+  python: |
+    result = hiitl.evaluate("classify_ticket", {
+        "category": "billing_dispute",
+        "priority": "high",
+        "confidence_score": 0.87,
+    })
+    if result.ok:
+        apply_ticket_classification()
+  typescript: |
+    const result = hiitl.evaluate({
+      action: 'classify_ticket',
+      params: {
+        category: 'billing_dispute',
+        priority: 'high',
+        confidence_score: 0.87,
+      },
+    });
+    if (result.ok) {
+      await applyTicketClassification();
+    }
+
+context_enrichment:
+  - field: "parameters.confidence_score"
+    why: "Classification confidence determines whether automated triage is safe or requires human verification"
+    example: 0.87
+  - field: "agent_id"
+    why: "Identifies which classification model or agent performed the triage for drift monitoring and accountability"
+    example: "ticket-classifier-v3"
+  - field: "parameters.priority"
+    why: "Critical and urgent tickets may need immediate human attention regardless of classification confidence"
+    example: "high"
+  - field: "parameters.category"
+    why: "Certain categories (legal, security, executive) may require specialized routing regardless of confidence"
+    example: "billing_dispute"
+  - field: "user_id"
+    why: "Tracks which customer or internal user submitted the ticket for SLA and escalation tracking"
+    example: "customer_29x8f"
+
+starter_policies:
+  - name: "allow-high-confidence-classification"
+    description: "Allow automated classification when model confidence exceeds the reliability threshold"
+    priority: 500
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "classify_ticket"
+        - field: "parameters.confidence_score"
+          operator: "greater_than_or_equal"
+          value: 0.85
+        - field: "parameters.priority"
+          operator: "not_in"
+          value: ["critical", "emergency"]
+    decision: "ALLOW"
+    reason_code: "HIGH_CONFIDENCE_CLASSIFICATION_ALLOWED"
+    remediation:
+      type: "static"
+      message: "Ticket classification permitted — model confidence meets threshold"
+      suggestion: "No action needed"
+
+  - name: "require-review-low-confidence"
+    description: "Route low-confidence classifications to human reviewers to prevent misrouting"
+    priority: 200
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "classify_ticket"
+        - field: "parameters.confidence_score"
+          operator: "less_than"
+          value: 0.85
+    decision: "REQUIRE_APPROVAL"
+    reason_code: "LOW_CONFIDENCE_REQUIRES_REVIEW"
+    remediation:
+      type: "static"
+      message: "Classification confidence is below the 0.85 threshold. Human review is required to prevent ticket misrouting."
+      suggestion: "The ticket has been queued for human triage. A support team member will review the suggested classification and either confirm or correct it. Average review time is under 15 minutes during business hours."
+
+  - name: "escalate-critical-priority"
+    description: "Immediately escalate tickets classified as critical or emergency priority to senior support staff"
+    priority: 100
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "classify_ticket"
+        - field: "parameters.priority"
+          operator: "in"
+          value: ["critical", "emergency"]
+    decision: "ESCALATE"
+    reason_code: "CRITICAL_TICKET_ESCALATED"
+    remediation:
+      type: "static"
+      message: "Critical and emergency priority tickets are automatically escalated to senior support staff regardless of classification confidence"
+      suggestion: "The ticket has been escalated to the on-call senior support engineer. Escalation notifications are sent via PagerDuty or your configured alerting channel. Do not attempt to re-classify — the escalation takes priority."
+
+  - name: "rate-limit-classification"
+    description: "Rate-limit classification actions to detect and contain model drift or bulk misclassification events"
+    priority: 300
+    enabled: true
+    conditions:
+      field: "action"
+      operator: "equals"
+      value: "classify_ticket"
+    decision: "RATE_LIMIT"
+    reason_code: "CLASSIFICATION_RATE_LIMITED"
+    remediation:
+      type: "static"
+      message: "Ticket classification rate limit exceeded. This safeguard helps detect model drift or bulk processing anomalies."
+      suggestion: "If processing a backlog, implement batching with delays between groups. If this is unexpected volume, investigate whether the classification agent is in a retry loop or processing duplicate tickets."
+
+remediation:
+  block_message: "Ticket classification was blocked by policy. This typically occurs when rate limits are exceeded or a kill switch has been activated due to detected model drift."
+  developer_action: "Check the decision reason_codes. For low-confidence blocks, surface the suggested classification to a human reviewer and implement the approval callback flow. For rate limits, add exponential backoff to your classification pipeline."
+  approval_message: "This ticket classification needs human verification. The AI suggested a category but confidence was below threshold. A reviewer will confirm or adjust the classification."
+
+compliance:
+  - regulation: "SLA Requirements"
+    relevance: "Ticket classification directly impacts SLA timers — misrouted tickets may breach response time commitments"
+    note: "Configure the confidence threshold based on your acceptable misclassification rate. Lower thresholds increase throughput but risk SLA breaches from misrouted tickets."
+  - regulation: "Customer Service Standards"
+    relevance: "Automated triage must meet the same quality standards as human triage to maintain customer satisfaction"
+    note: "Monitor the approval rate for low-confidence classifications. If human reviewers frequently override the AI classification, the model may need retraining. The audit trail provides the data needed for this analysis."

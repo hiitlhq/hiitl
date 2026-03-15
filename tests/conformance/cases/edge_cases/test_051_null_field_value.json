@@ -1,0 +1,46 @@
+{
+  "test_id": "test_051_null_field_value",
+  "description": "Test handling of null/missing field values",
+  "envelope": {
+    "schema_version": "v1.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_finance_bot",
+    "action_id": "act_test0510000000000000",
+    "timestamp": "2026-02-14T10:00:00Z",
+    "operation": "execute",
+    "parameters": {
+      "amount": 500
+    },
+    "idempotency_key": "idem_test_051_null_field_value",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "transfer_money"
+  },
+  "policy_set": {
+    "version": "1.0.0",
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "require_currency",
+        "priority": 100,
+        "enabled": true,
+        "conditions": {
+          "field": "parameters.currency",
+          "operator": "exists",
+          "value": false
+        },
+        "decision": "BLOCK",
+        "reason_code": "MISSING_CURRENCY",
+        "description": "Rule: require_currency"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "BLOCK",
+    "allowed": false,
+    "reason_codes": [
+      "MISSING_CURRENCY"
+    ]
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "test_id": "test_076_non_escalation_no_resume_token",
+  "description": "Non-escalation decisions (ALLOW, BLOCK) do not include resume_token",
+  "envelope": {
+    "schema_version": "v1.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "dev",
+    "agent_id": "agent_test",
+    "action_id": "act_test0760000000000000",
+    "timestamp": "2026-02-14T10:00:00Z",
+    "operation": "read",
+    "parameters": {
+      "table": "users"
+    },
+    "idempotency_key": "idem_test_076",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "read_data"
+  },
+  "policy_set": {
+    "version": "1.0.0",
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "allow_reads",
+        "priority": 100,
+        "enabled": true,
+        "conditions": {
+          "field": "operation",
+          "operator": "equals",
+          "value": "read"
+        },
+        "decision": "ALLOW",
+        "reason_code": "READ_ALLOWED",
+        "description": "Allow all read operations"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "ALLOW",
+    "allowed": true,
+    "reason_codes": [
+      "READ_ALLOWED"
+    ],
+    "resume_token": null,
+    "route_ref": null
+  }
+}

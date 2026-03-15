@@ -1,0 +1,73 @@
+{
+  "test_id": "test_007_multiple_rules_different_priorities",
+  "description": "Multiple rules with different priorities - highest matches first",
+  "envelope": {
+    "schema_version": "v1.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_finance_bot",
+    "action_id": "act_test0070000000000000",
+    "timestamp": "2026-02-14T10:00:00Z",
+    "operation": "execute",
+    "parameters": {
+      "amount": 500,
+      "currency": "USD"
+    },
+    "idempotency_key": "idem_test_007_multiple_rules_different_priorities",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "transfer_money"
+  },
+  "policy_set": {
+    "version": "1.0.0",
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "low_priority_block",
+        "priority": 10,
+        "enabled": true,
+        "conditions": {
+          "field": "action",
+          "operator": "equals",
+          "value": "transfer_money"
+        },
+        "decision": "BLOCK",
+        "reason_code": "LOW_PRIORITY",
+        "description": "Rule: low_priority_block"
+      },
+      {
+        "name": "medium_priority_approval",
+        "priority": 50,
+        "enabled": true,
+        "conditions": {
+          "field": "parameters.currency",
+          "operator": "equals",
+          "value": "USD"
+        },
+        "decision": "REQUIRE_APPROVAL",
+        "reason_code": "MEDIUM_PRIORITY",
+        "description": "Rule: medium_priority_approval"
+      },
+      {
+        "name": "high_priority_allow",
+        "priority": 100,
+        "enabled": true,
+        "conditions": {
+          "field": "parameters.amount",
+          "operator": "less_than_or_equal",
+          "value": 1000
+        },
+        "decision": "ALLOW",
+        "reason_code": "HIGH_PRIORITY",
+        "description": "Rule: high_priority_allow"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "ALLOW",
+    "allowed": true,
+    "reason_codes": [
+      "HIGH_PRIORITY"
+    ]
+  }
+}

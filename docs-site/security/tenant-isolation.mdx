@@ -1,0 +1,111 @@
+---
+title: "Tenant Isolation"
+description: "Strict org_id isolation at every layer"
+---
+
+## org_id scoping
+
+Every piece of data in hiitl is scoped to an `org_id`. This isolation is enforced at every layer of the system.
+
+| Layer | Isolation mechanism |
+|-------|-------------------|
+| **Database queries** | Every query includes `WHERE org_id = ?` |
+| **Audit logs** | Records are partitioned by org_id |
+| **Policy lookups** | Policies are scoped to org_id + environment |
+| **Rate limit counters** | Counters are keyed by org_id |
+| **API keys** | Keys are bound to a single org_id |
+
+There is no admin bypass that crosses tenant boundaries in the application layer.
+
+<Warning>
+**Cross-tenant data access is a P0 security bug.** Any code path that allows one org to read, write, or influence another org's data is treated as a critical severity incident. This is tested explicitly in the test suite.
+</Warning>
+
+## Environment separation
+
+Within an org, environments (`dev`, `stage`, `prod`) are fully isolated.
+
+```
+org_abc123
+  |-- dev    (policies, counters, audit log)
+  |-- stage  (policies, counters, audit log)
+  |-- prod   (policies, counters, audit log)
+```
+
+Isolation guarantees:
+
+- A `dev` environment action cannot trigger a `prod` policy
+- A `dev` environment action cannot increment a `prod` rate limit counter
+- A `dev` API key cannot query `prod` audit logs
+- Policies deployed to `stage` do not affect `prod`
+
+This prevents accidental cross-environment contamination during development and testing.
+
+## What this means in practice
+
+### Policy evaluation
+
+When the decision plane evaluates an envelope, it loads only policies matching the envelope's `org_id` and `environment`:
+
+```
+Envelope: { org_id: "org_abc123", environment: "prod", ... }
+    --> Loads: org_abc123 / prod policies only
+    --> Ignores: org_abc123 / dev, org_xyz / prod, etc.
+```
+
+### Rate limiting
+
+Rate limit counters are scoped to `(org_id, environment, scope_key)`:
+
+```
+Counter key: org_abc123:prod:agent_id:payment-agent
+    --> Only incremented by org_abc123 prod actions
+    --> org_abc123 dev has its own separate counter
+```
+
+### Audit trail
+
+Audit queries are always filtered by `org_id`:
+
+```bash
+# This only returns org_abc123 records
+curl -H "Authorization: Bearer $ORG_ABC123_KEY" \
+  https://api.hiitl.com/v1/audit
+```
+
+There is no API to query across organizations, even for hiitl administrators.
+
+## API key binding
+
+API keys are bound to exactly one `(org_id, environment)` pair at creation time. This binding cannot be changed -- to access a different environment, create a new key.
+
+```json
+{
+  "key_id": "key_abc123",
+  "org_id": "org_abc123",
+  "environment": "prod",
+  "scope": "evaluate"
+}
+```
+
+If a request's API key does not match the `org_id` or `environment` in the envelope, the request is rejected:
+
+```json
+{
+  "error": {
+    "code": "TENANT_MISMATCH",
+    "message": "API key is bound to org_abc123/prod but envelope specifies org_xyz789/prod."
+  }
+}
+```
+
+## Testing isolation
+
+The test suite includes explicit cross-tenant access tests:
+
+- Attempt to read org B's audit records with org A's API key
+- Attempt to evaluate against org B's policies with org A's envelope
+- Attempt to increment org B's rate limit counters with org A's actions
+- Attempt to toggle org B's kill switches with org A's admin key
+
+All of these must fail with clear error responses.

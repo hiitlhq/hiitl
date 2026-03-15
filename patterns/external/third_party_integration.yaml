@@ -1,0 +1,160 @@
+pattern_id: "external/third_party_integration"
+category: "external"
+name: "Third-Party Integration"
+description: >
+  Controls AI-initiated actions on third-party SaaS platforms and service integrations.
+  Enforces read/write access distinctions, blocks PII sharing with unauthorized services,
+  applies scope restrictions, and rate-limits to manage cost and prevent over-provisioning.
+tags: ["external", "integration", "third-party", "saas"]
+
+evaluate_examples:
+  python: |
+    result = hiitl.evaluate("third_party_integration", {
+        "service": "salesforce",
+        "action_type": "update_record",
+        "scope": "contacts",
+        "data_shared": ["name", "email", "company"],
+    })
+    if result.ok:
+        execute_integration_action()
+  typescript: |
+    const result = hiitl.evaluate({
+      action: 'third_party_integration',
+      params: {
+        service: 'salesforce',
+        action_type: 'update_record',
+        scope: 'contacts',
+        data_shared: ['name', 'email', 'company'],
+      },
+    });
+    if (result.ok) {
+      await executeIntegrationAction();
+    }
+
+context_enrichment:
+  - field: "sensitivity"
+    why: "Integrations that share PII or financial data must be classified at a higher sensitivity level for policy evaluation"
+    example: "identity"
+  - field: "target.service"
+    why: "The target SaaS service determines which access policies, scope restrictions, and rate limits apply"
+    example: "salesforce"
+  - field: "cost_estimate"
+    why: "Many SaaS integrations are metered — tracking estimated cost per action enables budget enforcement"
+    example: 0.05
+  - field: "parameters.scope"
+    why: "The access scope determines what data and operations the integration can touch on the target service"
+    example: "contacts"
+  - field: "parameters.data_shared"
+    why: "Explicit tracking of which data fields are shared with third parties is critical for privacy compliance and DPA enforcement"
+    example: ["name", "email", "company"]
+
+starter_policies:
+  - name: "allow-read-only"
+    description: "Allow read-only integration actions without additional approval for approved services"
+    priority: 500
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "third_party_integration"
+        - field: "parameters.action_type"
+          operator: "in"
+          value: ["read", "query", "list", "get"]
+    decision: "ALLOW"
+    reason_code: "READ_ONLY_INTEGRATION_ALLOWED"
+    remediation:
+      type: "static"
+      message: "Read-only integration action permitted"
+      suggestion: "No action needed"
+
+  - name: "require-approval-write-operations"
+    description: "Require human approval for write operations that modify data on third-party services"
+    priority: 200
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "third_party_integration"
+        - field: "parameters.action_type"
+          operator: "in"
+          value: ["create", "update_record", "delete", "execute", "write"]
+    decision: "REQUIRE_APPROVAL"
+    reason_code: "WRITE_INTEGRATION_REQUIRES_APPROVAL"
+    remediation:
+      type: "static"
+      message: "Write operations on third-party services require human approval to prevent unauthorized data modifications and maintain data integrity across systems."
+      suggestion: "Route the integration request to the service owner or integration administrator. Include the target service, scope, action type, and a summary of the data being modified. For bulk operations, specify the record count."
+
+  - name: "block-pii-sharing"
+    description: "Block integration actions that would share personally identifiable information with services not authorized for PII processing"
+    priority: 100
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "third_party_integration"
+        - field: "sensitivity"
+          operator: "equals"
+          value: "identity"
+        - field: "parameters.service"
+          operator: "not_in"
+          value: ["salesforce", "hubspot", "zendesk"]
+    decision: "BLOCK"
+    reason_code: "PII_SHARING_BLOCKED"
+    remediation:
+      type: "static"
+      message: "Sharing personally identifiable information with this service is blocked. Only services with a valid Data Processing Agreement (DPA) are authorized to receive PII."
+      suggestion: "Remove PII fields from the data_shared parameter, or submit a DPA request for this service to your privacy team. Once the DPA is executed and the service is added to the PII-authorized list, the integration will be permitted."
+
+  - name: "rate-limit-integrations"
+    description: "Rate-limit integration actions per service to manage API costs and prevent over-provisioning"
+    priority: 300
+    enabled: true
+    conditions:
+      field: "action"
+      operator: "equals"
+      value: "third_party_integration"
+    decision: "RATE_LIMIT"
+    reason_code: "INTEGRATION_RATE_LIMITED"
+    remediation:
+      type: "static"
+      message: "Third-party integration rate limit exceeded. Rate limits manage API costs and prevent excessive load on partner services."
+      suggestion: "Implement request batching and caching to reduce integration call volume. If higher throughput is required, coordinate with the service vendor on rate limits and request a policy adjustment from your administrator."
+
+  - name: "block-excessive-scope"
+    description: "Block integration actions that request access scopes beyond what is approved for the service"
+    priority: 150
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "third_party_integration"
+        - field: "parameters.scope"
+          operator: "in"
+          value: ["admin", "full_access", "delete_all", "manage_users"]
+    decision: "BLOCK"
+    reason_code: "EXCESSIVE_SCOPE_BLOCKED"
+    remediation:
+      type: "static"
+      message: "The requested access scope exceeds the approved level for third-party integrations. Administrative and full-access scopes are blocked to enforce the principle of least privilege."
+      suggestion: "Reduce the requested scope to the minimum necessary for the operation. Most integration tasks can be completed with read, write, or scoped access rather than admin-level permissions. If admin access is truly required, submit an exception request to your security team with the business justification."
+
+remediation:
+  block_message: "Third-party integration action was blocked by policy. Common causes: PII sharing with an unauthorized service, excessive access scope, or rate limit exceeded. Check reason_code for the specific trigger."
+  developer_action: "Inspect the decision reason_codes array. For PII blocks, either remove sensitive fields from data_shared or ensure the target service has an executed DPA. For scope blocks, reduce the requested scope to the minimum required. For write approval requirements, implement the approval callback flow."
+  approval_message: "This integration action requires approval because it modifies data on a third-party service. The approval request includes the target service, scope, action type, and data fields being shared."
+
+compliance:
+  - regulation: "Vendor Management / Third-Party Risk"
+    relevance: "All third-party integrations must be tracked and managed per your organization's vendor risk management framework"
+    note: "Each service in the integration allowlist should have a completed vendor risk assessment and current contract. The audit trail records all integration actions for vendor management review."
+  - regulation: "GDPR (Data Processors)"
+    relevance: "Third-party services that process personal data on your behalf are data processors under GDPR and must have a Data Processing Agreement"
+    note: "The PII-sharing block policy enforces that only services with executed DPAs receive personal data. Maintain a registry of authorized data processors and update the allowlist policy accordingly."
+  - regulation: "SOC 2 / Security Controls"
+    relevance: "Third-party integrations must comply with your SOC 2 control framework, particularly controls related to data access, vendor management, and change management"
+    note: "The write-operation approval requirement supports SOC 2 change management controls. Rate limiting supports availability controls. The immutable audit trail provides evidence for SOC 2 audits. Review integration patterns during your SOC 2 audit preparation."

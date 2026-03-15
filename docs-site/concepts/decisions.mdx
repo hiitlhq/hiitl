@@ -1,0 +1,199 @@
+---
+title: "Decisions"
+description: "What hiitl returns after evaluating an action"
+---
+
+## What is a decision?
+
+After evaluating an action against the active policy, hiitl returns a decision object. The decision tells your code what happened and what to do next.
+
+Every decision includes:
+- The **outcome** (`ALLOW`, `BLOCK`, `REQUIRE_APPROVAL`, etc.)
+- Whether the action is **allowed** (boolean convenience field)
+- **Reason codes** explaining why
+- **Timing metadata** so you can see the latency impact
+- The **policy version** used for the evaluation
+
+## Decision types
+
+| Decision | `allowed` | Description |
+|----------|-----------|-------------|
+| `ALLOW` | `true` | Action is permitted. Execute it. |
+| `OBSERVE` | `true` | Action observed but not enforced. `would_be` shows what enforcement would do. |
+| `BLOCK` | `false` | Action is denied by policy. Do not execute. |
+| `REQUIRE_APPROVAL` | `false` | Action requires human approval before execution. |
+| `PAUSE` | `false` | Action is held for later processing. |
+| `RATE_LIMIT` | `false` | Action exceeds rate limit. Backoff and retry after `reset_at`. |
+| `KILL_SWITCH` | `false` | Action blocked by kill switch (hard stop). Do not retry. |
+| `ESCALATE` | `false` | Action escalated to higher authority. |
+| `SANDBOX` | `true` | Route action to sandbox endpoint. Execute, but in sandbox. |
+
+<Note>
+`ALLOW` and `SANDBOX` set `allowed: true`. All other decisions set `allowed: false`.
+</Note>
+
+## Decision fields
+
+| Field | Type | Always present | Description |
+|-------|------|----------------|-------------|
+| `action_id` | string | Yes | Echo of the action_id from the envelope, for correlation |
+| `decision` | string | Yes | The decision outcome (see table above) |
+| `allowed` | boolean | Yes | `true` if `ALLOW` or `SANDBOX`, `false` otherwise |
+| `reason_codes` | array | Yes | Machine-readable reason codes explaining the decision |
+| `policy_version` | string | Yes | Version of the policy set used for evaluation |
+| `timing` | object | Yes | Latency breakdown: `ingest_ms`, `evaluation_ms`, `total_ms` |
+| `matched_rules` | array | No | Rules that matched: `{ rule_name, policy_set, priority }` |
+| `rate_limit` | object | No | Counter state when rate limit applies: `{ scope, window, limit, current, reset_at }` |
+| `resume_token` | string | No | Token to resume a paused/escalated action after review |
+| `route_ref` | string | No | Route artifact name for escalation decisions |
+| `escalation_context` | object | No | Context for approval workflows: SLA, timeout behavior, available responses |
+| `remediation` | object | No | Actionable guidance for BLOCK/RATE_LIMIT decisions |
+| `would_be` | string | No | What enforcement would have decided (present only for OBSERVE) |
+| `error` | object | No | Error details if ECP itself failed: `{ code, message }` |
+
+## Handling decisions in code
+
+<CodeGroup>
+
+```python Python
+decision = hiitl.evaluate(
+    "process_payment",
+    parameters={"amount": 500, "currency": "usd"},
+)
+
+if decision.ok:
+    process_payment(...)
+
+elif decision.blocked:
+    if decision.remediation:
+        print(decision.remediation.message)
+        # "Payment amount exceeds the $10,000 limit."
+    else:
+        print(f"Blocked: {decision.reason_codes}")
+
+elif decision.needs_approval:
+    send_to_review(
+        resume_token=decision.resume_token,
+        route=decision.route_ref,
+    )
+
+elif decision.decision == "RATE_LIMIT":
+    wait_until(decision.rate_limit["reset_at"])
+    retry()
+
+elif decision.decision == "KILL_SWITCH":
+    alert_ops("Kill switch active", decision.reason_codes)
+```
+
+```typescript TypeScript
+const decision = await hiitl.evaluate({
+  action: 'process_payment',
+  parameters: { amount: 500, currency: 'usd' },
+});
+
+if (decision.ok) {
+  await processPayment(...);
+
+} else if (decision.blocked) {
+  if (decision.remediation) {
+    console.log(decision.remediation.message);
+    // "Payment amount exceeds the $10,000 limit."
+  } else {
+    console.log(`Blocked: ${decision.reasonCodes}`);
+  }
+
+} else if (decision.needsApproval) {
+  await sendToReview({
+    resumeToken: decision.resumeToken,
+    route: decision.routeRef,
+  });
+
+} else if (decision.decision === 'RATE_LIMIT') {
+  await waitUntil(decision.rateLimit.resetAt);
+  await retry();
+
+} else if (decision.decision === 'KILL_SWITCH') {
+  await alertOps('Kill switch active', decision.reasonCodes);
+}
+```
+
+</CodeGroup>
+
+## Convenience properties
+
+The SDK provides convenience properties on the decision object so you do not need to compare string values for common checks.
+
+| Property | Equivalent check |
+|----------|-----------------|
+| `.ok` | `decision == "ALLOW"` or `decision == "SANDBOX"` |
+| `.allowed` | Same as `.ok` |
+| `.blocked` | `decision == "BLOCK"` or `decision == "KILL_SWITCH"` |
+| `.needs_approval` | `decision == "REQUIRE_APPROVAL"` |
+| `.observed` | `decision == "OBSERVE"` |
+| `.would_be` | Original decision type in observe mode |
+
+## Timing metadata
+
+Every decision includes timing so you can verify that hiitl is not adding meaningful latency.
+
+```json
+{
+  "timing": {
+    "ingest_ms": 0.5,
+    "evaluation_ms": 1.2,
+    "total_ms": 2.1
+  }
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `ingest_ms` | Time to validate the envelope and check the signature |
+| `evaluation_ms` | Time spent in policy evaluation |
+| `total_ms` | Full round-trip latency (includes network in hosted mode) |
+
+**Latency targets**: sub-millisecond locally, low tens of milliseconds hosted. If `total_ms` consistently exceeds these, it is a performance bug.
+
+## Remediation
+
+When a `BLOCK` or `RATE_LIMIT` decision fires, the matched rule can include remediation — structured guidance the caller (or an AI agent) can use to self-correct.
+
+```json
+{
+  "decision": "BLOCK",
+  "allowed": false,
+  "reason_codes": ["AMOUNT_EXCEEDS_LIMIT"],
+  "remediation": {
+    "message": "Payment amount of $15,000 exceeds the $10,000 limit.",
+    "suggestion": "Reduce amount to $10,000 or below, or request approval.",
+    "type": "threshold",
+    "details": {
+      "threshold": 10000,
+      "current_value": 15000,
+      "max_allowed": 10000
+    }
+  }
+}
+```
+
+Remediation types: `field_restriction`, `threshold`, `scope`, `rate_limit`, `temporal`, `custom`. Each type has a specific `details` schema.
+
+<Warning>
+`error` and `remediation` are mutually exclusive. `error` means hiitl itself failed (bad signature, control plane unavailable). `remediation` means hiitl worked correctly and intentionally blocked the action by policy.
+</Warning>
+
+## Observe mode
+
+When a rule is in observe mode, the decision is `OBSERVE` with `allowed: true`. The `would_be` field shows what enforcement would have done:
+
+```json
+{
+  "decision": "OBSERVE",
+  "allowed": true,
+  "reason_codes": ["OBSERVED"],
+  "would_be": "BLOCK",
+  "would_be_reason_codes": ["AMOUNT_EXCEEDS_LIMIT"]
+}
+```
+
+This lets you validate policies before enabling enforcement. Your code can check `decision.observed` and inspect `decision.would_be` to see the enforcement decision without any action being blocked.

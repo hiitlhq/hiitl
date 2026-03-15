@@ -1,0 +1,158 @@
+pattern_id: "external/call_external_api"
+category: "external"
+name: "Call External API"
+description: >
+  Controls AI-initiated external API calls to third-party services. Enforces allowlisting
+  of known services, blocks calls to unknown endpoints, applies per-service rate limits,
+  and tracks cost exposure from metered API usage.
+tags: ["external", "api", "third-party", "integration"]
+
+evaluate_examples:
+  python: |
+    result = hiitl.evaluate("call_external_api", {
+        "endpoint": "https://api.stripe.com/v1/charges",
+        "method": "POST",
+        "service_name": "stripe",
+    })
+    if result.ok:
+        execute_api_call()
+  typescript: |
+    const result = hiitl.evaluate({
+      action: 'call_external_api',
+      params: {
+        endpoint: 'https://api.stripe.com/v1/charges',
+        method: 'POST',
+        service_name: 'stripe',
+      },
+    });
+    if (result.ok) {
+      await executeApiCall();
+    }
+
+context_enrichment:
+  - field: "cost_estimate"
+    why: "Many external APIs are metered — tracking cost per call enables budget controls and spend alerting"
+    example: 0.03
+  - field: "target.service"
+    why: "The target service name determines which allowlist and rate limit rules apply"
+    example: "stripe"
+  - field: "sensitivity"
+    why: "API calls that transmit sensitive data (PII, financial) require stricter controls than read-only requests"
+    example: "money"
+  - field: "parameters.method"
+    why: "HTTP method indicates the operation type — GET is lower risk than POST/PUT/DELETE"
+    example: "POST"
+  - field: "parameters.endpoint"
+    why: "The full endpoint URL is logged for audit trail and can be matched against allowlist patterns"
+    example: "https://api.stripe.com/v1/charges"
+
+starter_policies:
+  - name: "allow-known-services"
+    description: "Allow API calls to pre-approved services that are in the organization's allowlist"
+    priority: 500
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "call_external_api"
+        - field: "parameters.service_name"
+          operator: "in"
+          value: ["stripe", "twilio", "sendgrid", "slack", "datadog"]
+    decision: "ALLOW"
+    reason_code: "KNOWN_SERVICE_ALLOWED"
+    remediation:
+      type: "static"
+      message: "API call to approved service permitted"
+      suggestion: "No action needed"
+
+  - name: "block-unknown-endpoints"
+    description: "Block API calls to services not on the approved allowlist to prevent data exfiltration and unauthorized integrations"
+    priority: 100
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "call_external_api"
+        - field: "parameters.service_name"
+          operator: "not_in"
+          value: ["stripe", "twilio", "sendgrid", "slack", "datadog"]
+    decision: "BLOCK"
+    reason_code: "UNKNOWN_SERVICE_BLOCKED"
+    remediation:
+      type: "static"
+      message: "API calls to unrecognized services are blocked. Only pre-approved services are permitted to prevent data exfiltration and unauthorized integrations."
+      suggestion: "To add a new service to the allowlist, submit a service integration request to your security team. Include the service name, endpoints, data shared, and business justification. Once approved, update the allowlist policy."
+
+  - name: "rate-limit-per-service"
+    description: "Apply per-service rate limits to prevent runaway costs and detect anomalous usage patterns"
+    priority: 300
+    enabled: true
+    conditions:
+      field: "action"
+      operator: "equals"
+      value: "call_external_api"
+    decision: "RATE_LIMIT"
+    reason_code: "API_CALL_RATE_LIMITED"
+    remediation:
+      type: "static"
+      message: "External API call rate limit exceeded for this service. Rate limits prevent runaway costs and detect anomalous integration behavior."
+      suggestion: "Implement request batching or caching to reduce API call volume. If higher limits are needed, request a rate limit increase from your administrator and ensure the service's cost budget can accommodate the increased usage."
+
+  - name: "require-approval-write-operations"
+    description: "Require approval for write operations (POST, PUT, DELETE) to sensitive services"
+    priority: 200
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "call_external_api"
+        - field: "parameters.method"
+          operator: "in"
+          value: ["POST", "PUT", "DELETE", "PATCH"]
+        - field: "sensitivity"
+          operator: "in"
+          value: ["money", "identity", "permissions"]
+    decision: "REQUIRE_APPROVAL"
+    reason_code: "SENSITIVE_WRITE_REQUIRES_APPROVAL"
+    remediation:
+      type: "static"
+      message: "Write operations to sensitive external services require human approval. This prevents unauthorized financial transactions, identity changes, or permission modifications."
+      suggestion: "Route the API call request to the appropriate approver. Include the target service, endpoint, HTTP method, and a summary of the payload (excluding sensitive fields). For financial operations, include the amount and currency."
+
+  - name: "block-high-cost-calls"
+    description: "Block API calls where the estimated cost exceeds the per-call budget threshold"
+    priority: 150
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "call_external_api"
+        - field: "cost_estimate"
+          operator: "greater_than"
+          value: 100
+    decision: "BLOCK"
+    reason_code: "HIGH_COST_API_CALL_BLOCKED"
+    remediation:
+      type: "static"
+      message: "This API call's estimated cost exceeds the $100 per-call threshold. High-cost API calls are blocked to prevent unexpected charges."
+      suggestion: "Review the API call parameters to reduce cost (e.g., smaller batch size, fewer fields requested). If the cost is justified, request a budget exception from your administrator or break the operation into smaller calls under the threshold."
+
+remediation:
+  block_message: "External API call was blocked by policy. Common causes: the target service is not on the approved allowlist, or the estimated cost exceeds your budget threshold. Check reason_code for specifics."
+  developer_action: "Inspect the decision reason_codes. For unknown service blocks, submit a service integration request. For cost blocks, review the call parameters or request a budget exception. For rate limits, implement backoff and caching."
+  approval_message: "This external API call requires approval because it performs a write operation on a sensitive service. The request includes the target service, method, and operation details for the approver."
+
+compliance:
+  - regulation: "Data Sharing Agreements"
+    relevance: "External API calls that transmit data must comply with data sharing agreements between your organization and the third-party service"
+    note: "The allowlist policy ensures only approved services receive data. For each approved service, verify that a current data sharing agreement or DPA is in place. The audit trail records all external API calls for compliance verification."
+  - regulation: "Third-Party Risk Management"
+    relevance: "AI agents calling external APIs create third-party risk exposure that must be managed per your organization's vendor risk framework"
+    note: "Each service in the allowlist should have a completed vendor risk assessment. Rate limits and cost controls reduce the blast radius of a compromised third-party integration. Monitor the audit trail for anomalous external API patterns."
+  - regulation: "PCI DSS (if applicable)"
+    relevance: "API calls that transmit cardholder data must comply with PCI DSS requirements for data transmission"
+    note: "If any external API call transmits cardholder data, ensure the target service is PCI-compliant and the transmission occurs over TLS. Consider adding a policy condition that checks for cardholder data fields in the parameters."

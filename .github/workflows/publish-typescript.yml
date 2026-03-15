@@ -1,0 +1,33 @@
+name: Publish TypeScript Packages
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  publish:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+      - name: Build and publish @hiitl/core
+        working-directory: typescript/packages/core
+        run: |
+          npm ci
+          npm run build
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Build and publish @hiitl/sdk
+        working-directory: typescript/packages/sdk
+        run: |
+          npm ci
+          npm run build
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

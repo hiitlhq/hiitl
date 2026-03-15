@@ -1,0 +1,50 @@
+{
+  "test_id": "test_015_in_operator",
+  "description": "Test in operator (value in list)",
+  "envelope": {
+    "schema_version": "v1.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_finance_bot",
+    "action_id": "act_test0150000000000000",
+    "timestamp": "2026-02-14T10:00:00Z",
+    "operation": "execute",
+    "parameters": {
+      "currency": "EUR"
+    },
+    "idempotency_key": "idem_test_015_in_operator",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "transfer_money"
+  },
+  "policy_set": {
+    "version": "1.0.0",
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "allow_approved_currencies",
+        "priority": 100,
+        "enabled": true,
+        "conditions": {
+          "field": "parameters.currency",
+          "operator": "in",
+          "value": [
+            "USD",
+            "EUR",
+            "GBP"
+          ]
+        },
+        "decision": "ALLOW",
+        "reason_code": "CURRENCY_APPROVED",
+        "description": "Rule: allow_approved_currencies"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "ALLOW",
+    "allowed": true,
+    "reason_codes": [
+      "CURRENCY_APPROVED"
+    ]
+  }
+}

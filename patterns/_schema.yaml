@@ -1,0 +1,64 @@
+# Pattern Schema Reference
+# This file documents the structure every pattern file must follow.
+# It is not a JSON Schema — it is a human-readable format reference.
+
+_schema_version: "1.0"
+
+# Required fields
+pattern_id: "category/action_name"      # Unique identifier (category/name)
+category: "financial"                   # One of: financial, data_access, communication, iam, infrastructure, documents, classification, external
+name: "Human Readable Name"            # Display name
+description: "What this pattern covers" # 1-3 sentence description
+tags: ["tag1", "tag2"]                 # Searchable tags
+
+# SDK evaluate() examples — copy-paste ready
+evaluate_examples:
+  python: |
+    result = hiitl.evaluate("action_name", {
+        "param": "value",
+    })
+    if result.ok:
+        execute_action()
+  typescript: |
+    const result = hiitl.evaluate({
+      action: 'action_name',
+      params: { param: 'value' },
+    });
+    if (result.ok) {
+      await executeAction();
+    }
+
+# Context enrichment — additional fields that improve policy evaluation
+context_enrichment:
+  - field: "field_name"
+    why: "Why this field matters for policy evaluation"
+    example: "example_value"
+
+# Starter policy rules — ready to copy into a policy file
+starter_policies:
+  - name: "rule-name"
+    description: "What this rule does"
+    priority: 100
+    enabled: true
+    conditions:
+      field: "parameters.amount"
+      operator: "greater_than"
+      value: 500
+    decision: "REQUIRE_APPROVAL"
+    reason_code: "REASON_CODE"
+    remediation:
+      type: "static"
+      message: "Why this was blocked and what to do"
+      suggestion: "How to resolve"
+
+# Remediation examples — what developers see when actions are blocked
+remediation:
+  block_message: "Human-readable message explaining why blocked"
+  developer_action: "What the developer should do to resolve"
+  approval_message: "Message when approval is required"
+
+# Compliance notes — relevant regulations and risk context
+compliance:
+  - regulation: "Regulation Name (e.g., PCI-DSS, GDPR)"
+    relevance: "Why this regulation applies"
+    note: "Specific compliance consideration"

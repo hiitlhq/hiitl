@@ -1,0 +1,47 @@
+{
+  "test_id": "test_052_empty_string",
+  "description": "Test handling of empty string values",
+  "envelope": {
+    "schema_version": "v1.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_finance_bot",
+    "action_id": "act_test0520000000000000",
+    "timestamp": "2026-02-14T10:00:00Z",
+    "operation": "execute",
+    "parameters": {
+      "recipient": "",
+      "subject": "Test"
+    },
+    "idempotency_key": "idem_test_052_empty_string",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "send_email"
+  },
+  "policy_set": {
+    "version": "1.0.0",
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "block_empty_recipient",
+        "priority": 100,
+        "enabled": true,
+        "conditions": {
+          "field": "parameters.recipient",
+          "operator": "equals",
+          "value": ""
+        },
+        "decision": "BLOCK",
+        "reason_code": "EMPTY_RECIPIENT",
+        "description": "Rule: block_empty_recipient"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "BLOCK",
+    "allowed": false,
+    "reason_codes": [
+      "EMPTY_RECIPIENT"
+    ]
+  }
+}

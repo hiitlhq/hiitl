@@ -1,0 +1,50 @@
+{
+  "scenario_id": "kill-switch-activation",
+  "name": "Kill Switch Blocks All Payments",
+  "description": "When kill switch is enabled, all payments are blocked regardless of amount. Non-payment tools remain unaffected.",
+  "category": "kill_switch",
+  "difficulty": "basic",
+  "policy_path": "../policies/kill-switch-policy.json",
+  "steps": [
+    {
+      "step": 1,
+      "name": "Payment blocked by kill switch",
+      "action": "evaluate",
+      "agent_id": "payment-agent",
+      "envelope": {
+        "tool": "process_payment",
+        "operation": "execute",
+        "target": {"account_id": "acct_test_001"},
+        "parameters": {"amount": 25.00, "currency": "usd"}
+      },
+      "expected_decision": "KILL_SWITCH",
+      "expected_reason_codes": ["KILL_SWITCH_PAYMENTS"],
+      "assertions": [
+        {"field": "decision.allowed", "equals": false},
+        {"field": "decision.decision", "equals": "KILL_SWITCH"}
+      ]
+    },
+    {
+      "step": 2,
+      "name": "Non-payment tool still allowed",
+      "action": "evaluate",
+      "agent_id": "payment-agent",
+      "envelope": {
+        "tool": "check_balance",
+        "operation": "read",
+        "target": {"account_id": "acct_test_001"},
+        "parameters": {}
+      },
+      "expected_decision": "ALLOW",
+      "expected_reason_codes": ["DEFAULT_ALLOW"],
+      "assertions": [
+        {"field": "decision.allowed", "equals": true},
+        {"field": "decision.decision", "equals": "ALLOW"}
+      ]
+    }
+  ],
+  "success_criteria": {
+    "all_steps_complete": true,
+    "all_assertions_passed": true
+  }
+}

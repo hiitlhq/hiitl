@@ -1,0 +1,213 @@
+---
+title: "evaluate() — Python"
+description: "Submit an action for policy evaluation and get a decision"
+---
+
+## Signature
+
+```python
+hiitl.evaluate(
+    action: str,
+    *,
+    parameters: dict | None = None,
+    target: dict | None = None,
+    operation: str = "execute",
+    user_id: str | None = None,
+    session_id: str | None = None,
+    agent_id: str | None = None,
+    confidence: float | None = None,
+    reason: str | None = None,
+    sensitivity: list[Sensitivity] | None = None,
+    cost_estimate: CostEstimate | None = None,
+    idempotency_key: str | None = None,
+) -> Decision
+```
+
+Only `action` is required (positional). Everything else is keyword-only with sensible defaults.
+
+## Parameters
+
+<ParamField path="action" type="str" required>
+  Action name. This is the tool or operation being evaluated (e.g., `"process_payment"`, `"send_email"`, `"delete_user"`).
+</ParamField>
+
+<ParamField path="parameters" type="dict | None" default="None">
+  Action parameters as a dictionary. Policy conditions can reference these via `parameters.*` field paths.
+
+  ```python
+  parameters={"amount": 150.00, "currency": "usd"}
+  ```
+</ParamField>
+
+<ParamField path="target" type="dict | None" default="None">
+  Target resource identifiers. Describes what the action acts on.
+
+  ```python
+  target={"account_id": "acct_123", "region": "us-east-1"}
+  ```
+</ParamField>
+
+<ParamField path="operation" type="str" default='"execute"'>
+  Operation type. One of: `"read"`, `"write"`, `"create"`, `"delete"`, `"execute"`, `"update"`.
+</ParamField>
+
+<ParamField path="user_id" type="str | None" default="None">
+  User identifier. Used for per-user rate limiting and audit attribution.
+</ParamField>
+
+<ParamField path="session_id" type="str | None" default="None">
+  Session identifier. Groups related actions for audit and debugging.
+</ParamField>
+
+<ParamField path="agent_id" type="str | None" default="None">
+  Override the `agent_id` set during initialization. Useful when a single SDK instance serves multiple agents.
+</ParamField>
+
+<ParamField path="confidence" type="float | None" default="None">
+  Agent confidence score between 0.0 and 1.0. Policies can use this to route low-confidence actions to human review.
+</ParamField>
+
+<ParamField path="reason" type="str | None" default="None">
+  Free-text reasoning for the action. Recorded in the audit trail. Maximum 500 characters.
+</ParamField>
+
+<ParamField path="sensitivity" type="list[Sensitivity] | None" default="None">
+  Sensitivity labels for the action. Values: `"money"`, `"identity"`, `"permissions"`, `"regulated"`, `"irreversible"`, `"pii"`, `"sensitive_data"`.
+</ParamField>
+
+<ParamField path="cost_estimate" type="CostEstimate | None" default="None">
+  Estimated cost of the action.
+
+  ```python
+  from hiitl.core.types import CostEstimate
+  cost_estimate=CostEstimate(tokens=5000, dollars=0.02)
+  ```
+</ParamField>
+
+<ParamField path="idempotency_key" type="str | None" default="None">
+  Idempotency key for deduplication. Auto-generated if not provided. Use this to prevent duplicate evaluations on retries.
+</ParamField>
+
+## Returns
+
+A [`Decision`](/sdk/python-decision) object. See the Decision reference for all fields and convenience properties.
+
+## Examples
+
+### Minimal call
+
+```python
+from hiitl import HIITL
+
+hiitl = HIITL()
+
+decision = hiitl.evaluate("send_email")
+if decision.allowed:
+    send_email()
+```
+
+### With parameters and target
+
+```python
+decision = hiitl.evaluate(
+    "process_payment",
+    parameters={"amount": 500.00, "currency": "usd"},
+    target={"account_id": "acct_123"},
+    operation="execute",
+    user_id="user_456",
+)
+```
+
+### Full call with all options
+
+```python
+from hiitl.core.types import CostEstimate, Sensitivity
+
+decision = hiitl.evaluate(
+    "deploy_infrastructure",
+    parameters={
+        "region": "us-east-1",
+        "instance_type": "m5.xlarge",
+        "count": 3,
+    },
+    target={"cluster_id": "prod-main"},
+    operation="create",
+    user_id="user_ops_lead",
+    session_id="deploy-session-001",
+    confidence=0.95,
+    reason="Scheduled capacity increase for Black Friday",
+    sensitivity=["money", "irreversible"],
+    cost_estimate=CostEstimate(dollars=2.50),
+    idempotency_key="deploy-bf-2025-001",
+)
+```
+
+### Handling different decisions
+
+```python
+decision = hiitl.evaluate(
+    "process_payment",
+    parameters={"amount": 10000.00, "currency": "usd"},
+)
+
+if decision.ok:
+    # ALLOW or SANDBOX — safe to proceed
+    process_payment()
+
+elif decision.blocked:
+    # BLOCK, KILL_SWITCH, or RATE_LIMIT
+    print(f"Blocked: {decision.reason_codes}")
+    if decision.remediation:
+        print(f"Suggestion: {decision.remediation.suggestion}")
+
+elif decision.needs_approval:
+    # REQUIRE_APPROVAL, PAUSE, or ESCALATE
+    print(f"Needs review: {decision.reason_codes}")
+    if decision.escalation_context:
+        print(f"Route to: {decision.escalation_context}")
+
+elif decision.observed:
+    # OBSERVE mode — action was logged but not enforced
+    print(f"Would have been: {decision.would_be}")
+    process_payment()
+```
+
+### Observe mode awareness
+
+In OBSERVE_ALL mode (the default), actions are never blocked. The decision tells you what *would* happen under enforcement:
+
+```python
+hiitl = HIITL()  # OBSERVE_ALL by default
+
+decision = hiitl.evaluate("process_payment", parameters={"amount": 10000})
+
+print(decision.allowed)               # True (observe mode)
+print(decision.decision)              # "OBSERVE"
+print(decision.observed)              # True
+print(decision.would_be)              # "BLOCK" (what enforcement would do)
+print(decision.would_be_reason_codes) # ["PAYMENT_TOO_HIGH"]
+```
+
+## Errors
+
+| Exception | When |
+|-----------|------|
+| `EnvelopeValidationError` | Invalid field values (e.g., confidence > 1.0) |
+| `PolicyLoadError` | Policy file cannot be loaded or parsed (local mode) |
+| `AuditLogError` | Audit log write fails (local mode, fail-closed) |
+| `ServerError` | Server returns an error response (hosted mode) |
+| `NetworkError` | Server is unreachable (hosted mode) |
+
+```python
+from hiitl.sdk.exceptions import EnvelopeValidationError, PolicyLoadError
+
+try:
+    decision = hiitl.evaluate("process_payment", confidence=5.0)
+except EnvelopeValidationError as e:
+    print(f"Validation failed: {e}")
+    print(f"Field errors: {e.validation_errors}")
+```
+
+<Tip>
+  In fail-closed mode (the default for high-stakes routes), audit write failures block the action. This ensures no action executes without a durable record.
+</Tip>

@@ -1,0 +1,206 @@
+---
+title: "Deployment Modes"
+description: "Local, hosted, and hybrid evaluation"
+---
+
+## Overview
+
+hiitl supports three deployment modes. The mode is auto-detected from the arguments you pass to the constructor — there is no separate configuration flag.
+
+| Mode | How to activate | Evaluator | Audit storage | Latency |
+|------|----------------|-----------|---------------|---------|
+| **Local** | No `api_key` | In-process | SQLite | Sub-millisecond |
+| **Hosted** | `api_key` + `server_url` | Server-side | PostgreSQL | Low tens of ms |
+| **Hybrid** | `api_key` only | In-process | Local + future sync | Sub-millisecond |
+
+## Local mode
+
+Local mode runs everything in your process. No network calls, no external dependencies, no API key required. Policies are loaded from local files and audit records are written to an embedded SQLite database.
+
+<CodeGroup>
+
+```python Python
+from hiitl import HIITL
+
+# Zero-config — starts in OBSERVE mode
+hiitl = HIITL()
+
+# With a local policy file
+hiitl = HIITL(
+    agent_id="payment-agent",
+    policy_path="./policies/payments.yaml",
+)
+```
+
+```typescript TypeScript
+import { HIITL } from '@hiitl/sdk';
+
+// Zero-config — starts in OBSERVE mode
+const hiitl = new HIITL();
+
+// With a local policy file
+const hiitl = new HIITL({
+  agentId: 'payment-agent',
+  policyPath: './policies/payments.yaml',
+});
+```
+
+</CodeGroup>
+
+**When to use local mode:**
+- Development and testing
+- Single-process deployments
+- Environments where you need zero network dependency
+- Evaluating hiitl before committing to a hosted deployment
+
+**What you get:**
+- Sub-millisecond evaluation (the evaluator runs in-process in your language)
+- Local SQLite audit trail
+- No API key, no account, no infrastructure
+- Full policy evaluation with all operators and conditions
+
+## Hosted mode
+
+Hosted mode sends envelopes to the hiitl server for evaluation. Policies are managed via the API, and audit records are stored in PostgreSQL with team-wide visibility.
+
+<CodeGroup>
+
+```python Python
+from hiitl import HIITL
+
+hiitl = HIITL(
+    agent_id="payment-agent",
+    org_id="org_mycompany123456789",
+    api_key="sk_live_abc123...",
+    server_url="https://ecp.hiitl.com",
+)
+```
+
+```typescript TypeScript
+import { HIITL } from '@hiitl/sdk';
+
+const hiitl = new HIITL({
+  agentId: 'payment-agent',
+  orgId: 'org_mycompany123456789',
+  apiKey: 'sk_live_abc123...',
+  serverUrl: 'https://ecp.hiitl.com',
+});
+```
+
+</CodeGroup>
+
+**When to use hosted mode:**
+- Production deployments with multiple agents or services
+- When you need centralized policy management
+- When teams need shared audit visibility
+- When you need webhook emission to observability/GRC platforms
+
+**What you get:**
+- Centralized policy management via API
+- PostgreSQL audit storage with search, filtering, and retention
+- Shared rate limit counters across distributed agents
+- Webhook emission to external systems
+- Team collaboration on policies and audit review
+
+## Hybrid mode
+
+Hybrid mode runs the evaluator locally for sub-millisecond latency, but stores your API key for future synchronization with the hosted backend. This is designed for teams that want local speed today with a migration path to hosted features.
+
+<CodeGroup>
+
+```python Python
+from hiitl import HIITL
+
+hiitl = HIITL(
+    agent_id="payment-agent",
+    api_key="sk_live_abc123...",
+    # No server_url — triggers hybrid mode
+)
+```
+
+```typescript TypeScript
+import { HIITL } from '@hiitl/sdk';
+
+const hiitl = new HIITL({
+  agentId: 'payment-agent',
+  apiKey: 'sk_live_abc123...',
+  // No serverUrl — triggers hybrid mode
+});
+```
+
+</CodeGroup>
+
+**When to use hybrid mode:**
+- You want local evaluation speed with a future path to hosted sync
+- You are starting local but plan to move to hosted mode later
+
+## How mode is auto-detected
+
+The SDK determines the deployment mode from the constructor arguments:
+
+```
+No api_key provided?
+  └─ Yes → LOCAL mode
+  └─ No  → api_key + server_url provided?
+              └─ Yes → HOSTED mode
+              └─ No  → HYBRID mode
+```
+
+You never need to set a `mode` flag. The SDK infers it from what you provide.
+
+## The evaluate() call is the same
+
+Regardless of deployment mode, the `evaluate()` call looks identical. The mode only affects where evaluation happens and where audit records are stored.
+
+<CodeGroup>
+
+```python Python — same call in every mode
+decision = hiitl.evaluate(
+    "process_payment",
+    parameters={"amount": 500, "currency": "usd"},
+    target={"account_id": "acct_123"},
+)
+
+if decision.ok:
+    process_payment(...)
+```
+
+```typescript TypeScript — same call in every mode
+const decision = await hiitl.evaluate({
+  action: 'process_payment',
+  parameters: { amount: 500, currency: 'usd' },
+  target: { accountId: 'acct_123' },
+});
+
+if (decision.ok) {
+  await processPayment(...);
+}
+```
+
+</CodeGroup>
+
+## Migrating between modes
+
+Moving from local to hosted is a constructor change, not a code rewrite. Your `evaluate()` calls, policy logic, and decision handling remain the same.
+
+<Steps>
+  <Step title="Start local">
+    `HIITL()` with no arguments. Observe mode, zero config.
+  </Step>
+  <Step title="Add policies">
+    `HIITL(policy_path="./policies/payments.yaml")` to evaluate against local policy files.
+  </Step>
+  <Step title="Move to hosted">
+    `HIITL(api_key="sk_live_...", server_url="https://ecp.hiitl.com")` to switch to server-side evaluation with centralized management.
+  </Step>
+</Steps>
+
+## Outage behavior
+
+In hosted mode, hiitl defines explicit behavior when the server is unreachable:
+
+- **Fail-closed** (default): If the server cannot be reached, the action is blocked. Safe by default.
+- **Fail-open** (opt-in): If the server cannot be reached, the action is allowed with a warning logged. Requires explicit configuration.
+- **Circuit breaker**: Prevents cascading retries. After repeated failures, the circuit opens and subsequent calls fail fast rather than waiting for timeouts.
+
+In local mode, there is no network dependency, so outage behavior does not apply.

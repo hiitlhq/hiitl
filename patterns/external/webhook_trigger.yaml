@@ -1,0 +1,161 @@
+pattern_id: "external/webhook_trigger"
+category: "external"
+name: "Webhook Trigger"
+description: >
+  Controls AI-initiated webhook dispatches to external destinations. Enforces destination
+  allowlisting, prevents data leakage through unauthorized webhook endpoints, applies rate
+  limits to protect downstream receivers, and requires approval for newly registered destinations.
+tags: ["external", "webhook", "notification", "event"]
+
+evaluate_examples:
+  python: |
+    result = hiitl.evaluate("webhook_trigger", {
+        "destination_url": "https://hooks.slack.com/services/T00/B00/xxx",
+        "event_type": "order_completed",
+        "payload_size": 2048,
+    })
+    if result.ok:
+        dispatch_webhook()
+  typescript: |
+    const result = hiitl.evaluate({
+      action: 'webhook_trigger',
+      params: {
+        destination_url: 'https://hooks.slack.com/services/T00/B00/xxx',
+        event_type: 'order_completed',
+        payload_size: 2048,
+      },
+    });
+    if (result.ok) {
+      await dispatchWebhook();
+    }
+
+context_enrichment:
+  - field: "target.destination"
+    why: "The webhook destination URL determines whether the target is on the approved allowlist or requires review"
+    example: "https://hooks.slack.com/services/T00/B00/xxx"
+  - field: "sensitivity"
+    why: "Webhooks carrying sensitive event data (PII, financial events) require stricter destination controls"
+    example: "identity"
+  - field: "parameters.event_type"
+    why: "Event type classification determines which destinations are appropriate and what data minimization rules apply"
+    example: "order_completed"
+  - field: "parameters.payload_size"
+    why: "Abnormally large payloads may indicate data exfiltration attempts or misconfigured event serialization"
+    example: 2048
+  - field: "environment"
+    why: "Webhook dispatch from non-production environments should be blocked to prevent test data from reaching live endpoints"
+    example: "prod"
+
+starter_policies:
+  - name: "allow-whitelisted-destinations"
+    description: "Allow webhook dispatch to pre-approved destination domains"
+    priority: 500
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "webhook_trigger"
+        - field: "parameters.destination_url"
+          operator: "matches"
+          value: "^https://(hooks\\.slack\\.com|api\\.pagerduty\\.com|events\\.datadog\\.com)"
+    decision: "ALLOW"
+    reason_code: "WHITELISTED_DESTINATION_ALLOWED"
+    remediation:
+      type: "static"
+      message: "Webhook dispatch to approved destination permitted"
+      suggestion: "No action needed"
+
+  - name: "block-external-in-dev"
+    description: "Block all external webhook dispatches from dev and staging environments"
+    priority: 100
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "webhook_trigger"
+        - field: "environment"
+          operator: "not_equals"
+          value: "prod"
+    decision: "BLOCK"
+    reason_code: "NON_PROD_WEBHOOK_BLOCKED"
+    remediation:
+      type: "static"
+      message: "Webhook dispatches are blocked in non-production environments to prevent test data from reaching live endpoints and external systems."
+      suggestion: "Use a webhook testing service (e.g., webhook.site) configured as an internal test destination, or use dry-run mode to validate webhook payloads without dispatching. Switch to the production environment for live webhook delivery."
+
+  - name: "rate-limit-webhooks"
+    description: "Rate-limit webhook dispatches per destination to protect downstream receivers and detect event storms"
+    priority: 300
+    enabled: true
+    conditions:
+      field: "action"
+      operator: "equals"
+      value: "webhook_trigger"
+    decision: "RATE_LIMIT"
+    reason_code: "WEBHOOK_RATE_LIMITED"
+    remediation:
+      type: "static"
+      message: "Webhook dispatch rate limit exceeded. Rate limits protect downstream receivers from event storms and detect runaway automation."
+      suggestion: "Implement event batching or debouncing to reduce webhook volume. If higher throughput is needed, coordinate with the destination service owner and request a rate limit increase from your administrator."
+
+  - name: "require-approval-new-destinations"
+    description: "Require security team approval before dispatching webhooks to destinations not on the approved list"
+    priority: 200
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "webhook_trigger"
+        - field: "parameters.destination_url"
+          operator: "not_contains"
+          value: "slack.com"
+        - field: "parameters.destination_url"
+          operator: "not_contains"
+          value: "pagerduty.com"
+        - field: "parameters.destination_url"
+          operator: "not_contains"
+          value: "datadog.com"
+    decision: "REQUIRE_APPROVAL"
+    reason_code: "NEW_DESTINATION_REQUIRES_APPROVAL"
+    remediation:
+      type: "static"
+      message: "Webhook dispatch to an unrecognized destination requires security team approval. This prevents data leakage through unauthorized endpoints."
+      suggestion: "Submit a destination approval request to your security team. Include the destination URL, the types of events that will be sent, and the data fields included in the payload. Once approved, add the destination domain to the allowlist policy."
+
+  - name: "block-oversized-payloads"
+    description: "Block webhook dispatches with abnormally large payloads that may indicate data exfiltration"
+    priority: 150
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "webhook_trigger"
+        - field: "parameters.payload_size"
+          operator: "greater_than"
+          value: 102400
+    decision: "BLOCK"
+    reason_code: "OVERSIZED_WEBHOOK_PAYLOAD_BLOCKED"
+    remediation:
+      type: "static"
+      message: "Webhook payload size exceeds the 100KB limit. Abnormally large payloads may indicate data exfiltration or misconfigured event serialization."
+      suggestion: "Review the webhook payload to remove unnecessary fields. If the event data legitimately exceeds the size limit, split it into multiple smaller events or include a reference URL instead of inline data. Contact your administrator if the payload size limit needs adjustment."
+
+remediation:
+  block_message: "Webhook dispatch was blocked by policy. Common causes: non-production environment, unrecognized destination, or oversized payload. Check reason_code for the specific trigger."
+  developer_action: "Inspect the decision reason_codes. For destination blocks, submit an approval request for the new destination. For payload size blocks, implement data minimization or event splitting. For environment blocks, switch to production or use dry-run mode."
+  approval_message: "This webhook dispatch requires approval because the destination is not on the pre-approved list. Your security team will review the destination URL and data exposure before approving."
+
+compliance:
+  - regulation: "Data Transfer Agreements"
+    relevance: "Webhooks that transmit data to external parties must comply with applicable data transfer agreements and privacy regulations"
+    note: "Each approved webhook destination should have a corresponding data processing agreement (DPA) if personal data is transmitted. The allowlist policy ensures only contractually approved destinations receive data."
+  - regulation: "Network Security Policy"
+    relevance: "Outbound webhook connections must comply with your organization's network security and egress control policies"
+    note: "Webhook destinations should be validated against your network security allowlist. Consider implementing webhook signing (HMAC) to allow receivers to verify the authenticity of dispatched events."
+  - regulation: "GDPR (Cross-Border Data Transfer)"
+    relevance: "Webhooks that transmit personal data to destinations outside the EEA must comply with GDPR cross-border transfer requirements"
+    note: "If webhook destinations are hosted outside the EEA, ensure appropriate transfer mechanisms are in place (Standard Contractual Clauses, adequacy decisions). Log all cross-border webhook dispatches in the audit trail."

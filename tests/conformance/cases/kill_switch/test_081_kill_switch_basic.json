@@ -1,0 +1,47 @@
+{
+  "test_id": "test_081_kill_switch_basic",
+  "description": "KILL_SWITCH rule produces decision with allowed=false",
+  "envelope": {
+    "schema_version": "v1.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_payment_bot",
+    "action_id": "act_test0810000000000000",
+    "timestamp": "2026-02-14T10:00:00Z",
+    "operation": "execute",
+    "parameters": {
+      "amount": 100.0,
+      "currency": "usd"
+    },
+    "idempotency_key": "idem_test_081_kill_switch_basic",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "process_payment"
+  },
+  "policy_set": {
+    "version": "1.0.0",
+    "name": "kill_switch_test_policy",
+    "rules": [
+      {
+        "name": "kill-switch-all-payments",
+        "priority": 1000,
+        "enabled": true,
+        "conditions": {
+          "field": "action",
+          "operator": "equals",
+          "value": "process_payment"
+        },
+        "decision": "KILL_SWITCH",
+        "reason_code": "KILL_SWITCH_PAYMENTS_ACTIVE",
+        "description": "Emergency stop for all payment processing"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "KILL_SWITCH",
+    "allowed": false,
+    "reason_codes": [
+      "KILL_SWITCH_PAYMENTS_ACTIVE"
+    ]
+  }
+}

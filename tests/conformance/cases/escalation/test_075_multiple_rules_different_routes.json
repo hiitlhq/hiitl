@@ -1,0 +1,64 @@
+{
+  "test_id": "test_075_multiple_rules_different_routes",
+  "description": "Multiple rules with different routes - highest priority rule's config is selected",
+  "envelope": {
+    "schema_version": "v1.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_finance_bot",
+    "action_id": "act_test0750000000000000",
+    "timestamp": "2026-02-14T10:00:00Z",
+    "operation": "execute",
+    "parameters": {
+      "amount": 100000,
+      "currency": "USD"
+    },
+    "idempotency_key": "idem_test_075",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "wire_transfer"
+  },
+  "policy_set": {
+    "version": "1.0.0",
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "low_priority_approval",
+        "priority": 50,
+        "enabled": true,
+        "conditions": {
+          "field": "parameters.amount",
+          "operator": "greater_than",
+          "value": 5000
+        },
+        "decision": "REQUIRE_APPROVAL",
+        "reason_code": "MEDIUM_APPROVAL",
+        "route": "standard-approval",
+        "description": "Low priority approval rule"
+      },
+      {
+        "name": "high_priority_escalation",
+        "priority": 200,
+        "enabled": true,
+        "conditions": {
+          "field": "parameters.amount",
+          "operator": "greater_than",
+          "value": 50000
+        },
+        "decision": "ESCALATE",
+        "reason_code": "EXECUTIVE_ESCALATION",
+        "route": "executive-review",
+        "description": "High priority escalation for very large amounts"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "ESCALATE",
+    "allowed": false,
+    "reason_codes": [
+      "EXECUTIVE_ESCALATION"
+    ],
+    "route_ref": "executive-review",
+    "resume_token": "PRESENT"
+  }
+}

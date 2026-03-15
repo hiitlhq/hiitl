@@ -1,0 +1,56 @@
+{
+  "test_id": "test_005_request_approval",
+  "description": "REQUEST_APPROVAL decision type",
+  "envelope": {
+    "schema_version": "v1.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_finance_bot",
+    "action_id": "act_transfer005000000000",
+    "timestamp": "2026-02-14T10:00:00Z",
+    "operation": "execute",
+    "parameters": {
+      "amount": 2500,
+      "currency": "USD"
+    },
+    "idempotency_key": "idem_test_005_request_approval",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "transfer_money"
+  },
+  "policy_set": {
+    "version": "1.0.0",
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "require_approval_medium_transfers",
+        "priority": 100,
+        "enabled": true,
+        "conditions": {
+          "all_of": [
+            {
+              "field": "parameters.amount",
+              "operator": "greater_than",
+              "value": 1000
+            },
+            {
+              "field": "parameters.amount",
+              "operator": "less_than_or_equal",
+              "value": 5000
+            }
+          ]
+        },
+        "decision": "REQUIRE_APPROVAL",
+        "reason_code": "MEDIUM_TRANSFER_NEEDS_APPROVAL",
+        "description": "Rule: require_approval_medium_transfers"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "REQUIRE_APPROVAL",
+    "allowed": false,
+    "reason_codes": [
+      "MEDIUM_TRANSFER_NEEDS_APPROVAL"
+    ]
+  }
+}

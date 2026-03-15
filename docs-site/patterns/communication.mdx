@@ -1,0 +1,169 @@
+---
+title: "Communication Patterns"
+description: "Email, SMS, and messaging integrations"
+---
+
+## send_email
+
+Send an email to a recipient.
+
+```python
+decision = hiitl.evaluate(
+    tool="send_email",
+    operation="execute",
+    target={"email": "customer@example.com"},
+    parameters={"subject": "Order shipped", "body": "Your order is on its way."}
+)
+```
+
+**Starter policy:**
+
+```yaml
+policy_set:
+  name: "email-policy"
+  version: "v1.0.0"
+  scope:
+    org_id: "org_abc123def456ghi7"
+    environment: "prod"
+
+  metadata:
+    rate_limits:
+      - scope: "user_id"
+        window: "day"
+        limit: 50
+      - scope: "agent_id"
+        window: "hour"
+        limit: 200
+
+  rules:
+    - name: "block-bulk-email"
+      enabled: true
+      priority: 900
+      conditions:
+        all_of:
+          - field: "action"
+            operator: "equals"
+            value: "send_email"
+          - field: "parameters.recipient_count"
+            operator: "greater_than"
+            value: 100
+      decision: "BLOCK"
+      reason_code: "BULK_EMAIL_BLOCKED"
+      remediation:
+        message: "Bulk email to 100+ recipients is not permitted through agents."
+        suggestion: "Use the marketing platform for bulk sends."
+        type: "threshold"
+        details:
+          max_recipients: 100
+
+    - name: "allow-email"
+      enabled: true
+      priority: 1
+      conditions:
+        all_of:
+          - field: "action"
+            operator: "equals"
+            value: "send_email"
+      decision: "ALLOW"
+      reason_code: "EMAIL_ALLOWED"
+```
+
+<Note>
+**Compliance:** CAN-SPAM requires opt-out mechanisms in commercial email. GDPR requires consent for marketing communications. Rate limiting protects against accidental bulk sends from runaway agents.
+</Note>
+
+---
+
+## send_sms
+
+Send an SMS message.
+
+```python
+decision = hiitl.evaluate(
+    tool="send_sms",
+    operation="execute",
+    target={"phone_number": "+15551234567"},
+    parameters={"message": "Your verification code is 123456"}
+)
+```
+
+**Starter policy:**
+
+```yaml
+- name: "rate-limit-sms-per-user"
+  enabled: true
+  priority: 100
+  conditions:
+    all_of:
+      - field: "action"
+        operator: "equals"
+        value: "send_sms"
+  decision: "ALLOW"
+  reason_code: "SMS_ALLOWED"
+
+# Apply via policy-set metadata:
+# metadata:
+#   rate_limits:
+#     - scope: "user_id"
+#       window: "hour"
+#       limit: 10
+#     - scope: "org"
+#       window: "day"
+#       limit: 5000
+```
+
+<Warning>
+**Cost control:** SMS messages have per-message costs. Rate limiting prevents runaway agents from generating large carrier bills. International SMS can cost 5-10x domestic rates -- consider separate policies for international numbers.
+</Warning>
+
+---
+
+## post_to_slack
+
+Post a message to a Slack channel or DM.
+
+```python
+decision = hiitl.evaluate(
+    tool="post_to_slack",
+    operation="execute",
+    target={"channel": "#incident-response"},
+    parameters={"message": "Deployment complete for v2.3.1"}
+)
+```
+
+**Starter policy:**
+
+```yaml
+- name: "block-general-channels"
+  enabled: true
+  priority: 900
+  conditions:
+    all_of:
+      - field: "action"
+        operator: "equals"
+        value: "post_to_slack"
+      - field: "target.channel"
+        operator: "in"
+        value: ["#general", "#all-hands", "#company-wide"]
+  decision: "BLOCK"
+  reason_code: "BROADCAST_CHANNEL_BLOCKED"
+  remediation:
+    message: "Agents cannot post to broadcast channels."
+    suggestion: "Post to a team-specific or bot channel instead."
+    type: "policy"
+
+- name: "allow-bot-channels"
+  enabled: true
+  priority: 1
+  conditions:
+    all_of:
+      - field: "action"
+        operator: "equals"
+        value: "post_to_slack"
+  decision: "ALLOW"
+  reason_code: "SLACK_POST_ALLOWED"
+```
+
+<Note>
+**Best practice:** Restrict agent posting to dedicated bot channels. Rate limit to prevent channel flooding. Require approval for DMs to prevent agent-initiated social engineering vectors.
+</Note>

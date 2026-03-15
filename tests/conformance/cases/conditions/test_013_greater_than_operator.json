@@ -1,0 +1,46 @@
+{
+  "test_id": "test_013_greater_than_operator",
+  "description": "Test greater_than operator",
+  "envelope": {
+    "schema_version": "v1.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_finance_bot",
+    "action_id": "act_test0130000000000000",
+    "timestamp": "2026-02-14T10:00:00Z",
+    "operation": "execute",
+    "parameters": {
+      "amount": 10000
+    },
+    "idempotency_key": "idem_test_013_greater_than_operator",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "transfer_money"
+  },
+  "policy_set": {
+    "version": "1.0.0",
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "block_large_transfers",
+        "priority": 100,
+        "enabled": true,
+        "conditions": {
+          "field": "parameters.amount",
+          "operator": "greater_than",
+          "value": 5000
+        },
+        "decision": "BLOCK",
+        "reason_code": "AMOUNT_TOO_LARGE",
+        "description": "Rule: block_large_transfers"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "BLOCK",
+    "allowed": false,
+    "reason_codes": [
+      "AMOUNT_TOO_LARGE"
+    ]
+  }
+}

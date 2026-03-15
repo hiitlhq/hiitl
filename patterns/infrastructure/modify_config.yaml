@@ -1,0 +1,154 @@
+pattern_id: "infrastructure/modify_config"
+category: "infrastructure"
+name: "Modify Configuration"
+description: >
+  Configuration change action covering application settings, feature flags, environment
+  variables, and service parameters. Controls access to sensitive configuration (secrets,
+  connection strings), environment isolation, and rate limiting to prevent misconfigurations,
+  secret leakage, and cascading failures.
+tags: ["infrastructure", "config", "settings", "change-management"]
+
+evaluate_examples:
+  python: |
+    result = hiitl.evaluate("modify_config", {
+        "config_key": "feature_flags.new_checkout",
+        "new_value": "enabled",
+        "scope": "service:payments-api",
+    })
+    if result.ok:
+        config_service.set(key=config_key, value=new_value, scope=scope)
+  typescript: |
+    const result = hiitl.evaluate({
+      action: 'modify_config',
+      params: {
+        config_key: 'feature_flags.new_checkout',
+        new_value: 'enabled',
+        scope: 'service:payments-api',
+      },
+    });
+    if (result.ok) {
+      await configService.set({ key: configKey, value: newValue, scope });
+    }
+
+context_enrichment:
+  - field: "user_id"
+    why: "Identifies who made the configuration change for audit and rollback attribution"
+    example: "user_8xKp2mNq"
+  - field: "target.service"
+    why: "The service affected by the configuration change determines the impact scope"
+    example: "payments-api"
+  - field: "target.config_key"
+    why: "The specific configuration key being changed; sensitive keys (secrets, credentials) require elevated controls"
+    example: "database.connection_string"
+  - field: "sensitivity"
+    why: "Configuration containing secrets, credentials, or security settings requires stricter handling"
+    example: "regulated"
+  - field: "parameters.previous_value_hash"
+    why: "Hash of the previous value enables drift detection and ensures the change is based on the current state"
+    example: "sha256:a1b2c3d4..."
+
+starter_policies:
+  - name: "allow-non-sensitive-config"
+    description: "Allow changes to non-sensitive configuration keys (feature flags, display settings)"
+    priority: 500
+    enabled: true
+    conditions:
+      field: "parameters.config_key"
+      operator: "starts_with"
+      value: "feature_flags."
+    decision: "ALLOW"
+    reason_code: "CONFIG_CHANGE_ALLOWED"
+    remediation:
+      type: "static"
+      message: "Configuration change to non-sensitive key permitted"
+      suggestion: "No action required"
+
+  - name: "require-approval-secrets"
+    description: "Require approval for changes to secrets, credentials, and connection strings"
+    priority: 100
+    enabled: true
+    conditions:
+      any_of:
+        - field: "parameters.config_key"
+          operator: "contains"
+          value: "secret"
+        - field: "parameters.config_key"
+          operator: "contains"
+          value: "password"
+        - field: "parameters.config_key"
+          operator: "contains"
+          value: "connection_string"
+        - field: "parameters.config_key"
+          operator: "contains"
+          value: "api_key"
+    decision: "REQUIRE_APPROVAL"
+    reason_code: "CONFIG_SECRET_APPROVAL_REQUIRED"
+    remediation:
+      type: "static"
+      message: "Changes to secrets, credentials, or connection strings require human approval."
+      suggestion: "Submit for approval with justification. Never include the actual secret value in the approval request -- reference the secret by name or vault path only. Ensure the new credential has been tested in a lower environment first."
+
+  - name: "block-cross-environment-config"
+    description: "Block production configuration changes originating from dev environment context"
+    priority: 70
+    enabled: true
+    conditions:
+      all_of:
+        - field: "environment"
+          operator: "equals"
+          value: "dev"
+        - field: "parameters.scope"
+          operator: "contains"
+          value: "prod"
+    decision: "BLOCK"
+    reason_code: "CONFIG_CROSS_ENV_BLOCKED"
+    remediation:
+      type: "static"
+      message: "Production configuration changes cannot be made from the dev environment."
+      suggestion: "Switch to the production environment context to make production configuration changes. This isolation prevents accidental production modifications during development. Use the staging environment for pre-production testing of configuration changes."
+
+  - name: "rate-limit-config-changes"
+    description: "Limit configuration changes to 30 per hour per agent to prevent runaway automation"
+    priority: 200
+    enabled: true
+    conditions:
+      field: "agent_id"
+      operator: "exists"
+      value: true
+    decision: "RATE_LIMIT"
+    reason_code: "CONFIG_CHANGE_RATE_LIMIT"
+    remediation:
+      type: "static"
+      message: "Configuration change rate limit exceeded. Maximum 30 changes per hour per agent."
+      suggestion: "If you need to make bulk configuration updates, use the batch configuration API which requires pre-approval and has separate rate limits. Review whether your automation is making unnecessary repeated changes."
+
+  - name: "require-approval-prod-config"
+    description: "Require approval for all production configuration changes"
+    priority: 120
+    enabled: true
+    conditions:
+      field: "environment"
+      operator: "equals"
+      value: "prod"
+    decision: "REQUIRE_APPROVAL"
+    reason_code: "CONFIG_PROD_APPROVAL_REQUIRED"
+    remediation:
+      type: "static"
+      message: "All production configuration changes require human approval."
+      suggestion: "Submit for approval with: the configuration key being changed, the reason for the change, the expected impact, and a rollback plan. Test the configuration change in staging first."
+
+remediation:
+  block_message: "This configuration change was blocked by policy. Common causes include cross-environment violations, sensitive key restrictions, or rate limit exceedance. Check the reason_code for details."
+  developer_action: "Review the decision response reason_codes. For cross-environment blocks, ensure you are operating in the correct environment context. For secret changes, submit through the secrets management workflow. For rate limits, reduce automation frequency."
+  approval_message: "This configuration change requires human approval. Production changes, secret modifications, or security-sensitive settings triggered the approval requirement."
+
+compliance:
+  - regulation: "Change Management"
+    relevance: "Configuration changes can affect system behavior as significantly as code changes"
+    note: "All configuration changes must be versioned, auditable, and reversible. Production configuration changes should follow the same change management process as code deployments, including approval, testing, and rollback planning."
+  - regulation: "SOC 2 Type II"
+    relevance: "Configuration management is a key control for demonstrating operational security"
+    note: "Maintain an immutable audit trail of all configuration changes including who, what, when, and why. Demonstrate that sensitive configuration (secrets, security settings) has additional access controls."
+  - regulation: "Secrets Management"
+    relevance: "Credentials and secrets require special handling to prevent leakage"
+    note: "Never log secret values in plain text. Use a dedicated secrets manager (Vault, AWS Secrets Manager) and reference secrets by path. Rotate secrets on a regular schedule and after any suspected compromise. Audit all secret access."

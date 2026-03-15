@@ -1,0 +1,46 @@
+{
+  "test_id": "test_006_sandbox",
+  "description": "SANDBOX decision type (allowed but isolated)",
+  "envelope": {
+    "schema_version": "v1.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "dev",
+    "agent_id": "agent_test_bot",
+    "action_id": "act_test0010000000000000",
+    "timestamp": "2026-02-14T10:00:00Z",
+    "operation": "execute",
+    "parameters": {
+      "query": "SELECT * FROM users LIMIT 10"
+    },
+    "idempotency_key": "idem_test_006_sandbox",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "database_query"
+  },
+  "policy_set": {
+    "version": "1.0.0",
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "sandbox_dev_queries",
+        "priority": 100,
+        "enabled": true,
+        "conditions": {
+          "field": "environment",
+          "operator": "equals",
+          "value": "dev"
+        },
+        "decision": "SANDBOX",
+        "reason_code": "DEV_ENVIRONMENT_SANDBOXED",
+        "description": "Rule: sandbox_dev_queries"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "SANDBOX",
+    "allowed": true,
+    "reason_codes": [
+      "DEV_ENVIRONMENT_SANDBOXED"
+    ]
+  }
+}

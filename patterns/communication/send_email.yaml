@@ -1,0 +1,146 @@
+pattern_id: "communication/send_email"
+category: "communication"
+name: "Send Email"
+description: >
+  Email sending action covering transactional, notification, and marketing messages.
+  Controls recipient validation, rate limiting, domain restrictions, and bulk send
+  approval to prevent spam, data leakage, and reputation damage.
+tags: ["email", "communication", "notification", "spam"]
+
+evaluate_examples:
+  python: |
+    result = hiitl.evaluate("send_email", {
+        "to": "customer@example.com",
+        "subject": "Your order has shipped",
+        "body_length": 1200,
+        "has_attachment": False,
+    })
+    if result.ok:
+        send_email(to=recipient, subject=subject, body=body)
+  typescript: |
+    const result = hiitl.evaluate({
+      action: 'send_email',
+      params: {
+        to: 'customer@example.com',
+        subject: 'Your order has shipped',
+        body_length: 1200,
+        has_attachment: false,
+      },
+    });
+    if (result.ok) {
+      await sendEmail({ to: recipient, subject, body });
+    }
+
+context_enrichment:
+  - field: "user_id"
+    why: "Identifies the user or agent initiating the send for rate limiting and audit attribution"
+    example: "user_8xKp2mNq"
+  - field: "sensitivity"
+    why: "Emails containing PII, financial data, or credentials require stricter controls"
+    example: "regulated"
+  - field: "parameters.recipient_count"
+    why: "Bulk sends (>50 recipients) require approval to prevent accidental spam"
+    example: 250
+  - field: "parameters.domain"
+    why: "External domains may be restricted in non-production environments to prevent test emails reaching real customers"
+    example: "example.com"
+  - field: "agent_id"
+    why: "Different agents have different email sending allowances and trust levels"
+    example: "notification-agent"
+
+starter_policies:
+  - name: "allow-normal-email"
+    description: "Allow standard transactional and notification emails to verified domains"
+    priority: 500
+    enabled: true
+    conditions:
+      all_of:
+        - field: "parameters.body_length"
+          operator: "less_than"
+          value: 50000
+        - field: "parameters.has_attachment"
+          operator: "equals"
+          value: false
+    decision: "ALLOW"
+    reason_code: "EMAIL_ALLOWED"
+    remediation:
+      type: "static"
+      message: "Email send permitted under standard policy"
+      suggestion: "No action required"
+
+  - name: "rate-limit-per-user"
+    description: "Limit each user to 100 emails per hour to prevent spam and abuse"
+    priority: 200
+    enabled: true
+    conditions:
+      field: "user_id"
+      operator: "exists"
+      value: true
+    decision: "RATE_LIMIT"
+    reason_code: "EMAIL_RATE_LIMIT_USER"
+    remediation:
+      type: "static"
+      message: "Email rate limit exceeded for this user. Maximum 100 emails per hour."
+      suggestion: "Wait for the rate limit window to reset, or batch messages into a single email with multiple recipients if appropriate."
+
+  - name: "block-external-in-dev"
+    description: "Block emails to external domains in dev/stage environments to prevent test emails reaching real recipients"
+    priority: 100
+    enabled: true
+    conditions:
+      all_of:
+        - field: "environment"
+          operator: "in"
+          value: ["dev", "stage"]
+        - field: "parameters.to"
+          operator: "not_ends_with"
+          value: "@yourcompany.com"
+    decision: "BLOCK"
+    reason_code: "EMAIL_EXTERNAL_BLOCKED_NON_PROD"
+    remediation:
+      type: "static"
+      message: "Emails to external domains are blocked in dev and staging environments to prevent test messages reaching real customers."
+      suggestion: "Use an internal @yourcompany.com address for testing, or promote this action to the production environment."
+
+  - name: "require-approval-bulk"
+    description: "Require human approval for bulk email sends exceeding 50 recipients"
+    priority: 150
+    enabled: true
+    conditions:
+      field: "parameters.recipient_count"
+      operator: "greater_than"
+      value: 50
+    decision: "REQUIRE_APPROVAL"
+    reason_code: "EMAIL_BULK_APPROVAL_REQUIRED"
+    remediation:
+      type: "static"
+      message: "Bulk email sends (>50 recipients) require human approval before dispatch."
+      suggestion: "Submit this action for approval through your team's review process. Include the recipient list and email content for review."
+
+  - name: "kill-switch-email"
+    description: "Emergency kill switch to halt all email sending when activated"
+    priority: 1
+    enabled: false
+    conditions:
+      field: "action"
+      operator: "equals"
+      value: "send_email"
+    decision: "KILL_SWITCH"
+    reason_code: "EMAIL_KILL_SWITCH_ACTIVE"
+    remediation:
+      type: "static"
+      message: "All email sending has been suspended by an administrator kill switch."
+      suggestion: "Contact your platform team to determine when the kill switch will be lifted. Check incident channels for status updates."
+
+remediation:
+  block_message: "This email send was blocked by policy. Check the reason_code in the response for specific details -- common causes include external recipients in non-production environments or missing required fields."
+  developer_action: "Review the decision response reason_codes. For domain restrictions, update your test to use internal addresses. For rate limits, implement backoff or batching. For bulk sends, submit for approval."
+  approval_message: "This email requires human approval before sending. The recipient count, content sensitivity, or target domain triggered an approval requirement. Submit through your team's approval workflow."
+
+compliance:
+  - regulation: "CAN-SPAM Act"
+    relevance: "Commercial emails must include opt-out mechanisms and honor unsubscribe requests"
+    note: "Ensure all marketing emails include an unsubscribe link and physical mailing address. Rate limiting helps prevent volumes that could trigger CAN-SPAM scrutiny."
+  - regulation: "GDPR"
+    relevance: "Marketing emails to EU recipients require explicit prior consent"
+    note: "Verify consent records exist before sending marketing communications. Transactional emails (order confirmations, password resets) generally do not require marketing consent but must still comply with data minimization principles."

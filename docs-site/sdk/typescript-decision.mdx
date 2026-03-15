@@ -1,0 +1,295 @@
+---
+title: "Decision Object — TypeScript"
+description: "Fields and patterns for handling evaluation decisions"
+---
+
+## Overview
+
+Every `evaluate()` call returns a `Decision` object. It contains the evaluation outcome, timing metadata, matched rules, and guidance for what to do next.
+
+```typescript
+const decision = await hiitl.evaluate({ action: 'process_payment', parameters: { amount: 500 } });
+
+if (decision.allowed) {
+  processPayment();
+}
+```
+
+## Fields
+
+### Core fields
+
+<ResponseField name="decision" type="DecisionType" required>
+  The decision type. One of:
+
+  | Value | `allowed` | Meaning |
+  |-------|-----------|---------|
+  | `"ALLOW"` | `true` | Action is permitted |
+  | `"OBSERVE"` | `true` | Action was logged but not enforced (OBSERVE mode) |
+  | `"BLOCK"` | `false` | Denied by policy |
+  | `"PAUSE"` | `false` | Paused pending external resolution |
+  | `"REQUIRE_APPROVAL"` | `false` | Needs human review |
+  | `"SANDBOX"` | `true` | Allowed in isolated/sandbox environment |
+  | `"RATE_LIMIT"` | `false` | Rate limit exceeded |
+  | `"KILL_SWITCH"` | `false` | Emergency stop active |
+  | `"ESCALATE"` | `false` | Escalated for review |
+  | `"ROUTE"` | `false` | Routed to a specific handler |
+</ResponseField>
+
+<ResponseField name="allowed" type="boolean" required>
+  Whether the action is permitted. `true` for `ALLOW`, `OBSERVE`, and `SANDBOX`. `false` for everything else.
+</ResponseField>
+
+<ResponseField name="reason_codes" type="string[]" required>
+  List of reason codes explaining the decision. Comes from matched policy rules (e.g., `["PAYMENT_TOO_HIGH"]`) or system defaults (e.g., `["DEFAULT_ALLOW"]`).
+</ResponseField>
+
+<ResponseField name="action_id" type="string" required>
+  The auto-generated action ID for this evaluation. Format: `act_` followed by 20+ alphanumeric characters.
+</ResponseField>
+
+<ResponseField name="policy_version" type="string" required>
+  Version of the policy set used for evaluation. Enables debugging and replay.
+</ResponseField>
+
+### Timing
+
+<ResponseField name="timing" type="Timing" required>
+  Performance metadata. Every decision includes timing so you can verify latency.
+
+  | Field | Type | Description |
+  |-------|------|-------------|
+  | `timing.ingest_ms` | `number` | Time to build and validate the envelope |
+  | `timing.evaluation_ms` | `number` | Time to evaluate the policy |
+  | `timing.total_ms` | `number` | Total end-to-end time |
+
+  ```typescript
+  console.log(`Evaluated in ${decision.timing.evaluation_ms.toFixed(2)}ms`);
+  // Evaluated in 0.34ms
+  ```
+</ResponseField>
+
+### Observe mode fields
+
+<ResponseField name="would_be" type="string | undefined">
+  When `decision` is `"OBSERVE"`, this shows what the decision *would have been* under enforcement. For example, `"BLOCK"` or `"REQUIRE_APPROVAL"`.
+</ResponseField>
+
+<ResponseField name="would_be_reason_codes" type="string[] | undefined">
+  When `decision` is `"OBSERVE"`, the reason codes that would have applied under enforcement.
+</ResponseField>
+
+### Policy details
+
+<ResponseField name="matched_rules" type="MatchedRule[] | undefined">
+  Rules that matched during evaluation. Each entry has `rule_name`, `policy_set`, and `priority`.
+</ResponseField>
+
+<ResponseField name="envelope_hash" type="string | undefined">
+  SHA-256 hash of the evaluated envelope. Allows the caller to verify that the server evaluated the exact envelope that was submitted.
+</ResponseField>
+
+### Escalation fields
+
+<ResponseField name="resume_token" type="string | undefined">
+  Token to correlate an escalation decision with a reviewer's response. Present when `decision` is `REQUIRE_APPROVAL`, `PAUSE`, or `ESCALATE`.
+</ResponseField>
+
+<ResponseField name="route_ref" type="string | undefined">
+  Route configuration name from the matched rule. Used internally to resolve escalation routing.
+</ResponseField>
+
+<ResponseField name="escalation_context" type="Record<string, unknown> | undefined">
+  Resolved escalation routing details. Populated by the SDK when a route config is available. Contains information like webhook URLs, reviewer roles, and SLA expectations.
+</ResponseField>
+
+<ResponseField name="approval_metadata" type="ApprovalMetadata | undefined">
+  Approval workflow details when `decision` is `REQUIRE_APPROVAL`. Contains `approval_id`, optional `sla_hours`, `reviewer_role`, and `resume_url`.
+</ResponseField>
+
+### Rate limit fields
+
+<ResponseField name="rate_limit" type="RateLimit | undefined">
+  Rate limit state when `decision` is `RATE_LIMIT`. Contains `scope`, `window`, `limit`, `current` count, and `reset_at` timestamp.
+
+  ```typescript
+  if (decision.decision === 'RATE_LIMIT' && decision.rate_limit) {
+    const rl = decision.rate_limit;
+    console.log(`Limit: ${rl.current}/${rl.limit} in ${rl.window}`);
+    console.log(`Resets at: ${rl.reset_at}`);
+  }
+  ```
+</ResponseField>
+
+### Sandbox fields
+
+<ResponseField name="sandbox_metadata" type="SandboxMetadata | undefined">
+  Sandbox routing details when `decision` is `SANDBOX`. Contains `sandbox_endpoint` and optional `sandbox_environment`.
+</ResponseField>
+
+### Error and remediation
+
+<ResponseField name="error" type="ErrorDetail | undefined">
+  Present when ECP itself failed (not when policy enforcement blocked an action). Contains `code` (machine-readable) and `message` (human-readable with guidance).
+
+  ```typescript
+  if (decision.error) {
+    console.error(`ECP error: [${decision.error.code}] ${decision.error.message}`);
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="remediation" type="Remediation | undefined">
+  Present when a policy intentionally blocked or rate-limited an action. Contains `message`, `suggestion`, `type`, and optional `details`. Mutually exclusive with `error`.
+
+  ```typescript
+  if (decision.remediation) {
+    console.log(`Why: ${decision.remediation.message}`);
+    console.log(`Fix: ${decision.remediation.suggestion}`);
+  }
+  ```
+</ResponseField>
+
+<Note>
+  `error` and `remediation` are mutually exclusive. `error` means ECP failed. `remediation` means ECP worked and intentionally enforced a policy.
+</Note>
+
+## Decision type constants
+
+You can use the `DecisionType` enum for type-safe comparisons:
+
+```typescript
+import { DecisionType } from '@hiitl/core';
+
+if (decision.decision === DecisionType.BLOCK) {
+  // ...
+}
+
+if (decision.decision === DecisionType.REQUIRE_APPROVAL) {
+  // ...
+}
+```
+
+## Common patterns
+
+### Basic allow/deny
+
+```typescript
+const decision = await hiitl.evaluate({
+  action: 'send_email',
+  parameters: {
+    to: 'user@example.com',
+    subject: 'Order confirmation',
+  },
+});
+
+if (decision.allowed) {
+  sendEmail();
+} else {
+  handleDenial(decision.reason_codes);
+}
+```
+
+### Full decision routing
+
+```typescript
+const decision = await hiitl.evaluate({
+  action: 'process_payment',
+  parameters: { amount: 5000 },
+});
+
+switch (decision.decision) {
+  case 'ALLOW':
+    executePayment();
+    break;
+
+  case 'BLOCK':
+  case 'KILL_SWITCH':
+    logBlocked(decision.reason_codes);
+    if (decision.remediation) {
+      notifyUser(decision.remediation.suggestion);
+    }
+    break;
+
+  case 'REQUIRE_APPROVAL':
+    submitForReview({
+      action: 'process_payment',
+      resumeToken: decision.resume_token,
+    });
+    break;
+
+  case 'RATE_LIMIT':
+    if (decision.rate_limit) {
+      scheduleRetry(decision.rate_limit.reset_at);
+    }
+    break;
+
+  case 'OBSERVE':
+    // Not enforced — proceed but log
+    logObservation(decision.would_be);
+    executePayment();
+    break;
+
+  case 'SANDBOX':
+    executeInSandbox(decision.sandbox_metadata);
+    break;
+}
+```
+
+### Checking decision categories
+
+Unlike the Python SDK which provides convenience properties (`.ok`, `.blocked`, `.needs_approval`, `.observed`), the TypeScript SDK uses plain object fields. Here are equivalent helper patterns:
+
+```typescript
+// Check if allowed (equivalent to Python's .ok)
+if (decision.allowed) {
+  // ALLOW, OBSERVE, or SANDBOX
+}
+
+// Check if blocked
+const isBlocked = !decision.allowed && ['BLOCK', 'KILL_SWITCH', 'RATE_LIMIT'].includes(decision.decision);
+
+// Check if needs approval
+const needsApproval = ['REQUIRE_APPROVAL', 'PAUSE', 'ESCALATE'].includes(decision.decision);
+
+// Check if observed
+const isObserved = decision.decision === 'OBSERVE';
+```
+
+### Logging decision details
+
+```typescript
+const decision = await hiitl.evaluate({
+  action: 'delete_records',
+  parameters: { table: 'users' },
+});
+
+console.log(`Decision: ${decision.decision}`);
+console.log(`Allowed: ${decision.allowed}`);
+console.log(`Reasons: ${decision.reason_codes.join(', ')}`);
+console.log(`Policy: ${decision.policy_version}`);
+console.log(`Latency: ${decision.timing.total_ms.toFixed(2)}ms`);
+
+if (decision.matched_rules) {
+  for (const rule of decision.matched_rules) {
+    console.log(`  Matched: ${rule.rule_name} (priority ${rule.priority})`);
+  }
+}
+```
+
+## TypeScript types
+
+All Decision-related types are available from `@hiitl/core`:
+
+```typescript
+import type {
+  Decision,
+  Timing,
+  MatchedRule,
+  RateLimit,
+  ApprovalMetadata,
+  SandboxMetadata,
+  ErrorDetail,
+  Remediation,
+} from '@hiitl/core';
+```

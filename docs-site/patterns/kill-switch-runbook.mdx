@@ -1,0 +1,154 @@
+---
+title: "Kill Switch Runbook"
+description: "Emergency stop operations guide"
+---
+
+Kill switches are the highest-priority enforcement mechanism in hiitl. They are `KILL_SWITCH` rules within policies (priority 1000+) that block all matching actions when enabled.
+
+## When to use kill switches
+
+- **Active incident** -- Fraudulent activity, compromised credentials, data breach in progress
+- **Runaway agent** -- Agent executing unintended actions at scale
+- **Regulatory halt** -- Compliance requires immediate cessation of specific operations
+- **Deployment rollback** -- New agent behavior is causing harm, need instant stop
+
+## How kill switches work
+
+Kill switches are regular policy rules with `decision: "KILL_SWITCH"`. They follow the same first-match-wins priority system -- high priority (1000+) ensures they evaluate before ALLOW rules.
+
+- `enabled: true` -- the evaluator matches the rule and returns `allowed: false`
+- `enabled: false` -- the rule is skipped and lower-priority rules evaluate normally
+
+No separate tables, models, or evaluation logic. Toggle the rule's `enabled` field within existing policy infrastructure.
+
+---
+
+## Local mode
+
+Edit the policy file directly:
+
+```yaml
+rules:
+  - name: kill-switch-payments
+    priority: 1000
+    enabled: true          # Toggle this
+    conditions:
+      all_of:
+        - field: action
+          operator: equals
+          value: process_payment
+    decision: KILL_SWITCH
+    reason_code: KILL_SWITCH_PAYMENTS
+```
+
+The SDK's mtime-based caching detects the file change on the next `evaluate()` call. No restart needed.
+
+---
+
+## Hosted mode
+
+### List kill switches
+
+```bash
+curl -H "Authorization: Bearer $API_KEY" \
+  https://api.hiitl.com/v1/kill-switches
+```
+
+### Activate a kill switch
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer $ADMIN_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "reason": "Fraud detected in payment processing",
+    "activated_by": "ops_admin@company.com"
+  }' \
+  https://api.hiitl.com/v1/kill-switches/kill-switch-payments/activate
+```
+
+### Deactivate a kill switch
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer $ADMIN_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "reason": "Incident resolved, payments safe to resume",
+    "deactivated_by": "ops_admin@company.com"
+  }' \
+  https://api.hiitl.com/v1/kill-switches/kill-switch-payments/deactivate
+```
+
+### Verify via audit trail
+
+```bash
+curl -H "Authorization: Bearer $READ_API_KEY" \
+  https://api.hiitl.com/v1/policies/changes
+```
+
+Look for `change_type: "KILL_SWITCH_ACTIVATED"` or `"KILL_SWITCH_DEACTIVATED"` in the most recent entries.
+
+---
+
+## Common scenarios
+
+### Scenario 1: Emergency payment stop
+
+<Steps>
+  <Step title="Alert detected">
+    Fraudulent transactions detected via monitoring.
+  </Step>
+  <Step title="Activate kill switch">
+    `POST /v1/kill-switches/kill-switch-payments/activate`
+  </Step>
+  <Step title="Verify">
+    All subsequent payment evaluations return `KILL_SWITCH` with `allowed: false`.
+  </Step>
+  <Step title="Investigate">
+    Identify root cause using the audit trail.
+  </Step>
+  <Step title="Fix and verify">
+    Resolve the underlying issue.
+  </Step>
+  <Step title="Deactivate">
+    `POST /v1/kill-switches/kill-switch-payments/deactivate`
+  </Step>
+  <Step title="Monitor">
+    Confirm normal payment flow resumes via audit log.
+  </Step>
+</Steps>
+
+### Scenario 2: Agent misbehavior
+
+1. Alert: agent executing unintended bulk operations
+2. Activate agent-specific kill switch (conditions match `agent_id`)
+3. Other agents continue operating normally
+4. Fix agent configuration/logic
+5. Deactivate kill switch
+
+---
+
+## Error responses
+
+| Status | Meaning | Action |
+|--------|---------|--------|
+| 404 | Rule not found | Check rule name matches policy |
+| 400 | Not a KILL_SWITCH rule | Only KILL_SWITCH rules can be toggled via this API |
+| 400 | Already in state | Kill switch already active/inactive |
+| 403 | Insufficient scope | Use an API key with `admin` scope |
+| 404 | No active policy | Create a policy first via `POST /v1/policies` |
+
+---
+
+## Policy design tips
+
+<Warning>
+Always pre-create kill switches with `enabled: false` so they are ready to activate instantly during incidents. Do not try to write new policy rules during an emergency.
+</Warning>
+
+- Name kill switches descriptively: `kill-switch-{scope}` (e.g., `kill-switch-all-payments`, `kill-switch-agent-bot-1`)
+- Set priority to 1000+ to ensure they evaluate before all other rules
+- Use specific conditions to limit blast radius (tool-specific, agent-specific)
+- Document which kill switches exist and what they control
+- Test kill switch activation/deactivation as part of incident response drills

@@ -1,0 +1,66 @@
+{
+  "test_id": "test_043_nested_all_of_and_none_of",
+  "description": "Test nested all_of with none_of",
+  "envelope": {
+    "schema_version": "v1.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_finance_bot",
+    "action_id": "act_test0430000000000000",
+    "timestamp": "2026-02-14T10:00:00Z",
+    "operation": "execute",
+    "parameters": {
+      "amount": 500,
+      "currency": "USD",
+      "recipient": "user@company.com"
+    },
+    "idempotency_key": "idem_test_043_nested_all_of_and_none_of",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "transfer_money"
+  },
+  "policy_set": {
+    "version": "1.0.0",
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "safe_transfer_rule",
+        "priority": 100,
+        "enabled": true,
+        "conditions": {
+          "all_of": [
+            {
+              "field": "parameters.amount",
+              "operator": "less_than_or_equal",
+              "value": 1000
+            },
+            {
+              "none_of": [
+                {
+                  "field": "parameters.recipient",
+                  "operator": "contains",
+                  "value": "suspicious"
+                },
+                {
+                  "field": "parameters.recipient",
+                  "operator": "contains",
+                  "value": "blocked"
+                }
+              ]
+            }
+          ]
+        },
+        "decision": "ALLOW",
+        "reason_code": "SAFE_TRANSFER",
+        "description": "Rule: safe_transfer_rule"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "ALLOW",
+    "allowed": true,
+    "reason_codes": [
+      "SAFE_TRANSFER"
+    ]
+  }
+}

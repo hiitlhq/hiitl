@@ -1,0 +1,155 @@
+pattern_id: "documents/publish_content"
+category: "documents"
+name: "Publish Content"
+description: >
+  Controls AI-driven content publishing actions across channels including websites, social media,
+  email campaigns, and internal knowledge bases. Enforces audience-appropriate review gates,
+  prevents accidental public exposure of internal content, and sandboxes drafts for preview.
+tags: ["documents", "publishing", "content", "public"]
+
+evaluate_examples:
+  python: |
+    result = hiitl.evaluate("publish_content", {
+        "content_type": "blog_post",
+        "audience": "public",
+        "channel": "company_blog",
+    })
+    if result.ok:
+        publish_to_channel()
+  typescript: |
+    const result = hiitl.evaluate({
+      action: 'publish_content',
+      params: {
+        content_type: 'blog_post',
+        audience: 'public',
+        channel: 'company_blog',
+      },
+    });
+    if (result.ok) {
+      await publishToChannel();
+    }
+
+context_enrichment:
+  - field: "user_id"
+    why: "Identifies the author or publishing agent for attribution and accountability in the audit trail"
+    example: "user_8a3f2c"
+  - field: "target.channel"
+    why: "The publishing channel determines audience reach and risk level — social media has higher blast radius than internal wiki"
+    example: "company_blog"
+  - field: "sensitivity"
+    why: "Public-facing content carries reputational risk; internal content has lower sensitivity"
+    example: "public"
+  - field: "parameters.audience"
+    why: "Audience classification drives the approval workflow — public content requires more review than internal"
+    example: "public"
+  - field: "environment"
+    why: "Publishing should only occur from production; dev/stage environments should sandbox or block"
+    example: "prod"
+
+starter_policies:
+  - name: "allow-internal-content"
+    description: "Allow publishing to internal channels without additional approval"
+    priority: 500
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "publish_content"
+        - field: "parameters.audience"
+          operator: "equals"
+          value: "internal"
+    decision: "ALLOW"
+    reason_code: "INTERNAL_PUBLISH_ALLOWED"
+    remediation:
+      type: "static"
+      message: "Internal content publishing permitted"
+      suggestion: "No action needed"
+
+  - name: "require-approval-public-content"
+    description: "Require editorial or communications team approval before publishing any public-facing content"
+    priority: 200
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "publish_content"
+        - field: "parameters.audience"
+          operator: "in"
+          value: ["public", "external"]
+    decision: "REQUIRE_APPROVAL"
+    reason_code: "PUBLIC_CONTENT_REQUIRES_APPROVAL"
+    remediation:
+      type: "static"
+      message: "Public-facing content requires editorial approval before publishing to prevent reputational risk"
+      suggestion: "Route the content to your editorial or communications team for review. Include a preview link and the target channel in the approval request. Typical review turnaround is 1-4 hours."
+
+  - name: "sandbox-draft-content"
+    description: "Route draft content to a sandbox environment for preview instead of publishing live"
+    priority: 300
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "publish_content"
+        - field: "parameters.content_type"
+          operator: "contains"
+          value: "draft"
+    decision: "SANDBOX"
+    reason_code: "DRAFT_CONTENT_SANDBOXED"
+    remediation:
+      type: "static"
+      message: "Draft content has been routed to a sandbox for preview rather than published live"
+      suggestion: "Review the content in the sandbox environment. When ready to publish, update the content_type to remove the draft designation and re-submit."
+
+  - name: "block-publish-in-dev"
+    description: "Block all content publishing from non-production environments to prevent accidental live posts"
+    priority: 100
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "publish_content"
+        - field: "environment"
+          operator: "not_equals"
+          value: "prod"
+    decision: "BLOCK"
+    reason_code: "NON_PROD_PUBLISH_BLOCKED"
+    remediation:
+      type: "static"
+      message: "Content publishing is only permitted from the production environment. Publishing from dev or staging is blocked to prevent accidental live posts."
+      suggestion: "Switch to the production environment to publish content. If you are testing the publishing flow, use the sandbox decision mode or dry-run mode instead."
+
+  - name: "rate-limit-publishing"
+    description: "Limit publishing frequency to prevent spam and catch runaway automation"
+    priority: 350
+    enabled: true
+    conditions:
+      field: "action"
+      operator: "equals"
+      value: "publish_content"
+    decision: "RATE_LIMIT"
+    reason_code: "PUBLISHING_RATE_LIMITED"
+    remediation:
+      type: "static"
+      message: "Content publishing rate limit exceeded. This safeguard prevents spam and detects runaway automation."
+      suggestion: "Wait for the rate limit window to reset before publishing additional content. If you need to perform bulk publishing, schedule a batch window with your administrator."
+
+remediation:
+  block_message: "Content publishing was blocked by policy. Check the reason_code — common causes include attempting to publish from a non-production environment or exceeding rate limits."
+  developer_action: "Inspect the decision reason_codes. For environment blocks, ensure you are targeting the production environment. For approval requirements, implement an approval callback handler. For sandboxed content, provide a sandbox preview URL to the user."
+  approval_message: "This content requires editorial approval before publishing. The request has been routed to your configured review team. Public-facing content typically requires communications team sign-off."
+
+compliance:
+  - regulation: "Brand and Communications Guidelines"
+    relevance: "Public-facing AI-generated content must conform to organizational brand standards and messaging guidelines"
+    note: "Configure approval routing to include your brand/communications team for all public and external audience content."
+  - regulation: "Regulatory Disclosures"
+    relevance: "Content in regulated industries (financial services, healthcare) may require specific disclosures or disclaimers"
+    note: "If your industry requires disclaimers on published content, add a policy condition checking for the presence of required disclosure fields before allowing publication."
+  - regulation: "Accessibility (WCAG / ADA)"
+    relevance: "Published content must meet accessibility standards, particularly for public-facing channels"
+    note: "Consider adding a pre-publish validation step that checks content against accessibility requirements before routing to the publish action."

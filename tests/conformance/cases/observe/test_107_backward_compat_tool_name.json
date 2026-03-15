@@ -1,0 +1,44 @@
+{
+  "test_id": "test_107_backward_compat_tool_name",
+  "description": "Backward compatibility: envelope with tool_name (instead of action) still works correctly",
+  "envelope": {
+    "schema_version": "v1.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_finance_bot",
+    "action_id": "act_test1070000000000000000",
+    "timestamp": "2026-02-14T12:00:00.000Z",
+    "tool_name": "process_payment",
+    "operation": "execute",
+    "parameters": {
+      "amount": 100
+    },
+    "idempotency_key": "idem_test_107_backward_compat",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "policy_set": {
+    "version": "1.0.0",
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "allow_payments",
+        "priority": 100,
+        "enabled": true,
+        "conditions": {
+          "field": "action",
+          "operator": "equals",
+          "value": "process_payment"
+        },
+        "decision": "ALLOW",
+        "reason_code": "PAYMENT_ALLOWED",
+        "description": "Allow payments"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "ALLOW",
+    "allowed": true,
+    "reason_codes": ["PAYMENT_ALLOWED"]
+  }
+}

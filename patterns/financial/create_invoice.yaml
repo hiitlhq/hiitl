@@ -1,0 +1,140 @@
+pattern_id: "financial/create_invoice"
+category: "financial"
+name: "Create Invoice"
+description: >
+  Invoice creation for billing customers. Invoices are financial commitments that
+  affect revenue recognition and tax obligations. Controls should prevent
+  erroneous billing, detect anomalous amounts, and enforce rate limits on bulk generation.
+tags: ["invoice", "billing", "financial"]
+
+evaluate_examples:
+  python: |
+    result = hiitl.evaluate("create_invoice", {
+        "amount": 4500.00,
+        "customer_id": "cust_3mK8nR2pQ7",
+        "line_items": [
+            {"description": "Consulting - Q4", "amount": 4500.00}
+        ],
+    })
+    if result.ok:
+        create_invoice(customer_id="cust_3mK8nR2pQ7", line_items=line_items)
+  typescript: |
+    const result = hiitl.evaluate({
+      action: 'create_invoice',
+      params: {
+        amount: 4500.00,
+        customer_id: 'cust_3mK8nR2pQ7',
+        line_items: [
+          { description: 'Consulting - Q4', amount: 4500.00 },
+        ],
+      },
+    });
+    if (result.ok) {
+      await createInvoice({ customerId: 'cust_3mK8nR2pQ7', lineItems });
+    }
+
+context_enrichment:
+  - field: "user_id"
+    why: "Tracks which user initiated the invoice for audit attribution and per-user rate limits"
+    example: "user_4gT2hN8kLm"
+  - field: "cost_estimate"
+    why: "Total invoice amount enables budget-based policies and spend anomaly detection"
+    example: 4500.00
+  - field: "parameters.customer_id"
+    why: "Customer identifier enables per-customer invoice frequency limits and fraud detection"
+    example: "cust_3mK8nR2pQ7"
+  - field: "parameters.due_date"
+    why: "Due date validation ensures invoices are not created with unreasonable payment terms"
+    example: "2026-03-31"
+  - field: "target.billing_entity"
+    why: "Identifies which legal entity is issuing the invoice for multi-entity compliance"
+    example: "entity_us_west"
+
+starter_policies:
+  - name: "allow-normal-invoices"
+    description: "Auto-approve invoices under $10,000 — standard billing operations"
+    priority: 200
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "create_invoice"
+        - field: "parameters.amount"
+          operator: "less_than"
+          value: 10000
+    decision: "ALLOW"
+    reason_code: "INVOICE_AUTO_APPROVED"
+    remediation:
+      type: "static"
+      message: "Invoice auto-approved (under $10,000 threshold)"
+      suggestion: "No action needed"
+
+  - name: "approve-large-invoices"
+    description: "Require approval for invoices $10,000 and above — material revenue events"
+    priority: 150
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "create_invoice"
+        - field: "parameters.amount"
+          operator: "greater_than_or_equal"
+          value: 10000
+    decision: "REQUIRE_APPROVAL"
+    reason_code: "LARGE_INVOICE_NEEDS_APPROVAL"
+    remediation:
+      type: "static"
+      message: "Invoices of $10,000 or more require finance team approval before creation"
+      suggestion: "Route this invoice to the finance team for review. Include supporting documentation such as the contract or purchase order reference."
+
+  - name: "block-suspicious-amounts"
+    description: "Block invoices over $100,000 — likely erroneous or requires executive approval outside automated systems"
+    priority: 100
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "create_invoice"
+        - field: "parameters.amount"
+          operator: "greater_than"
+          value: 100000
+    decision: "BLOCK"
+    reason_code: "INVOICE_AMOUNT_SUSPICIOUS"
+    remediation:
+      type: "static"
+      message: "Invoice amount exceeds $100,000 and cannot be created through automated billing"
+      suggestion: "Verify the amount is correct. Invoices of this size must be created manually with executive sign-off. Contact the finance director."
+
+  - name: "rate-limit-invoice-creation"
+    description: "Limit invoice creation to 100 per hour per agent to prevent bulk billing errors"
+    priority: 50
+    enabled: true
+    conditions:
+      field: "action"
+      operator: "equals"
+      value: "create_invoice"
+    decision: "RATE_LIMIT"
+    reason_code: "INVOICE_RATE_EXCEEDED"
+    remediation:
+      type: "static"
+      message: "This agent has exceeded the maximum of 100 invoices per hour"
+      suggestion: "Wait for the rate limit window to reset. If bulk invoice generation is needed, use the batch billing API instead of individual invoice creation."
+
+remediation:
+  block_message: "This invoice was blocked because the amount exceeds the automated billing threshold. Large invoices require manual creation with appropriate authorization to prevent billing errors."
+  developer_action: "Verify the invoice amount is correct. For amounts over $100,000, use the manual billing workflow. For amounts between $10,000 and $100,000, submit for finance team approval."
+  approval_message: "This invoice requires finance team approval before it can be sent to the customer. The reviewer will see the full invoice details including line items, amount, and customer information."
+
+compliance:
+  - regulation: "SOX"
+    relevance: "Revenue recognition controls require oversight of invoice creation as invoices directly impact reported revenue"
+    note: "All invoice creation attempts must be logged regardless of outcome. Policy version and decision rationale provide SOX Section 302 evidence of management controls over financial reporting."
+  - regulation: "Tax Regulations"
+    relevance: "Invoices are tax documents that affect VAT/GST obligations and income tax reporting"
+    note: "Ensure invoice parameters include tax jurisdiction information when applicable. The audit trail must be retained for the duration required by local tax authorities (typically 5-7 years)."
+  - regulation: "ASC 606 / IFRS 15"
+    relevance: "Revenue recognition standards require controls over when and how revenue commitments are created"
+    note: "Invoice creation by automated agents should be correlated with contract or purchase order references to ensure proper revenue recognition timing."

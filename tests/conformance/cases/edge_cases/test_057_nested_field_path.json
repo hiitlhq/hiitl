@@ -1,0 +1,52 @@
+{
+  "test_id": "test_057_nested_field_path",
+  "description": "Test deep field path resolution (3 levels)",
+  "envelope": {
+    "schema_version": "v1.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_finance_bot",
+    "action_id": "act_test0570000000000000",
+    "timestamp": "2026-02-14T10:00:00Z",
+    "operation": "execute",
+    "parameters": {
+      "transfer": {
+        "details": {
+          "destination": {
+            "account_id": "acc_suspicious_123"
+          }
+        }
+      }
+    },
+    "idempotency_key": "idem_test_057_nested_field_path",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "transfer_money"
+  },
+  "policy_set": {
+    "version": "1.0.0",
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "block_suspicious_accounts",
+        "priority": 100,
+        "enabled": true,
+        "conditions": {
+          "field": "parameters.transfer.details.destination.account_id",
+          "operator": "contains",
+          "value": "suspicious"
+        },
+        "decision": "BLOCK",
+        "reason_code": "SUSPICIOUS_ACCOUNT",
+        "description": "Rule: block_suspicious_accounts"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "BLOCK",
+    "allowed": false,
+    "reason_codes": [
+      "SUSPICIOUS_ACCOUNT"
+    ]
+  }
+}

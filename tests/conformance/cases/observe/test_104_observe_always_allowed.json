@@ -1,0 +1,47 @@
+{
+  "test_id": "test_104_observe_always_allowed",
+  "description": "OBSERVE_ALL mode: REQUIRE_APPROVAL decision becomes OBSERVE with allowed=true",
+  "mode": "OBSERVE_ALL",
+  "envelope": {
+    "schema_version": "v1.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_finance_bot",
+    "action_id": "act_test1040000000000000000",
+    "timestamp": "2026-02-14T12:00:00.000Z",
+    "action": "process_payment",
+    "operation": "execute",
+    "parameters": {
+      "amount": 1000
+    },
+    "idempotency_key": "idem_test_104_observe_always_allowed",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "policy_set": {
+    "version": "1.0.0",
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "require_approval_payments",
+        "priority": 100,
+        "enabled": true,
+        "conditions": {
+          "field": "action",
+          "operator": "equals",
+          "value": "process_payment"
+        },
+        "decision": "REQUIRE_APPROVAL",
+        "reason_code": "PAYMENT_REQUIRES_APPROVAL",
+        "description": "All payments require approval"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "OBSERVE",
+    "allowed": true,
+    "reason_codes": ["OBSERVED"],
+    "would_be": "REQUIRE_APPROVAL",
+    "would_be_reason_codes": ["PAYMENT_REQUIRES_APPROVAL"]
+  }
+}

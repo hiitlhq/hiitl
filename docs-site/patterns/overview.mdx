@@ -1,0 +1,57 @@
+---
+title: "Pattern Repository"
+description: "25 copy-paste-ready action patterns across 8 categories"
+---
+
+## What are patterns?
+
+Patterns are pre-built `evaluate()` calls paired with starter policies for common AI agent actions. Each pattern includes the SDK call, a YAML policy rule, remediation guidance, and compliance notes.
+
+Copy the pattern, customize the thresholds, and deploy.
+
+## Categories
+
+| Category | Patterns | Actions covered |
+|----------|----------|-----------------|
+| [Financial](/patterns/financial) | 4 | `process_payment`, `create_invoice`, `issue_refund`, `transfer_funds` |
+| [Data Access](/patterns/data-access) | 3 | `query_database`, `export_data`, `delete_records` |
+| [Communication](/patterns/communication) | 3 | `send_email`, `send_sms`, `post_to_slack` |
+| [IAM](/patterns/iam) | 3 | `create_user`, `modify_permissions`, `reset_password` |
+| [Infrastructure](/patterns/infrastructure) | 3 | `deploy_service`, `modify_config`, `scale_resources` |
+| Documents | 3 | `generate_report`, `sign_document`, `archive_records` |
+| Classification | 3 | `classify_content`, `assign_priority`, `route_ticket` |
+| External | 3 | `call_external_api`, `sync_crm`, `trigger_webhook` |
+
+## Pattern structure
+
+Every pattern includes:
+
+1. **`evaluate()` call** -- the Python SDK call to wrap the action
+2. **Starter policy** -- a YAML rule with sensible defaults
+3. **Remediation steps** -- what to do when a decision blocks
+4. **Compliance notes** -- relevant standards (PCI-DSS, SOX, GDPR, etc.)
+
+## Using patterns
+
+<Steps>
+  <Step title="Find the pattern">
+    Browse the categories above or search for your action type.
+  </Step>
+  <Step title="Copy the evaluate() call">
+    Paste into your tool handler. Adjust `target` and `parameters` to match your data model.
+  </Step>
+  <Step title="Copy the policy rule">
+    Add to your `policy.yaml`. Adjust thresholds, reason codes, and metadata.
+  </Step>
+  <Step title="Test locally">
+    Run in local mode to verify the policy fires as expected.
+  </Step>
+</Steps>
+
+<Note>
+All patterns use Python examples by default. The `evaluate()` call is identical in TypeScript -- see the [TypeScript SDK reference](/sdk/typescript-evaluate) for syntax.
+</Note>
+
+## Full repository
+
+The complete pattern repository with YAML policy files is available on [GitHub](https://github.com/hiitlhq/hiitl/tree/main/patterns).

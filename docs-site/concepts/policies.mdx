@@ -1,0 +1,315 @@
+---
+title: "Policies"
+description: "Deterministic rules that govern what actions are allowed"
+---
+
+## What is a policy?
+
+A policy is a versioned, deterministic rule set evaluated against envelope fields. Policies are the configuration surface for hiitl — they define what gets allowed, blocked, escalated, or rate-limited.
+
+Policies are code. They are versioned, testable, reviewable, and immutable once deployed.
+
+## Structure
+
+Policies are organized into **policy sets** — named collections of rules scoped to an organization and environment.
+
+```yaml Policy set structure
+policy_set:
+  name: "payments-policy"
+  version: "v2.1.0"
+  description: "Payment processing controls for production"
+  scope:
+    org_id: "org_abc123def456ghi7"
+    environment: "prod"
+
+  rules:
+    - name: "kill-switch-all-payments"
+      # ... rule definition
+    - name: "block-high-value"
+      # ... rule definition
+    - name: "allow-payments"
+      # ... rule definition
+```
+
+## Rules
+
+A rule is the atomic unit of policy. Each rule has conditions (when does it apply?) and a decision (what outcome does it produce?).
+
+```yaml Example rule
+- name: "require-approval-high-value"
+  description: "Require approval for payments over $500"
+  enabled: true
+  priority: 100
+  conditions:
+    all_of:
+      - field: "action"
+        operator: "equals"
+        value: "process_payment"
+      - field: "parameters.amount"
+        operator: "greater_than"
+        value: 500
+  decision: "REQUIRE_APPROVAL"
+  reason_code: "HIGH_VALUE_PAYMENT"
+```
+
+### Rule fields
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | string | Yes | Unique rule identifier within the policy set |
+| `description` | string | Yes | Human-readable explanation |
+| `enabled` | boolean | Yes | Whether the rule is active |
+| `priority` | integer | Yes | Evaluation order. Higher number = evaluated first |
+| `conditions` | object | Yes | Condition tree (see below) |
+| `decision` | string | Yes | Decision outcome: `ALLOW`, `BLOCK`, `REQUIRE_APPROVAL`, `PAUSE`, `SANDBOX`, `KILL_SWITCH`, `ESCALATE`, `ROUTE` |
+| `reason_code` | string | Yes | Machine-readable reason returned in the decision |
+| `mode` | string | No | `"enforce"` (default) or `"observe"`. In observe mode, the rule logs what it would do without enforcing. |
+| `route` | string | No | Route name for escalation decisions (`REQUIRE_APPROVAL`, `PAUSE`, `ESCALATE`) |
+| `remediation` | object | No | Structured guidance returned when a BLOCK or RATE_LIMIT rule fires |
+| `metadata` | object | No | Additional data (SLA, reviewer info, etc.) |
+
+## Conditions
+
+Conditions determine when a rule applies. They support field references with dot notation, comparison operators, and logical composition.
+
+### Logical operators
+
+**`all_of`** (AND) — all conditions must be true:
+
+```yaml
+conditions:
+  all_of:
+    - field: "action"
+      operator: "equals"
+      value: "process_payment"
+    - field: "environment"
+      operator: "equals"
+      value: "prod"
+```
+
+**`any_of`** (OR) — at least one condition must be true:
+
+```yaml
+conditions:
+  any_of:
+    - field: "sensitivity"
+      operator: "contains"
+      value: "money"
+    - field: "sensitivity"
+      operator: "contains"
+      value: "irreversible"
+```
+
+**`none_of`** (NOT) — none of the conditions may be true:
+
+```yaml
+conditions:
+  none_of:
+    - field: "environment"
+      operator: "equals"
+      value: "dev"
+```
+
+### Comparison operators
+
+| Operator | Types | Description |
+|----------|-------|-------------|
+| `equals` | all | Exact match (case-sensitive for strings) |
+| `not_equals` | all | Not equal |
+| `greater_than` | number | Numeric `>` comparison |
+| `greater_than_or_equal` | number | Numeric `>=` comparison |
+| `less_than` | number | Numeric `<` comparison |
+| `less_than_or_equal` | number | Numeric `<=` comparison |
+| `contains` | string, array | Substring match or array element membership |
+| `not_contains` | string, array | Inverse of `contains` |
+| `starts_with` | string | String prefix match |
+| `ends_with` | string | String suffix match |
+| `matches` | string | Regex match |
+| `in` | all | Value is in a set (right-hand side is an array) |
+| `not_in` | all | Value is not in a set |
+| `exists` | all | Field exists in the envelope (value is `true` or `false`) |
+
+### Field path syntax
+
+Use dot notation for nested envelope fields:
+
+| Field path | Envelope location |
+|------------|-------------------|
+| `action` | Top-level `action` field |
+| `parameters.amount` | `envelope.parameters.amount` |
+| `target.account_id` | `envelope.target.account_id` |
+| `cost_estimate.dollars` | `envelope.cost_estimate.dollars` |
+| `sensitivity` | Array field (use `contains` operator) |
+
+### Nested conditions
+
+Logical operators can be nested for complex rules:
+
+```yaml
+conditions:
+  all_of:
+    - field: "environment"
+      operator: "equals"
+      value: "prod"
+    - field: "action"
+      operator: "equals"
+      value: "process_payment"
+    - any_of:
+        - field: "parameters.amount"
+          operator: "greater_than"
+          value: 10000
+        - all_of:
+            - field: "parameters.amount"
+              operator: "greater_than"
+              value: 1000
+            - field: "confidence"
+              operator: "less_than"
+              value: 0.8
+```
+
+This reads: must be in prod AND must be process_payment AND (amount > $10,000 OR (amount > $1,000 AND confidence < 0.8)).
+
+## Priority and evaluation order
+
+Rules are evaluated in **priority order, highest first**. The first matching rule produces the decision.
+
+The recommended priority ranges follow a fixed precedence:
+
+| Priority range | Category |
+|----------------|----------|
+| 1000+ | Kill switches |
+| 900 - 999 | Deny / Block rules |
+| 500 - 899 | Rate limits |
+| 400 - 499 | Scope enforcement |
+| 100 - 399 | Threshold checks |
+| 50 - 99 | Approval requirements |
+| 1 - 49 | Allow rules (default) |
+
+<Warning>
+**DENY always wins.** If any rule in the policy set produces a `BLOCK` or `KILL_SWITCH`, the action is blocked regardless of what other rules would allow. This is not configurable.
+</Warning>
+
+## Rule modes: observe vs. enforce
+
+Every rule has a `mode` field that defaults to `"enforce"`. Setting it to `"observe"` lets you see what a rule would do without actually enforcing it.
+
+```yaml
+- name: "block-high-value"
+  enabled: true
+  priority: 900
+  mode: "observe"   # log the decision, don't enforce it
+  conditions:
+    all_of:
+      - field: "parameters.amount"
+        operator: "greater_than"
+        value: 10000
+  decision: "BLOCK"
+  reason_code: "AMOUNT_EXCEEDS_LIMIT"
+```
+
+When an observe-mode rule matches, the decision is `OBSERVE` with `allowed: true`. The `would_be` field shows what would have happened in enforce mode (e.g. `"BLOCK"`). This is how you validate policies before turning them on.
+
+## Remediation
+
+Rules that produce `BLOCK` or `RATE_LIMIT` decisions can include a `remediation` object with structured, actionable guidance.
+
+```yaml
+- name: "block-high-value-payments"
+  enabled: true
+  priority: 900
+  conditions:
+    all_of:
+      - field: "parameters.amount"
+        operator: "greater_than"
+        value: 10000
+  decision: "BLOCK"
+  reason_code: "AMOUNT_EXCEEDS_LIMIT"
+  remediation:
+    message: "Payment amount exceeds the $10,000 limit."
+    suggestion: "Reduce amount to $10,000 or below, or request approval."
+    type: "threshold"
+    details:
+      threshold: 10000
+      max_allowed: 10000
+```
+
+When this rule fires, the [decision response](/concepts/decisions) includes the full `remediation` object. An AI agent reading the response can use `remediation.details` to self-correct and retry.
+
+## Full example
+
+```yaml Complete policy set
+policy_set:
+  name: "payments-policy"
+  version: "v2.1.0"
+  description: "Payment processing controls for production"
+  scope:
+    org_id: "org_abc123def456ghi7"
+    environment: "prod"
+
+  rules:
+    - name: "kill-switch-all-payments"
+      description: "Emergency stop for all payments"
+      enabled: false
+      priority: 1000
+      conditions:
+        all_of:
+          - field: "action"
+            operator: "equals"
+            value: "process_payment"
+      decision: "KILL_SWITCH"
+      reason_code: "KILL_SWITCH_ACTIVE"
+
+    - name: "block-suspended-agents"
+      description: "Block payments from suspended agents"
+      enabled: true
+      priority: 900
+      conditions:
+        all_of:
+          - field: "action"
+            operator: "equals"
+            value: "process_payment"
+          - field: "agent_id"
+            operator: "in"
+            value: ["agent-123", "agent-456"]
+      decision: "BLOCK"
+      reason_code: "AGENT_SUSPENDED"
+
+    - name: "require-approval-high-value"
+      description: "Require approval for payments over $500"
+      enabled: true
+      priority: 100
+      conditions:
+        all_of:
+          - field: "action"
+            operator: "equals"
+            value: "process_payment"
+          - field: "parameters.amount"
+            operator: "greater_than"
+            value: 500
+      decision: "REQUIRE_APPROVAL"
+      reason_code: "HIGH_VALUE_PAYMENT"
+      route: "finance-review"
+
+    - name: "allow-payments"
+      description: "Default allow for payments"
+      enabled: true
+      priority: 1
+      conditions:
+        all_of:
+          - field: "action"
+            operator: "equals"
+            value: "process_payment"
+      decision: "ALLOW"
+      reason_code: "DEFAULT_ALLOW"
+```
+
+<Note>
+**JSON is the primary format.** Policies are JSON objects internally. YAML is a convenience layer for humans — YAML files are parsed and converted to JSON before evaluation.
+</Note>
+
+## Versioning and immutability
+
+- Every policy set carries a **semver version** (e.g. `v2.1.0`).
+- Deployed versions are **immutable** — they are never modified, only superseded by a new version.
+- Rollback means **activating a previous version**, not editing the current one.
+- Every [decision](/concepts/decisions) includes the policy version used, enabling replay and debugging.

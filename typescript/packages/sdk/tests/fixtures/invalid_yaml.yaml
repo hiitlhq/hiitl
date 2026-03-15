@@ -1,0 +1,6 @@
+name: invalid-yaml
+rules:
+  - name: broken-rule
+    priority: 100
+  enabled: true  # Incorrect indentation breaks YAML
+    decision: ALLOW

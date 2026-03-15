@@ -1,0 +1,52 @@
+{
+  "name": "@hiitl/core",
+  "version": "0.1.0",
+  "description": "HIITL Policy Evaluator - Core runtime enforcement engine for TypeScript",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:conformance": "vitest run tests/conformance",
+    "type-check": "tsc --noEmit"
+  },
+  "keywords": [
+    "hiitl",
+    "policy",
+    "evaluator",
+    "execution-control",
+    "authorization"
+  ],
+  "author": "HIITL, Inc.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hiitlhq/hiitl.git",
+    "directory": "typescript/packages/core"
+  },
+  "homepage": "https://github.com/hiitlhq/hiitl#readme",
+  "bugs": {
+    "url": "https://github.com/hiitlhq/hiitl/issues"
+  },
+  "dependencies": {
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.0"
+  }
+}

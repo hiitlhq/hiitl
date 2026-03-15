@@ -1,0 +1,96 @@
+---
+title: "API Reference"
+description: "REST API for hosted mode"
+---
+
+The hiitl REST API is used in hosted mode for evaluation, policy management, and audit log access.
+
+<Note>
+In local mode, the SDK runs evaluation in-process and does not call the API. The API is only relevant for hosted deployments.
+</Note>
+
+## Base URL
+
+```
+https://api.hiitl.com/v1
+```
+
+## Authentication
+
+All requests require a Bearer token in the `Authorization` header:
+
+```bash
+curl -H "Authorization: Bearer hiitl_prod_abc123..." \
+  https://api.hiitl.com/v1/evaluate
+```
+
+See [Authentication](/security/authentication) for details on API key scopes and rotation.
+
+## Content type
+
+All request and response bodies are JSON:
+
+```
+Content-Type: application/json
+```
+
+## Endpoints
+
+| Method | Path | Scope required | Description |
+|--------|------|----------------|-------------|
+| `POST` | [`/v1/evaluate`](/api/evaluate) | `evaluate` | Evaluate an action against policy |
+| `GET` | [`/v1/policies`](/api/policies) | `read` | List active policies |
+| `POST` | [`/v1/policies`](/api/policies) | `admin` | Create a new policy version |
+| `GET` | [`/v1/policies/{id}`](/api/policies) | `read` | Get a specific policy |
+| `GET` | [`/v1/audit`](/api/audit) | `read` | Query the audit trail |
+| `GET` | [`/v1/audit/{id}`](/api/audit) | `read` | Get a single audit record |
+| `GET` | `/v1/kill-switches` | `read` | List kill switch rules |
+| `POST` | `/v1/kill-switches/{name}/activate` | `admin` | Activate a kill switch |
+| `POST` | `/v1/kill-switches/{name}/deactivate` | `admin` | Deactivate a kill switch |
+
+## Error format
+
+All errors follow a consistent structure:
+
+```json
+{
+  "error": {
+    "code": "INSUFFICIENT_SCOPE",
+    "message": "This API key has 'evaluate' scope. The requested operation requires 'admin' scope."
+  }
+}
+```
+
+### Common error codes
+
+| Code | HTTP Status | Description |
+|------|-------------|-------------|
+| `UNAUTHORIZED` | 401 | Missing or invalid API key |
+| `INSUFFICIENT_SCOPE` | 403 | API key lacks required scope |
+| `TENANT_MISMATCH` | 403 | API key org/environment does not match request |
+| `NOT_FOUND` | 404 | Resource does not exist |
+| `VALIDATION_ERROR` | 422 | Request body failed validation |
+| `RATE_LIMITED` | 429 | API rate limit exceeded |
+| `INTERNAL_ERROR` | 500 | Server error |
+
+## Versioning
+
+The API is versioned via the URL path (`/v1/`). Breaking changes require a new version. Additive changes (new optional fields) are made within the current version.
+
+## Rate limits
+
+The API itself has rate limits separate from policy-level rate limits:
+
+| Scope | Limit |
+|-------|-------|
+| Evaluate endpoint | 10,000 requests/minute per org |
+| Read endpoints | 1,000 requests/minute per org |
+| Admin endpoints | 100 requests/minute per org |
+
+Rate limit headers are included in every response:
+
+```
+X-RateLimit-Limit: 10000
+X-RateLimit-Remaining: 9842
+X-RateLimit-Reset: 1709164800
+```

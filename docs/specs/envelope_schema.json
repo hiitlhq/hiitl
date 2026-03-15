@@ -1,0 +1,239 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hiitl.ai/schemas/envelope/v1.json",
+  "title": "HIITL Execution Envelope",
+  "description": "Language-neutral specification for the execution envelope. Source of truth for all language implementations.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "org_id",
+    "environment",
+    "agent_id",
+    "action_id",
+    "idempotency_key",
+    "action",
+    "timestamp",
+    "signature"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "description": "Version of this envelope schema. Format: 'v{major}.{minor}'",
+      "pattern": "^v[0-9]+\\.[0-9]+$",
+      "examples": ["v1.0"]
+    },
+    "org_id": {
+      "type": "string",
+      "description": "Organization identifier. Tenant isolation boundary. Format: org_{random}",
+      "pattern": "^org_[a-zA-Z0-9]{16,}$",
+      "examples": ["org_abc123def456ghi7"]
+    },
+    "environment": {
+      "type": "string",
+      "description": "Environment this action is executing in. Isolation boundary within org.",
+      "enum": ["dev", "stage", "prod"],
+      "examples": ["prod"]
+    },
+    "agent_id": {
+      "type": "string",
+      "description": "Stable identifier for the agent (across runs). SDK config value.",
+      "minLength": 1,
+      "maxLength": 128,
+      "examples": ["payment-agent", "customer-service-bot", "data-ingestion-worker"]
+    },
+    "agent_instance_id": {
+      "type": "string",
+      "description": "Per-run instance identifier for the agent. Optional. Useful for distributed systems.",
+      "minLength": 1,
+      "maxLength": 128,
+      "examples": ["payment-agent-pod-7b9f4", "run-2024-02-14-12-34-56"]
+    },
+    "user_id": {
+      "type": "string",
+      "description": "End-user identifier (if action is on behalf of a user). Optional.",
+      "minLength": 1,
+      "maxLength": 128,
+      "examples": ["user_abc123", "employee_12345", "customer_xyz789"]
+    },
+    "session_id": {
+      "type": "string",
+      "description": "Session identifier. Optional. Groups actions within a user session.",
+      "minLength": 1,
+      "maxLength": 128,
+      "examples": ["sess_abc123def456"]
+    },
+    "action_id": {
+      "type": "string",
+      "description": "Client-generated unique identifier for this action. Format: act_{ulid or uuid}",
+      "pattern": "^act_[a-zA-Z0-9]{20,}$",
+      "examples": ["act_01HQZ6X8Z9P5ABCDEFGHIJK"]
+    },
+    "idempotency_key": {
+      "type": "string",
+      "description": "Idempotency key for deduplication. Prevents duplicate execution on retry. Client-generated.",
+      "minLength": 1,
+      "maxLength": 255,
+      "examples": ["idem_01HQZ6X8Z9P5ABCDEFGHIJK", "payment-123-attempt-1"]
+    },
+    "correlation_id": {
+      "type": "string",
+      "description": "Correlation ID for distributed tracing. Optional. Auto-propagated from execution context.",
+      "minLength": 1,
+      "maxLength": 128,
+      "examples": ["trace_abc123", "req_xyz789"]
+    },
+    "trace_id": {
+      "type": "string",
+      "description": "OpenTelemetry trace ID. Optional. Auto-propagated from execution context.",
+      "minLength": 1,
+      "maxLength": 128,
+      "examples": ["00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"]
+    },
+    "action": {
+      "type": "string",
+      "description": "Name of the action being evaluated. Primary classification field. Replaces tool_name (which is accepted as a backward-compatible alias).",
+      "minLength": 1,
+      "maxLength": 128,
+      "examples": ["process_payment", "send_email", "grant_access", "modify_database", "execute_workflow"]
+    },
+    "action_type": {
+      "type": "string",
+      "description": "Type classification for the action. Optional secondary classification.",
+      "minLength": 1,
+      "maxLength": 128,
+      "examples": ["payment", "communication", "access_control", "data_mutation"]
+    },
+    "operation": {
+      "type": "string",
+      "description": "CRUD operation type. Indicates the nature of the action. Defaults to 'execute' if omitted.",
+      "enum": ["read", "write", "create", "delete", "execute", "update"],
+      "default": "execute",
+      "examples": ["execute", "create", "delete"]
+    },
+    "target": {
+      "type": "object",
+      "description": "Resource identifiers. What is this action targeting? Structured JSON. Defaults to empty object if omitted.",
+      "default": {},
+      "examples": [
+        {"account_id": "acct_123"},
+        {"user_id": "user_456", "resource": "database_table"},
+        {"email_address": "customer@example.com"}
+      ],
+      "additionalProperties": true
+    },
+    "parameters": {
+      "type": "object",
+      "description": "Structured action parameters. Action-specific. JSON object. Defaults to empty object if omitted.",
+      "default": {},
+      "examples": [
+        {"amount": 150.00, "currency": "usd"},
+        {"subject": "Welcome", "body": "Hello..."},
+        {"role": "admin", "scope": "read_write"}
+      ],
+      "additionalProperties": true
+    },
+    "sensitivity": {
+      "type": "array",
+      "description": "Risk signal: sensitivity classification. Multiple classifications allowed.",
+      "items": {
+        "type": "string",
+        "enum": ["money", "identity", "permissions", "regulated", "irreversible", "pii", "sensitive_data"]
+      },
+      "examples": [["money", "irreversible"], ["identity", "permissions"]]
+    },
+    "cost_estimate": {
+      "type": "object",
+      "description": "Risk signal: estimated cost of this action. Optional.",
+      "properties": {
+        "tokens": {
+          "type": "number",
+          "description": "Estimated token count (for LLM calls)",
+          "minimum": 0
+        },
+        "dollars": {
+          "type": "number",
+          "description": "Estimated dollar cost",
+          "minimum": 0
+        },
+        "api_calls": {
+          "type": "integer",
+          "description": "Number of external API calls",
+          "minimum": 0
+        }
+      },
+      "examples": [
+        {"tokens": 1500, "dollars": 0.03},
+        {"api_calls": 1, "dollars": 0.01}
+      ]
+    },
+    "confidence": {
+      "type": "number",
+      "description": "Risk signal: confidence score from upstream AI system. Optional. Range 0.0-1.0.",
+      "minimum": 0.0,
+      "maximum": 1.0,
+      "examples": [0.95, 0.72]
+    },
+    "requested_scopes": {
+      "type": "array",
+      "description": "Risk signal: permission scopes requested for this action. Optional.",
+      "items": {
+        "type": "string"
+      },
+      "examples": [["read_customers", "write_payments"], ["admin"]]
+    },
+    "reason": {
+      "type": "string",
+      "description": "Context: brief reason for this action. For audit trail. Limited length. DO NOT include full prompts.",
+      "maxLength": 500,
+      "examples": [
+        "User requested refund for order #12345",
+        "Scheduled job: daily backup",
+        "Agent determined payment approval required"
+      ]
+    },
+    "prompt_hash": {
+      "type": "string",
+      "description": "Context: hash of the prompt that led to this action. Optional. For audit without logging full prompt.",
+      "minLength": 1,
+      "maxLength": 128,
+      "examples": ["sha256:abc123def456..."]
+    },
+    "policy_refs": {
+      "type": "array",
+      "description": "Context: references to policies that should apply. Optional. Usually determined server-side.",
+      "items": {
+        "type": "string"
+      },
+      "examples": [["payment-approval-policy-v2", "rate-limit-policy"]]
+    },
+    "timestamp": {
+      "type": "string",
+      "description": "ISO 8601 timestamp when envelope was created. Required. Used for replay attack prevention.",
+      "format": "date-time",
+      "examples": ["2026-02-14T12:34:56.789Z"]
+    },
+    "signature": {
+      "type": "string",
+      "description": "HMAC-SHA256 signature of canonical envelope representation. Required. Prevents tampering.",
+      "pattern": "^[a-f0-9]{64}$",
+      "examples": ["a1b2c3d4e5f6..."]
+    },
+    "signature_version": {
+      "type": "string",
+      "description": "Signature algorithm version. For future migration. Optional, defaults to 'hmac-sha256-v1'.",
+      "enum": ["hmac-sha256-v1"],
+      "default": "hmac-sha256-v1"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional metadata. Optional. Not used in policy evaluation. Free-form.",
+      "additionalProperties": true,
+      "examples": [
+        {"source": "webhook", "priority": "high"},
+        {"custom_field": "custom_value"}
+      ]
+    }
+  },
+  "additionalProperties": false,
+  "$comment": "Version 1.1 - Renamed tool_name to action. Made operation/target/parameters optional with defaults. Backward compatibility: tool_name accepted as alias for action. Language-neutral. All implementations must validate against this schema."
+}

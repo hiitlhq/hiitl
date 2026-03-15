@@ -1,0 +1,219 @@
+---
+title: "Configuration — Python"
+description: "HIITL constructor options, deployment modes, and environment variables"
+---
+
+## Constructor
+
+```python
+HIITL(**kwargs)
+```
+
+All parameters are keyword-only. `HIITL()` with no arguments works in local OBSERVE mode.
+
+## Parameters
+
+### Identity
+
+<ParamField path="agent_id" type="str" default='"default"'>
+  Agent identifier. Included in every envelope and used for per-agent rate limiting.
+</ParamField>
+
+<ParamField path="environment" type="str" default='"dev"'>
+  Execution environment. One of: `"dev"`, `"stage"`, `"prod"`. Controls environment isolation for policies, counters, and audit.
+</ParamField>
+
+<ParamField path="org_id" type="str" default='"org_devlocal0000000000"'>
+  Organization ID. Must match pattern `org_[a-z0-9]{18,}`. The default is a dev-local placeholder.
+</ParamField>
+
+### Policy mode
+
+<ParamField path="mode" type="str" default='"OBSERVE_ALL"'>
+  Policy evaluation mode.
+
+  | Mode | Behavior |
+  |------|----------|
+  | `"OBSERVE_ALL"` | All actions are allowed. Decisions are logged with `would_be` fields showing what enforcement would do. |
+  | `"RESPECT_POLICY"` | Policy rules are enforced. Actions can be blocked, require approval, etc. |
+</ParamField>
+
+### Local evaluation
+
+<ParamField path="policy_path" type="str | None" default="None">
+  Path to a policy file (JSON or YAML). Required when `mode="RESPECT_POLICY"` in local mode. Optional in OBSERVE_ALL mode (uses empty policy set).
+</ParamField>
+
+<ParamField path="audit_db_path" type="str" default='"./hiitl_audit.db"'>
+  Path to the SQLite audit database. Created automatically if it does not exist. All evaluated actions are recorded here.
+</ParamField>
+
+<ParamField path="enable_rate_limiting" type="bool" default="True">
+  Whether to enforce rate limits defined in policy metadata.
+</ParamField>
+
+<ParamField path="routes_path" type="str | None" default="None">
+  Path to a directory containing route configuration files (YAML/JSON). Route configs define where escalation decisions (REQUIRE_APPROVAL, PAUSE, ESCALATE) are routed.
+</ParamField>
+
+<ParamField path="signature_key" type="str | None" default="None">
+  HMAC-SHA256 key for envelope signing. When set, every envelope is signed and the signature is included in the audit record. When not set, a placeholder signature is used.
+</ParamField>
+
+### Hosted evaluation
+
+<ParamField path="api_key" type="str | None" default="None">
+  API key for server authentication (Bearer token). Providing an API key changes the deployment mode.
+</ParamField>
+
+<ParamField path="server_url" type="str | None" default="None">
+  ECP server URL (e.g., `"https://ecp.hiitl.com"`). Required together with `api_key` for hosted mode.
+</ParamField>
+
+<ParamField path="timeout" type="float" default="5.0">
+  HTTP request timeout in seconds (hosted mode only).
+</ParamField>
+
+<ParamField path="max_retries" type="int" default="3">
+  Maximum retry attempts on transient failures (hosted mode only). Range: 0-10.
+</ParamField>
+
+### Sync control
+
+<ParamField path="sync" type="bool" default="True">
+  Enable sync when `api_key` is provided. Set to `False` to force pure local mode while storing the API key for future use.
+</ParamField>
+
+## Deployment modes
+
+The deployment mode is auto-detected from constructor arguments. You do not set it directly.
+
+<Tabs>
+  <Tab title="Local">
+    **No `api_key`** — evaluation runs entirely in-process.
+
+    ```python
+    # Zero-config: observe everything, block nothing
+    hiitl = HIITL()
+
+    # With a policy: enforce rules locally
+    hiitl = HIITL(
+        agent_id="payment-agent",
+        policy_path="./policy.yaml",
+        mode="RESPECT_POLICY",
+    )
+    ```
+
+    Local mode uses the embedded Python evaluator, writes to a local SQLite audit database, and requires zero infrastructure.
+  </Tab>
+
+  <Tab title="Hosted">
+    **`api_key` + `server_url`** — evaluation is sent to the ECP server.
+
+    ```python
+    hiitl = HIITL(
+        agent_id="payment-agent",
+        org_id="org_mycompany123456789",
+        api_key="sk_live_abc123...",
+        server_url="https://ecp.hiitl.com",
+        environment="prod",
+        mode="RESPECT_POLICY",
+    )
+    ```
+
+    Hosted mode sends envelopes to the server for evaluation. The server manages policies, audit, rate limiting, and shared counters.
+  </Tab>
+
+  <Tab title="Hybrid">
+    **`api_key` only (no `server_url`)** — local evaluation with API key stored for future sync.
+
+    ```python
+    hiitl = HIITL(
+        agent_id="payment-agent",
+        api_key="sk_live_abc123...",
+        policy_path="./policy.yaml",
+        mode="RESPECT_POLICY",
+    )
+    ```
+
+    Hybrid mode evaluates locally using the embedded evaluator, but stores the API key for a future policy sync feature. Requires `policy_path` when using `RESPECT_POLICY` mode.
+  </Tab>
+</Tabs>
+
+### Auto-detection rules
+
+| `api_key` | `server_url` | `sync` | Mode |
+|-----------|-------------|--------|------|
+| absent | absent | -- | **local** |
+| present | present | -- | **hosted** |
+| present | absent | `True` (default) | **hybrid** |
+| present | absent | `False` | **local** (key stored) |
+
+## Environment variables
+
+All configuration supports `HIITL_` prefixed environment variables. Constructor arguments take precedence over environment variables.
+
+| Variable | Maps to |
+|----------|---------|
+| `HIITL_ENVIRONMENT` | `environment` |
+| `HIITL_AGENT_ID` | `agent_id` |
+| `HIITL_ORG_ID` | `org_id` |
+| `HIITL_POLICY_PATH` | `policy_path` |
+| `HIITL_AUDIT_DB_PATH` | `audit_db_path` |
+| `HIITL_ENABLE_RATE_LIMITING` | `enable_rate_limiting` |
+| `HIITL_SIGNATURE_KEY` | `signature_key` |
+| `HIITL_API_KEY` | `api_key` |
+| `HIITL_SERVER_URL` | `server_url` |
+| `HIITL_TIMEOUT` | `timeout` |
+| `HIITL_MAX_RETRIES` | `max_retries` |
+
+```bash
+export HIITL_API_KEY="sk_live_abc123..."
+export HIITL_SERVER_URL="https://ecp.hiitl.com"
+export HIITL_ENVIRONMENT="prod"
+```
+
+```python
+# Picks up environment variables automatically
+hiitl = HIITL(agent_id="payment-agent")
+```
+
+## Context manager
+
+The HIITL client supports context manager usage to ensure resources are released:
+
+```python
+with HIITL(policy_path="./policy.yaml") as hiitl:
+    decision = hiitl.evaluate("process_payment", parameters={"amount": 50})
+# Resources released automatically
+```
+
+This is equivalent to calling `hiitl.close()` manually, which releases HTTP connections in hosted mode.
+
+## Errors
+
+| Exception | When |
+|-----------|------|
+| `ConfigurationError` | Invalid constructor arguments or missing required fields |
+| `PolicyLoadError` | Policy file cannot be found, read, or parsed |
+| `AuditLogError` | Audit database cannot be created or initialized |
+
+```python
+from hiitl.sdk.exceptions import ConfigurationError
+
+try:
+    hiitl = HIITL(mode="RESPECT_POLICY")
+except ConfigurationError as e:
+    print(e)
+    # "policy_path is required for RESPECT_POLICY mode.
+    #
+    # Provide a policy file:
+    #   HIITL(policy_path='./policy.yaml', mode='RESPECT_POLICY')
+    #
+    # Or use OBSERVE_ALL mode (default) which works without a policy file:
+    #   HIITL()"
+```
+
+<Tip>
+  Error messages include code examples showing how to fix the problem. This is intentional -- every error should answer "what happened?" and "what should I do about it?"
+</Tip>

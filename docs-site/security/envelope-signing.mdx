@@ -1,0 +1,112 @@
+---
+title: "Envelope Signing"
+description: "HMAC-SHA256 envelope integrity verification"
+---
+
+## How signing works
+
+Every envelope submitted to hiitl includes an HMAC-SHA256 signature. This prevents tampering between the SDK and the decision plane.
+
+```
+Envelope fields --> HMAC-SHA256(secret_key) --> signature
+```
+
+The SDK computes the signature automatically using the org's secret key. The decision plane verifies the signature before evaluation. If the signature does not match, the envelope is rejected.
+
+## SDK handles signing
+
+You do not need to compute signatures manually. The SDK signs every envelope automatically.
+
+<CodeGroup>
+
+```python Python
+# Signing happens automatically inside evaluate()
+hiitl = HIITL(
+    api_key="hiitl_prod_abc123...",
+    environment="prod",
+    agent_id="payment-agent"
+)
+
+# The SDK signs this envelope before sending
+decision = hiitl.evaluate(
+    tool="process_payment",
+    operation="execute",
+    target={"account_id": "acct_123"},
+    parameters={"amount": 150.00}
+)
+```
+
+```typescript TypeScript
+// Signing happens automatically inside evaluate()
+const hiitl = new HIITL({
+  apiKey: 'hiitl_prod_abc123...',
+  environment: 'prod',
+  agentId: 'payment-agent',
+});
+
+// The SDK signs this envelope before sending
+const decision = await hiitl.evaluate({
+  tool: 'process_payment',
+  operation: 'execute',
+  target: { accountId: 'acct_123' },
+  parameters: { amount: 150.0 },
+});
+```
+
+</CodeGroup>
+
+## Verification failure
+
+If the signature does not match, the decision plane rejects the envelope with `SIGNATURE_INVALID` and records the attempt in the audit trail.
+
+```json
+{
+  "decision": "BLOCK",
+  "allowed": false,
+  "reason_codes": ["SIGNATURE_INVALID"],
+  "error": {
+    "code": "SIGNATURE_INVALID",
+    "message": "Envelope signature verification failed. The envelope may have been tampered with in transit."
+  }
+}
+```
+
+This event is always audited, even though the action was rejected. The audit record includes the source IP and timestamp for forensic analysis.
+
+## What is signed
+
+The signature covers the canonical JSON representation of the envelope's action-relevant fields:
+
+- `action` / `tool_name`
+- `operation`
+- `target`
+- `parameters`
+- `agent_id`
+- `org_id`
+- `environment`
+- `action_id`
+- `idempotency_key`
+
+Metadata fields (timestamps, SDK version) are excluded from the signature to avoid clock-skew issues.
+
+## Envelope hash in response
+
+Every decision response includes a SHA-256 hash of the evaluated envelope:
+
+```json
+{
+  "decision": "ALLOW",
+  "allowed": true,
+  "envelope_hash": "sha256:a3f2b8c9d1e4f5..."
+}
+```
+
+The caller can verify this hash matches what they submitted, confirming that hiitl evaluated the exact envelope that was sent.
+
+## Trust model
+
+HMAC-SHA256 is appropriate for the trust model where the org trusts its own SDK. Both the SDK and the server share the same secret key (derived from the API key).
+
+<Note>
+Asymmetric signing (RSA, ECDSA) can be evaluated later if envelopes need to pass through untrusted intermediaries. For Phase 1, HMAC provides integrity verification with minimal latency overhead.
+</Note>

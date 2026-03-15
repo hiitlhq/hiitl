@@ -1,0 +1,280 @@
+---
+title: "MCP Integration"
+description: "Add hiitl to an MCP server in 5 minutes"
+---
+
+You have an MCP server with tool handlers. You want governance -- visibility into what tools your AI agents are calling, and the ability to block, rate-limit, or require approval before execution.
+
+hiitl's `evaluate()` call wraps your existing tool handlers. No new framework, no architectural changes.
+
+## Before and after
+
+<CodeGroup>
+
+```python Before (unprotected)
+@server.call_tool()
+async def handle_tool(name: str, arguments: dict):
+    if name == "send_email":
+        return await send_email(arguments["to"], arguments["subject"], arguments["body"])
+```
+
+```python After (protected by hiitl)
+@server.call_tool()
+async def handle_tool(name: str, arguments: dict):
+    result = hiitl.evaluate(name, arguments)
+    if not result.ok:
+        return f"Blocked: {result.reason_codes}"
+
+    if name == "send_email":
+        return await send_email(arguments["to"], arguments["subject"], arguments["body"])
+```
+
+</CodeGroup>
+
+Every tool call now passes through the control point before executing.
+
+---
+
+## Step 1: Install
+
+<CodeGroup>
+
+```bash Python
+pip install hiitl
+```
+
+```bash TypeScript
+npm install @hiitl/sdk
+```
+
+</CodeGroup>
+
+## Step 2: Initialize
+
+Add hiitl initialization alongside your MCP server setup.
+
+<CodeGroup>
+
+```python Python
+from hiitl import HIITL
+from mcp.server import Server
+
+server = Server("my-mcp-server")
+
+hiitl = HIITL(
+    environment="dev",
+    agent_id="my-mcp-server",
+    org_id="org_devlocal000000000",
+    policy_path="./policy.yaml",
+)
+```
+
+```typescript TypeScript
+import { HIITL } from '@hiitl/sdk';
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+
+const server = new Server(
+  { name: 'my-mcp-server', version: '1.0.0' },
+  { capabilities: { tools: {} } }
+);
+
+const hiitl = new HIITL({
+  environment: 'dev',
+  agentId: 'my-mcp-server',
+  orgId: 'org_devlocal000000000',
+  policyPath: './policy.yaml',
+});
+```
+
+</CodeGroup>
+
+No API key needed for local mode. The SDK runs evaluation entirely in-process.
+
+## Step 3: Wrap tool handlers
+
+Add `evaluate()` at the top of your tool handler.
+
+<CodeGroup>
+
+```python Python
+@server.call_tool()
+async def handle_tool(name: str, arguments: dict):
+    result = hiitl.evaluate(name, arguments)
+
+    if not result.ok:
+        return f"Action blocked by policy: {result.reason_codes}"
+
+    if name == "send_email":
+        return await send_email(arguments["to"], arguments["subject"], arguments["body"])
+    elif name == "query_database":
+        return await run_query(arguments["sql"])
+    elif name == "process_payment":
+        return await charge_card(arguments["amount"], arguments["currency"])
+```
+
+```typescript TypeScript
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  const { name, arguments: args } = request.params;
+
+  const result = hiitl.evaluate({ action: name, params: args ?? {} });
+
+  if (!result.ok) {
+    return {
+      content: [{ type: 'text', text: `Action blocked: ${result.reason_codes}` }],
+    };
+  }
+
+  if (name === 'send_email') {
+    return await sendEmail(args.to, args.subject, args.body);
+  }
+});
+```
+
+</CodeGroup>
+
+### What `evaluate()` gives you
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `result.ok` | bool | Safe to proceed (ALLOW or SANDBOX) |
+| `result.blocked` | bool | Denied by policy |
+| `result.needs_approval` | bool | Requires human review |
+| `result.reason_codes` | list | Why the decision was made |
+| `result.remediation` | object | Guidance on what to do |
+
+## Step 4: Add a policy
+
+Create `policy.yaml`:
+
+```yaml
+policy_set:
+  name: "mcp-server-policy"
+  version: "v1.0.0"
+  scope:
+    org_id: "org_devlocal000000000"
+    environment: "dev"
+
+  rules:
+    - name: "block-large-payments"
+      enabled: true
+      priority: 100
+      conditions:
+        all_of:
+          - field: "action"
+            operator: "equals"
+            value: "process_payment"
+          - field: "parameters.amount"
+            operator: "greater_than"
+            value: 500
+      decision: "BLOCK"
+      reason_code: "PAYMENT_TOO_HIGH"
+
+    - name: "allow-all"
+      enabled: true
+      priority: 1
+      conditions:
+        all_of:
+          - field: "action"
+            operator: "exists"
+            value: true
+      decision: "ALLOW"
+      reason_code: "DEFAULT_ALLOW"
+```
+
+## Step 5: Run it
+
+Start your MCP server as usual. Evaluations happen inline -- no extra processes, no network calls in local mode.
+
+---
+
+## Handling different decisions
+
+<CodeGroup>
+
+```python Python
+@server.call_tool()
+async def handle_tool(name: str, arguments: dict):
+    result = hiitl.evaluate(name, arguments)
+
+    if result.ok:
+        return await execute_tool(name, arguments)
+
+    if result.needs_approval:
+        return f"This action requires approval. Action ID: {result.action_id}"
+
+    if result.blocked:
+        msg = f"Blocked: {result.reason_codes}"
+        if result.remediation:
+            msg += f"\nSuggestion: {result.remediation.suggestion}"
+        return msg
+
+    return f"Action not allowed: {result.reason_codes}"
+```
+
+```typescript TypeScript
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  const { name, arguments: args } = request.params;
+  const result = hiitl.evaluate({ action: name, params: args ?? {} });
+
+  if (result.ok) {
+    return await executeTool(name, args);
+  }
+
+  if (result.needs_approval) {
+    return {
+      content: [{ type: 'text', text: `Requires approval. ID: ${result.action_id}` }],
+    };
+  }
+
+  if (result.blocked) {
+    const suggestion = result.remediation?.suggestion
+      ? `\nSuggestion: ${result.remediation.suggestion}`
+      : '';
+    return {
+      content: [{ type: 'text', text: `Blocked: ${result.reason_codes}${suggestion}` }],
+    };
+  }
+
+  return {
+    content: [{ type: 'text', text: `Not allowed: ${result.reason_codes}` }],
+  };
+});
+```
+
+</CodeGroup>
+
+---
+
+## Starter policies for common MCP tools
+
+| MCP tool | Pattern | Policy focus |
+|----------|---------|--------------|
+| Payment processing | [process_payment](/patterns/financial) | Amount thresholds, rate limits |
+| Email sending | [send_email](/patterns/communication) | Rate limits, recipient validation |
+| Database queries | [query_database](/patterns/data-access) | PII access, query scope |
+| File operations | [export_data](/patterns/data-access) | Size limits, format controls |
+
+---
+
+## Moving to production
+
+Switch from local to hosted mode by adding an API key:
+
+```python
+hiitl = HIITL(
+    api_key=os.getenv("HIITL_API_KEY"),
+    server_url=os.getenv("HIITL_SERVER_URL"),
+    environment="prod",
+    agent_id="governed-mcp-server",
+)
+```
+
+The `evaluate()` calls stay exactly the same. Only the initialization changes.
+
+## Troubleshooting
+
+**`evaluate()` always returns ok** -- You are running without a policy. Create a `policy.yaml` and pass the path to HIITL.
+
+**Action name mismatch** -- The `name` in `evaluate(name, arguments)` must match the `action` value in your policy conditions.
+
+**Arguments structure** -- `evaluate()` passes `arguments` as parameters. Policy conditions reference them as `parameters.field_name`.

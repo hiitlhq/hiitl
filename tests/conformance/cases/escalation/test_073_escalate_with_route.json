@@ -1,0 +1,50 @@
+{
+  "test_id": "test_073_escalate_with_route",
+  "description": "ESCALATE rule with route passes reference to decision.route_ref",
+  "envelope": {
+    "schema_version": "v1.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_security_scanner",
+    "action_id": "act_test0730000000000000",
+    "timestamp": "2026-02-14T10:00:00Z",
+    "operation": "update",
+    "parameters": {
+      "role": "admin",
+      "scope": "organization"
+    },
+    "idempotency_key": "idem_test_073",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "modify_permissions"
+  },
+  "policy_set": {
+    "version": "1.0.0",
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "escalate_permission_changes",
+        "priority": 100,
+        "enabled": true,
+        "conditions": {
+          "field": "action",
+          "operator": "equals",
+          "value": "modify_permissions"
+        },
+        "decision": "ESCALATE",
+        "reason_code": "PERMISSION_CHANGE_ESCALATED",
+        "route": "security-escalation",
+        "description": "Permission changes escalated to security team"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "ESCALATE",
+    "allowed": false,
+    "reason_codes": [
+      "PERMISSION_CHANGE_ESCALATED"
+    ],
+    "route_ref": "security-escalation",
+    "resume_token": "PRESENT"
+  }
+}

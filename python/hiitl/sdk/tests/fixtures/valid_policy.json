@@ -1,0 +1,19 @@
+{
+  "version": "1.0.0",
+  "name": "test_policy",
+  "rules": [
+    {
+      "name": "allow_small_amounts",
+      "priority": 100,
+      "enabled": true,
+      "conditions": {
+        "field": "parameters.amount",
+        "operator": "less_than",
+        "value": 1000
+      },
+      "decision": "ALLOW",
+      "reason_code": "SMALL_AMOUNT",
+      "description": "Allow transfers under $1000"
+    }
+  ]
+}

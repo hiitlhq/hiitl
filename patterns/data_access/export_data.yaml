@@ -1,0 +1,168 @@
+pattern_id: "data_access/export_data"
+category: "data_access"
+name: "Export Data"
+description: >
+  Data export and bulk download operations. Exports are high-risk because they move data
+  outside the system boundary where controls can no longer be enforced. Policies must
+  consider export size, data classification, environment, and destination to prevent
+  unauthorized data exfiltration.
+tags: ["export", "data-access", "bulk", "privacy"]
+
+evaluate_examples:
+  python: |
+    result = hiitl.evaluate("export_data", {
+        "format": "csv",
+        "record_count": 5000,
+        "includes_pii": True,
+    })
+    if result.ok:
+        export_dataset(format="csv", record_count=5000)
+  typescript: |
+    const result = hiitl.evaluate({
+      action: 'export_data',
+      params: {
+        format: 'csv',
+        record_count: 5000,
+        includes_pii: true,
+      },
+    });
+    if (result.ok) {
+      await exportDataset({ format: 'csv', recordCount: 5000 });
+    }
+
+context_enrichment:
+  - field: "user_id"
+    why: "Identifies who is exporting data for audit attribution and per-user export limits"
+    example: "user_8kN3mR7pQ2"
+  - field: "sensitivity"
+    why: "Data classification level determines which export controls apply (regulated data requires stricter oversight)"
+    example: "regulated"
+  - field: "target.dataset"
+    why: "The source dataset identifier enables dataset-specific export policies and compliance tracking"
+    example: "customer_analytics"
+  - field: "parameters.destination"
+    why: "Where the export is going affects risk assessment — internal storage vs. external download vs. third-party integration"
+    example: "s3://reports-bucket/exports/"
+  - field: "parameters.encryption"
+    why: "Whether the export will be encrypted at rest affects data protection compliance"
+    example: "aes-256"
+
+starter_policies:
+  - name: "allow-small-exports"
+    description: "Auto-approve exports of fewer than 1,000 records that do not contain PII"
+    priority: 200
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "export_data"
+        - field: "parameters.record_count"
+          operator: "less_than"
+          value: 1000
+        - field: "parameters.includes_pii"
+          operator: "equals"
+          value: false
+    decision: "ALLOW"
+    reason_code: "EXPORT_AUTO_APPROVED"
+    remediation:
+      type: "static"
+      message: "Export auto-approved (under 1,000 records, no PII)"
+      suggestion: "No action needed"
+
+  - name: "approve-large-exports"
+    description: "Require approval for exports of 1,000 or more records to prevent bulk data extraction"
+    priority: 150
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "export_data"
+        - field: "parameters.record_count"
+          operator: "greater_than_or_equal"
+          value: 1000
+        - field: "parameters.includes_pii"
+          operator: "equals"
+          value: false
+    decision: "REQUIRE_APPROVAL"
+    reason_code: "LARGE_EXPORT_NEEDS_APPROVAL"
+    remediation:
+      type: "static"
+      message: "Exports of 1,000 or more records require data steward approval"
+      suggestion: "Submit an export request with the business justification. Consider whether a smaller sample or aggregated data would meet your needs."
+
+  - name: "block-pii-export-in-dev"
+    description: "Block all PII-containing exports in the dev environment to prevent test data leakage"
+    priority: 100
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "export_data"
+        - field: "parameters.includes_pii"
+          operator: "equals"
+          value: true
+        - field: "environment"
+          operator: "equals"
+          value: "dev"
+    decision: "BLOCK"
+    reason_code: "PII_EXPORT_BLOCKED_IN_DEV"
+    remediation:
+      type: "static"
+      message: "Exports containing PII are not permitted in the dev environment"
+      suggestion: "Use anonymized or synthetic data for development purposes. If you need real PII for debugging, request a time-limited exception from the data protection team and work in a controlled staging environment."
+
+  - name: "approve-pii-exports"
+    description: "Require approval for any export containing personally identifiable information in production"
+    priority: 110
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "export_data"
+        - field: "parameters.includes_pii"
+          operator: "equals"
+          value: true
+        - field: "environment"
+          operator: "not_equals"
+          value: "dev"
+    decision: "REQUIRE_APPROVAL"
+    reason_code: "PII_EXPORT_NEEDS_APPROVAL"
+    remediation:
+      type: "static"
+      message: "Exports containing personally identifiable information require data protection officer approval"
+      suggestion: "Submit the export request with a clear purpose statement, data minimization justification, and the intended use. Confirm that the destination meets your organization's data handling requirements."
+
+  - name: "rate-limit-exports"
+    description: "Limit each agent to 10 exports per hour to prevent systematic data extraction"
+    priority: 50
+    enabled: true
+    conditions:
+      field: "action"
+      operator: "equals"
+      value: "export_data"
+    decision: "RATE_LIMIT"
+    reason_code: "EXPORT_RATE_EXCEEDED"
+    remediation:
+      type: "static"
+      message: "This agent has exceeded the maximum of 10 data exports per hour"
+      suggestion: "Consolidate your export needs into fewer, larger requests rather than many small ones. If you need higher export frequency, request a rate limit increase with business justification."
+
+remediation:
+  block_message: "This data export was blocked because it violates the data protection policy for this environment. PII exports in dev are prohibited, and large exports require approval to prevent unauthorized data extraction."
+  developer_action: "Check whether the export includes PII and whether you are in the correct environment. For PII exports in production, submit an approval request. For dev, use anonymized data instead."
+  approval_message: "This data export requires approval because it involves a large dataset or contains PII. The reviewer will see the export format, record count, data classification, and destination."
+
+compliance:
+  - regulation: "GDPR"
+    relevance: "GDPR Article 20 establishes data portability rights, but Article 5 requires purpose limitation and data minimization for all processing including exports"
+    note: "Exports of EU personal data must be logged with purpose, recipient, and legal basis. Cross-border exports outside the EU require additional safeguards (Standard Contractual Clauses or adequacy decision)."
+  - regulation: "CCPA"
+    relevance: "CCPA gives consumers the right to know about and request their data, but businesses must also protect against unauthorized bulk access to consumer data"
+    note: "Export controls help demonstrate that consumer data access is controlled and audited. The export audit trail supports responding to consumer data access requests."
+  - regulation: "Data Residency"
+    relevance: "Some jurisdictions and contracts require that data remain within specific geographic boundaries"
+    note: "The export destination field in context enrichment enables policies that block exports to non-compliant storage locations. Customize the destination checks to match your data residency requirements."

@@ -1,0 +1,142 @@
+pattern_id: "infrastructure/deploy_service"
+category: "infrastructure"
+name: "Deploy Service"
+description: >
+  Service deployment action covering application releases, container updates, and
+  infrastructure rollouts. Controls environment promotion, deployment strategy
+  validation, breaking change detection, and approval workflows to prevent
+  unreviewed production changes and failed deployments.
+tags: ["infrastructure", "deployment", "ci-cd", "release"]
+
+evaluate_examples:
+  python: |
+    result = hiitl.evaluate("deploy_service", {
+        "service_name": "payments-api",
+        "version": "2.4.1",
+        "environment": "staging",
+        "strategy": "rolling",
+    })
+    if result.ok:
+        deployment_service.deploy(service=name, version=ver, env=env, strategy=strategy)
+  typescript: |
+    const result = hiitl.evaluate({
+      action: 'deploy_service',
+      params: {
+        service_name: 'payments-api',
+        version: '2.4.1',
+        environment: 'staging',
+        strategy: 'rolling',
+      },
+    });
+    if (result.ok) {
+      await deploymentService.deploy({ service: name, version: ver, env, strategy });
+    }
+
+context_enrichment:
+  - field: "user_id"
+    why: "Identifies the deployer for audit trail and authorization; production deploys may require specific roles"
+    example: "user_8xKp2mNq"
+  - field: "target.service"
+    why: "Service name determines which deployment policies and approval chains apply"
+    example: "payments-api"
+  - field: "target.environment"
+    why: "Environment determines the risk level and approval requirements for the deployment"
+    example: "production"
+  - field: "sensitivity"
+    why: "Deployments to critical services or those handling financial/PII data have elevated sensitivity"
+    example: "irreversible"
+  - field: "parameters.has_breaking_changes"
+    why: "Breaking changes require additional review and may need coordinated rollout across dependent services"
+    example: false
+
+starter_policies:
+  - name: "allow-dev-deploy"
+    description: "Allow all deployments to the dev environment without restrictions"
+    priority: 500
+    enabled: true
+    conditions:
+      field: "environment"
+      operator: "equals"
+      value: "dev"
+    decision: "ALLOW"
+    reason_code: "DEPLOY_DEV_ALLOWED"
+    remediation:
+      type: "static"
+      message: "Deployment to dev environment permitted"
+      suggestion: "No action required"
+
+  - name: "require-approval-staging"
+    description: "Require approval for staging deployments to ensure QA readiness"
+    priority: 150
+    enabled: true
+    conditions:
+      field: "environment"
+      operator: "equals"
+      value: "stage"
+    decision: "REQUIRE_APPROVAL"
+    reason_code: "DEPLOY_STAGING_APPROVAL_REQUIRED"
+    remediation:
+      type: "static"
+      message: "Staging deployments require approval to ensure the release has passed QA gates."
+      suggestion: "Verify all automated tests pass and the change has been code-reviewed. Submit for approval with the release notes and test results summary."
+
+  - name: "require-approval-production"
+    description: "Require approval for production deployments with mandatory review"
+    priority: 100
+    enabled: true
+    conditions:
+      field: "environment"
+      operator: "equals"
+      value: "prod"
+    decision: "REQUIRE_APPROVAL"
+    reason_code: "DEPLOY_PROD_APPROVAL_REQUIRED"
+    remediation:
+      type: "static"
+      message: "Production deployments require human approval from an authorized release manager."
+      suggestion: "Ensure the version has been validated in staging. Submit for approval with: release notes, staging test results, rollback plan, and deployment window. Production deploys outside the maintenance window require additional justification."
+
+  - name: "block-breaking-changes-without-plan"
+    description: "Block deployments flagged with breaking changes that lack a migration plan"
+    priority: 70
+    enabled: true
+    conditions:
+      field: "parameters.has_breaking_changes"
+      operator: "equals"
+      value: true
+    decision: "BLOCK"
+    reason_code: "DEPLOY_BREAKING_CHANGE_BLOCKED"
+    remediation:
+      type: "static"
+      message: "Deployments with breaking changes are blocked until a migration plan is reviewed."
+      suggestion: "Create a migration plan documenting: affected downstream services, backward compatibility strategy, data migration steps, and rollback procedure. Submit the migration plan for architecture review before retrying the deployment."
+
+  - name: "kill-switch-deployments"
+    description: "Emergency kill switch to freeze all deployments during incidents"
+    priority: 1
+    enabled: false
+    conditions:
+      field: "action"
+      operator: "equals"
+      value: "deploy_service"
+    decision: "KILL_SWITCH"
+    reason_code: "DEPLOY_KILL_SWITCH_ACTIVE"
+    remediation:
+      type: "static"
+      message: "All deployments have been frozen by an administrator kill switch, typically during an active incident."
+      suggestion: "Check the incident channel for status updates. Deployments will resume when the kill switch is lifted by the on-call engineer or release manager."
+
+remediation:
+  block_message: "This deployment was blocked by policy. Common causes include breaking changes without migration plans, production deploys without approval, or an active deployment freeze. Check the reason_code for details."
+  developer_action: "Review the decision response reason_codes. For breaking change blocks, prepare a migration plan. For environment approval requirements, gather release notes and test results. For kill switch blocks, check incident channels."
+  approval_message: "This deployment requires human approval. Production and staging environments require review to ensure release readiness, testing completeness, and rollback planning."
+
+compliance:
+  - regulation: "Change Management Policy"
+    relevance: "All production changes must follow the organization's change management process"
+    note: "Deployments must have an associated change ticket, approval from an authorized reviewer, and a documented rollback procedure. Emergency changes follow an expedited process but still require post-hoc review."
+  - regulation: "SOC 2 Type II"
+    relevance: "Change management controls are a core audit area for SOC 2 compliance"
+    note: "Demonstrate that production changes require multi-party approval, that all deployment attempts are logged (including blocked ones), and that rollback capability exists for every deployment."
+  - regulation: "PCI-DSS"
+    relevance: "Applies to services that process, store, or transmit payment card data"
+    note: "Payment-related service deployments require separation of duties between development and production deployment. Code review and approval records must be retained for audit."

@@ -1,0 +1,69 @@
+{
+  "name": "multi-rule-policy",
+  "version": "1.0.0",
+  "description": "Policy with multiple priority levels for testing rule ordering",
+  "rules": [
+    {
+      "name": "block-dangerous-delete",
+      "description": "Block all delete operations (highest priority)",
+      "enabled": true,
+      "priority": 500,
+      "conditions": {
+        "field": "operation",
+        "operator": "equals",
+        "value": "delete"
+      },
+      "decision": "BLOCK",
+      "reason_code": "DANGEROUS_DELETE"
+    },
+    {
+      "name": "approve-write-pii",
+      "description": "Require approval for write operations with PII",
+      "enabled": true,
+      "priority": 200,
+      "conditions": {
+        "all_of": [
+          {
+            "field": "operation",
+            "operator": "equals",
+            "value": "write"
+          },
+          {
+            "field": "sensitivity",
+            "operator": "contains",
+            "value": "pii"
+          }
+        ]
+      },
+      "decision": "REQUIRE_APPROVAL",
+      "reason_code": "PII_WRITE_APPROVAL",
+      "hitl_config": "pii-review"
+    },
+    {
+      "name": "allow-read",
+      "description": "Allow all read operations",
+      "enabled": true,
+      "priority": 100,
+      "conditions": {
+        "field": "operation",
+        "operator": "equals",
+        "value": "read"
+      },
+      "decision": "ALLOW",
+      "reason_code": "READ_ALLOWED"
+    },
+    {
+      "name": "allow-execute",
+      "description": "Allow execute operations",
+      "enabled": true,
+      "priority": 50,
+      "conditions": {
+        "field": "operation",
+        "operator": "equals",
+        "value": "execute"
+      },
+      "decision": "ALLOW",
+      "reason_code": "EXECUTE_ALLOWED"
+    }
+  ]
+}

@@ -1,0 +1,152 @@
+pattern_id: "infrastructure/scale_resources"
+category: "infrastructure"
+name: "Scale Resources"
+description: >
+  Resource scaling action covering compute instances, container replicas, database
+  capacity, and storage allocation. Controls cost thresholds, prevents accidental
+  scale-to-zero in production, enforces budget limits, and requires approval for
+  large-scale changes to prevent runaway costs and service disruptions.
+tags: ["infrastructure", "scaling", "resources", "cost"]
+
+evaluate_examples:
+  python: |
+    result = hiitl.evaluate("scale_resources", {
+        "resource_type": "compute_instances",
+        "direction": "up",
+        "target_count": 10,
+    })
+    if result.ok:
+        infra_service.scale(resource=resource_type, count=target_count)
+  typescript: |
+    const result = hiitl.evaluate({
+      action: 'scale_resources',
+      params: {
+        resource_type: 'compute_instances',
+        direction: 'up',
+        target_count: 10,
+      },
+    });
+    if (result.ok) {
+      await infraService.scale({ resource: resourceType, count: targetCount });
+    }
+
+context_enrichment:
+  - field: "user_id"
+    why: "Identifies who initiated the scaling action for budget attribution and audit"
+    example: "user_8xKp2mNq"
+  - field: "cost_estimate"
+    why: "Estimated cost impact of the scaling change; critical for budget enforcement"
+    example: 450.00
+  - field: "target.resource"
+    why: "The specific resource being scaled determines cost impact and service dependencies"
+    example: "payments-api-cluster"
+  - field: "parameters.current_count"
+    why: "The current resource count provides context for the magnitude of the scaling change"
+    example: 3
+  - field: "sensitivity"
+    why: "Scaling critical infrastructure (databases, core services) has higher blast radius than scaling stateless workers"
+    example: "irreversible"
+
+starter_policies:
+  - name: "allow-within-limits"
+    description: "Allow scaling changes that stay within predefined resource limits"
+    priority: 500
+    enabled: true
+    conditions:
+      all_of:
+        - field: "parameters.target_count"
+          operator: "greater_than"
+          value: 0
+        - field: "parameters.target_count"
+          operator: "less_than_or_equal"
+          value: 20
+    decision: "ALLOW"
+    reason_code: "SCALE_WITHIN_LIMITS_ALLOWED"
+    remediation:
+      type: "static"
+      message: "Resource scaling within configured limits permitted"
+      suggestion: "No action required"
+
+  - name: "require-approval-large-scale-up"
+    description: "Require approval for scale-up operations exceeding 20 instances or a significant cost increase"
+    priority: 120
+    enabled: true
+    conditions:
+      all_of:
+        - field: "parameters.direction"
+          operator: "equals"
+          value: "up"
+        - field: "parameters.target_count"
+          operator: "greater_than"
+          value: 20
+    decision: "REQUIRE_APPROVAL"
+    reason_code: "SCALE_LARGE_APPROVAL_REQUIRED"
+    remediation:
+      type: "static"
+      message: "Scaling beyond 20 instances requires human approval due to significant cost and capacity implications."
+      suggestion: "Submit for approval with: the reason for the scale-up, expected duration (is this permanent or temporary for a traffic spike?), estimated cost impact, and whether auto-scaling rules should be updated instead."
+
+  - name: "block-scale-to-zero-prod"
+    description: "Block scaling any production resource to zero to prevent accidental service outages"
+    priority: 50
+    enabled: true
+    conditions:
+      all_of:
+        - field: "parameters.target_count"
+          operator: "equals"
+          value: 0
+        - field: "environment"
+          operator: "equals"
+          value: "prod"
+    decision: "BLOCK"
+    reason_code: "SCALE_TO_ZERO_PROD_BLOCKED"
+    remediation:
+      type: "static"
+      message: "Scaling production resources to zero is blocked to prevent service outages."
+      suggestion: "If you intend to decommission this resource, use the service decommission workflow which includes dependency checks, traffic verification, and staged shutdown. To scale down, use a minimum count of 1 or higher."
+
+  - name: "cost-threshold-approval"
+    description: "Require approval when estimated scaling cost exceeds $500 per month"
+    priority: 100
+    enabled: true
+    conditions:
+      field: "cost_estimate"
+      operator: "greater_than"
+      value: 500
+    decision: "REQUIRE_APPROVAL"
+    reason_code: "SCALE_COST_THRESHOLD_APPROVAL"
+    remediation:
+      type: "static"
+      message: "This scaling change exceeds the $500/month cost threshold and requires budget approval."
+      suggestion: "Submit for approval with: the cost breakdown, budget allocation, business justification, and whether the increase is temporary or permanent. Include comparison with current spend and the percentage increase."
+
+  - name: "rate-limit-scaling"
+    description: "Limit scaling operations to 10 per hour per agent to prevent thrashing"
+    priority: 200
+    enabled: true
+    conditions:
+      field: "agent_id"
+      operator: "exists"
+      value: true
+    decision: "RATE_LIMIT"
+    reason_code: "SCALE_RATE_LIMIT"
+    remediation:
+      type: "static"
+      message: "Resource scaling rate limit exceeded. Maximum 10 scaling operations per hour per agent."
+      suggestion: "Frequent scaling may indicate a misconfigured auto-scaler or flapping condition. Review your auto-scaling rules and thresholds. If rapid scaling is genuinely needed, configure auto-scaling policies rather than making individual scaling calls."
+
+remediation:
+  block_message: "This scaling operation was blocked by policy. Common causes include scale-to-zero in production, exceeding resource limits, or cost threshold violations. Check the reason_code for details."
+  developer_action: "Review the decision response reason_codes. For scale-to-zero blocks, use the decommission workflow instead. For cost threshold violations, submit for budget approval. For rate limits, review auto-scaling configuration for potential thrashing."
+  approval_message: "This scaling operation requires human approval. Large scale-up requests or operations exceeding cost thresholds trigger budget and capacity review."
+
+compliance:
+  - regulation: "Budget Controls"
+    relevance: "Cloud resource scaling directly impacts infrastructure costs and budget adherence"
+    note: "All scaling operations exceeding cost thresholds must have budget approval. Maintain audit trail linking scaling decisions to budget authorizations. Implement alerts for cumulative spend approaching budget limits."
+  - regulation: "Capacity Planning"
+    relevance: "Resource scaling affects system reliability, performance, and cost efficiency"
+    note: "Scaling decisions should align with capacity planning projections. Unexpected scaling events may indicate traffic anomalies, attacks, or misconfiguration. All scaling events are logged for capacity planning analysis."
+  - regulation: "SOC 2 Type II"
+    relevance: "Infrastructure change management is a key control area"
+    note: "Demonstrate that production infrastructure changes (including scaling) are controlled, approved where required, and fully auditable. Scale-to-zero prevention is an availability control that auditors expect to see."

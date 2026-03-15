@@ -1,0 +1,131 @@
+{
+  "agent_id": "payment-agent",
+  "name": "Payment Processing Agent",
+  "description": "Processes customer payments and refunds. Handles the majority of financial transactions.",
+  "behavior_profile": {
+    "tools": [
+      "process_payment",
+      "process_refund",
+      "check_balance",
+      "verify_account"
+    ],
+    "action_frequency": {
+      "process_payment": 0.65,
+      "process_refund": 0.20,
+      "check_balance": 0.10,
+      "verify_account": 0.05
+    },
+    "parameter_distributions": {
+      "process_payment": {
+        "amount": {
+          "type": "distribution",
+          "distribution": "exponential",
+          "mean": 150,
+          "min": 10,
+          "max": 10000
+        },
+        "currency": {
+          "type": "categorical",
+          "values": ["usd", "eur", "gbp"],
+          "probabilities": [0.7, 0.2, 0.1]
+        },
+        "account_id": {
+          "type": "pattern",
+          "pattern": "acct_{random_id}"
+        }
+      },
+      "process_refund": {
+        "amount": {
+          "type": "distribution",
+          "distribution": "exponential",
+          "mean": 75,
+          "min": 5,
+          "max": 1000
+        },
+        "currency": {
+          "type": "categorical",
+          "values": ["usd", "eur", "gbp"],
+          "probabilities": [0.7, 0.2, 0.1]
+        },
+        "reason": {
+          "type": "categorical",
+          "values": [
+            "customer_request",
+            "order_cancelled",
+            "product_defective",
+            "duplicate_charge"
+          ],
+          "probabilities": [0.4, 0.3, 0.2, 0.1]
+        }
+      },
+      "check_balance": {
+        "account_id": {
+          "type": "pattern",
+          "pattern": "acct_{random_id}"
+        }
+      },
+      "verify_account": {
+        "account_id": {
+          "type": "pattern",
+          "pattern": "acct_{random_id}"
+        },
+        "verification_type": {
+          "type": "categorical",
+          "values": ["kyc", "credit_check", "fraud_check"],
+          "probabilities": [0.5, 0.3, 0.2]
+        }
+      }
+    },
+    "rate": "100 actions/hour",
+    "normal_patterns": {
+      "business_hours_only": true,
+      "business_hours": "09:00-17:00 EST",
+      "weekday_heavy": true,
+      "weekday_ratio": 0.8,
+      "weekend_ratio": 0.2
+    },
+    "anomaly_patterns": {
+      "sudden_spike": {
+        "description": "Occasional traffic spike (e.g., flash sale)",
+        "probability": 0.01,
+        "multiplier": 5,
+        "duration_minutes": 30
+      },
+      "unusual_amounts": {
+        "description": "Occasional very high-value payment",
+        "probability": 0.05,
+        "threshold": 5000,
+        "max": 50000
+      },
+      "rapid_refunds": {
+        "description": "Burst of refunds (e.g., service outage)",
+        "probability": 0.02,
+        "count": 20,
+        "timeframe_minutes": 10
+      }
+    }
+  },
+  "expected_policy_interactions": {
+    "high_value_approval": {
+      "description": "Payments over $1000 require approval",
+      "expected_frequency": "5% of payments",
+      "decision": "REQUIRE_APPROVAL"
+    },
+    "rate_limit": {
+      "description": "Agent limited to 100 payments per hour",
+      "expected_frequency": "During spikes",
+      "decision": "RATE_LIMIT"
+    },
+    "fraud_detection": {
+      "description": "Unusual pattern triggers escalation",
+      "expected_frequency": "1% of payments",
+      "decision": "ESCALATE"
+    }
+  },
+  "sensitivity_flags": {
+    "process_payment": ["money", "irreversible"],
+    "process_refund": ["money"],
+    "check_balance": ["money"],
+    "verify_account": ["identity", "pii"]
+  }
+}

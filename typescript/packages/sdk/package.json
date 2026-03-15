@@ -1,0 +1,59 @@
+{
+  "name": "@hiitl/sdk",
+  "version": "0.1.0",
+  "description": "HIITL SDK - TypeScript SDK for local/edge mode policy evaluation",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:unit": "vitest run tests/unit",
+    "test:integration": "vitest run tests/integration",
+    "type-check": "tsc --noEmit"
+  },
+  "keywords": [
+    "hiitl",
+    "sdk",
+    "policy",
+    "local-mode",
+    "edge",
+    "execution-control"
+  ],
+  "author": "HIITL, Inc.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hiitlhq/hiitl.git",
+    "directory": "typescript/packages/sdk"
+  },
+  "homepage": "https://github.com/hiitlhq/hiitl#readme",
+  "bugs": {
+    "url": "https://github.com/hiitlhq/hiitl/issues"
+  },
+  "dependencies": {
+    "@hiitl/core": "^0.1.0",
+    "better-sqlite3": "^9.4.0",
+    "js-yaml": "^4.1.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.9",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.0"
+  }
+}

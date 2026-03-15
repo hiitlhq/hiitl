@@ -1,0 +1,254 @@
+---
+title: "Configuration — TypeScript"
+description: "HIITL constructor options, deployment modes, and environment variables"
+---
+
+## Constructor
+
+```typescript
+new HIITL(options?: HIITLConfigInput)
+```
+
+All options are optional. `new HIITL()` with no arguments works in local OBSERVE mode.
+
+<Note>
+  The TypeScript SDK uses `snake_case` for option names to match the Python SDK and envelope schema. Both `snake_case` and `camelCase` field names appear in TypeScript types, but the canonical names used in `HIITLConfigInput` are `snake_case` (e.g., `agent_id`, `policy_path`, `server_url`).
+</Note>
+
+## Parameters
+
+### Identity
+
+<ParamField path="agent_id" type="string" default='"default"'>
+  Agent identifier. Included in every envelope and used for per-agent rate limiting.
+</ParamField>
+
+<ParamField path="environment" type="'dev' | 'stage' | 'prod'" default='"dev"'>
+  Execution environment. Controls environment isolation for policies, counters, and audit.
+</ParamField>
+
+<ParamField path="org_id" type="string" default='"org_devlocal0000000000"'>
+  Organization ID. Must match pattern `org_[a-z0-9]{18,}`. The default is a dev-local placeholder.
+</ParamField>
+
+### Policy mode
+
+<ParamField path="mode" type="'OBSERVE_ALL' | 'RESPECT_POLICY'" default='"OBSERVE_ALL"'>
+  Policy evaluation mode.
+
+  | Mode | Behavior |
+  |------|----------|
+  | `"OBSERVE_ALL"` | All actions are allowed. Decisions are logged with `would_be` fields showing what enforcement would do. |
+  | `"RESPECT_POLICY"` | Policy rules are enforced. Actions can be blocked, require approval, etc. |
+</ParamField>
+
+### Local evaluation
+
+<ParamField path="policy_path" type="string">
+  Path to a policy file (JSON or YAML). Required when `mode` is `"RESPECT_POLICY"` in local mode. Optional in OBSERVE_ALL mode (uses empty policy set).
+</ParamField>
+
+<ParamField path="audit_db_path" type="string" default='"./hiitl_audit.db"'>
+  Path to the SQLite audit database. Created automatically if it does not exist. All evaluated actions are recorded here.
+</ParamField>
+
+<ParamField path="enable_rate_limiting" type="boolean" default="true">
+  Whether to enforce rate limits defined in policy metadata.
+</ParamField>
+
+<ParamField path="routes_path" type="string">
+  Path to a directory containing route configuration files (YAML/JSON). Route configs define where escalation decisions (REQUIRE_APPROVAL, PAUSE, ESCALATE) are routed.
+</ParamField>
+
+<ParamField path="signature_key" type="string">
+  HMAC-SHA256 key for envelope signing. When set, every envelope is signed and the signature is included in the audit record. When not set, a placeholder signature is used.
+</ParamField>
+
+### Hosted evaluation
+
+<ParamField path="api_key" type="string">
+  API key for server authentication (Bearer token). Providing an API key changes the deployment mode.
+</ParamField>
+
+<ParamField path="server_url" type="string">
+  ECP server URL (e.g., `"https://ecp.hiitl.com"`). Required together with `api_key` for hosted mode. Must be a valid URL starting with `http://` or `https://`. Trailing slashes are stripped automatically.
+</ParamField>
+
+<ParamField path="timeout" type="number" default="5000">
+  HTTP request timeout in milliseconds (hosted mode only). Range: 100-30000.
+</ParamField>
+
+<ParamField path="max_retries" type="number" default="3">
+  Maximum retry attempts on transient failures (hosted mode only). Range: 0-10.
+</ParamField>
+
+### Sync control
+
+<ParamField path="sync" type="boolean" default="true">
+  Enable sync when `api_key` is provided. Set to `false` to force pure local mode while storing the API key for future use.
+</ParamField>
+
+## Deployment modes
+
+The deployment mode is auto-detected from constructor arguments. You do not set it directly.
+
+<Tabs>
+  <Tab title="Local">
+    **No `api_key`** -- evaluation runs entirely in-process.
+
+    ```typescript
+    // Zero-config: observe everything, block nothing
+    const hiitl = new HIITL();
+
+    // With a policy: enforce rules locally
+    const hiitl = new HIITL({
+      agent_id: 'payment-agent',
+      policy_path: './policy.yaml',
+      mode: 'RESPECT_POLICY',
+    });
+    ```
+
+    Local mode uses the embedded TypeScript evaluator, writes to a local SQLite audit database, and requires zero infrastructure.
+  </Tab>
+
+  <Tab title="Hosted">
+    **`api_key` + `server_url`** -- evaluation is sent to the ECP server.
+
+    ```typescript
+    const hiitl = new HIITL({
+      agent_id: 'payment-agent',
+      org_id: 'org_mycompany123456789',
+      api_key: 'sk_live_abc123...',
+      server_url: 'https://ecp.hiitl.com',
+      environment: 'prod',
+      mode: 'RESPECT_POLICY',
+    });
+    ```
+
+    Hosted mode sends envelopes to the server for evaluation. The server manages policies, audit, rate limiting, and shared counters.
+  </Tab>
+
+  <Tab title="Hybrid">
+    **`api_key` only (no `server_url`)** -- local evaluation with API key stored for future sync.
+
+    ```typescript
+    const hiitl = new HIITL({
+      agent_id: 'payment-agent',
+      api_key: 'sk_live_abc123...',
+      policy_path: './policy.yaml',
+      mode: 'RESPECT_POLICY',
+    });
+    ```
+
+    Hybrid mode evaluates locally using the embedded evaluator, but stores the API key for a future policy sync feature. Requires `policy_path` when using `RESPECT_POLICY` mode.
+  </Tab>
+</Tabs>
+
+### Auto-detection rules
+
+| `api_key` | `server_url` | `sync` | Mode |
+|-----------|-------------|--------|------|
+| absent | absent | -- | **local** |
+| present | present | -- | **hosted** |
+| present | absent | `true` (default) | **hybrid** |
+| present | absent | `false` | **local** (key stored) |
+
+## Accessing the mode
+
+```typescript
+const hiitl = new HIITL();
+
+console.log(hiitl.mode);     // "local"
+console.log(hiitl.evalMode); // "OBSERVE_ALL"
+```
+
+## Environment variables
+
+All configuration supports `HIITL_` prefixed environment variables. Constructor arguments take precedence over environment variables.
+
+| Variable | Maps to |
+|----------|---------|
+| `HIITL_ENVIRONMENT` | `environment` |
+| `HIITL_AGENT_ID` | `agent_id` |
+| `HIITL_ORG_ID` | `org_id` |
+| `HIITL_POLICY_PATH` | `policy_path` |
+| `HIITL_AUDIT_DB_PATH` | `audit_db_path` |
+| `HIITL_ENABLE_RATE_LIMITING` | `enable_rate_limiting` (`"true"` / `"false"`) |
+| `HIITL_SIGNATURE_KEY` | `signature_key` |
+| `HIITL_API_KEY` | `api_key` |
+| `HIITL_SERVER_URL` | `server_url` |
+| `HIITL_TIMEOUT` | `timeout` (parsed as number) |
+| `HIITL_MAX_RETRIES` | `max_retries` (parsed as number) |
+| `HIITL_SYNC` | `sync` (`"true"` / `"false"`) |
+
+```bash
+export HIITL_API_KEY="sk_live_abc123..."
+export HIITL_SERVER_URL="https://ecp.hiitl.com"
+export HIITL_ENVIRONMENT="prod"
+```
+
+```typescript
+// Picks up environment variables automatically
+const hiitl = new HIITL({ agent_id: 'payment-agent' });
+```
+
+## Cleanup
+
+Call `close()` to release resources when you are done:
+
+```typescript
+const hiitl = new HIITL();
+
+// ... use hiitl ...
+
+hiitl.close(); // Closes SQLite audit database in local mode
+```
+
+## Querying audit records
+
+In local mode, you can query the audit log directly:
+
+```typescript
+const records = hiitl.queryAudit({ limit: 10 });
+
+// Filter by decision type
+const blocked = hiitl.queryAudit({ decision_type: 'BLOCK' });
+
+// Find a specific action
+const action = hiitl.queryAudit({ action_id: 'act_abc123...' });
+```
+
+<Note>
+  `queryAudit()` is only available in local mode. In hosted mode, query the server API directly.
+</Note>
+
+## Errors
+
+| Exception | When |
+|-----------|------|
+| `ConfigurationError` | Invalid constructor options or missing required fields |
+| `PolicyLoadError` | Policy file cannot be found, read, or parsed |
+| `AuditLogError` | Audit database cannot be created or initialized |
+
+```typescript
+import { ConfigurationError } from '@hiitl/sdk';
+
+try {
+  const hiitl = new HIITL({ mode: 'RESPECT_POLICY' });
+} catch (e) {
+  if (e instanceof ConfigurationError) {
+    console.error(e.message);
+    // "policy_path is required when mode is RESPECT_POLICY.
+    //
+    // Either provide a policy file:
+    //   new HIITL({ policy_path: './policy.yaml', mode: 'RESPECT_POLICY' })
+    //
+    // Or use OBSERVE_ALL mode (default) for zero-config:
+    //   new HIITL()"
+  }
+}
+```
+
+<Tip>
+  Error messages include code examples showing how to fix the problem. This is intentional -- every error should answer "what happened?" and "what should I do about it?"
+</Tip>

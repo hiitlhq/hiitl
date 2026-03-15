@@ -1,0 +1,189 @@
+---
+title: "Infrastructure Patterns"
+description: "Deployments, configuration, and scaling operations"
+---
+
+## deploy_service
+
+Deploy a service or application version to an environment.
+
+```python
+decision = hiitl.evaluate(
+    tool="deploy_service",
+    operation="execute",
+    target={"service": "payment-api", "environment": "prod"},
+    parameters={"version": "v2.3.1", "strategy": "rolling"}
+)
+```
+
+**Starter policy:**
+
+```yaml
+- name: "block-prod-deploy-outside-window"
+  enabled: true
+  priority: 900
+  conditions:
+    all_of:
+      - field: "action"
+        operator: "equals"
+        value: "deploy_service"
+      - field: "target.environment"
+        operator: "equals"
+        value: "prod"
+  decision: "REQUIRE_APPROVAL"
+  reason_code: "PROD_DEPLOY_REQUIRES_APPROVAL"
+  remediation:
+    message: "Production deployments require explicit approval."
+    suggestion: "Submit the deployment through the release management workflow."
+    type: "policy"
+  metadata:
+    sla_hours: 1
+    reviewer_role: "release_manager"
+
+- name: "allow-dev-deploys"
+  enabled: true
+  priority: 1
+  conditions:
+    all_of:
+      - field: "action"
+        operator: "equals"
+        value: "deploy_service"
+      - field: "target.environment"
+        operator: "in"
+        value: ["dev", "stage"]
+  decision: "ALLOW"
+  reason_code: "NON_PROD_DEPLOY_ALLOWED"
+```
+
+<Note>
+**Best practice:** Always require approval for production deployments. Use environment-based policies so dev/stage deploys remain unblocked. The audit trail provides a deployment log for change management compliance.
+</Note>
+
+---
+
+## modify_config
+
+Change a runtime configuration value.
+
+```python
+decision = hiitl.evaluate(
+    tool="modify_config",
+    operation="write",
+    target={"service": "payment-api", "config_key": "max_retry_count"},
+    parameters={"old_value": 3, "new_value": 5}
+)
+```
+
+**Starter policy:**
+
+```yaml
+- name: "block-sensitive-config-changes"
+  enabled: true
+  priority: 900
+  conditions:
+    all_of:
+      - field: "action"
+        operator: "equals"
+        value: "modify_config"
+      - field: "target.config_key"
+        operator: "in"
+        value: ["database_url", "api_secret", "encryption_key", "admin_password"]
+  decision: "BLOCK"
+  reason_code: "SENSITIVE_CONFIG_BLOCKED"
+  remediation:
+    message: "Sensitive configuration values cannot be changed by agents."
+    suggestion: "Update sensitive config through the secrets management portal (e.g., Vault, AWS Secrets Manager)."
+    type: "policy"
+
+- name: "require-approval-prod-config"
+  enabled: true
+  priority: 100
+  conditions:
+    all_of:
+      - field: "action"
+        operator: "equals"
+        value: "modify_config"
+      - field: "target.service"
+        operator: "not_equals"
+        value: ""
+  decision: "REQUIRE_APPROVAL"
+  reason_code: "CONFIG_CHANGE_REQUIRES_APPROVAL"
+  metadata:
+    sla_hours: 2
+    reviewer_role: "platform_eng"
+```
+
+<Warning>
+**Security:** Configuration changes can have cascading effects. Block changes to security-sensitive keys entirely. Require approval for all other configuration changes in production. The audit trail provides a configuration change log for SOC 2 CC8.1.
+</Warning>
+
+---
+
+## scale_resources
+
+Scale compute resources up or down.
+
+```python
+decision = hiitl.evaluate(
+    tool="scale_resources",
+    operation="execute",
+    target={"service": "payment-api", "resource_type": "compute"},
+    parameters={"current_replicas": 3, "desired_replicas": 10, "instance_type": "c5.xlarge"}
+)
+```
+
+**Starter policy:**
+
+```yaml
+- name: "block-excessive-scaling"
+  enabled: true
+  priority: 900
+  conditions:
+    all_of:
+      - field: "action"
+        operator: "equals"
+        value: "scale_resources"
+      - field: "parameters.desired_replicas"
+        operator: "greater_than"
+        value: 20
+  decision: "BLOCK"
+  reason_code: "SCALE_EXCEEDS_LIMIT"
+  remediation:
+    message: "Cannot scale beyond 20 replicas automatically."
+    suggestion: "Request capacity increase through the infrastructure team."
+    type: "threshold"
+    details:
+      max_replicas: 20
+
+- name: "require-approval-large-scale"
+  enabled: true
+  priority: 100
+  conditions:
+    all_of:
+      - field: "action"
+        operator: "equals"
+        value: "scale_resources"
+      - field: "parameters.desired_replicas"
+        operator: "greater_than"
+        value: 5
+  decision: "REQUIRE_APPROVAL"
+  reason_code: "LARGE_SCALE_CHANGE"
+  metadata:
+    sla_hours: 1
+    reviewer_role: "infra_ops"
+
+- name: "allow-small-scaling"
+  enabled: true
+  priority: 1
+  conditions:
+    all_of:
+      - field: "action"
+        operator: "equals"
+        value: "scale_resources"
+  decision: "ALLOW"
+  reason_code: "SCALE_ALLOWED"
+```
+
+<Note>
+**Cost control:** Scaling operations directly impact cloud spend. Set hard limits on maximum replica counts to prevent runaway costs from misconfigured autoscaling agents. The `cost_estimate` envelope field can be used for budget-aware policies.
+</Note>

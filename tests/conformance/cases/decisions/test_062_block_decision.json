@@ -1,0 +1,46 @@
+{
+  "test_id": "test_062_block_decision",
+  "description": "BLOCK decision with allowed=false",
+  "envelope": {
+    "schema_version": "v1.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_finance_bot",
+    "action_id": "act_test0620000000000000",
+    "timestamp": "2026-02-14T10:00:00Z",
+    "operation": "execute",
+    "parameters": {
+      "filename": "critical_system_config.yml"
+    },
+    "idempotency_key": "idem_test_062_block_decision",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "delete_file"
+  },
+  "policy_set": {
+    "version": "1.0.0",
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "block_system_file_deletion",
+        "priority": 100,
+        "enabled": true,
+        "conditions": {
+          "field": "parameters.filename",
+          "operator": "contains",
+          "value": "system"
+        },
+        "decision": "BLOCK",
+        "reason_code": "SYSTEM_FILE_PROTECTED",
+        "description": "Rule: block_system_file_deletion"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "BLOCK",
+    "allowed": false,
+    "reason_codes": [
+      "SYSTEM_FILE_PROTECTED"
+    ]
+  }
+}

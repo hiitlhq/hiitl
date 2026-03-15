@@ -1,0 +1,48 @@
+{
+  "test_id": "test_019_exists_operator",
+  "description": "Test exists operator (field exists)",
+  "envelope": {
+    "schema_version": "v1.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_finance_bot",
+    "action_id": "act_test0190000000000000",
+    "timestamp": "2026-02-14T10:00:00Z",
+    "operation": "execute",
+    "parameters": {
+      "amount": 1000,
+      "currency": "USD",
+      "approval_code": "APPROVAL_12345"
+    },
+    "idempotency_key": "idem_test_019_exists_operator",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "transfer_money"
+  },
+  "policy_set": {
+    "version": "1.0.0",
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "allow_if_approved",
+        "priority": 100,
+        "enabled": true,
+        "conditions": {
+          "field": "parameters.approval_code",
+          "operator": "exists",
+          "value": true
+        },
+        "decision": "ALLOW",
+        "reason_code": "HAS_APPROVAL_CODE",
+        "description": "Rule: allow_if_approved"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "ALLOW",
+    "allowed": true,
+    "reason_codes": [
+      "HAS_APPROVAL_CODE"
+    ]
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "test_id": "test_044_complex_any_of_with_all_of",
+  "description": "Test any_of where each option is an all_of",
+  "envelope": {
+    "schema_version": "v1.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_finance_bot",
+    "action_id": "act_test0440000000000000",
+    "timestamp": "2026-02-14T10:00:00Z",
+    "operation": "execute",
+    "parameters": {
+      "amount": 100,
+      "currency": "USD",
+      "account_type": "business"
+    },
+    "idempotency_key": "idem_test_044_complex_any_of_with_all_of",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "transfer_money"
+  },
+  "policy_set": {
+    "version": "1.0.0",
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "flexible_approval_rule",
+        "priority": 100,
+        "enabled": true,
+        "conditions": {
+          "any_of": [
+            {
+              "all_of": [
+                {
+                  "field": "parameters.amount",
+                  "operator": "less_than",
+                  "value": 500
+                },
+                {
+                  "field": "parameters.account_type",
+                  "operator": "equals",
+                  "value": "business"
+                }
+              ]
+            },
+            {
+              "all_of": [
+                {
+                  "field": "parameters.amount",
+                  "operator": "less_than",
+                  "value": 100
+                },
+                {
+                  "field": "parameters.currency",
+                  "operator": "equals",
+                  "value": "USD"
+                }
+              ]
+            }
+          ]
+        },
+        "decision": "ALLOW",
+        "reason_code": "FLEXIBLE_CRITERIA_MET",
+        "description": "Rule: flexible_approval_rule"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "ALLOW",
+    "allowed": true,
+    "reason_codes": [
+      "FLEXIBLE_CRITERIA_MET"
+    ]
+  }
+}

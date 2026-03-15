@@ -1,0 +1,47 @@
+{
+  "test_id": "test_067_empty_array",
+  "description": "Test handling of empty arrays",
+  "envelope": {
+    "schema_version": "v1.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_message_bot",
+    "action_id": "act_test0670000000000000",
+    "timestamp": "2026-02-14T10:00:00Z",
+    "operation": "execute",
+    "parameters": {
+      "recipients": [],
+      "subject": "Test"
+    },
+    "idempotency_key": "idem_test_067_empty_array",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "send_email"
+  },
+  "policy_set": {
+    "version": "1.0.0",
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "block_if_no_recipients",
+        "priority": 100,
+        "enabled": true,
+        "conditions": {
+          "field": "parameters.recipients",
+          "operator": "equals",
+          "value": []
+        },
+        "decision": "BLOCK",
+        "reason_code": "NO_RECIPIENTS",
+        "description": "Rule: block_if_no_recipients"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "BLOCK",
+    "allowed": false,
+    "reason_codes": [
+      "NO_RECIPIENTS"
+    ]
+  }
+}

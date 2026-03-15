@@ -1,0 +1,33 @@
+{
+  "name": "kill-switch-policy",
+  "version": "1.0.0",
+  "description": "Policy with kill switch enabled — blocks all payments",
+  "rules": [
+    {
+      "name": "kill-switch-payments",
+      "description": "Emergency stop all payments",
+      "enabled": true,
+      "priority": 1000,
+      "conditions": {
+        "field": "tool_name",
+        "operator": "equals",
+        "value": "process_payment"
+      },
+      "decision": "KILL_SWITCH",
+      "reason_code": "KILL_SWITCH_PAYMENTS"
+    },
+    {
+      "name": "allow-all",
+      "description": "Allow everything else",
+      "enabled": true,
+      "priority": 1,
+      "conditions": {
+        "field": "tool_name",
+        "operator": "exists",
+        "value": true
+      },
+      "decision": "ALLOW",
+      "reason_code": "DEFAULT_ALLOW"
+    }
+  ]
+}

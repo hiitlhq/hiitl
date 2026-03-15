@@ -1,0 +1,118 @@
+---
+title: "Authentication"
+description: "API keys, scoping, and rotation"
+---
+
+## API key authentication
+
+All hosted-mode requests require a Bearer token in the `Authorization` header.
+
+```bash
+curl -H "Authorization: Bearer hiitl_prod_abc123..." \
+  https://api.hiitl.com/v1/evaluate
+```
+
+In the SDK:
+
+<CodeGroup>
+
+```python Python
+hiitl = HIITL(
+    api_key="hiitl_prod_abc123...",
+    environment="prod",
+    agent_id="payment-agent"
+)
+```
+
+```typescript TypeScript
+const hiitl = new HIITL({
+  apiKey: 'hiitl_prod_abc123...',
+  environment: 'prod',
+  agentId: 'payment-agent',
+});
+```
+
+</CodeGroup>
+
+<Note>
+Local mode does not require an API key. The SDK runs evaluation entirely in-process.
+</Note>
+
+## API key scopes
+
+Every API key has an explicit scope that limits what it can do.
+
+| Scope | Permissions | Use case |
+|-------|-------------|----------|
+| `evaluate` | Submit envelopes for evaluation | Agent runtime (production) |
+| `read` | Query audit logs and policies | Monitoring, dashboards |
+| `admin` | Modify policies, toggle kill switches | Operations, deployment |
+| `full` | All permissions | Development only |
+
+<Warning>
+**Never use `full` scope keys in production.** Use the narrowest scope required. An agent only needs `evaluate` scope. A dashboard only needs `read` scope.
+</Warning>
+
+Requests with insufficient scope receive a `403` response:
+
+```json
+{
+  "error": {
+    "code": "INSUFFICIENT_SCOPE",
+    "message": "This API key has 'evaluate' scope. The requested operation requires 'admin' scope."
+  }
+}
+```
+
+## Key format
+
+API keys follow the pattern: `hiitl_{environment}_{random}`
+
+- `hiitl_prod_abc123...` -- production key
+- `hiitl_dev_xyz789...` -- development key
+
+Keys are scoped to a single `org_id` and `environment`. A production key cannot access development data, and vice versa.
+
+## Key rotation
+
+API keys support zero-downtime rotation with overlapping validity windows.
+
+<Steps>
+  <Step title="Create a new key">
+    Generate a new API key with the same scope via the admin API or dashboard.
+  </Step>
+  <Step title="Deploy the new key">
+    Update your application to use the new key. Both old and new keys are valid during this window.
+  </Step>
+  <Step title="Revoke the old key">
+    Once all services are using the new key, revoke the old one. Revoked keys stop working immediately.
+  </Step>
+</Steps>
+
+```bash
+# Create new key
+curl -X POST \
+  -H "Authorization: Bearer $ADMIN_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"scope": "evaluate", "description": "payment-agent-v2"}' \
+  https://api.hiitl.com/v1/api-keys
+
+# Revoke old key
+curl -X DELETE \
+  -H "Authorization: Bearer $ADMIN_API_KEY" \
+  https://api.hiitl.com/v1/api-keys/{key_id}
+```
+
+<Warning>
+Revoked keys stop working **immediately**. Ensure all services have migrated to the new key before revoking.
+</Warning>
+
+## Environment separation
+
+API keys enforce environment isolation:
+
+- A `dev` key can only access `dev` environment data
+- A `prod` key can only access `prod` environment data
+- Cross-environment requests are rejected with `ENVIRONMENT_MISMATCH`
+
+This means a misconfigured development service cannot accidentally evaluate against production policies or write to the production audit log.

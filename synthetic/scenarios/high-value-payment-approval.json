@@ -1,0 +1,133 @@
+{
+  "scenario_id": "high-value-payment-approval",
+  "name": "High-Value Payment Requires Approval",
+  "description": "Demonstrates approval workflow: agent attempts high-value payment, requires approval, gets approved, executes successfully",
+  "category": "approval_workflows",
+  "difficulty": "basic",
+  "estimated_duration_seconds": 10,
+  "policy_path": "../policies/payment-policy.json",
+  "steps": [
+    {
+      "step": 1,
+      "name": "Agent attempts high-value payment",
+      "action": "evaluate",
+      "agent_id": "payment-agent",
+      "envelope": {
+        "tool": "process_payment",
+        "operation": "execute",
+        "target": {
+          "account_id": "acct_demo_123"
+        },
+        "parameters": {
+          "amount": 5000.00,
+          "currency": "usd",
+          "description": "Large equipment purchase"
+        },
+        "sensitivity": ["money", "irreversible"],
+        "reason": "Customer requested equipment purchase payment"
+      },
+      "expected_decision": "REQUIRE_APPROVAL",
+      "expected_reason_codes": ["HIGH_VALUE_PAYMENT"],
+      "assertions": [
+        {"field": "decision.allowed", "equals": false},
+        {"field": "decision.decision", "equals": "REQUIRE_APPROVAL"},
+        {"field": "decision.resume_token", "exists": true},
+        {"field": "decision.hitl_config_ref", "equals": "payment-approval"}
+      ]
+    },
+    {
+      "step": 2,
+      "name": "Finance manager reviews and approves",
+      "action": "approve",
+      "approval_id": "${step_1_response.resume_token}",
+      "approver": {
+        "user_id": "user_finance_manager",
+        "role": "finance_approver",
+        "name": "Jane Finance Manager"
+      },
+      "approval_decision": "approved",
+      "approval_reason": "Legitimate equipment purchase, vendor verified",
+      "approval_notes": "Checked with customer via phone, purchase confirmed",
+      "assertions": [
+        {"field": "approval_status", "equals": "approved"},
+        {"field": "approved_at", "exists": true},
+        {"field": "approved_by", "equals": "user_finance_manager"}
+      ]
+    },
+    {
+      "step": 3,
+      "name": "Payment executes after approval",
+      "action": "execute",
+      "action_id": "${step_1_response.action_id}",
+      "expected_result": "success",
+      "assertions": [
+        {"field": "execution_result.status", "equals": "succeeded"},
+        {"field": "execution_result.transaction_id", "exists": true}
+      ]
+    },
+    {
+      "step": 4,
+      "name": "Verify audit trail completeness",
+      "action": "verify_audit",
+      "action_id": "${step_1_response.action_id}",
+      "expected_audit_records": 3,
+      "expected_events": [
+        {"event_type": "action.evaluated", "decision": "REQUIRE_APPROVAL"},
+        {"event_type": "action.approved", "approver": "user_finance_manager"},
+        {"event_type": "action.executed", "status": "succeeded"}
+      ],
+      "assertions": [
+        {"field": "audit_trail.length", "equals": 3},
+        {"field": "audit_trail[0].decision", "equals": "REQUIRE_APPROVAL"},
+        {"field": "audit_trail[1].event_type", "equals": "action.approved"},
+        {"field": "audit_trail[2].event_type", "equals": "action.executed"}
+      ]
+    }
+  ],
+  "success_criteria": {
+    "all_steps_complete": true,
+    "all_assertions_passed": true,
+    "approval_workflow_correct": true,
+    "audit_trail_complete": true,
+    "latency_acceptable": {
+      "max_total_ms": 100,
+      "max_evaluation_ms": 10
+    }
+  },
+  "cleanup": {
+    "description": "Scenario uses simulated payment execution, no cleanup required",
+    "actions": []
+  },
+  "narrative": {
+    "intro": "This scenario demonstrates HIITL's approval workflow for high-value payments. The agent attempts a $5000 payment, which exceeds the approval threshold and requires review by a finance manager.",
+    "steps": [
+      "The payment agent attempts to process a $5000 equipment purchase.",
+      "ECP evaluates the action and determines it requires approval based on the high-value payment policy.",
+      "The action is paused and routed to a finance manager for review.",
+      "The finance manager reviews the context, verifies the purchase with the customer, and approves.",
+      "ECP receives the approval and allows the payment to execute.",
+      "The payment processes successfully and a complete audit trail is created."
+    ],
+    "key_points": [
+      "Deterministic policy enforcement: All payments over $1000 require approval",
+      "Approval workflow: Action paused, routed to appropriate reviewer, resumed after approval",
+      "Complete audit trail: Every step (evaluation, approval, execution) is recorded",
+      "SLA tracking: Escalation context includes SLA expectations",
+      "Transparent latency: Evaluation happens in single-digit milliseconds"
+    ]
+  },
+  "variations": {
+    "denied_approval": {
+      "description": "Same scenario but approval is denied",
+      "change_at_step": 2,
+      "change": {"approval_decision": "denied"},
+      "expected_outcome": "Payment does not execute, audit shows denial"
+    },
+    "approval_timeout": {
+      "description": "Same scenario but approval times out",
+      "change_at_step": 2,
+      "change": {"simulate_timeout": true, "timeout_hours": 5},
+      "expected_outcome": "Payment escalated after SLA exceeded"
+    }
+  }
+}

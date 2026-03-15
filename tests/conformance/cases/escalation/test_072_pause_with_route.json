@@ -1,0 +1,59 @@
+{
+  "test_id": "test_072_pause_with_route",
+  "description": "PAUSE rule with route passes reference to decision.route_ref",
+  "envelope": {
+    "schema_version": "v1.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_data_processor",
+    "action_id": "act_test0720000000000000",
+    "timestamp": "2026-02-14T10:00:00Z",
+    "operation": "delete",
+    "parameters": {
+      "table": "customers",
+      "count": 500
+    },
+    "idempotency_key": "idem_test_072",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "delete_records"
+  },
+  "policy_set": {
+    "version": "1.0.0",
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "pause_bulk_deletes",
+        "priority": 100,
+        "enabled": true,
+        "conditions": {
+          "all_of": [
+            {
+              "field": "operation",
+              "operator": "equals",
+              "value": "delete"
+            },
+            {
+              "field": "parameters.count",
+              "operator": "greater_than",
+              "value": 100
+            }
+          ]
+        },
+        "decision": "PAUSE",
+        "reason_code": "BULK_DELETE_PAUSED",
+        "route": "data-deletion-review",
+        "description": "Bulk deletes are paused for manual review"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "PAUSE",
+    "allowed": false,
+    "reason_codes": [
+      "BULK_DELETE_PAUSED"
+    ],
+    "route_ref": "data-deletion-review",
+    "resume_token": "PRESENT"
+  }
+}

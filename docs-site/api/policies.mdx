@@ -1,0 +1,191 @@
+---
+title: "Policies"
+description: "Policy management endpoints"
+---
+
+Manage policy sets in hosted mode. Policies are versioned and immutable once deployed.
+
+## List policies
+
+```
+GET /v1/policies
+```
+
+**Required scope:** `read`
+
+Returns all policy sets for the authenticated org and environment.
+
+**Query parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `environment` | string | Filter by environment (`dev`, `stage`, `prod`) |
+| `active` | boolean | Only return the currently active version per policy set |
+
+**Example:**
+
+```bash
+curl -H "Authorization: Bearer $API_KEY" \
+  "https://api.hiitl.com/v1/policies?active=true"
+```
+
+```json
+{
+  "policies": [
+    {
+      "id": "pol_abc123",
+      "name": "payments-policy",
+      "version": "v2.1.0",
+      "active": true,
+      "environment": "prod",
+      "rule_count": 4,
+      "content_hash": "sha256:a1b2c3d4...",
+      "created_at": "2025-01-10T09:00:00Z",
+      "created_by": "admin@company.com"
+    }
+  ]
+}
+```
+
+---
+
+## Create policy
+
+```
+POST /v1/policies
+```
+
+**Required scope:** `admin`
+
+Create a new policy version. If a policy set with the same name already exists, this creates a new version and activates it.
+
+**Request body:**
+
+<ParamField body="policy_set" type="object" required>
+  The full policy set object including name, version, scope, and rules. See [Policies concept](/concepts/policies) for the full schema.
+</ParamField>
+
+<ParamField body="activate" type="boolean">
+  Whether to activate this version immediately. Defaults to `true`.
+</ParamField>
+
+**Example:**
+
+```bash
+curl -X POST https://api.hiitl.com/v1/policies \
+  -H "Authorization: Bearer $ADMIN_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "policy_set": {
+      "name": "payments-policy",
+      "version": "v2.2.0",
+      "scope": {
+        "org_id": "org_abc123def456ghi7",
+        "environment": "prod"
+      },
+      "rules": [
+        {
+          "name": "allow-payments",
+          "enabled": true,
+          "priority": 1,
+          "conditions": {
+            "all_of": [
+              { "field": "action", "operator": "equals", "value": "process_payment" }
+            ]
+          },
+          "decision": "ALLOW",
+          "reason_code": "DEFAULT_ALLOW"
+        }
+      ]
+    }
+  }'
+```
+
+**Response:**
+
+```json
+{
+  "id": "pol_def456",
+  "name": "payments-policy",
+  "version": "v2.2.0",
+  "active": true,
+  "content_hash": "sha256:e5f6a7b8...",
+  "created_at": "2025-01-15T14:00:00Z",
+  "diff": {
+    "rules_added": [],
+    "rules_removed": [],
+    "rules_modified": ["allow-payments"]
+  }
+}
+```
+
+The response includes a structured `diff` showing what changed from the previous version.
+
+---
+
+## Get policy
+
+```
+GET /v1/policies/{id}
+```
+
+**Required scope:** `read`
+
+Returns a single policy set with full rule definitions.
+
+**Example:**
+
+```bash
+curl -H "Authorization: Bearer $API_KEY" \
+  https://api.hiitl.com/v1/policies/pol_abc123
+```
+
+```json
+{
+  "id": "pol_abc123",
+  "name": "payments-policy",
+  "version": "v2.1.0",
+  "active": true,
+  "environment": "prod",
+  "content_hash": "sha256:a1b2c3d4...",
+  "created_at": "2025-01-10T09:00:00Z",
+  "created_by": "admin@company.com",
+  "policy_set": {
+    "name": "payments-policy",
+    "version": "v2.1.0",
+    "scope": {
+      "org_id": "org_abc123def456ghi7",
+      "environment": "prod"
+    },
+    "rules": [
+      {
+        "name": "allow-payments",
+        "description": "Default allow for payments",
+        "enabled": true,
+        "priority": 1,
+        "conditions": {
+          "all_of": [
+            { "field": "action", "operator": "equals", "value": "process_payment" }
+          ]
+        },
+        "decision": "ALLOW",
+        "reason_code": "DEFAULT_ALLOW"
+      }
+    ]
+  }
+}
+```
+
+---
+
+## Policy versioning
+
+- Deployed versions are **immutable** -- they are never modified
+- Creating a new version supersedes the previous one
+- Rollback means activating a previous version, not editing the current one
+- Every version has a SHA-256 `content_hash` computed at write time
+- The evaluator verifies the hash before using a policy
+
+<Note>
+All policy changes produce an immutable audit record: who changed what, when, from which version to which version, with content hashes before and after.
+</Note>

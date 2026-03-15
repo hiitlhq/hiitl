@@ -1,0 +1,170 @@
+---
+title: "IAM Patterns"
+description: "User management, permissions, and credential operations"
+---
+
+## create_user
+
+Create a new user account.
+
+```python
+decision = hiitl.evaluate(
+    tool="create_user",
+    operation="create",
+    target={"domain": "company.com"},
+    parameters={"email": "new.hire@company.com", "role": "basic_user", "department": "engineering"}
+)
+```
+
+**Starter policy:**
+
+```yaml
+- name: "block-admin-user-creation"
+  enabled: true
+  priority: 900
+  conditions:
+    all_of:
+      - field: "action"
+        operator: "equals"
+        value: "create_user"
+      - field: "parameters.role"
+        operator: "in"
+        value: ["admin", "superuser", "root"]
+  decision: "BLOCK"
+  reason_code: "ADMIN_CREATION_BLOCKED"
+  remediation:
+    message: "Agents cannot create admin-level accounts."
+    suggestion: "Create the user with basic_user role. Admin access must be granted separately through the IAM portal."
+    type: "policy"
+
+- name: "allow-basic-user-creation"
+  enabled: true
+  priority: 1
+  conditions:
+    all_of:
+      - field: "action"
+        operator: "equals"
+        value: "create_user"
+  decision: "ALLOW"
+  reason_code: "USER_CREATION_ALLOWED"
+```
+
+<Note>
+**Compliance:** SOX and SOC 2 require access provisioning controls. All user creation events are recorded in the hiitl audit trail, providing evidence for compliance audits.
+</Note>
+
+---
+
+## modify_permissions
+
+Change a user's permissions or role assignments.
+
+```python
+decision = hiitl.evaluate(
+    tool="modify_permissions",
+    operation="execute",
+    target={"user_id": "usr_789", "resource": "billing_system"},
+    parameters={"action": "grant", "role": "admin", "scope": "production"}
+)
+```
+
+**Starter policy:**
+
+```yaml
+- name: "require-approval-admin-grants"
+  enabled: true
+  priority: 200
+  conditions:
+    all_of:
+      - field: "action"
+        operator: "equals"
+        value: "modify_permissions"
+      - field: "parameters.role"
+        operator: "in"
+        value: ["admin", "superuser", "root", "owner"]
+  decision: "REQUIRE_APPROVAL"
+  reason_code: "ADMIN_PERMISSION_GRANT"
+  remediation:
+    message: "Admin permission grants require security team approval."
+    suggestion: "Submit the permission request through the access review workflow."
+    type: "policy"
+  metadata:
+    sla_hours: 2
+    reviewer_role: "security_team"
+
+- name: "block-prod-permissions-in-dev"
+  enabled: true
+  priority: 900
+  conditions:
+    all_of:
+      - field: "environment"
+        operator: "equals"
+        value: "dev"
+      - field: "action"
+        operator: "equals"
+        value: "modify_permissions"
+      - field: "parameters.scope"
+        operator: "contains"
+        value: "production"
+  decision: "BLOCK"
+  reason_code: "PROD_PERMISSIONS_IN_DEV"
+  remediation:
+    message: "Production permissions cannot be granted from dev environment."
+    suggestion: "Switch to the production environment to manage production permissions."
+    type: "policy"
+```
+
+<Warning>
+**Privilege escalation:** Permission modifications are the highest-risk IAM operation. Always require approval for admin-level grants. Consider blocking all cross-environment permission changes entirely.
+</Warning>
+
+---
+
+## reset_password
+
+Reset a user's password or credentials.
+
+```python
+decision = hiitl.evaluate(
+    tool="reset_password",
+    operation="execute",
+    target={"user_id": "usr_789"},
+    parameters={"method": "email_link", "initiated_by": "support_agent"}
+)
+```
+
+**Starter policy:**
+
+```yaml
+- name: "require-approval-admin-password-reset"
+  enabled: true
+  priority: 200
+  conditions:
+    all_of:
+      - field: "action"
+        operator: "equals"
+        value: "reset_password"
+      - field: "target.user_id"
+        operator: "starts_with"
+        value: "admin_"
+  decision: "REQUIRE_APPROVAL"
+  reason_code: "ADMIN_PASSWORD_RESET"
+  metadata:
+    sla_hours: 1
+    reviewer_role: "security_ops"
+
+- name: "allow-standard-password-reset"
+  enabled: true
+  priority: 1
+  conditions:
+    all_of:
+      - field: "action"
+        operator: "equals"
+        value: "reset_password"
+  decision: "ALLOW"
+  reason_code: "PASSWORD_RESET_ALLOWED"
+```
+
+<Note>
+**Compliance:** SOC 2 CC6.1 requires logical access controls. Password resets for privileged accounts should always require multi-party approval. Rate-limit resets per user to prevent brute-force account takeover attempts.
+</Note>

@@ -1,0 +1,48 @@
+{
+  "test_id": "test_106_sparse_missing_field_skips_rule",
+  "description": "Sparse envelope: rule references parameters.amount but no parameters provided — rule doesn't match, falls through to default BLOCK",
+  "envelope": {
+    "schema_version": "v1.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_test",
+    "action_id": "act_test1060000000000000000",
+    "timestamp": "2026-02-14T12:00:00.000Z",
+    "action": "process_payment",
+    "idempotency_key": "idem_test_106_sparse_missing",
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "policy_set": {
+    "version": "1.0.0",
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "allow_small_payments",
+        "priority": 100,
+        "enabled": true,
+        "conditions": {
+          "all_of": [
+            {
+              "field": "action",
+              "operator": "equals",
+              "value": "process_payment"
+            },
+            {
+              "field": "parameters.amount",
+              "operator": "less_than",
+              "value": 1000
+            }
+          ]
+        },
+        "decision": "ALLOW",
+        "reason_code": "SMALL_PAYMENT_ALLOWED",
+        "description": "Allow payments under 1000"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "BLOCK",
+    "allowed": false,
+    "reason_codes": ["NO_MATCHING_RULE"]
+  }
+}

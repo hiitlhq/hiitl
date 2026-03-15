@@ -1,0 +1,46 @@
+{
+  "test_id": "test_058_special_characters",
+  "description": "Test handling of special characters in strings",
+  "envelope": {
+    "schema_version": "v1.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_finance_bot",
+    "action_id": "act_test0580000000000000",
+    "timestamp": "2026-02-14T10:00:00Z",
+    "operation": "execute",
+    "parameters": {
+      "subject": "Re: Invoice #12345 - Payment $500.00 (URGENT!!!)"
+    },
+    "idempotency_key": "idem_test_058_special_characters",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "send_email"
+  },
+  "policy_set": {
+    "version": "1.0.0",
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "block_urgent_subjects",
+        "priority": 100,
+        "enabled": true,
+        "conditions": {
+          "field": "parameters.subject",
+          "operator": "contains",
+          "value": "URGENT!!!"
+        },
+        "decision": "BLOCK",
+        "reason_code": "SUSPICIOUS_URGENT_SUBJECT",
+        "description": "Rule: block_urgent_subjects"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "BLOCK",
+    "allowed": false,
+    "reason_codes": [
+      "SUSPICIOUS_URGENT_SUBJECT"
+    ]
+  }
+}

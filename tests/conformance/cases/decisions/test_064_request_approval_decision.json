@@ -1,0 +1,56 @@
+{
+  "test_id": "test_064_request_approval_decision",
+  "description": "REQUEST_APPROVAL decision with allowed=false",
+  "envelope": {
+    "schema_version": "v1.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_finance_bot",
+    "action_id": "act_test0640000000000000",
+    "timestamp": "2026-02-14T10:00:00Z",
+    "operation": "execute",
+    "parameters": {
+      "amount": 25000,
+      "currency": "USD"
+    },
+    "idempotency_key": "idem_test_064_request_approval_decision",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "wire_transfer"
+  },
+  "policy_set": {
+    "version": "1.0.0",
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "approval_for_large_wires",
+        "priority": 100,
+        "enabled": true,
+        "conditions": {
+          "all_of": [
+            {
+              "field": "action",
+              "operator": "equals",
+              "value": "wire_transfer"
+            },
+            {
+              "field": "parameters.amount",
+              "operator": "greater_than",
+              "value": 10000
+            }
+          ]
+        },
+        "decision": "REQUIRE_APPROVAL",
+        "reason_code": "LARGE_WIRE_NEEDS_APPROVAL",
+        "description": "Rule: approval_for_large_wires"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "REQUIRE_APPROVAL",
+    "allowed": false,
+    "reason_codes": [
+      "LARGE_WIRE_NEEDS_APPROVAL"
+    ]
+  }
+}

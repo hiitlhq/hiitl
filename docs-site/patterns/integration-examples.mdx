@@ -1,0 +1,425 @@
+---
+title: "Integration Examples"
+description: "Framework-specific integration patterns"
+---
+
+hiitl is architecturally neutral. It works with any orchestration framework without requiring rewrites. These examples show the integration pattern for popular frameworks.
+
+## LangChain
+
+Wrap tool functions with `evaluate()` inside the tool definition.
+
+<CodeGroup>
+
+```python Python
+from langchain.tools import tool
+from hiitl import HIITL
+
+hiitl = HIITL(
+    api_key=os.getenv("HIITL_API_KEY"),
+    environment="prod",
+    agent_id="langchain-agent"
+)
+
+@tool
+def process_payment(account_id: str, amount: float) -> dict:
+    """Process a payment for the given account."""
+    decision = hiitl.evaluate(
+        tool="process_payment",
+        operation="execute",
+        target={"account_id": account_id},
+        parameters={"amount": amount, "currency": "usd"}
+    )
+
+    if not decision.allowed:
+        return {
+            "error": "Payment blocked by policy",
+            "reason": decision.reason_codes,
+            "decision": decision.decision
+        }
+
+    result = stripe.charge(account_id, amount)
+    return {"status": "success", "transaction_id": result.id}
+```
+
+```typescript TypeScript
+import { DynamicStructuredTool } from "@langchain/core/tools";
+import { HIITL } from "@hiitl/sdk";
+import { z } from "zod";
+
+const hiitl = new HIITL({
+  apiKey: process.env.HIITL_API_KEY!,
+  environment: "prod",
+  agentId: "langchain-js-agent",
+});
+
+const processPaymentTool = new DynamicStructuredTool({
+  name: "process_payment",
+  description: "Process a payment for the given account",
+  schema: z.object({
+    accountId: z.string(),
+    amount: z.number(),
+  }),
+  func: async ({ accountId, amount }) => {
+    const decision = await hiitl.evaluate({
+      tool: "process_payment",
+      operation: "execute",
+      target: { accountId },
+      parameters: { amount, currency: "usd" },
+    });
+
+    if (!decision.allowed) {
+      return JSON.stringify({
+        error: "Payment blocked by policy",
+        reason: decision.reason_codes,
+      });
+    }
+
+    const result = await stripe.charges.create({
+      amount: amount * 100,
+      currency: "usd",
+      customer: accountId,
+    });
+    return JSON.stringify({ status: "success", transactionId: result.id });
+  },
+});
+```
+
+</CodeGroup>
+
+### LangChain callback handler
+
+For automatic evaluation of all tool calls, use a callback handler.
+
+```python
+from langchain.callbacks.base import BaseCallbackHandler
+from langchain.schema import AgentAction
+
+class HIITLCallbackHandler(BaseCallbackHandler):
+    def __init__(self, hiitl: HIITL):
+        self.hiitl = hiitl
+
+    def on_agent_action(self, action: AgentAction, **kwargs):
+        decision = self.hiitl.evaluate(
+            tool=action.tool,
+            operation="execute",
+            target={},
+            parameters=action.tool_input
+        )
+        if not decision.allowed:
+            raise ValueError(f"Tool blocked: {decision.reason_codes}")
+
+# Usage
+callback = HIITLCallbackHandler(hiitl)
+agent_executor = AgentExecutor(agent=agent, tools=tools, callbacks=[callback])
+```
+
+---
+
+## OpenAI Agents SDK
+
+Evaluate tool calls in your function execution handler.
+
+```python
+from openai import OpenAI
+from hiitl import HIITL
+import json
+
+client = OpenAI()
+hiitl = HIITL(
+    api_key=os.getenv("HIITL_API_KEY"),
+    environment="prod",
+    agent_id="openai-agent"
+)
+
+def execute_tool(tool_name: str, arguments: dict) -> str:
+    decision = hiitl.evaluate(
+        tool=tool_name,
+        operation="execute",
+        target={k: v for k, v in arguments.items() if k.endswith("_id")},
+        parameters=arguments
+    )
+
+    if not decision.allowed:
+        return json.dumps({
+            "error": "Action blocked by policy",
+            "reason": decision.reason_codes,
+            "decision": decision.decision
+        })
+
+    if tool_name == "process_payment":
+        result = stripe.charge(arguments["account_id"], arguments["amount"])
+        return json.dumps({"status": "success", "transaction_id": result.id})
+
+    return json.dumps({"error": "Unknown tool"})
+
+# Handle tool calls from chat completion
+message = response.choices[0].message
+if message.tool_calls:
+    for tool_call in message.tool_calls:
+        result = execute_tool(
+            tool_call.function.name,
+            json.loads(tool_call.function.arguments)
+        )
+```
+
+---
+
+## Vercel AI SDK
+
+Add `evaluate()` inside each tool's `execute` function.
+
+```typescript
+import { HIITL } from "@hiitl/sdk";
+import { streamText, tool } from "ai";
+import { openai } from "@ai-sdk/openai";
+import { z } from "zod";
+
+const hiitl = new HIITL({
+  apiKey: process.env.HIITL_API_KEY!,
+  environment: "prod",
+  agentId: "vercel-ai-agent",
+});
+
+export async function POST(req: Request) {
+  const { messages } = await req.json();
+
+  const result = await streamText({
+    model: openai("gpt-4"),
+    messages,
+    tools: {
+      process_payment: tool({
+        description: "Process a payment",
+        parameters: z.object({
+          accountId: z.string(),
+          amount: z.number(),
+        }),
+        execute: async ({ accountId, amount }) => {
+          const decision = await hiitl.evaluate({
+            tool: "process_payment",
+            operation: "execute",
+            target: { accountId },
+            parameters: { amount, currency: "usd" },
+          });
+
+          if (!decision.allowed) {
+            throw new Error(
+              `Payment blocked: ${decision.reason_codes.join(", ")}`
+            );
+          }
+
+          return await processPayment(accountId, amount);
+        },
+      }),
+    },
+  });
+
+  return result.toAIStreamResponse();
+}
+```
+
+---
+
+## CrewAI
+
+Wrap task execution with hiitl evaluation.
+
+```python
+from crewai import Agent, Task, Crew
+from hiitl import HIITL
+
+hiitl = HIITL(
+    api_key=os.getenv("HIITL_API_KEY"),
+    environment="prod",
+    agent_id="crewai-agent"
+)
+
+class HIITLTask(Task):
+    def execute(self, context: str = "") -> str:
+        decision = hiitl.evaluate(
+            tool=self.description,
+            operation="execute",
+            target={},
+            parameters={"context": context}
+        )
+
+        if not decision.allowed:
+            return f"Task blocked: {decision.reason_codes}"
+
+        return super().execute(context)
+
+payment_task = HIITLTask(
+    description="process_payment",
+    agent=payment_processor
+)
+
+crew = Crew(agents=[payment_processor], tasks=[payment_task])
+result = crew.kickoff()
+```
+
+---
+
+## Custom agent loop
+
+For agents with custom orchestration, add `evaluate()` at the action boundary.
+
+<CodeGroup>
+
+```python Python
+from hiitl import HIITL
+import json
+
+hiitl = HIITL(
+    api_key=os.getenv("HIITL_API_KEY"),
+    environment="prod",
+    agent_id="custom-agent"
+)
+
+def agent_loop(user_input: str):
+    messages = [{"role": "user", "content": user_input}]
+
+    while True:
+        response = client.chat.completions.create(
+            model="gpt-4", messages=messages
+        )
+        message = response.choices[0].message
+        messages.append(message)
+
+        if "ACTION:" in message.content:
+            action = parse_action(message.content)
+
+            # Evaluate before executing
+            decision = hiitl.evaluate(
+                tool=action["tool"],
+                operation="execute",
+                target=action.get("target", {}),
+                parameters=action.get("parameters", {})
+            )
+
+            if not decision.allowed:
+                messages.append({
+                    "role": "system",
+                    "content": f"Action blocked: {decision.reason_codes}"
+                })
+                continue
+
+            result = execute_action(action)
+            messages.append({
+                "role": "system",
+                "content": f"Action result: {result}"
+            })
+        else:
+            return message.content
+```
+
+```typescript TypeScript
+import { HIITL } from "@hiitl/sdk";
+
+const hiitl = new HIITL({
+  apiKey: process.env.HIITL_API_KEY!,
+  environment: "prod",
+  agentId: "custom-agent",
+});
+
+async function agentLoop(userInput: string): Promise<string> {
+  const messages = [{ role: "user", content: userInput }];
+
+  while (true) {
+    const response = await client.chat.completions.create({
+      model: "gpt-4",
+      messages,
+    });
+
+    const message = response.choices[0].message;
+    messages.push(message);
+
+    if (message.content?.includes("ACTION:")) {
+      const action = parseAction(message.content);
+
+      const decision = await hiitl.evaluate({
+        tool: action.tool,
+        operation: "execute",
+        target: action.target || {},
+        parameters: action.parameters || {},
+      });
+
+      if (!decision.allowed) {
+        messages.push({
+          role: "system",
+          content: `Action blocked: ${decision.reason_codes.join(", ")}`,
+        });
+        continue;
+      }
+
+      const result = await executeAction(action);
+      messages.push({
+        role: "system",
+        content: `Action result: ${JSON.stringify(result)}`,
+      });
+    } else {
+      return message.content || "";
+    }
+  }
+}
+```
+
+</CodeGroup>
+
+---
+
+## HTTP middleware
+
+Protect API endpoints with a decorator or middleware pattern.
+
+```python
+from flask import Flask, request, jsonify
+from hiitl import HIITL
+from functools import wraps
+
+app = Flask(__name__)
+hiitl = HIITL(
+    api_key=os.getenv("HIITL_API_KEY"),
+    environment="prod",
+    agent_id="api-server"
+)
+
+def hiitl_protected(tool_name: str):
+    def decorator(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            data = request.get_json()
+            decision = hiitl.evaluate(
+                tool=tool_name,
+                operation="execute",
+                target={},
+                parameters=data
+            )
+
+            if not decision.allowed:
+                return jsonify({
+                    "error": "Action blocked",
+                    "reason": decision.reason_codes,
+                    "decision": decision.decision
+                }), 403
+
+            return f(*args, **kwargs)
+        return wrapper
+    return decorator
+
+@app.route("/api/process-payment", methods=["POST"])
+@hiitl_protected("process_payment")
+def process_payment():
+    data = request.get_json()
+    result = stripe.charge(data["account_id"], data["amount"])
+    return jsonify({"status": "success", "transaction_id": result.id})
+```
+
+---
+
+## Integration principles
+
+1. **Wrap, don't rewrite.** hiitl integrates at the tool/action boundary. No architectural changes required.
+2. **Fail gracefully.** Return meaningful blocked-action messages to the LLM so it can adjust behavior.
+3. **Provide rich context.** Include `target`, `parameters`, `sensitivity`, and `cost_estimate` in envelopes.
+4. **Test locally first.** Use local mode to validate policies before deploying to production.
+5. **Monitor the audit trail.** Review decisions regularly to understand agent behavior patterns.

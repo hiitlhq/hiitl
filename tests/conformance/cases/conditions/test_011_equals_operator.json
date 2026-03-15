@@ -1,0 +1,46 @@
+{
+  "test_id": "test_011_equals_operator",
+  "description": "Test equals operator",
+  "envelope": {
+    "schema_version": "v1.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_finance_bot",
+    "action_id": "act_test0110000000000000",
+    "timestamp": "2026-02-14T10:00:00Z",
+    "operation": "execute",
+    "parameters": {
+      "recipient": "user@example.com"
+    },
+    "idempotency_key": "idem_test_011_equals_operator",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "send_email"
+  },
+  "policy_set": {
+    "version": "1.0.0",
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "allow_specific_recipient",
+        "priority": 100,
+        "enabled": true,
+        "conditions": {
+          "field": "parameters.recipient",
+          "operator": "equals",
+          "value": "user@example.com"
+        },
+        "decision": "ALLOW",
+        "reason_code": "RECIPIENT_ALLOWED",
+        "description": "Rule: allow_specific_recipient"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "ALLOW",
+    "allowed": true,
+    "reason_codes": [
+      "RECIPIENT_ALLOWED"
+    ]
+  }
+}

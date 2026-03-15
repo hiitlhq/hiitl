@@ -1,0 +1,177 @@
+---
+title: "Data Access Patterns"
+description: "Database queries, data exports, and record deletion"
+---
+
+## query_database
+
+Execute a database query.
+
+```python
+decision = hiitl.evaluate(
+    tool="query_database",
+    operation="read",
+    target={"database": "production", "table": "users"},
+    parameters={"query_type": "select", "limit": 100}
+)
+```
+
+**Starter policy:**
+
+```yaml
+- name: "block-unlimited-queries"
+  enabled: true
+  priority: 900
+  conditions:
+    all_of:
+      - field: "action"
+        operator: "equals"
+        value: "query_database"
+      - field: "parameters.limit"
+        operator: "greater_than"
+        value: 10000
+  decision: "BLOCK"
+  reason_code: "QUERY_TOO_LARGE"
+  remediation:
+    message: "Query limit exceeds 10,000 rows."
+    suggestion: "Add a LIMIT clause of 10,000 or less, or use the export_data action for bulk retrieval."
+    type: "threshold"
+    details:
+      max_limit: 10000
+
+- name: "require-approval-pii-tables"
+  enabled: true
+  priority: 100
+  conditions:
+    all_of:
+      - field: "action"
+        operator: "equals"
+        value: "query_database"
+      - field: "target.table"
+        operator: "in"
+        value: ["users", "customers", "employees", "billing"]
+  decision: "REQUIRE_APPROVAL"
+  reason_code: "PII_TABLE_ACCESS"
+  metadata:
+    sla_hours: 1
+    reviewer_role: "data_steward"
+```
+
+<Note>
+**Compliance:** GDPR Article 25 (data protection by design) and CCPA require controls on access to personal data. The audit trail provides evidence of access patterns for data subject access requests (DSARs).
+</Note>
+
+---
+
+## export_data
+
+Export data from the system to a file or external destination.
+
+```python
+decision = hiitl.evaluate(
+    tool="export_data",
+    operation="read",
+    target={"source": "analytics_db", "format": "csv"},
+    parameters={"row_count": 50000, "includes_pii": True}
+)
+```
+
+**Starter policy:**
+
+```yaml
+- name: "block-pii-export"
+  enabled: true
+  priority: 900
+  conditions:
+    all_of:
+      - field: "action"
+        operator: "equals"
+        value: "export_data"
+      - field: "parameters.includes_pii"
+        operator: "equals"
+        value: true
+  decision: "BLOCK"
+  reason_code: "PII_EXPORT_BLOCKED"
+  remediation:
+    message: "Exports containing PII are not permitted via automated agents."
+    suggestion: "Use the anonymized export endpoint or request manual export through the data team."
+    type: "policy"
+
+- name: "require-approval-large-export"
+  enabled: true
+  priority: 100
+  conditions:
+    all_of:
+      - field: "action"
+        operator: "equals"
+        value: "export_data"
+      - field: "parameters.row_count"
+        operator: "greater_than"
+        value: 10000
+  decision: "REQUIRE_APPROVAL"
+  reason_code: "LARGE_EXPORT"
+  metadata:
+    sla_hours: 4
+    reviewer_role: "data_ops"
+```
+
+<Warning>
+**Data loss prevention:** Exports are a primary vector for data exfiltration. Consider blocking all PII exports by default and requiring manual review for large exports regardless of content.
+</Warning>
+
+---
+
+## delete_records
+
+Delete records from a database or data store.
+
+```python
+decision = hiitl.evaluate(
+    tool="delete_records",
+    operation="delete",
+    target={"database": "production", "table": "orders"},
+    parameters={"record_count": 1, "where_clause": "id = 'ord_123'"}
+)
+```
+
+**Starter policy:**
+
+```yaml
+- name: "block-bulk-delete"
+  enabled: true
+  priority: 900
+  conditions:
+    all_of:
+      - field: "action"
+        operator: "equals"
+        value: "delete_records"
+      - field: "parameters.record_count"
+        operator: "greater_than"
+        value: 100
+  decision: "BLOCK"
+  reason_code: "BULK_DELETE_BLOCKED"
+  remediation:
+    message: "Bulk deletion of more than 100 records is not permitted."
+    suggestion: "Delete records in smaller batches, or submit a bulk deletion request through the admin portal."
+    type: "threshold"
+    details:
+      max_records: 100
+
+- name: "require-approval-any-delete"
+  enabled: true
+  priority: 100
+  conditions:
+    all_of:
+      - field: "action"
+        operator: "equals"
+        value: "delete_records"
+  decision: "REQUIRE_APPROVAL"
+  reason_code: "DELETE_REQUIRES_APPROVAL"
+  metadata:
+    sla_hours: 1
+    reviewer_role: "database_admin"
+```
+
+<Warning>
+**Irreversibility:** Delete operations are irreversible by nature. Consider requiring approval for ALL delete operations in production, regardless of record count. Use `sensitivity: ["irreversible"]` in the envelope for additional policy targeting.
+</Warning>

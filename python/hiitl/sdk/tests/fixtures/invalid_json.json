@@ -1,0 +1,11 @@
+{
+  "version": "1.0.0",
+  "name": "invalid_policy",
+  "rules": [
+    {
+      "name": "test_rule"
+      // Missing comma here - invalid JSON
+      "priority": 100
+    }
+  ]
+}

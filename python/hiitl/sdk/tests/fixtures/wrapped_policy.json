@@ -1,0 +1,21 @@
+{
+  "policy_set": {
+    "version": "1.0.0",
+    "name": "wrapped_test_policy",
+    "rules": [
+      {
+        "name": "test_rule",
+        "priority": 100,
+        "enabled": true,
+        "conditions": {
+          "field": "tool_name",
+          "operator": "equals",
+          "value": "test_tool"
+        },
+        "decision": "ALLOW",
+        "reason_code": "TEST",
+        "description": "Test rule"
+      }
+    ]
+  }
+}

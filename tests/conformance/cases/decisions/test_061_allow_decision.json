@@ -1,0 +1,46 @@
+{
+  "test_id": "test_061_allow_decision",
+  "description": "ALLOW decision with allowed=true",
+  "envelope": {
+    "schema_version": "v1.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_finance_bot",
+    "action_id": "act_test0610000000000000",
+    "timestamp": "2026-02-14T10:00:00Z",
+    "operation": "execute",
+    "parameters": {
+      "filename": "public_data.txt"
+    },
+    "idempotency_key": "idem_test_061_allow_decision",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "read_file"
+  },
+  "policy_set": {
+    "version": "1.0.0",
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "allow_public_files",
+        "priority": 100,
+        "enabled": true,
+        "conditions": {
+          "field": "parameters.filename",
+          "operator": "starts_with",
+          "value": "public_"
+        },
+        "decision": "ALLOW",
+        "reason_code": "PUBLIC_FILE_ACCESS",
+        "description": "Rule: allow_public_files"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "ALLOW",
+    "allowed": true,
+    "reason_codes": [
+      "PUBLIC_FILE_ACCESS"
+    ]
+  }
+}

@@ -1,0 +1,161 @@
+pattern_id: "classification/score_application"
+category: "classification"
+name: "Score Application"
+description: >
+  Controls AI-driven application scoring for loans, jobs, insurance, and other decisioning
+  workflows. Enforces fairness guardrails, requires human review for edge cases and protected
+  categories, and sandboxes scoring models in non-production environments for bias testing.
+tags: ["classification", "scoring", "fairness", "bias"]
+
+evaluate_examples:
+  python: |
+    result = hiitl.evaluate("score_application", {
+        "application_type": "personal_loan",
+        "score": 680,
+        "factors": ["income", "credit_history", "employment_length"],
+    })
+    if result.ok:
+        apply_scoring_decision()
+  typescript: |
+    const result = hiitl.evaluate({
+      action: 'score_application',
+      params: {
+        application_type: 'personal_loan',
+        score: 680,
+        factors: ['income', 'credit_history', 'employment_length'],
+      },
+    });
+    if (result.ok) {
+      await applyScoringDecision();
+    }
+
+context_enrichment:
+  - field: "parameters.confidence_score"
+    why: "Model confidence in the score affects whether automated decisioning is appropriate or human review is needed"
+    example: 0.91
+  - field: "sensitivity"
+    why: "Application scoring affects people's access to financial products, employment, and services — set to 'regulated' for regulated use cases"
+    example: "regulated"
+  - field: "agent_id"
+    why: "Identifies which scoring model version produced the result, critical for fairness audits and model governance"
+    example: "loan-scorer-v2.3"
+  - field: "parameters.application_type"
+    why: "Different application types are subject to different regulations (ECOA for lending, EEOC for employment)"
+    example: "personal_loan"
+  - field: "environment"
+    why: "Scoring models in dev/stage should be sandboxed to prevent real decisions from untested model versions"
+    example: "prod"
+
+starter_policies:
+  - name: "allow-clear-decisions"
+    description: "Allow automated scoring for applications that fall clearly within approved ranges with high confidence"
+    priority: 500
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "score_application"
+        - field: "parameters.score"
+          operator: "greater_than_or_equal"
+          value: 700
+        - field: "environment"
+          operator: "equals"
+          value: "prod"
+    decision: "ALLOW"
+    reason_code: "CLEAR_SCORE_ALLOWED"
+    remediation:
+      type: "static"
+      message: "Application score is within the auto-decision range — automated processing permitted"
+      suggestion: "No action needed"
+
+  - name: "require-review-edge-cases"
+    description: "Require human review for scores near decision boundaries where model uncertainty is highest"
+    priority: 200
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "score_application"
+        - field: "parameters.score"
+          operator: "greater_than_or_equal"
+          value: 620
+        - field: "parameters.score"
+          operator: "less_than"
+          value: 700
+    decision: "REQUIRE_APPROVAL"
+    reason_code: "EDGE_CASE_REQUIRES_REVIEW"
+    remediation:
+      type: "static"
+      message: "Application score falls in the review zone (620-699) where model uncertainty is highest. Human review ensures fair treatment of borderline applicants."
+      suggestion: "Route the application to a human underwriter or reviewer. Include the full scoring factors breakdown and any adverse action reasons. Borderline applications should receive additional consideration per your fair lending or fair hiring policies."
+
+  - name: "block-automated-adverse-action"
+    description: "Block fully automated adverse decisions (denials) to ensure human review of all rejections"
+    priority: 100
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "score_application"
+        - field: "parameters.score"
+          operator: "less_than"
+          value: 620
+    decision: "BLOCK"
+    reason_code: "AUTOMATED_ADVERSE_ACTION_BLOCKED"
+    remediation:
+      type: "static"
+      message: "Automated adverse actions (application denials) are blocked. All denial decisions must involve human review to comply with fair lending/hiring requirements and ensure proper adverse action notices."
+      suggestion: "Route the application to a human reviewer for final determination. If the reviewer confirms denial, generate the required adverse action notice citing specific reasons. Never issue an automated denial without human review."
+
+  - name: "sandbox-non-production"
+    description: "Sandbox scoring actions in non-production environments to prevent real decisions from untested models"
+    priority: 150
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "score_application"
+        - field: "environment"
+          operator: "not_equals"
+          value: "prod"
+    decision: "SANDBOX"
+    reason_code: "NON_PROD_SCORING_SANDBOXED"
+    remediation:
+      type: "static"
+      message: "Application scoring in non-production environments is sandboxed. Scores are generated but not applied to real applications."
+      suggestion: "Use the sandbox results for model validation and bias testing. Promote the model to production only after it passes fairness benchmarks and receives model governance approval."
+
+  - name: "rate-limit-scoring"
+    description: "Rate-limit scoring to detect and contain model drift or bulk processing anomalies"
+    priority: 300
+    enabled: true
+    conditions:
+      field: "action"
+      operator: "equals"
+      value: "score_application"
+    decision: "RATE_LIMIT"
+    reason_code: "SCORING_RATE_LIMITED"
+    remediation:
+      type: "static"
+      message: "Application scoring rate limit exceeded. This safeguard detects unusual volume that may indicate model drift, data pipeline issues, or retry loops."
+      suggestion: "Implement batching with controlled throughput for bulk scoring jobs. If the rate limit was unexpected, check your data pipeline for duplicate applications or retry loops."
+
+remediation:
+  block_message: "Application scoring was blocked by policy. The most common cause is an attempted automated adverse action (denial). All denials require human review. Check reason_code for the specific trigger."
+  developer_action: "Read the decision reason_codes. For adverse action blocks, implement the human review routing flow. For sandbox decisions, capture the sandbox result for model validation. Always ensure adverse action notices include the specific factors that contributed to the score."
+  approval_message: "This application score falls in the review zone and requires human assessment. A reviewer will evaluate the scoring factors and make a final determination. Include all relevant applicant context in the review queue."
+
+compliance:
+  - regulation: "ECOA / Fair Lending (Reg B)"
+    relevance: "Automated credit scoring must comply with the Equal Credit Opportunity Act, which prohibits discrimination and requires adverse action notices"
+    note: "All automated denials are blocked by default to ensure compliance. Adverse action notices must cite specific reasons from the scoring factors, not just the score itself. Monitor scoring patterns across demographic groups using the audit trail."
+  - regulation: "EEOC / Employment Non-Discrimination"
+    relevance: "AI-driven hiring and applicant scoring must comply with EEOC guidelines and the emerging regulatory framework for automated employment decisions"
+    note: "For employment scoring, configure the review zone threshold conservatively. Several jurisdictions (NYC Local Law 144, EU AI Act) require bias audits for automated employment decisions. The audit trail provides the data needed for these audits."
+  - regulation: "Algorithmic Fairness / EU AI Act"
+    relevance: "Application scoring is classified as high-risk AI under the EU AI Act and requires transparency, human oversight, and bias monitoring"
+    note: "The sandbox policy for non-production environments supports bias testing before deployment. Use the audit trail to generate fairness metrics across protected characteristics. Document the scoring model's purpose, training data, and validation results as required by AI governance frameworks."

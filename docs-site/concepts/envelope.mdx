@@ -1,0 +1,131 @@
+---
+title: "Execution Envelope"
+description: "The normalized representation of an action"
+---
+
+## What is an envelope?
+
+An execution envelope is the normalized, machine-readable representation of an action plus all its required metadata. Every action that passes through hiitl is described by an envelope — identifiers, action definition, risk signals, context, and a cryptographic signature.
+
+The full envelope has roughly 20 fields. You provide 1 to 5 of them. The SDK handles everything else.
+
+## What you provide vs. what the SDK constructs
+
+<CodeGroup>
+
+```python Python — what you write
+decision = hiitl.evaluate(
+    "process_payment",
+    operation="execute",
+    target={"account_id": "acct_123"},
+    parameters={"amount": 150.00, "currency": "usd"},
+)
+```
+
+```typescript TypeScript — what you write
+const decision = await hiitl.evaluate({
+  action: 'process_payment',
+  operation: 'execute',
+  target: { accountId: 'acct_123' },
+  parameters: { amount: 150.0, currency: 'usd' },
+});
+```
+
+</CodeGroup>
+
+The SDK constructs the full envelope behind the scenes:
+
+```json Full envelope (constructed by SDK)
+{
+  "schema_version": "v1.0",
+  "org_id": "org_abc123def456ghi7",
+  "environment": "prod",
+  "agent_id": "payment-agent",
+  "action_id": "act_01HQZ6X8Z9P5ABCDEFGHIJK",
+  "idempotency_key": "idem_01HQZ6X8Z9P5ABCDEFGHIJK",
+  "action": "process_payment",
+  "operation": "execute",
+  "target": {
+    "account_id": "acct_123"
+  },
+  "parameters": {
+    "amount": 150.00,
+    "currency": "usd"
+  },
+  "timestamp": "2026-02-14T12:34:56.789Z",
+  "signature": "a1b2c3d4e5f6..."
+}
+```
+
+Fields like `org_id`, `environment`, and `agent_id` come from SDK configuration (set once at init). Fields like `action_id`, `idempotency_key`, `timestamp`, and `signature` are auto-generated per call.
+
+## Field reference
+
+### Identifiers
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `schema_version` | string | Yes | Envelope schema version (e.g. `"v1.0"`) |
+| `org_id` | string | Yes | Organization identifier. Tenant isolation boundary. Pattern: `org_{alphanumeric 16+}` |
+| `environment` | string | Yes | One of `"dev"`, `"stage"`, `"prod"` |
+| `agent_id` | string | Yes | Stable identifier for the agent across runs |
+| `agent_instance_id` | string | No | Per-run instance identifier (useful for distributed systems) |
+| `user_id` | string | No | End-user on whose behalf the action runs |
+| `session_id` | string | No | Groups actions within a user session |
+| `action_id` | string | Yes | Client-generated unique ID. Pattern: `act_{alphanumeric 20+}` |
+| `idempotency_key` | string | Yes | Prevents duplicate execution on retry |
+| `correlation_id` | string | No | Distributed tracing correlation ID |
+| `trace_id` | string | No | OpenTelemetry trace ID |
+
+### Action definition
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `action` | string | Yes | Name of the action being evaluated (e.g. `"process_payment"`, `"send_email"`) |
+| `action_type` | string | No | Secondary classification (e.g. `"payment"`, `"communication"`) |
+| `operation` | string | No | CRUD operation: `"read"`, `"write"`, `"create"`, `"delete"`, `"execute"`, `"update"`. Defaults to `"execute"` |
+| `target` | object | No | Resource identifiers — what the action targets. Defaults to `{}` |
+| `parameters` | object | No | Action-specific parameters. Defaults to `{}` |
+
+### Risk signals
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `sensitivity` | array | No | Risk classifications: `"money"`, `"identity"`, `"permissions"`, `"regulated"`, `"irreversible"`, `"pii"`, `"sensitive_data"` |
+| `cost_estimate` | object | No | Estimated cost: `{ tokens, dollars, api_calls }` |
+| `confidence` | number | No | Upstream AI confidence score (0.0 to 1.0) |
+| `requested_scopes` | array | No | Permission scopes requested for this action |
+
+### Context
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `reason` | string | No | Brief reason for the action (max 500 chars, for audit). Never include full prompts. |
+| `prompt_hash` | string | No | Hash of the prompt that led to this action (audit without logging the prompt) |
+| `policy_refs` | array | No | References to policies that should apply (usually determined server-side) |
+
+### Security
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `timestamp` | string | Yes | ISO 8601 timestamp. Used for replay attack prevention. |
+| `signature` | string | Yes | HMAC-SHA256 signature of the canonical envelope. 64-character hex string. |
+| `signature_version` | string | No | Signature algorithm version. Defaults to `"hmac-sha256-v1"` |
+
+### Metadata
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `metadata` | object | No | Free-form metadata. Not used in policy evaluation. |
+
+## Envelope design principles
+
+<Note>
+The envelope is the developer's friend, not their burden. You specify only what is unique to this action. The SDK handles the rest.
+</Note>
+
+- **JSON is the native format.** Envelopes are JSON objects. All language implementations serialize to and from JSON.
+- **Versioned.** The `schema_version` field allows backward-compatible evolution.
+- **Signed.** HMAC-SHA256 signature prevents tampering between the SDK and the evaluator.
+- **Deterministic.** The same envelope evaluated against the same policy always produces the same decision.
+- **No raw prompts.** The `reason` field is for brief audit context. Use `prompt_hash` if you need prompt traceability without logging sensitive content.

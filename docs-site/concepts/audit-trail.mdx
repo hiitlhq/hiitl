@@ -1,0 +1,161 @@
+---
+title: "Audit Trail"
+description: "Immutable record of every action, even blocked ones"
+---
+
+## What gets recorded
+
+Every action that passes through hiitl produces an audit record. This includes actions that were allowed, blocked, rate-limited, escalated, or failed validation. There are no silent actions.
+
+Each audit record captures:
+
+| Data | Description |
+|------|-------------|
+| **Envelope** | The full (or redacted) execution envelope that was submitted |
+| **Decision** | The outcome: `ALLOW`, `BLOCK`, `REQUIRE_APPROVAL`, etc. |
+| **Reason codes** | Machine-readable codes explaining why that decision was made |
+| **Policy version** | Exact version of the policy set used during evaluation |
+| **Matched rules** | Which rules fired and at what priority |
+| **Timing** | Latency breakdown: ingest, evaluation, and total milliseconds |
+| **Identifiers** | org_id, environment, agent_id, user_id, action_id |
+
+## Immutability
+
+The audit trail is **append-only**. Once a record is written, it cannot be updated, modified, or deleted.
+
+<Warning>
+In fail-closed mode (the default), if the audit write fails, the action is blocked. hiitl will not allow an action to execute without a durable record of the evaluation.
+</Warning>
+
+This design guarantees:
+- Every attempted action has a permanent record for its retention window
+- Blocked actions are recorded, not silently dropped
+- The audit trail is a reliable source of truth for compliance, debugging, and incident response
+
+## Event types
+
+Audit records are typed by lifecycle stage. The `event_type` field indicates what happened.
+
+| Event type | When |
+|------------|------|
+| `action.evaluated` | Policy evaluation completed |
+| `action.executed` | Action was executed after an ALLOW decision |
+| `action.failed` | Action execution failed (after ALLOW) |
+| `action.canceled` | Action was canceled |
+| `action.escalated` | Action was escalated to human review |
+| `action.review_pending` | Escalation routed to a reviewer, awaiting response |
+| `action.review_received` | Reviewer submitted their response |
+| `action.resumed` | Previously paused action resumed or canceled after review |
+| `policy.changed` | A policy was created, updated, or activated |
+| `kill_switch.activated` | A kill switch rule was enabled |
+| `kill_switch.deactivated` | A kill switch rule was disabled |
+| `rate_limit.exceeded` | An action exceeded its rate limit |
+| `signature.invalid` | Envelope signature verification failed |
+| `control_plane.unavailable` | The control plane was unreachable |
+
+## Storage
+
+<Tabs>
+  <Tab title="Local mode">
+    In local mode, audit records are stored in an embedded **SQLite** database. No external infrastructure required.
+
+    - File location is configurable (defaults to `./hiitl_audit.db`)
+    - Same append-only guarantees as hosted mode
+    - Suitable for development, testing, and single-process deployments
+  </Tab>
+  <Tab title="Hosted mode">
+    In hosted mode, audit records are stored in **PostgreSQL** with time-based partitioning.
+
+    - Partitioned by month for efficient retention management
+    - Indexed by org_id, environment, timestamp, agent_id, action, and decision type
+    - Row-level security ensures strict tenant isolation
+    - Configurable retention per organization
+  </Tab>
+</Tabs>
+
+## Security and tamper detection
+
+### Content hashing
+
+Every audit record includes a **SHA-256 hash** of its own content, computed at write time. This enables individual record tamper detection: if any field in the record is modified after write, the hash will not match.
+
+### Policy change audit trail
+
+Policy modifications produce their own audit records, separate from the action audit trail. Each policy change record includes:
+
+- Who changed the policy
+- What version was active before and after
+- Content hashes of the old and new policy versions
+- A structured diff showing rules added, removed, or modified
+
+If the policy change audit write fails, the policy change is rejected.
+
+### Envelope hash in decisions
+
+Every [decision response](/concepts/decisions) includes a SHA-256 hash of the evaluated envelope. The caller can verify that what hiitl evaluated matches what they submitted.
+
+## Redaction
+
+Sensitive parameters can be redacted before storage. Redaction is configured at the org level and happens **after** policy evaluation (the evaluator sees the full envelope).
+
+```json Before redaction
+{
+  "parameters": {
+    "account_number": "1234567890",
+    "amount": 500
+  }
+}
+```
+
+```json After redaction
+{
+  "parameters": {
+    "account_number": "[REDACTED]",
+    "amount": 500
+  }
+}
+```
+
+Auto-redaction patterns match common sensitive field names like `password`, `secret`, `api_key`, `token`, `ssn`, and `credit_card`. Custom fields can be added per organization.
+
+## Querying the audit trail
+
+Audit records are searchable by:
+
+- **Time range** -- find all actions in the last hour
+- **Agent** -- what did `payment-agent` do today?
+- **Action** -- all `process_payment` evaluations this week
+- **Decision type** -- show me every `BLOCK` and `KILL_SWITCH`
+- **User** -- actions on behalf of a specific end user
+- **Environment** -- filter to `prod` only
+
+## OpenTelemetry compatibility
+
+The event format maps cleanly to OpenTelemetry spans and events. Key field mappings:
+
+| hiitl field | OTel span field |
+|-------------|-----------------|
+| `event_id` | `span.id` |
+| `trace_id` | `span.trace_id` |
+| `timestamp` | `span.start_time` |
+| `timing.total_ms` | `span.duration` |
+| `event_type` | `span.name` |
+| `decision` | `span.attributes["decision"]` |
+
+Phase 1 emits events via webhooks. Native OTel export is planned for Phase 2.
+
+## Webhook emission
+
+Organizations can configure webhook endpoints to receive audit events in real time. Webhooks support filtering so consumers only receive relevant events.
+
+```yaml Example webhook configuration
+webhooks:
+  - name: "security-alerts"
+    url: "https://hooks.example.com/hiitl"
+    events: ["action.evaluated", "kill_switch.activated"]
+    filters:
+      decision: ["BLOCK", "KILL_SWITCH"]
+      environment: ["prod"]
+```
+
+Webhook payloads use the same JSON format as audit records and are signed with HMAC-SHA256 so consumers can verify authenticity.

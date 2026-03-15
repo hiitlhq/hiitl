@@ -1,0 +1,39 @@
+{
+  "test_id": "test_105_sparse_envelope_action_only",
+  "description": "Sparse envelope: only action + required identifiers, operation/target/parameters use defaults",
+  "envelope": {
+    "schema_version": "v1.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "dev",
+    "agent_id": "agent_test",
+    "action_id": "act_test1050000000000000000",
+    "timestamp": "2026-02-14T12:00:00.000Z",
+    "action": "send_email",
+    "idempotency_key": "idem_test_105_sparse",
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "policy_set": {
+    "version": "1.0.0",
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "allow_email",
+        "priority": 100,
+        "enabled": true,
+        "conditions": {
+          "field": "action",
+          "operator": "equals",
+          "value": "send_email"
+        },
+        "decision": "ALLOW",
+        "reason_code": "EMAIL_ALLOWED",
+        "description": "Allow sending emails"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "ALLOW",
+    "allowed": true,
+    "reason_codes": ["EMAIL_ALLOWED"]
+  }
+}

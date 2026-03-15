@@ -1,0 +1,162 @@
+pattern_id: "classification/approve_claim"
+category: "classification"
+name: "Approve Claim"
+description: >
+  Controls AI-driven claim approval actions for insurance claims, expense reports, and
+  reimbursement requests. Enforces tiered approval thresholds, blocks large auto-approvals,
+  and escalates high-risk claims for fraud investigation or senior review.
+tags: ["classification", "claim", "approval", "financial"]
+
+evaluate_examples:
+  python: |
+    result = hiitl.evaluate("approve_claim", {
+        "claim_type": "expense_report",
+        "amount": 1250.00,
+        "risk_score": 0.15,
+    })
+    if result.ok:
+        process_claim_approval()
+  typescript: |
+    const result = hiitl.evaluate({
+      action: 'approve_claim',
+      params: {
+        claim_type: 'expense_report',
+        amount: 1250.00,
+        risk_score: 0.15,
+      },
+    });
+    if (result.ok) {
+      await processClaimApproval();
+    }
+
+context_enrichment:
+  - field: "user_id"
+    why: "Identifies the claimant for conflict-of-interest checks and approval chain routing"
+    example: "employee_4k9x2"
+  - field: "parameters.confidence_score"
+    why: "Model confidence in the claim validity assessment determines whether auto-approval is appropriate"
+    example: 0.92
+  - field: "sensitivity"
+    why: "Claims involve money; set to 'money' to activate financial controls and audit requirements"
+    example: "money"
+  - field: "parameters.risk_score"
+    why: "Fraud risk score from the risk model determines escalation thresholds"
+    example: 0.15
+  - field: "parameters.amount"
+    why: "Claim value drives tiered approval requirements — higher amounts need more senior approvers"
+    example: 1250.00
+
+starter_policies:
+  - name: "allow-small-auto-approve"
+    description: "Auto-approve low-value claims with low risk scores to maximize processing efficiency"
+    priority: 500
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "approve_claim"
+        - field: "parameters.amount"
+          operator: "less_than"
+          value: 500
+        - field: "parameters.risk_score"
+          operator: "less_than"
+          value: 0.3
+    decision: "ALLOW"
+    reason_code: "LOW_VALUE_LOW_RISK_AUTO_APPROVED"
+    remediation:
+      type: "static"
+      message: "Claim auto-approved — below value and risk thresholds"
+      suggestion: "No action needed"
+
+  - name: "require-review-medium-claims"
+    description: "Require human review for medium-value claims or claims with moderate risk indicators"
+    priority: 300
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "approve_claim"
+        - any_of:
+            - field: "parameters.amount"
+              operator: "greater_than_or_equal"
+              value: 500
+            - field: "parameters.risk_score"
+              operator: "greater_than_or_equal"
+              value: 0.3
+    decision: "REQUIRE_APPROVAL"
+    reason_code: "MEDIUM_CLAIM_REQUIRES_REVIEW"
+    remediation:
+      type: "static"
+      message: "This claim exceeds the auto-approval threshold due to value or risk score. Human review is required."
+      suggestion: "The claim has been routed to the appropriate reviewer based on the claim type and amount. Claims under $5,000 go to team leads; claims over $5,000 go to department managers. Provide supporting documentation to expedite review."
+
+  - name: "block-large-auto-approval"
+    description: "Block automated approval of claims above the maximum auto-approval ceiling"
+    priority: 100
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "approve_claim"
+        - field: "parameters.amount"
+          operator: "greater_than_or_equal"
+          value: 10000
+    decision: "BLOCK"
+    reason_code: "LARGE_CLAIM_AUTO_APPROVAL_BLOCKED"
+    remediation:
+      type: "static"
+      message: "Claims of $10,000 or more cannot be auto-approved by AI. This is a hard ceiling to prevent unauthorized large disbursements."
+      suggestion: "Claims of this size require manual processing through the standard claims workflow. Submit the claim through your claims management system for multi-level human review."
+
+  - name: "escalate-high-risk"
+    description: "Escalate claims with high fraud risk scores to the fraud investigation team"
+    priority: 150
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "approve_claim"
+        - field: "parameters.risk_score"
+          operator: "greater_than_or_equal"
+          value: 0.7
+    decision: "ESCALATE"
+    reason_code: "HIGH_RISK_CLAIM_ESCALATED"
+    remediation:
+      type: "static"
+      message: "This claim has a high fraud risk score and has been escalated to the fraud investigation team. Processing is paused pending investigation."
+      suggestion: "Do not approve or deny this claim. The fraud investigation team will review the risk indicators and make a determination. Typical investigation time is 2-5 business days."
+
+  - name: "rate-limit-approvals"
+    description: "Rate-limit claim approvals per agent to detect compromised automation or model issues"
+    priority: 350
+    enabled: true
+    conditions:
+      field: "action"
+      operator: "equals"
+      value: "approve_claim"
+    decision: "RATE_LIMIT"
+    reason_code: "CLAIM_APPROVAL_RATE_LIMITED"
+    remediation:
+      type: "static"
+      message: "Claim approval rate limit exceeded. This control prevents bulk unauthorized approvals from compromised or malfunctioning agents."
+      suggestion: "If processing a legitimate batch, space approvals over time. If the rate limit was unexpected, investigate the agent for compromise or malfunction. Contact your administrator for temporary limit increases."
+
+remediation:
+  block_message: "Claim approval was blocked by policy. The most common cause is that the claim amount exceeds the automated approval ceiling. Check reason_code for the specific trigger."
+  developer_action: "Read the decision reason_codes array. For amount-based blocks, route to manual processing. For risk-based escalations, implement the escalation callback flow and hold the claim until investigation completes. Never retry a blocked claim without addressing the root cause."
+  approval_message: "This claim requires human review before approval. The request has been routed based on claim value and risk level. Provide the claim ID and supporting documentation to the reviewer."
+
+compliance:
+  - regulation: "Insurance Regulations (State/Federal)"
+    relevance: "Automated claim adjudication must comply with applicable insurance regulations including fair claims settlement practices"
+    note: "Auto-approval thresholds should be reviewed with your compliance team to ensure they align with state insurance department requirements. Some jurisdictions restrict fully automated claim decisions."
+  - regulation: "Fiduciary Duty"
+    relevance: "Organizations have a fiduciary duty to process claims fairly and prevent fraudulent disbursements"
+    note: "The tiered approval thresholds and fraud escalation policies implement the controls needed to demonstrate fiduciary responsibility. Audit trail records provide evidence of due diligence."
+  - regulation: "Internal Audit Requirements"
+    relevance: "All claim approval decisions, including auto-approvals, must be auditable for internal and external audit review"
+    note: "Every claim decision is recorded in the immutable audit trail with the full envelope, policy version, risk score, and outcome. Configure retention to meet your audit cycle requirements."

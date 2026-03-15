@@ -1,0 +1,156 @@
+---
+title: "Python Quickstart"
+description: "From install to first evaluated action in 5 minutes"
+---
+
+## Install
+
+```bash
+pip install hiitl
+```
+
+## Evaluate your first action
+
+<Steps>
+  <Step title="Initialize the SDK">
+    Zero-config initialization gives you immediate observability. No API key, no policy files, no setup.
+
+    ```python
+    from hiitl import HIITL
+
+    hiitl = HIITL()
+    ```
+
+    That's it. Every `evaluate()` call is now logged locally in OBSERVE mode.
+  </Step>
+
+  <Step title="Wrap a tool call">
+    Add `evaluate()` before any action your agent takes.
+
+    ```python
+    decision = hiitl.evaluate("process_payment", parameters={
+        "amount": 150.00,
+        "currency": "usd",
+        "account_id": "acct_123",
+    })
+
+    if decision.allowed:
+        process_payment(account_id="acct_123", amount=150.00)
+    else:
+        print(f"Blocked: {decision.reason_codes}")
+    ```
+
+    With no policies loaded, every action is allowed and recorded. You get a complete audit trail immediately.
+  </Step>
+
+  <Step title="Add a policy">
+    Create `policy.yaml` to start enforcing rules:
+
+    ```yaml policy.yaml
+    policy_set:
+      name: "payment-controls"
+      version: "v1.0.0"
+      rules:
+        - name: "block-high-value-payments"
+          enabled: true
+          priority: 100
+          conditions:
+            all_of:
+              - field: "parameters.amount"
+                operator: "greater_than"
+                value: 500
+          decision: "BLOCK"
+          reason_code: "PAYMENT_TOO_HIGH"
+    ```
+
+    Point the SDK at it:
+
+    ```python
+    hiitl = HIITL(policy_path="./policy.yaml")
+    ```
+  </Step>
+
+  <Step title="See enforcement in action">
+    Now try a payment over the threshold:
+
+    ```python
+    decision = hiitl.evaluate("process_payment", parameters={
+        "amount": 1000.00,
+        "currency": "usd",
+        "account_id": "acct_456",
+    })
+
+    print(decision.allowed)       # False
+    print(decision.decision)      # BLOCK
+    print(decision.reason_codes)  # ['PAYMENT_TOO_HIGH']
+    ```
+
+    The policy matched. The action was blocked before it could execute.
+  </Step>
+</Steps>
+
+## What you get back
+
+Every `evaluate()` call returns a decision object with everything you need:
+
+```python
+decision = hiitl.evaluate("process_payment", parameters={"amount": 50.00})
+
+decision.allowed          # True — safe to execute
+decision.decision         # "ALLOW"
+decision.reason_codes     # ["DEFAULT_ALLOW"]
+decision.policy_version   # "v1.0.0"
+decision.timing           # {"evaluation_ms": 0.4, "total_ms": 0.8}
+```
+
+<Tip>
+  Every response includes `timing` metadata so you can verify hiitl adds negligible latency. Target: under 1ms locally.
+</Tip>
+
+## Decision types
+
+| Decision | `allowed` | Meaning |
+|----------|-----------|---------|
+| `ALLOW` | `true` | Safe to proceed |
+| `BLOCK` | `false` | Denied by policy |
+| `REQUIRE_APPROVAL` | `false` | Needs human review before execution |
+| `RATE_LIMIT` | `false` | Too many requests — wait and retry |
+| `KILL_SWITCH` | `false` | Emergency stop — do not retry |
+| `SANDBOX` | `true` | Allowed in isolated environment |
+
+## Configuration options
+
+```python
+# Zero-config (observe mode, local evaluation)
+hiitl = HIITL()
+
+# Local with policies
+hiitl = HIITL(policy_path="./policy.yaml")
+
+# Hosted (team collaboration, managed audit)
+hiitl = HIITL(
+    api_key=os.getenv("HIITL_API_KEY"),
+    server_url=os.getenv("HIITL_SERVER_URL"),
+)
+```
+
+<Note>
+  Mode is auto-detected. No `api_key` means local evaluation. Add `api_key` + `server_url` to switch to hosted mode. The `evaluate()` calls stay the same.
+</Note>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Observe-First Guide" icon="eye" href="/getting-started/observe-first">
+    See what your agents are doing before writing any policies
+  </Card>
+  <Card title="Policy Cookbook" icon="book" href="/patterns/policy-cookbook">
+    Practical policy examples for common scenarios
+  </Card>
+  <Card title="Integration Examples" icon="plug" href="/patterns/integration-examples">
+    LangChain, OpenAI Agents, custom agent loops
+  </Card>
+  <Card title="Core Concepts" icon="lightbulb" href="/concepts/how-it-works">
+    Understand envelopes, policies, and decisions in depth
+  </Card>
+</CardGroup>

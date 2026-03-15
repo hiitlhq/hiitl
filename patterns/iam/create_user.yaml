@@ -1,0 +1,144 @@
+pattern_id: "iam/create_user"
+category: "iam"
+name: "Create User"
+description: >
+  User account creation action covering onboarding, service accounts, and
+  programmatic account provisioning. Controls role assignment, environment
+  restrictions, rate limiting, and approval workflows to prevent unauthorized
+  access and privilege accumulation.
+tags: ["iam", "user", "account", "onboarding"]
+
+evaluate_examples:
+  python: |
+    result = hiitl.evaluate("create_user", {
+        "email": "jane.doe@company.com",
+        "role": "developer",
+        "department": "engineering",
+    })
+    if result.ok:
+        identity_service.create_user(email=email, role=role, department=dept)
+  typescript: |
+    const result = hiitl.evaluate({
+      action: 'create_user',
+      params: {
+        email: 'jane.doe@company.com',
+        role: 'developer',
+        department: 'engineering',
+      },
+    });
+    if (result.ok) {
+      await identityService.createUser({ email, role, department });
+    }
+
+context_enrichment:
+  - field: "user_id"
+    why: "Identifies who is creating the account for audit trail and authorization checks"
+    example: "user_8xKp2mNq"
+  - field: "sensitivity"
+    why: "Identity creation is inherently sensitive; elevated roles increase sensitivity further"
+    example: "identity"
+  - field: "parameters.is_service_account"
+    why: "Service accounts have different lifecycle and security requirements than human accounts"
+    example: false
+  - field: "target.identity_provider"
+    why: "Different identity providers may have different provisioning rules and approval requirements"
+    example: "okta"
+  - field: "agent_id"
+    why: "Only authorized agents should create user accounts; tracks which automation performed provisioning"
+    example: "onboarding-agent"
+
+starter_policies:
+  - name: "allow-standard-roles"
+    description: "Allow creation of users with standard, non-privileged roles"
+    priority: 500
+    enabled: true
+    conditions:
+      field: "parameters.role"
+      operator: "in"
+      value: ["viewer", "developer", "contributor", "member"]
+    decision: "ALLOW"
+    reason_code: "USER_CREATION_ALLOWED"
+    remediation:
+      type: "static"
+      message: "User creation with standard role permitted"
+      suggestion: "No action required"
+
+  - name: "require-approval-admin-roles"
+    description: "Require human approval for admin, owner, or privileged role assignment at creation time"
+    priority: 100
+    enabled: true
+    conditions:
+      field: "parameters.role"
+      operator: "in"
+      value: ["admin", "owner", "super_admin", "security_admin"]
+    decision: "REQUIRE_APPROVAL"
+    reason_code: "USER_ADMIN_ROLE_APPROVAL_REQUIRED"
+    remediation:
+      type: "static"
+      message: "Creating a user with an admin or owner role requires human approval."
+      suggestion: "Submit for approval with business justification. Include why the user needs elevated privileges and whether a less privileged role would suffice. Consider granting a standard role now and elevating later through a separate permission change."
+
+  - name: "block-prod-without-approval"
+    description: "Block direct user creation in production without prior approval to prevent unauthorized access"
+    priority: 80
+    enabled: true
+    conditions:
+      all_of:
+        - field: "environment"
+          operator: "equals"
+          value: "prod"
+        - field: "parameters.role"
+          operator: "not_in"
+          value: ["viewer"]
+    decision: "REQUIRE_APPROVAL"
+    reason_code: "USER_PROD_CREATION_APPROVAL_REQUIRED"
+    remediation:
+      type: "static"
+      message: "User creation in the production environment requires approval for all roles except viewer."
+      suggestion: "Create the user in staging first for testing, then submit a production creation request for approval. Include the business justification and expected access duration."
+
+  - name: "rate-limit-creation"
+    description: "Limit account creation to 20 per hour per agent to detect runaway automation"
+    priority: 200
+    enabled: true
+    conditions:
+      field: "agent_id"
+      operator: "exists"
+      value: true
+    decision: "RATE_LIMIT"
+    reason_code: "USER_CREATION_RATE_LIMIT"
+    remediation:
+      type: "static"
+      message: "User creation rate limit exceeded. Maximum 20 accounts per hour per agent."
+      suggestion: "If you are running a bulk onboarding process, use the batch provisioning API which has separate rate limits and requires pre-approval. Otherwise, wait for the rate limit window to reset."
+
+  - name: "block-external-email-domains"
+    description: "Block creation of accounts with email domains outside the organization"
+    priority: 90
+    enabled: true
+    conditions:
+      field: "parameters.email"
+      operator: "not_ends_with"
+      value: "@company.com"
+    decision: "REQUIRE_APPROVAL"
+    reason_code: "USER_EXTERNAL_EMAIL_APPROVAL"
+    remediation:
+      type: "static"
+      message: "User accounts with external email domains require approval."
+      suggestion: "Verify this is a legitimate external user (contractor, partner, vendor). Submit for approval with the external user's organization, access justification, and expected account duration."
+
+remediation:
+  block_message: "This user creation was blocked by policy. Common causes include privileged role assignment, production environment restrictions, or external email domains. Check the reason_code for details."
+  developer_action: "Review the decision response reason_codes. For role restrictions, consider assigning a standard role and elevating separately. For environment blocks, create in staging first. For external emails, submit for approval with justification."
+  approval_message: "This user creation requires human approval. Privileged roles, production environments, or external email domains triggered the approval workflow."
+
+compliance:
+  - regulation: "SOX (Sarbanes-Oxley)"
+    relevance: "Access controls for financial systems require documented approval for account provisioning"
+    note: "All user creation events in systems that touch financial data must have an auditable approval chain. Automated provisioning must be logged with the authorizing agent and policy version."
+  - regulation: "Identity Management Policy"
+    relevance: "Organization identity governance requires controlled account lifecycle management"
+    note: "Accounts must follow the principle of least privilege at creation. Service accounts require designated owners and expiration dates. Regular access reviews must be able to trace account creation back to an approved request."
+  - regulation: "SOC 2 Type II"
+    relevance: "Access provisioning is a key control area for SOC 2 audits"
+    note: "Maintain complete audit trail of all account creation attempts (including blocked ones). Demonstrate that privileged access requires multi-party approval and that access is reviewed periodically."

@@ -1,0 +1,10 @@
+{
+  "name": "invalid-schema",
+  "version": "1.0",
+  "rules": [
+    {
+      "name": "missing-fields",
+      "priority": 100
+    }
+  ]
+}

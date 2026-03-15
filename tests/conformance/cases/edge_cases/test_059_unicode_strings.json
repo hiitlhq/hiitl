@@ -1,0 +1,47 @@
+{
+  "test_id": "test_059_unicode_strings",
+  "description": "Test handling of Unicode characters",
+  "envelope": {
+    "schema_version": "v1.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_message_bot",
+    "action_id": "act_test0590000000000000",
+    "timestamp": "2026-02-14T10:00:00Z",
+    "operation": "execute",
+    "parameters": {
+      "recipient": "\u7528\u6237@\u516c\u53f8.com",
+      "message": "Hello \u4e16\u754c! \ud83c\udf0d"
+    },
+    "idempotency_key": "idem_test_059_unicode_strings",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "send_message"
+  },
+  "policy_set": {
+    "version": "1.0.0",
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "allow_unicode_messages",
+        "priority": 100,
+        "enabled": true,
+        "conditions": {
+          "field": "parameters.message",
+          "operator": "contains",
+          "value": "\u4e16\u754c"
+        },
+        "decision": "ALLOW",
+        "reason_code": "UNICODE_MESSAGE_ALLOWED",
+        "description": "Rule: allow_unicode_messages"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "ALLOW",
+    "allowed": true,
+    "reason_codes": [
+      "UNICODE_MESSAGE_ALLOWED"
+    ]
+  }
+}

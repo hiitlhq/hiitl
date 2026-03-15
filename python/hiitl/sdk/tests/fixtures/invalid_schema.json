@@ -1,0 +1,18 @@
+{
+  "version": "1.0.0",
+  "name": "invalid_schema_policy",
+  "rules": [
+    {
+      "name": "test_rule",
+      "priority": 100,
+      "enabled": true,
+      "conditions": {
+        "field": "parameters.amount",
+        "operator": "invalid_operator",
+        "value": 100
+      },
+      "decision": "ALLOW",
+      "reason_code": "TEST"
+    }
+  ]
+}

@@ -1,0 +1,152 @@
+pattern_id: "iam/modify_permissions"
+category: "iam"
+name: "Modify Permissions"
+description: >
+  Permission and role modification action covering grants, revocations, and role
+  changes. Controls privilege escalation, enforces least-privilege principles, and
+  requires approval for sensitive permission changes to prevent unauthorized access
+  accumulation.
+tags: ["iam", "permissions", "privilege-escalation", "rbac"]
+
+evaluate_examples:
+  python: |
+    result = hiitl.evaluate("modify_permissions", {
+        "target_user": "user_5kMn9pLq",
+        "permission": "database:write",
+        "action": "grant",
+    })
+    if result.ok:
+        iam_service.modify_permission(user=target, perm=permission, action=action)
+  typescript: |
+    const result = hiitl.evaluate({
+      action: 'modify_permissions',
+      params: {
+        target_user: 'user_5kMn9pLq',
+        permission: 'database:write',
+        action: 'grant',
+      },
+    });
+    if (result.ok) {
+      await iamService.modifyPermission({ user: target, perm: permission, action });
+    }
+
+context_enrichment:
+  - field: "user_id"
+    why: "Identifies who is making the permission change; critical for detecting self-escalation attempts"
+    example: "user_8xKp2mNq"
+  - field: "sensitivity"
+    why: "Permission changes are inherently sensitive; admin-level changes are critical"
+    example: "permissions"
+  - field: "target.user"
+    why: "The user whose permissions are being modified; needed for self-escalation detection and audit"
+    example: "user_5kMn9pLq"
+  - field: "parameters.previous_role"
+    why: "Understanding the current permission level helps evaluate whether the change is an escalation"
+    example: "developer"
+  - field: "parameters.scope"
+    why: "Permission scope (org-wide vs. project-specific) determines the blast radius of the change"
+    example: "project:payments-api"
+
+starter_policies:
+  - name: "allow-read-only-grants"
+    description: "Allow granting read-only permissions without approval"
+    priority: 500
+    enabled: true
+    conditions:
+      all_of:
+        - field: "parameters.action"
+          operator: "equals"
+          value: "grant"
+        - field: "parameters.permission"
+          operator: "ends_with"
+          value: ":read"
+    decision: "ALLOW"
+    reason_code: "PERMISSION_READ_GRANT_ALLOWED"
+    remediation:
+      type: "static"
+      message: "Read-only permission grant permitted under standard policy"
+      suggestion: "No action required"
+
+  - name: "require-approval-write-permissions"
+    description: "Require approval for granting write, delete, or execute permissions"
+    priority: 150
+    enabled: true
+    conditions:
+      all_of:
+        - field: "parameters.action"
+          operator: "equals"
+          value: "grant"
+        - field: "parameters.permission"
+          operator: "not_ends_with"
+          value: ":read"
+    decision: "REQUIRE_APPROVAL"
+    reason_code: "PERMISSION_WRITE_APPROVAL_REQUIRED"
+    remediation:
+      type: "static"
+      message: "Granting write, delete, or execute permissions requires human approval."
+      suggestion: "Submit for approval with justification. Specify the minimum permission level needed and the expected duration. Consider time-boxed access (grant with automatic expiration) if the need is temporary."
+
+  - name: "block-admin-self-escalation"
+    description: "Block users from granting themselves admin or elevated privileges"
+    priority: 50
+    enabled: true
+    conditions:
+      all_of:
+        - field: "parameters.action"
+          operator: "equals"
+          value: "grant"
+        - field: "parameters.permission"
+          operator: "contains"
+          value: "admin"
+    decision: "BLOCK"
+    reason_code: "PERMISSION_ADMIN_ESCALATION_BLOCKED"
+    remediation:
+      type: "static"
+      message: "Admin privilege grants are blocked for automated processes. Admin access requires a separate, human-initiated approval workflow."
+      suggestion: "Admin permissions cannot be granted through automated tools. Submit a formal access request through your organization's privileged access management process. A different authorized administrator must approve and execute the grant."
+
+  - name: "escalate-privilege-changes"
+    description: "Escalate all privilege-level changes to security team for visibility"
+    priority: 120
+    enabled: true
+    conditions:
+      field: "parameters.permission"
+      operator: "contains"
+      value: "privileged"
+    decision: "ESCALATE"
+    reason_code: "PERMISSION_PRIVILEGE_CHANGE_ESCALATED"
+    remediation:
+      type: "static"
+      message: "This privilege-level change has been escalated to the security team for review."
+      suggestion: "The security team will review this permission change. You will be notified when the review is complete. Prepare documentation of the business need and expected access duration."
+
+  - name: "rate-limit-permission-changes"
+    description: "Limit permission modifications to 10 per hour per agent to detect bulk escalation attempts"
+    priority: 200
+    enabled: true
+    conditions:
+      field: "agent_id"
+      operator: "exists"
+      value: true
+    decision: "RATE_LIMIT"
+    reason_code: "PERMISSION_CHANGE_RATE_LIMIT"
+    remediation:
+      type: "static"
+      message: "Permission modification rate limit exceeded. Maximum 10 changes per hour per agent."
+      suggestion: "If you need to make bulk permission changes, use the batch access provisioning workflow which requires pre-approval and has separate rate limits."
+
+remediation:
+  block_message: "This permission modification was blocked by policy. Common causes include admin privilege escalation attempts, self-escalation, or rate limit violations. Check the reason_code for details."
+  developer_action: "Review the decision response reason_codes. For admin escalation blocks, use your organization's privileged access management process. For write permission denials, submit for approval with business justification and minimum required scope."
+  approval_message: "This permission change requires human approval. Write access grants, privilege escalations, or broad-scope changes triggered the approval requirement."
+
+compliance:
+  - regulation: "SOX (Sarbanes-Oxley)"
+    relevance: "Segregation of duties and access controls require documented approval for permission changes"
+    note: "Permission changes affecting financial systems must have multi-party approval. Self-escalation must be technically prevented, not just policy-prohibited. Maintain complete audit trail of all grant and revoke operations."
+  - regulation: "Principle of Least Privilege"
+    relevance: "Users and agents should have the minimum permissions necessary for their function"
+    note: "All permission grants should include justification and, where possible, an expiration date. Regular access reviews should identify and remove accumulated unnecessary permissions."
+  - regulation: "Access Review Requirements"
+    relevance: "Periodic access certifications require traceability from current permissions to approval records"
+    note: "Every permission grant recorded in the ECP audit trail includes the approver, justification, timestamp, and policy version. This data feeds directly into quarterly access review processes."

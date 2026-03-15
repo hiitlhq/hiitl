@@ -1,0 +1,46 @@
+{
+  "test_id": "test_018_ends_with_operator",
+  "description": "Test ends_with operator",
+  "envelope": {
+    "schema_version": "v1.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_file_bot",
+    "action_id": "act_test0180000000000000",
+    "timestamp": "2026-02-14T10:00:00Z",
+    "operation": "execute",
+    "parameters": {
+      "filename": "sensitive_data.csv"
+    },
+    "idempotency_key": "idem_test_018_ends_with_operator",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "read_file"
+  },
+  "policy_set": {
+    "version": "1.0.0",
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "block_csv_files",
+        "priority": 100,
+        "enabled": true,
+        "conditions": {
+          "field": "parameters.filename",
+          "operator": "ends_with",
+          "value": ".csv"
+        },
+        "decision": "BLOCK",
+        "reason_code": "CSV_FILES_RESTRICTED",
+        "description": "Rule: block_csv_files"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "BLOCK",
+    "allowed": false,
+    "reason_codes": [
+      "CSV_FILES_RESTRICTED"
+    ]
+  }
+}

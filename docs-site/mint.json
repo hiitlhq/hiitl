@@ -1,0 +1,134 @@
+{
+  "$schema": "https://mintlify.com/schema.json",
+  "name": "hiitl",
+  "logo": {
+    "dark": "/logo/dark.svg",
+    "light": "/logo/light.svg"
+  },
+  "favicon": "/favicon.svg",
+  "colors": {
+    "primary": "#0D9373",
+    "light": "#07C983",
+    "dark": "#0D9373",
+    "anchors": {
+      "from": "#0D9373",
+      "to": "#07C983"
+    }
+  },
+  "topbarLinks": [
+    {
+      "name": "GitHub",
+      "url": "https://github.com/hiitlhq/hiitl"
+    }
+  ],
+  "topbarCtaButton": {
+    "name": "Get Started",
+    "url": "/getting-started/quickstart-python"
+  },
+  "tabs": [
+    {
+      "name": "API Reference",
+      "url": "api"
+    },
+    {
+      "name": "Patterns",
+      "url": "patterns"
+    }
+  ],
+  "anchors": [
+    {
+      "name": "GitHub",
+      "icon": "github",
+      "url": "https://github.com/hiitlhq/hiitl"
+    }
+  ],
+  "navigation": [
+    {
+      "group": "Getting Started",
+      "pages": [
+        "getting-started/overview",
+        "getting-started/quickstart-python",
+        "getting-started/quickstart-typescript",
+        "getting-started/observe-first"
+      ]
+    },
+    {
+      "group": "Core Concepts",
+      "pages": [
+        "concepts/how-it-works",
+        "concepts/envelope",
+        "concepts/policies",
+        "concepts/decisions",
+        "concepts/audit-trail",
+        "concepts/deployment-modes"
+      ]
+    },
+    {
+      "group": "SDK Reference",
+      "pages": [
+        {
+          "group": "Python",
+          "pages": [
+            "sdk/python-installation",
+            "sdk/python-evaluate",
+            "sdk/python-configuration",
+            "sdk/python-decision"
+          ]
+        },
+        {
+          "group": "TypeScript",
+          "pages": [
+            "sdk/typescript-installation",
+            "sdk/typescript-evaluate",
+            "sdk/typescript-configuration",
+            "sdk/typescript-decision"
+          ]
+        }
+      ]
+    },
+    {
+      "group": "Guides",
+      "pages": [
+        "patterns/integration-examples",
+        "patterns/policy-cookbook",
+        "patterns/mcp-integration",
+        "patterns/kill-switch-runbook"
+      ]
+    },
+    {
+      "group": "Security",
+      "pages": [
+        "security/authentication",
+        "security/envelope-signing",
+        "security/tenant-isolation"
+      ]
+    },
+    {
+      "group": "API Reference",
+      "pages": [
+        "api/overview",
+        "api/evaluate",
+        "api/policies",
+        "api/audit"
+      ]
+    },
+    {
+      "group": "Pattern Repository",
+      "pages": [
+        "patterns/overview",
+        "patterns/financial",
+        "patterns/data-access",
+        "patterns/communication",
+        "patterns/iam",
+        "patterns/infrastructure"
+      ]
+    }
+  ],
+  "footerSocials": {
+    "github": "https://github.com/hiitlhq/hiitl"
+  },
+  "backgroundImage": "/images/background.png",
+  "modeToggle": {
+    "default": "dark"
+  }
+}

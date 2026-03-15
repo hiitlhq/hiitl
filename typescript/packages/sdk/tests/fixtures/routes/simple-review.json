@@ -1,0 +1,22 @@
+{
+  "name": "simple-review",
+  "version": "v1.0.0",
+  "direction": "bidirectional",
+  "timing": "sync",
+  "endpoint": "https://example.com/review",
+  "protocol": "webhook",
+  "context": {
+    "fields": [
+      { "field_path": "parameters.action", "label": "Action" },
+      { "field_path": "target.resource", "label": "Resource" }
+    ]
+  },
+  "response_schema": {
+    "decision_options": ["approve", "deny"],
+    "required_fields": ["decision"]
+  },
+  "sla": {
+    "timeout": "30m",
+    "timeout_action": "fail_closed"
+  }
+}

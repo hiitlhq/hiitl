@@ -1,0 +1,151 @@
+pattern_id: "financial/process_payment"
+category: "financial"
+name: "Process Payment"
+description: >
+  Payment processing action covering credit card charges, ACH debits, and other monetary
+  transactions. This is a high-stakes action that requires tiered approval based on amount
+  and strict rate limiting to prevent runaway charges from automated agents.
+tags: ["payment", "financial", "pci-dss", "money"]
+
+evaluate_examples:
+  python: |
+    result = hiitl.evaluate("process_payment", {
+        "amount": 250.00,
+        "currency": "usd",
+        "account_id": "acct_8x7kQ2nR4m",
+    })
+    if result.ok:
+        process_payment(amount=250.00, currency="usd", account_id="acct_8x7kQ2nR4m")
+  typescript: |
+    const result = hiitl.evaluate({
+      action: 'process_payment',
+      params: {
+        amount: 250.00,
+        currency: 'usd',
+        account_id: 'acct_8x7kQ2nR4m',
+      },
+    });
+    if (result.ok) {
+      await processPayment({ amount: 250.00, currency: 'usd', accountId: 'acct_8x7kQ2nR4m' });
+    }
+
+context_enrichment:
+  - field: "user_id"
+    why: "Identifies which end-user initiated the payment to support per-user rate limits and audit attribution"
+    example: "user_9f3hJ7kLm2"
+  - field: "sensitivity"
+    why: "Marks the action as involving money so policies can apply financial-specific controls"
+    example: "money"
+  - field: "cost_estimate"
+    why: "Provides the transaction amount as a cost signal for budget-based policies and spend tracking"
+    example: 250.00
+  - field: "target.merchant_category"
+    why: "Merchant category code enables policies that restrict payments to specific business types"
+    example: "5411"
+  - field: "parameters.payment_method"
+    why: "Different payment methods carry different risk profiles and compliance requirements"
+    example: "credit_card"
+
+starter_policies:
+  - name: "allow-small-payments"
+    description: "Auto-approve payments under $100 — low risk, fast path"
+    priority: 200
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "process_payment"
+        - field: "parameters.amount"
+          operator: "less_than"
+          value: 100
+    decision: "ALLOW"
+    reason_code: "PAYMENT_AUTO_APPROVED"
+    remediation:
+      type: "static"
+      message: "Payment auto-approved (under $100 threshold)"
+      suggestion: "No action needed"
+
+  - name: "approve-medium-payments"
+    description: "Require human approval for payments between $100 and $1,000"
+    priority: 150
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "process_payment"
+        - field: "parameters.amount"
+          operator: "greater_than_or_equal"
+          value: 100
+        - field: "parameters.amount"
+          operator: "less_than_or_equal"
+          value: 1000
+    decision: "REQUIRE_APPROVAL"
+    reason_code: "PAYMENT_NEEDS_APPROVAL"
+    remediation:
+      type: "static"
+      message: "Payments between $100 and $1,000 require human approval before processing"
+      suggestion: "Submit this payment for manager review, or reduce the amount below $100 for auto-approval"
+
+  - name: "block-large-payments"
+    description: "Block payments exceeding $1,000 — requires manual processing outside automated systems"
+    priority: 100
+    enabled: true
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "process_payment"
+        - field: "parameters.amount"
+          operator: "greater_than"
+          value: 1000
+    decision: "BLOCK"
+    reason_code: "PAYMENT_EXCEEDS_LIMIT"
+    remediation:
+      type: "static"
+      message: "Payments over $1,000 cannot be processed by automated agents"
+      suggestion: "Route this payment through the manual processing workflow or contact a financial administrator to adjust the threshold"
+
+  - name: "payment-kill-switch"
+    description: "Emergency kill switch to halt all payment processing immediately"
+    priority: 10
+    enabled: false
+    conditions:
+      field: "action"
+      operator: "equals"
+      value: "process_payment"
+    decision: "KILL_SWITCH"
+    reason_code: "PAYMENTS_SUSPENDED"
+    remediation:
+      type: "static"
+      message: "All payment processing has been suspended by an administrator"
+      suggestion: "Contact the operations team to check the status of the payment kill switch and understand when processing will resume"
+
+  - name: "rate-limit-payments"
+    description: "Limit each agent to 50 payments per hour to prevent runaway charge loops"
+    priority: 50
+    enabled: true
+    conditions:
+      field: "action"
+      operator: "equals"
+      value: "process_payment"
+    decision: "RATE_LIMIT"
+    reason_code: "PAYMENT_RATE_EXCEEDED"
+    remediation:
+      type: "static"
+      message: "This agent has exceeded the maximum of 50 payments per hour"
+      suggestion: "Wait for the rate limit window to reset, or contact an administrator to increase the limit for this agent if the volume is expected"
+
+remediation:
+  block_message: "This payment was blocked because it exceeds the automated processing threshold. Payments over $1,000 must go through the manual review process to comply with financial controls."
+  developer_action: "Check the payment amount against your configured thresholds. If you need higher limits, update the 'block-large-payments' policy or route through an approval workflow."
+  approval_message: "This payment requires human approval before it can be processed. The approver will see the full payment details including amount, currency, and destination account."
+
+compliance:
+  - regulation: "PCI-DSS"
+    relevance: "Payment card processing requires controls on who and what can initiate transactions"
+    note: "Ensure card numbers are never included in envelope parameters — use tokenized references only. Audit trail must capture all payment attempts including blocked ones."
+  - regulation: "SOX"
+    relevance: "Financial transaction controls must be documented and auditable for Sarbanes-Oxley compliance"
+    note: "The immutable audit trail satisfies SOX Section 404 requirements for transaction-level controls. Policy versions attached to each decision provide evidence of control effectiveness."

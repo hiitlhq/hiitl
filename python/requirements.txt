@@ -1,0 +1,14 @@
+# HIITL Python Dependencies
+
+# Core dependencies
+pydantic>=2.0.0  # Type validation and serialization
+pydantic-settings>=2.0.0  # Settings management
+PyYAML>=6.0.0  # YAML parsing (convenience layer for policies)
+httpx>=0.25.0  # HTTP client for hosted mode
+
+# Development dependencies
+pytest>=7.0.0  # Testing framework
+pytest-cov>=4.0.0  # Coverage reporting
+black>=23.0.0  # Code formatting
+mypy>=1.0.0  # Type checking
+ruff>=0.1.0  # Fast Python linter

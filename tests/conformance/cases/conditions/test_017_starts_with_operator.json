@@ -1,0 +1,46 @@
+{
+  "test_id": "test_017_starts_with_operator",
+  "description": "Test starts_with operator",
+  "envelope": {
+    "schema_version": "v1.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_api_bot",
+    "action_id": "act_test0170000000000000",
+    "timestamp": "2026-02-14T10:00:00Z",
+    "operation": "execute",
+    "parameters": {
+      "url": "https://api.internal.company.com/data"
+    },
+    "idempotency_key": "idem_test_017_starts_with_operator",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "api_call"
+  },
+  "policy_set": {
+    "version": "1.0.0",
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "allow_internal_apis",
+        "priority": 100,
+        "enabled": true,
+        "conditions": {
+          "field": "parameters.url",
+          "operator": "starts_with",
+          "value": "https://api.internal.company.com"
+        },
+        "decision": "ALLOW",
+        "reason_code": "INTERNAL_API_ALLOWED",
+        "description": "Rule: allow_internal_apis"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "ALLOW",
+    "allowed": true,
+    "reason_codes": [
+      "INTERNAL_API_ALLOWED"
+    ]
+  }
+}
