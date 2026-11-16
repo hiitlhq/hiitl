@@ -28,7 +28,7 @@ All options are optional. `new HIITL()` with no arguments works in local OBSERVE
 </ParamField>
 
 <ParamField path="org_id" type="string" default='"org_devlocal0000000000"'>
-  Organization ID. Must match pattern `org_[a-z0-9]{18,}`. The default is a dev-local placeholder.
+  Organization ID. Must match the envelope's `org_id` pattern, `^org_[a-zA-Z0-9]{16,}$`. The default is a dev-local placeholder. Hosted mode requires `environment`, `agent_id` and `org_id` to be given explicitly.
 </ParamField>
 
 ### Policy mode
@@ -52,6 +52,14 @@ All options are optional. `new HIITL()` with no arguments works in local OBSERVE
   Path to the SQLite audit database. Created automatically if it does not exist. All evaluated actions are recorded here.
 </ParamField>
 
+<ParamField path="redact_fields" type="string[]">
+  Envelope fields this client's audit store records as `"[REDACTED]"`. Each is a dotted path to a member of one of the envelope's objects, such as `"parameters.account_number"` or `"target.email"`; a path through an array applies to every item. Evaluation sees the call whole. The record is redacted after the envelope is signed and its `envelope_hash` taken, and before the row's content hash, so the content hash covers the row as stored. A remediation that states the call's value at a declared field stores the marker too. In hybrid mode the client also applies the organization's own list (`PUT /v1/redaction-policy`), pulled with its policies, at every write, and the row is uploaded already redacted. In hosted mode (`evaluation: 'remote'`) the declaration applies to the records the client holds while the service is unreachable (`fail_mode`). A top-level field (`org_id`, `action`) throws `ConfigurationError`. A declared path the call does not carry is named in the record's `redaction` member, `{"absent": [...]}`, never skipped silently.
+</ParamField>
+
+<ParamField path="recorded_parameters" type="Record<string, string[]>">
+  `{action: [parameter names]}`. When set, the store records every other member of `parameters` by name, with its value as `"hmac-sha256:"` and the HMAC-SHA256 of its canonical form; `{}` hashes every parameter. The key is the store's: made at its first start beside the audit file (`<audit_db_path>.value_hash.key`, mode 0600), never synced or recorded. A key file of another length fails the start. The MCP gateway always sets this from its `recorded_arguments`.
+</ParamField>
+
 <ParamField path="enable_rate_limiting" type="boolean" default="true">
   Whether to enforce rate limits defined in policy metadata.
 </ParamField>
@@ -61,36 +69,63 @@ All options are optional. `new HIITL()` with no arguments works in local OBSERVE
 </ParamField>
 
 <ParamField path="signature_key" type="string">
-  HMAC-SHA256 key for envelope signing. When set, every envelope is signed and the signature is included in the audit record. When not set, a placeholder signature is used.
+  Your API key's signing secret, shown once when the key is created. When set, every envelope is signed and the SDK checks the signature before it evaluates; the signature is included in the audit record. When not set, the signature is 64 zeros. Hosted evaluation needs it: the service evaluates only a signed envelope.
+</ParamField>
+
+<ParamField path="dedup_window_seconds" type="number" default="86400">
+  The dedup window. A call whose `idempotency_key` the audit store already holds, for an envelope timestamped within this many seconds of the new one, returns the first decision and writes no record. Past the window, the key names a new action with its own record.
 </ParamField>
 
 ### Hosted evaluation
 
 <ParamField path="api_key" type="string">
-  API key for server authentication (Bearer token). Providing an API key changes the deployment mode.
+  API key for server authentication (Bearer token). With a key the client syncs with the hosted service (hybrid mode), or evaluates there when `evaluation` is `'remote'`.
 </ParamField>
 
 <ParamField path="server_url" type="string">
-  ECP server URL (e.g., `"https://ecp.hiitl.com"`). Required together with `api_key` for hosted mode. Must be a valid URL starting with `http://` or `https://`. Trailing slashes are stripped automatically.
+  ECP server URL (e.g., `"https://api.hiitl.com"`). In hybrid mode it is the sync target (the default service when absent); with `evaluation: 'remote'` it is required and receives each evaluation. Must be an HTTPS URL naming a host. Trailing slashes are stripped automatically.
 </ParamField>
 
-<ParamField path="timeout" type="number" default="5000">
-  HTTP request timeout in milliseconds (hosted mode only). Range: 100-30000.
+<ParamField path="evaluation" type="'local' | 'remote'" default="'local'">
+  Where evaluation runs. `'local'` evaluates in-process (hybrid mode when an `api_key` is given). `'remote'` is the explicit opt-in to hosted evaluation and needs both `api_key` and `server_url`; any other value is refused with a `ConfigurationError` naming the valid ones.
+</ParamField>
+
+<ParamField path="timeout" type="number" default="5">
+  HTTP request timeout in seconds (hosted mode only), as in the Python SDK. Range: 0.1-30; a value outside it raises `ConfigurationError` naming the range and the unit.
 </ParamField>
 
 <ParamField path="max_retries" type="number" default="3">
-  Maximum retry attempts on transient failures (hosted mode only). Range: 0-10.
+  Maximum retry attempts on transient failures (hosted mode only). Range: 0-10; a value outside it raises `ConfigurationError` naming the range.
+</ParamField>
+
+<ParamField path="fail_mode" type="'FAIL_CLOSED' | 'FAIL_OPEN'" default="'FAIL_CLOSED'">
+  What a hosted outage answers: the service unreachable, timing out, answering with a server error, or its circuit breaker open. `'FAIL_CLOSED'` answers with the action not allowed (`CONTROL_PLANE_UNAVAILABLE`, its cause in `reason_codes`); `'FAIL_OPEN'`, opt-in, allows it without evaluation and logs a warning. Either way the call is recorded in the local store at `audit_db_path`, under this client's `redact_fields`, and the records are sent to the service before the next call once it answers; no call, and so no record, is sent while the breaker is open. Any other value raises `ConfigurationError` naming the two.
 </ParamField>
 
 ### Sync control
 
 <ParamField path="sync" type="boolean" default="true">
-  Enable sync when `api_key` is provided. Set to `false` to force pure local mode while storing the API key for future use.
+  Enable sync when `api_key` is provided. Set to `false` to force pure local mode (the key is kept but nothing connects).
 </ParamField>
+
+### Telemetry
+
+<ParamField path="telemetry_level" type="'full' | 'standard' | 'minimal' | 'off'" default="'standard'">
+  The hybrid client's usage telemetry level, the same setting as the Python SDK's. The TypeScript SDK ships no telemetry collector, so it sends no telemetry at any level. The value is read (from `HIITL_TELEMETRY_LEVEL` when not given) and checked, and any other value throws `ConfigurationError` naming the four.
+</ParamField>
+
+The other telemetry settings are `sync_config`'s, the Python SDK's, each read from its `HIITL_TELEMETRY_*` variable when not given and checked; a value outside its range throws `ConfigurationError` naming the range. They send nothing here:
+
+| Setting | Variable | Default | Range |
+|---------|----------|---------|-------|
+| `sync_config.telemetry_sync_interval` | `HIITL_TELEMETRY_INTERVAL` | 60 (seconds) | 5-3600 |
+| `sync_config.telemetry_buffer_size` | `HIITL_TELEMETRY_BUFFER_SIZE` | 60 (records) | 10-1000 |
+| `sync_config.telemetry_sample_rate` | `HIITL_TELEMETRY_SAMPLE_RATE` | 1.0 | 0-1 |
+| `sync_config.telemetry_parameter_tools` | `HIITL_TELEMETRY_PARAMETER_TOOLS` (a JSON list) | none | the actions whose parameters are counted |
 
 ## Deployment modes
 
-The deployment mode is auto-detected from constructor arguments. You do not set it directly.
+The deployment mode is derived from `api_key`, `evaluation` and `sync`, whether passed to the constructor or read from their `HIITL_*` variables. You do not set it directly.
 
 <Tabs>
   <Tab title="Local">
@@ -112,14 +147,16 @@ The deployment mode is auto-detected from constructor arguments. You do not set 
   </Tab>
 
   <Tab title="Hosted">
-    **`api_key` + `server_url`** -- evaluation is sent to the ECP server.
+    **`api_key` + `server_url` + `evaluation: 'remote'`** -- evaluation is sent to the ECP server.
 
     ```typescript
     const hiitl = new HIITL({
       agent_id: 'payment-agent',
       org_id: 'org_mycompany123456789',
       api_key: 'sk_live_abc123...',
-      server_url: 'https://ecp.hiitl.com',
+      server_url: 'https://api.hiitl.com',
+      signature_key: '...', // the API key's signing secret, shown when the key was created
+      evaluation: 'remote',
       environment: 'prod',
       mode: 'RESPECT_POLICY',
     });
@@ -129,7 +166,7 @@ The deployment mode is auto-detected from constructor arguments. You do not set 
   </Tab>
 
   <Tab title="Hybrid">
-    **`api_key` only (no `server_url`)** -- local evaluation with API key stored for future sync.
+    **`api_key`** (with or without a `server_url` as the sync target) -- local evaluation with policies synced from the hosted service.
 
     ```typescript
     const hiitl = new HIITL({
@@ -140,18 +177,23 @@ The deployment mode is auto-detected from constructor arguments. You do not set 
     });
     ```
 
-    Hybrid mode evaluates locally using the embedded evaluator, but stores the API key for a future policy sync feature. Requires `policy_path` when using `RESPECT_POLICY` mode.
+    Hybrid mode evaluates locally using the embedded evaluator and syncs policies from the hosted service, uploading audit records in batches; a disk cache keeps it deciding when the service is unreachable. Routes and kill switches are downloaded but not yet applied; the client asks only the routes in its own `routes_path`. `cold_start_behavior: 'fail-closed'` makes the client throw at its first `evaluate()` when it started with no cache and no successful sync. `policy_path` is optional in hybrid mode (it is the fallback policy); only pure local mode requires it under `RESPECT_POLICY`.
   </Tab>
 </Tabs>
 
 ### Auto-detection rules
 
-| `api_key` | `server_url` | `sync` | Mode |
-|-----------|-------------|--------|------|
-| absent | absent | -- | **local** |
-| present | present | -- | **hosted** |
-| present | absent | `true` (default) | **hybrid** |
-| present | absent | `false` | **local** (key stored) |
+| `api_key` | `server_url` | `evaluation` | `sync` | Mode |
+|-----------|--------------|--------------|--------|------|
+| absent | absent | `'local'` (default) | -- | **local** |
+| present | absent | `'local'` (default) | `true` (default) | **hybrid** (the default service) |
+| present | present | `'local'` (default) | `true` (default) | **hybrid** (syncs with `server_url`) |
+| present | absent | `'local'` (default) | `false` | **local** (key stored) |
+| present | present | `'remote'` | -- | **hosted** |
+| absent | present | `'remote'` | -- | **local** (no key, nothing connects) |
+| present | absent | `'remote'` | -- | `ConfigurationError`: `server_url` is required |
+
+The Python SDK derives the mode from the same arguments by the same table.
 
 ## Accessing the mode
 
@@ -164,32 +206,56 @@ console.log(hiitl.evalMode); // "OBSERVE_ALL"
 
 ## Environment variables
 
-All configuration supports `HIITL_` prefixed environment variables. Constructor arguments take precedence over environment variables.
+Every setting below can come from its `HIITL_` prefixed environment variable. An option passed to the constructor takes precedence, then the variable, then the default; a given `sync_config` keeps the variables for the settings it leaves unset. The mode is decided from the resolved values, so `HIITL_API_KEY` alone starts hybrid mode. A value its kind cannot read (a number, a boolean or a JSON list) is refused with a `ConfigurationError` naming the variable. A set `HIITL_SYNC_*` or `HIITL_TELEMETRY_*` variable that no setting reads raises `ConfigurationError` when the client is constructed, naming the variables its family reads; a name an earlier release read (the `HIITL_SYNC_TELEMETRY_*` names) is refused naming its replacement. A variable left set is never ignored silently. Every timeout and interval is in seconds, as in the Python SDK.
 
-| Variable | Maps to |
-|----------|---------|
-| `HIITL_ENVIRONMENT` | `environment` |
-| `HIITL_AGENT_ID` | `agent_id` |
-| `HIITL_ORG_ID` | `org_id` |
-| `HIITL_POLICY_PATH` | `policy_path` |
-| `HIITL_AUDIT_DB_PATH` | `audit_db_path` |
-| `HIITL_ENABLE_RATE_LIMITING` | `enable_rate_limiting` (`"true"` / `"false"`) |
-| `HIITL_SIGNATURE_KEY` | `signature_key` |
-| `HIITL_API_KEY` | `api_key` |
-| `HIITL_SERVER_URL` | `server_url` |
-| `HIITL_TIMEOUT` | `timeout` (parsed as number) |
-| `HIITL_MAX_RETRIES` | `max_retries` (parsed as number) |
-| `HIITL_SYNC` | `sync` (`"true"` / `"false"`) |
+| Variable | Option | Read as |
+|----------|--------|---------|
+| `HIITL_ENVIRONMENT` | `environment` | text |
+| `HIITL_AGENT_ID` | `agent_id` | text |
+| `HIITL_ORG_ID` | `org_id` | text |
+| `HIITL_MODE` | `mode` | text |
+| `HIITL_POLICY_PATH` | `policy_path` | text |
+| `HIITL_AUDIT_DB_PATH` | `audit_db_path` | text |
+| `HIITL_ENABLE_RATE_LIMITING` | `enable_rate_limiting` | `true` / `false` (also `1`/`0`, `yes`/`no`, `on`/`off`) |
+| `HIITL_ROUTES_PATH` | `routes_path` | text |
+| `HIITL_SIGNATURE_KEY` | `signature_key` | text |
+| `HIITL_DEDUP_WINDOW_SECONDS` | `dedup_window_seconds` | a number |
+| `HIITL_API_KEY` | `api_key` | text |
+| `HIITL_SERVER_URL` | `server_url` | text |
+| `HIITL_EVALUATION` | `evaluation` | text |
+| `HIITL_SYNC` | `sync` | `true` / `false` (also `1`/`0`, `yes`/`no`, `on`/`off`) |
+| `HIITL_COLD_START_BEHAVIOR` | `cold_start_behavior` | text |
+| `HIITL_TELEMETRY_LEVEL` | `telemetry_level` | text |
+| `HIITL_TIMEOUT` | `timeout` | a number |
+| `HIITL_MAX_RETRIES` | `max_retries` | a number |
+| `HIITL_FAIL_MODE` | `fail_mode` | text |
+| `HIITL_CACHE_DIR` | `cache_dir` | text |
+| `HIITL_SYNC_INIT_TIMEOUT` | `sync_init_timeout` | a number |
+| `HIITL_SYNC_AUDIT_INTERVAL` | `sync_config.audit_sync_interval` | a number |
+| `HIITL_SYNC_POLICY_INTERVAL` | `sync_config.policy_sync_interval` | a number |
+| `HIITL_SYNC_ROUTE_INTERVAL` | `sync_config.route_sync_interval` | a number |
+| `HIITL_SYNC_KS_INTERVAL` | `sync_config.kill_switch_poll_interval` | a number |
+| `HIITL_SYNC_AUDIT_BATCH` | `sync_config.audit_batch_size` | a number |
+| `HIITL_SYNC_MAX_BUFFER` | `sync_config.max_buffer_records` | a number |
+| `HIITL_SYNC_MAX_BUFFER_BYTES` | `sync_config.max_buffer_size_bytes` | a number |
+| `HIITL_SYNC_CB_THRESHOLD` | `sync_config.circuit_breaker_threshold` | a number |
+| `HIITL_SYNC_CB_RESET` | `sync_config.circuit_breaker_reset` | a number |
+| `HIITL_SYNC_MAX_STALE` | `sync_config.max_cache_stale_age` | a number |
+| `HIITL_SYNC_TIMEOUT` | `sync_config.sync_timeout` | a number |
+| `HIITL_SYNC_MAX_RETRIES` | `sync_config.sync_max_retries` | a number |
+| `HIITL_TELEMETRY_INTERVAL` | `sync_config.telemetry_sync_interval` | a number |
+| `HIITL_TELEMETRY_BUFFER_SIZE` | `sync_config.telemetry_buffer_size` | a number |
+| `HIITL_TELEMETRY_SAMPLE_RATE` | `sync_config.telemetry_sample_rate` | a number |
+| `HIITL_TELEMETRY_PARAMETER_TOOLS` | `sync_config.telemetry_parameter_tools` | a JSON list |
 
 ```bash
-export HIITL_API_KEY="sk_live_abc123..."
-export HIITL_SERVER_URL="https://ecp.hiitl.com"
 export HIITL_ENVIRONMENT="prod"
+export HIITL_POLICY_PATH="/etc/hiitl/policy.yaml"
 ```
 
 ```typescript
-// Picks up environment variables automatically
-const hiitl = new HIITL({ agent_id: 'payment-agent' });
+// Picks up those settings from the environment; no HIITL_API_KEY is set, so the mode is local
+const hiitl = new HIITL({ agent_id: 'payment-agent', mode: 'RESPECT_POLICY' });
 ```
 
 ## Cleanup
@@ -219,7 +285,7 @@ const action = hiitl.queryAudit({ action_id: 'act_abc123...' });
 ```
 
 <Note>
-  `queryAudit()` is only available in local mode. In hosted mode, query the server API directly.
+  `queryAudit()` reads the local SQLite record, so it works in local and hybrid mode. In hosted mode it throws; query the service's API instead.
 </Note>
 
 ## Errors
@@ -227,7 +293,7 @@ const action = hiitl.queryAudit({ action_id: 'act_abc123...' });
 | Exception | When |
 |-----------|------|
 | `ConfigurationError` | Invalid constructor options or missing required fields |
-| `PolicyLoadError` | Policy file cannot be found, read, or parsed |
+| `PolicyLoadError` | Policy file cannot be found, read, or parsed when the client is constructed. Once constructed, a file that goes missing or stops parsing is the decision `POLICY_ERROR`, not a throw |
 | `AuditLogError` | Audit database cannot be created or initialized |
 
 ```typescript
@@ -238,13 +304,16 @@ try {
 } catch (e) {
   if (e instanceof ConfigurationError) {
     console.error(e.message);
-    // "policy_path is required when mode is RESPECT_POLICY.
+    // "policy_path is required when mode is RESPECT_POLICY in pure-local mode.
     //
     // Either provide a policy file:
     //   new HIITL({ policy_path: './policy.yaml', mode: 'RESPECT_POLICY' })
     //
     // Or use OBSERVE_ALL mode (default) for zero-config:
-    //   new HIITL()"
+    //   new HIITL()
+    //
+    // Or use hybrid mode (policies sync from server):
+    //   new HIITL({ api_key: 'sk_...' })"
   }
 }
 ```

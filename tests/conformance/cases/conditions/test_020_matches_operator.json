@@ -2,7 +2,7 @@
   "test_id": "test_020_matches_operator",
   "description": "Test matches operator (regex)",
   "envelope": {
-    "schema_version": "v1.0",
+    "schema_version": "v2.0",
     "org_id": "org_1234567890abcdef",
     "environment": "prod",
     "agent_id": "agent_finance_bot",
@@ -18,13 +18,17 @@
     "action": "send_email"
   },
   "policy_set": {
-    "version": "1.0.0",
+    "version": "v1.0.0",
+    "description": "Test matches operator (regex)",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
     "name": "test_policy",
     "rules": [
       {
         "name": "allow_company_emails",
         "priority": 100,
-        "enabled": true,
         "conditions": {
           "field": "parameters.recipient",
           "operator": "matches",

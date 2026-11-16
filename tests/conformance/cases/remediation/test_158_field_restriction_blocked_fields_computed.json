@@ -1,0 +1,94 @@
+{
+  "test_id": "test_158_field_restriction_blocked_fields_computed",
+  "description": "A field_restriction remediation whose blocked_fields is written {ref, filter} returns the call's values at ref that are in filter, in the envelope's order, each once, with field_ref set to ref (policy_format.md Remediation on Rules; R-0059; HTL-20 row 146).",
+  "envelope": {
+    "schema_version": "v2.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_data_bot",
+    "action_id": "act_test15800000000000000000",
+    "timestamp": "2026-02-14T10:00:00Z",
+    "operation": "read",
+    "parameters": {
+      "fields": [
+        "name",
+        "ssn",
+        "email",
+        "dob",
+        "ssn"
+      ],
+      "format": "csv"
+    },
+    "idempotency_key": "idem_test_158",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "export_data"
+  },
+  "policy_set": {
+    "version": "v1.0.0",
+    "description": "A field_restriction remediation whose blocked_fields is written {ref, filter} returns the call's values at ref that are in filter, in the envelope's order, each once, with field_ref set to ref (policy_format.md Remediation on Rules; R-0059; HTL-20 row 146).",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
+    "name": "data_export_policy",
+    "rules": [
+      {
+        "name": "block_pii_export",
+        "priority": 100,
+        "conditions": {
+          "field": "parameters.fields",
+          "operator": "contains",
+          "value": "ssn"
+        },
+        "decision": "BLOCK",
+        "reason_code": "PII_FIELDS_BLOCKED",
+        "description": "Block exports naming PII fields",
+        "remediation": {
+          "message": "Exports may not include personal identifiers.",
+          "suggestion": "Remove the blocked fields from the export, or request the approved PII export workflow.",
+          "type": "field_restriction",
+          "details": {
+            "blocked_fields": {
+              "ref": "parameters.fields",
+              "filter": [
+                "dob",
+                "ssn",
+                "tax_id"
+              ]
+            },
+            "allowed_fields": [
+              "name",
+              "email",
+              "department"
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "BLOCK",
+    "allowed": false,
+    "reason_codes": [
+      "PII_FIELDS_BLOCKED"
+    ],
+    "remediation": {
+      "message": "Exports may not include personal identifiers.",
+      "suggestion": "Remove the blocked fields from the export, or request the approved PII export workflow.",
+      "type": "field_restriction",
+      "details": {
+        "blocked_fields": [
+          "ssn",
+          "dob"
+        ],
+        "allowed_fields": [
+          "name",
+          "email",
+          "department"
+        ],
+        "field_ref": "parameters.fields"
+      }
+    }
+  }
+}

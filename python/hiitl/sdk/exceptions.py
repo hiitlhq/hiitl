@@ -24,7 +24,15 @@ class PolicyLoadError(HIITLError):
 
     The error message includes helpful context pointing to the correct schema
     documentation in docs/specs/policy_format.md.
+
+    On the evaluate path it is not raised to the caller: an envelope exists, so the failure is the decision
+    POLICY_ERROR with `reason` as its cause and this message logged (decision_response.md "Error Handling"; HTL-22
+    row 159). `reason` is the Error Handling cause: POLICY_NOT_FOUND, POLICY_LOAD_FAILED or POLICY_VALIDATION_ERROR.
     """
+
+    def __init__(self, message: str, reason: str = "POLICY_VALIDATION_ERROR"):
+        super().__init__(message)
+        self.reason = reason
 
 
 class AuditLogError(HIITLError):
@@ -98,6 +106,20 @@ class ServerError(HIITLError):
         )
 
 
+class LifecycleError(HIITLError):
+    """A result `record_result` does not record on the action's lifecycle (event_format.md "The lifecycle"; HTL-22
+    row 150).
+
+    Attributes:
+        reason: Why, the code the hosted service answers too: RESULT_INVALID, ACTION_NOT_FOUND,
+            RESULT_ON_UNALLOWED_DECISION or RESULT_ALREADY_RECORDED
+    """
+
+    def __init__(self, reason: str, message: str):
+        self.reason = reason
+        super().__init__(f"[{reason}] {message}")
+
+
 class SyncError(HIITLError):
     """Sync engine encountered an error.
 
@@ -128,6 +150,8 @@ class NetworkError(HIITLError):
     """
 
     def __init__(self, server_url: str, cause: Exception):
+        # TICKET-011's constructor, deleted with the edit that replaced ColdStartError (TICKET-116, 2026-05-18): the
+        # message lost its troubleshooting and read as a tuple
         self.server_url = server_url
         self.cause = cause
         super().__init__(
@@ -137,4 +161,36 @@ class NetworkError(HIITLError):
             "  2. Check network connectivity\n"
             "  3. Confirm the server is running\n"
             "  4. Check for firewall or proxy issues"
+        )
+
+
+class ColdStartError(HIITLError):
+    """Initial sync failed at SDK startup and cold_start_behavior='fail-closed' (TICKET-116).
+
+    Raised from HIITL(...) constructor when:
+      - hybrid mode was requested (api_key provided), AND
+      - no disk cache exists (cold start), AND
+      - the initial sync did not complete within `sync_init_timeout`, AND
+      - `cold_start_behavior='fail-closed'` was set.
+
+    The other cold_start_behavior values (`warn-and-observe` (default),
+    `observe-silent`) never raise this — they continue in OBSERVE_ALL
+    with cache_status='empty' on every Decision until background sync
+    succeeds.
+
+    Attributes:
+        server_url: The server the SDK tried to reach
+        timeout_seconds: The sync_init_timeout that elapsed
+    """
+
+    def __init__(self, server_url: str, timeout_seconds: float):
+        self.server_url = server_url
+        self.timeout_seconds = timeout_seconds
+        super().__init__(
+            f"Cold-start sync failed: could not reach {server_url} within "
+            f"{timeout_seconds}s and no disk cache was available. "
+            f"cold_start_behavior='fail-closed' was set, so initialization "
+            f"aborted rather than continuing in OBSERVE_ALL. "
+            f"Switch to cold_start_behavior='warn-and-observe' to allow "
+            f"the SDK to start in OBSERVE_ALL until background sync succeeds."
         )

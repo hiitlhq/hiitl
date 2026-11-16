@@ -1,0 +1,81 @@
+{
+  "test_id": "test_145_conforms_to_departing_parameters_match_the_negated_test",
+  "description": "conforms_to over a parameter schema (policy_format.md 2.6): a parameter the schema does not name departs, so the negated test matches.",
+  "envelope": {
+    "schema_version": "v2.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_ops_bot",
+    "action_id": "act_test1450000000000000000",
+    "timestamp": "2026-10-09T10:00:00Z",
+    "operation": "execute",
+    "parameters": {
+      "account_id": "acct_1",
+      "note": "x"
+    },
+    "idempotency_key": "idem_test_145_f",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "grant_access"
+  },
+  "policy_set": {
+    "version": "v1.0.0",
+    "description": "conforms_to over a parameter schema (policy_format.md 2.6): a parameter the schema does not name departs, so the negated test matches.",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "parameters_off_schema",
+        "priority": 900,
+        "conditions": {
+          "none_of": [
+            {
+              "field": "parameters",
+              "operator": "conforms_to",
+              "value": {
+                "type": "object",
+                "properties": {
+                  "account_id": {
+                    "type": "string"
+                  },
+                  "amount": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "account_id"
+                ],
+                "additionalProperties": false
+              }
+            }
+          ]
+        },
+        "decision": "BLOCK",
+        "reason_code": "PARAMETERS_OFF_SCHEMA",
+        "description": "Rule: parameters_off_schema"
+      },
+      {
+        "name": "allow_otherwise",
+        "priority": 1,
+        "conditions": {
+          "field": "action",
+          "operator": "exists",
+          "value": true
+        },
+        "decision": "ALLOW",
+        "reason_code": "ALLOWED",
+        "description": "Rule: allow_otherwise"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "BLOCK",
+    "allowed": false,
+    "reason_codes": [
+      "PARAMETERS_OFF_SCHEMA"
+    ]
+  }
+}

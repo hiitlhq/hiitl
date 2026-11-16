@@ -3,8 +3,11 @@
 Every tool call is evaluated against policy before execution.
 
 Run:
-    pip install hiitl mcp
+    pip install hiitl
     python server.py
+
+The tool handlers below are simulated, so the example runs without the
+mcp package.
 
 This example shows how to add hiitl to an existing MCP server
 with a single evaluate() call per tool handler.
@@ -12,11 +15,11 @@ with a single evaluate() call per tool handler.
 
 from hiitl import HIITL
 
-# Initialize hiitl — zero config for observe mode,
-# or add a policy_path for enforcement
+# Initialize hiitl. With no policy it observes: every call proceeds and is
+# recorded. To enforce, write a policy file (it needs an ALLOW rule for each
+# tool call it lets through; see ../payment-agent/policy.yaml) and uncomment:
 hiitl = HIITL(
     agent_id="mcp-assistant",
-    # Uncomment for enforcement:
     # policy_path="./policy.yaml",
     # mode="RESPECT_POLICY",
 )

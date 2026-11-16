@@ -1,0 +1,94 @@
+{
+  "test_id": "test_178_fail_closed_a_field_reference_the_call_does_not_carry_blocks",
+  "description": "A {\"$field\": ...} value is a read too: under fail_closed, a rule comparing the refund's amount with an order total the call does not carry decides BLOCK (MISSING_FIELD), naming the referenced field (HTL-22 row 176).",
+  "envelope": {
+    "schema_version": "v2.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_support_bot",
+    "action_id": "act_test1780000000000000000",
+    "timestamp": "2026-11-05T10:00:00Z",
+    "action": "issue_refund",
+    "operation": "execute",
+    "parameters": {
+      "amount": 40
+    },
+    "idempotency_key": "idem_test_178",
+    "target": {
+      "order_id": "ord_881"
+    },
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "policy_set": {
+    "name": "refunds_policy",
+    "version": "v1.0.0",
+    "description": "Refund controls for the support agent",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
+    "on_missing": "fail_closed",
+    "rules": [
+      {
+        "name": "block_refunds_over_the_order_total",
+        "description": "A refund larger than the order it refunds is blocked",
+        "priority": 100,
+        "conditions": {
+          "all_of": [
+            {
+              "field": "action",
+              "operator": "equals",
+              "value": "issue_refund"
+            },
+            {
+              "field": "parameters.amount",
+              "operator": "greater_than",
+              "value": {
+                "$field": "parameters.order_total"
+              }
+            }
+          ]
+        },
+        "decision": "BLOCK",
+        "reason_code": "REFUND_EXCEEDS_ORDER"
+      },
+      {
+        "name": "allow_refunds",
+        "description": "Refunds are allowed otherwise",
+        "priority": 50,
+        "conditions": {
+          "field": "action",
+          "operator": "equals",
+          "value": "issue_refund"
+        },
+        "decision": "ALLOW",
+        "reason_code": "REFUND_ALLOWED"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "BLOCK",
+    "allowed": false,
+    "reason_codes": [
+      "MISSING_FIELD"
+    ],
+    "matched_rules": [
+      {
+        "rule_name": "block_refunds_over_the_order_total",
+        "policy_set": "refunds_policy",
+        "priority": 100
+      }
+    ],
+    "remediation": {
+      "message": "Rule 'block_refunds_over_the_order_total' in policy set 'refunds_policy' reads parameters.order_total, which the call does not carry, and the set's on_missing is fail_closed.",
+      "suggestion": "Add parameters.order_total to the call and evaluate it again.",
+      "type": "custom",
+      "details": {
+        "fields": [
+          "parameters.order_total"
+        ]
+      }
+    },
+    "missing_fields": null
+  }
+}

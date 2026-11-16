@@ -13,7 +13,9 @@ def _make_policy(rules: List[Dict]) -> PolicySet:
     """Create a minimal policy for testing."""
     return PolicySet(
         name="test-policy",
-        version="1.0.0",
+        version="v1.0.0",
+        description="The test-policy set",
+        scope={"org_id": "org_devlocal0000000000", "environment": "dev"},
         rules=[Rule(**r) for r in rules],
     )
 
@@ -40,7 +42,6 @@ RULES = [
     {
         "name": "rule-a",
         "description": "Rule A",
-        "enabled": True,
         "priority": 100,
         "conditions": {"field": "action", "operator": "equals", "value": "tool_a"},
         "decision": "ALLOW",
@@ -49,7 +50,6 @@ RULES = [
     {
         "name": "rule-b",
         "description": "Rule B",
-        "enabled": True,
         "priority": 50,
         "conditions": {"field": "action", "operator": "equals", "value": "tool_b"},
         "decision": "BLOCK",
@@ -58,7 +58,7 @@ RULES = [
     {
         "name": "rule-c-disabled",
         "description": "Disabled rule",
-        "enabled": False,
+        "lifecycle_stage": "disabled",
         "priority": 200,
         "conditions": {"field": "action", "operator": "equals", "value": "tool_c"},
         "decision": "BLOCK",

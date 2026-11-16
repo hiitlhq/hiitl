@@ -3,54 +3,63 @@ title: "IAM Patterns"
 description: "User management, permissions, and credential operations"
 ---
 
+Each starter policy below is a complete policy file. Load it with `HIITL(policy_path="policy.yaml", mode="RESPECT_POLICY")` to enforce it. Under `RESPECT_POLICY`, an action no rule matches is blocked with `NO_MATCHING_RULE`, so each policy carries an `ALLOW` rule for the calls that should proceed. Under the default mode, `OBSERVE_ALL`, a decision other than `ALLOW` or `SANDBOX` comes back as `OBSERVE`, with the rule's decision in `would_be`.
+
 ## create_user
 
 Create a new user account.
 
 ```python
 decision = hiitl.evaluate(
-    tool="create_user",
+    "create_user",
     operation="create",
     target={"domain": "company.com"},
-    parameters={"email": "new.hire@company.com", "role": "basic_user", "department": "engineering"}
+    parameters={"email": "new.hire@company.com", "role": "basic_user", "department": "engineering"},
 )
 ```
 
 **Starter policy:**
 
 ```yaml
-- name: "block-admin-user-creation"
-  enabled: true
-  priority: 900
-  conditions:
-    all_of:
-      - field: "action"
-        operator: "equals"
-        value: "create_user"
-      - field: "parameters.role"
-        operator: "in"
-        value: ["admin", "superuser", "root"]
-  decision: "BLOCK"
-  reason_code: "ADMIN_CREATION_BLOCKED"
-  remediation:
-    message: "Agents cannot create admin-level accounts."
-    suggestion: "Create the user with basic_user role. Admin access must be granted separately through the IAM portal."
-    type: "policy"
+name: "user-creation"
+version: "v1.0.0"
+description: "Controls on create_user"
+scope:
+  org_id: "org_devlocal0000000000"
+  environment: "dev"
+rules:
+  - name: "block-admin-user-creation"
+    description: "Block agents from creating admin-level accounts"
+    priority: 900
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "create_user"
+        - field: "parameters.role"
+          operator: "in"
+          value: ["admin", "superuser", "root"]
+    decision: "BLOCK"
+    reason_code: "ADMIN_CREATION_BLOCKED"
+    remediation:
+      message: "Agents cannot create admin-level accounts."
+      suggestion: "Create the user with basic_user role. Admin access must be granted separately through the IAM portal."
+      type: "custom"
 
-- name: "allow-basic-user-creation"
-  enabled: true
-  priority: 1
-  conditions:
-    all_of:
-      - field: "action"
-        operator: "equals"
-        value: "create_user"
-  decision: "ALLOW"
-  reason_code: "USER_CREATION_ALLOWED"
+  - name: "allow-basic-user-creation"
+    description: "Allow creation of non-admin users"
+    priority: 1
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "create_user"
+    decision: "ALLOW"
+    reason_code: "USER_CREATION_ALLOWED"
 ```
 
 <Note>
-**Compliance:** SOX and SOC 2 require access provisioning controls. All user creation events are recorded in the hiitl audit trail, providing evidence for compliance audits.
+**Compliance:** SOX and SOC 2 require access provisioning controls. Every user creation that hiitl evaluates is recorded in the hiitl audit trail, providing evidence for compliance audits.
 </Note>
 
 ---
@@ -61,57 +70,74 @@ Change a user's permissions or role assignments.
 
 ```python
 decision = hiitl.evaluate(
-    tool="modify_permissions",
+    "modify_permissions",
     operation="execute",
     target={"user_id": "usr_789", "resource": "billing_system"},
-    parameters={"action": "grant", "role": "admin", "scope": "production"}
+    parameters={"action": "grant", "role": "admin", "scope": "production"},
 )
 ```
 
 **Starter policy:**
 
 ```yaml
-- name: "require-approval-admin-grants"
-  enabled: true
-  priority: 200
-  conditions:
-    all_of:
-      - field: "action"
-        operator: "equals"
-        value: "modify_permissions"
-      - field: "parameters.role"
-        operator: "in"
-        value: ["admin", "superuser", "root", "owner"]
-  decision: "REQUIRE_APPROVAL"
-  reason_code: "ADMIN_PERMISSION_GRANT"
-  remediation:
-    message: "Admin permission grants require security team approval."
-    suggestion: "Submit the permission request through the access review workflow."
-    type: "policy"
-  metadata:
-    sla_hours: 2
-    reviewer_role: "security_team"
+name: "permissions"
+version: "v1.0.0"
+description: "Controls on modify_permissions"
+scope:
+  org_id: "org_devlocal0000000000"
+  environment: "dev"
+rules:
+  - name: "require-approval-admin-grants"
+    description: "Require security team approval for admin-level grants"
+    priority: 200
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "modify_permissions"
+        - field: "parameters.role"
+          operator: "in"
+          value: ["admin", "superuser", "root", "owner"]
+    decision: "REQUIRE_APPROVAL"
+    reason_code: "ADMIN_PERMISSION_GRANT"
+    remediation:
+      message: "Admin permission grants require security team approval."
+      suggestion: "Submit the permission request through the access review workflow."
+      type: "custom"
+    metadata:
+      sla_hours: 2
+      reviewer_role: "security_team"
 
-- name: "block-prod-permissions-in-dev"
-  enabled: true
-  priority: 900
-  conditions:
-    all_of:
-      - field: "environment"
-        operator: "equals"
-        value: "dev"
-      - field: "action"
-        operator: "equals"
-        value: "modify_permissions"
-      - field: "parameters.scope"
-        operator: "contains"
-        value: "production"
-  decision: "BLOCK"
-  reason_code: "PROD_PERMISSIONS_IN_DEV"
-  remediation:
-    message: "Production permissions cannot be granted from dev environment."
-    suggestion: "Switch to the production environment to manage production permissions."
-    type: "policy"
+  - name: "block-prod-permissions-in-dev"
+    description: "Block production permission changes made from the dev environment"
+    priority: 900
+    conditions:
+      all_of:
+        - field: "environment"
+          operator: "equals"
+          value: "dev"
+        - field: "action"
+          operator: "equals"
+          value: "modify_permissions"
+        - field: "parameters.scope"
+          operator: "contains"
+          value: "production"
+    decision: "BLOCK"
+    reason_code: "PROD_PERMISSIONS_IN_DEV"
+    remediation:
+      message: "Production permissions cannot be granted from dev environment."
+      suggestion: "Switch to the production environment to manage production permissions."
+      type: "custom"
+
+  - name: "allow-permission-changes"
+    description: "Allow other permission changes"
+    priority: 50
+    conditions:
+      field: "action"
+      operator: "equals"
+      value: "modify_permissions"
+    decision: "ALLOW"
+    reason_code: "PERMISSION_CHANGE_ALLOWED"
 ```
 
 <Warning>
@@ -126,43 +152,50 @@ Reset a user's password or credentials.
 
 ```python
 decision = hiitl.evaluate(
-    tool="reset_password",
+    "reset_password",
     operation="execute",
     target={"user_id": "usr_789"},
-    parameters={"method": "email_link", "initiated_by": "support_agent"}
+    parameters={"method": "email_link", "initiated_by": "support_agent"},
 )
 ```
 
 **Starter policy:**
 
 ```yaml
-- name: "require-approval-admin-password-reset"
-  enabled: true
-  priority: 200
-  conditions:
-    all_of:
-      - field: "action"
-        operator: "equals"
-        value: "reset_password"
-      - field: "target.user_id"
-        operator: "starts_with"
-        value: "admin_"
-  decision: "REQUIRE_APPROVAL"
-  reason_code: "ADMIN_PASSWORD_RESET"
-  metadata:
-    sla_hours: 1
-    reviewer_role: "security_ops"
+name: "password-resets"
+version: "v1.0.0"
+description: "Controls on reset_password"
+scope:
+  org_id: "org_devlocal0000000000"
+  environment: "dev"
+rules:
+  - name: "require-approval-admin-password-reset"
+    description: "Require security ops approval to reset an admin account's password"
+    priority: 200
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "reset_password"
+        - field: "target.user_id"
+          operator: "starts_with"
+          value: "admin_"
+    decision: "REQUIRE_APPROVAL"
+    reason_code: "ADMIN_PASSWORD_RESET"
+    metadata:
+      sla_hours: 1
+      reviewer_role: "security_ops"
 
-- name: "allow-standard-password-reset"
-  enabled: true
-  priority: 1
-  conditions:
-    all_of:
-      - field: "action"
-        operator: "equals"
-        value: "reset_password"
-  decision: "ALLOW"
-  reason_code: "PASSWORD_RESET_ALLOWED"
+  - name: "allow-standard-password-reset"
+    description: "Allow password resets for other accounts"
+    priority: 1
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "reset_password"
+    decision: "ALLOW"
+    reason_code: "PASSWORD_RESET_ALLOWED"
 ```
 
 <Note>

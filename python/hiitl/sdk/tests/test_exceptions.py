@@ -11,6 +11,16 @@ from hiitl.sdk.exceptions import (
 )
 
 
+def test_the_package_exports_every_sdk_error():
+    """Every error the SDK raises is importable from `hiitl` itself; the classes are read from hiitl.sdk.exceptions."""
+    import hiitl
+    from hiitl.sdk import exceptions
+
+    errors = {n for n, c in vars(exceptions).items() if isinstance(c, type) and issubclass(c, HIITLError)}
+    assert errors - set(hiitl.__all__) == set()
+    assert all(getattr(hiitl, n) is getattr(exceptions, n) for n in errors)
+
+
 class TestExceptionHierarchy:
     """Test exception class hierarchy."""
 

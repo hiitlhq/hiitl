@@ -3,7 +3,7 @@ title: "Policies"
 description: "Policy management endpoints"
 ---
 
-Manage policy sets in hosted mode. Policies are versioned and immutable once deployed.
+Manage policy sets on the hosted service. Policies are versioned, and the service never changes a version once it is deployed. Each organization has one active policy per environment, and hosted evaluation uses it.
 
 ## List policies
 
@@ -13,37 +13,60 @@ GET /v1/policies
 
 **Required scope:** `read`
 
-Returns all policy sets for the authenticated org and environment.
+Returns the policies for the authenticated org and environment. By default, only the active policy is returned.
 
 **Query parameters:**
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `environment` | string | Filter by environment (`dev`, `stage`, `prod`) |
-| `active` | boolean | Only return the currently active version per policy set |
+| `active_only` | boolean | Only return the active policy. Defaults to `true`. Set `false` to list every version, newest first |
 
 **Example:**
 
 ```bash
 curl -H "Authorization: Bearer $API_KEY" \
-  "https://api.hiitl.com/v1/policies?active=true"
+  "https://api.hiitl.com/v1/policies?active_only=false"
 ```
 
-```json
+```jsonc
 {
   "policies": [
     {
-      "id": "pol_abc123",
-      "name": "payments-policy",
-      "version": "v2.1.0",
-      "active": true,
+      "policy_id": "pol_abac472e7878432abf62",
+      "org_id": "org_northwindpay0001",
       "environment": "prod",
-      "rule_count": 4,
-      "content_hash": "sha256:a1b2c3d4...",
-      "created_at": "2025-01-10T09:00:00Z",
-      "created_by": "admin@company.com"
+      "policy_set": {
+        "name": "payments-policy",
+        "version": "2.2.0",
+        "scope": { "org_id": "org_northwindpay0001", "environment": "prod" },
+        "rules": [ /* … */ ]
+      },
+      "version": "2.2.0",
+      "content_hash": "ae13f7fa19d6dae2fdec1867ae0669bf2bb7445cf546bb32a7bf2a6a6ca30039",
+      "is_active": true,
+      "created_at": "2026-11-04T03:57:00+00:00",
+      "updated_at": "2026-11-04T03:57:00+00:00",
+      "created_by": "key_7f3a9c2e41b84d06a5e1"
+    },
+    {
+      "policy_id": "pol_f25b77396be04156b7da",
+      "org_id": "org_northwindpay0001",
+      "environment": "prod",
+      "policy_set": {
+        "name": "payments-policy",
+        "version": "2.1.0",
+        "scope": { "org_id": "org_northwindpay0001", "environment": "prod" },
+        "rules": [ /* … */ ]
+      },
+      "version": "2.1.0",
+      "content_hash": "f78bb2fcc14c3f98a6956fd7dac364c69966ffd22c4ffcb8fce727a817e5972e",
+      "is_active": false,
+      "created_at": "2026-11-04T03:56:59+00:00",
+      "updated_at": "2026-11-04T03:56:59+00:00",
+      "created_by": "key_7f3a9c2e41b84d06a5e1"
     }
-  ]
+  ],
+  "count": 2
 }
 ```
 
@@ -57,17 +80,28 @@ POST /v1/policies
 
 **Required scope:** `admin`
 
-Create a new policy version. If a policy set with the same name already exists, this creates a new version and activates it.
+Create a new policy version and make it the active version. The new version replaces the active policy for the API key's environment, whatever its name. The previous version is kept, inactive. No rule reaches `active` by being written: see **Staging** below.
 
 **Request body:**
 
 <ParamField body="policy_set" type="object" required>
-  The full policy set object including name, version, scope, and rules. See [Policies concept](/concepts/policies) for the full schema.
+  The full policy set object including name, version, scope, and rules. See [Policies concept](/concepts/policies) for the full schema. `scope.org_id` and `scope.environment` must match the API key's organization and environment, or the request fails with `400 POLICY_VALIDATION_ERROR`.
 </ParamField>
 
-<ParamField body="activate" type="boolean">
-  Whether to activate this version immediately. Defaults to `true`.
-</ParamField>
+The service records who made the change as the caller it authenticated: the version's `created_by` and the change record's `changed_by` are the API key's `key_id` (or, for a dashboard session, the signed-in user). The request does not name it, and a body carrying `created_by` is refused with `422`, naming the field.
+
+If the version string is already used by a different policy set in this environment, the service stores the new set under the next unused version (for example, `2.2.0` becomes `2.2.1`). The response shows the version stored.
+
+**Staging:** the service writes the set the way the [rule lifecycle](/concepts/policies#lifecycle-stages-observe-before-you-enforce) moves rules:
+
+- The service loads the set the way the SDKs do. A set that does not load is refused with `400 POLICY_VALIDATION_ERROR` and the loader's message, and nothing is written. A rule that still carries `enabled` or `mode` is refused this way, and the message names `lifecycle_stage`. So is a set holding two rules of one name: a rule's `name` is unique within its set, and the message names it.
+- The service then loads the set as it would be written, with the onboarding default and any refinement below. If that set does not load, the write is refused with `422 POLICY_VALIDATION_ERROR` and the loader's message, and nothing is written. A first set whose own rule is named `observe_all` with other content than the default's is refused this way, naming it. The status says which set did not load: `400` is the set you sent, `422` the set the write would store.
+- A rule's body is every field but `lifecycle_stage`. A rule written `active` (the default) must pass the promotion gate unless the active version already holds it `active` with the same body. A ready regression report for the rule's body is part of the gate: a report on an earlier body does not pass an edited one. If the gate refuses the rule, it lands `staged`, and the response lists it under `held` with the gate's code and message. Promote it once the gate passes.
+- If the active version holds a rule `staged` or `active` and you write it with a changed body, that is an edit to the rule. The edit is written as the rule's refinement, `<name>~r<n>`, which lands `staged` beside the unchanged rule. The unchanged rule keeps binding. The response lists the edit under `refined`. Writing the same set again writes the same rules.
+- Any other rule lands as written. Rules the active version holds that the new set does not name are not carried over.
+- A set whose content is a stored version's is that version posted again. It is written as stored, each rule at the stage that version holds it, and the staging above does not apply. Its change record's `change_type` is `ROLLBACK`.
+- If the set, as it would be written, allows no action (every call ends in a block or awaits a review) and the active version allows some, or there is none, the write is refused with `422 ALWAYS_BLOCK`, and nothing is written. `details.held` names the rules the gate held `staged`: keep a rule that allows, as the active version holds it, and the held rules observe beside it until they are promoted. An active version that already allows nothing is yours: the lint reports it, and the write is not refused.
+- The first set you write into an environment with no active version is written with the onboarding default after its own rules, as accepting a suggestion there is: `observe_all`, an `ALLOW` at priority 0, `active`. The set allows every action while the gate holds your rules `staged`, and they observe. If your set already holds the default as written, it is carried once. The `ALWAYS_BLOCK` check reads the set with the default.
 
 **Example:**
 
@@ -78,23 +112,42 @@ curl -X POST https://api.hiitl.com/v1/policies \
   -d '{
     "policy_set": {
       "name": "payments-policy",
-      "version": "v2.2.0",
+      "version": "2.2.0",
       "scope": {
-        "org_id": "org_abc123def456ghi7",
+        "org_id": "org_northwindpay0001",
         "environment": "prod"
       },
       "rules": [
         {
+          "name": "block-large-payments",
+          "description": "Block payments over $10,000",
+          "priority": 100,
+          "conditions": {
+            "all_of": [
+              { "field": "action", "operator": "equals", "value": "process_payment" },
+              { "field": "parameters.amount", "operator": "greater_than", "value": 10000 }
+            ]
+          },
+          "decision": "BLOCK",
+          "reason_code": "AMOUNT_EXCEEDS_LIMIT",
+          "remediation": {
+            "message": "Payment amount exceeds the $10,000 limit.",
+            "suggestion": "Reduce amount to $10,000 or below, or request approval.",
+            "type": "threshold",
+            "details": { "field": "parameters.amount", "threshold": 10000, "max_allowed": 10000 }
+          }
+        },
+        {
           "name": "allow-payments",
-          "enabled": true,
-          "priority": 1,
+          "description": "Allow payments that no other rule stops",
+          "priority": 10,
           "conditions": {
             "all_of": [
               { "field": "action", "operator": "equals", "value": "process_payment" }
             ]
           },
           "decision": "ALLOW",
-          "reason_code": "DEFAULT_ALLOW"
+          "reason_code": "PAYMENT_ALLOWED"
         }
       ]
     }
@@ -105,87 +158,170 @@ curl -X POST https://api.hiitl.com/v1/policies \
 
 ```json
 {
-  "id": "pol_def456",
-  "name": "payments-policy",
-  "version": "v2.2.0",
-  "active": true,
-  "content_hash": "sha256:e5f6a7b8...",
-  "created_at": "2025-01-15T14:00:00Z",
-  "diff": {
-    "rules_added": [],
-    "rules_removed": [],
-    "rules_modified": ["allow-payments"]
-  }
+  "policy_id": "pol_abac472e7878432abf62",
+  "version": "2.2.0",
+  "content_hash": "ae13f7fa19d6dae2fdec1867ae0669bf2bb7445cf546bb32a7bf2a6a6ca30039",
+  "is_active": true,
+  "created_at": "2026-11-04T03:57:00+00:00",
+  "lint": [],
+  "held": [
+    {
+      "rule": "block-large-payments",
+      "code": "RULE_NO_REGRESSION_REPORT",
+      "message": "rule `block-large-payments` has no regression report: observe it before it enforces — produce one over its 7-day window (POST /v1/policies/{policy_id}/rules/{rule_name}/regression-report), then promote."
+    }
+  ],
+  "refined": []
 }
 ```
 
-The response includes a structured `diff` showing what changed from the previous version.
+In the example, `allow-payments` is unchanged from the active version, so it stays `active`. `block-large-payments` is new, so it lands `staged`.
+
+The response includes `lint`: findings about the set as you wrote it, each with a `code`, `severity` (`error`, `warning`, or `info`), `rule`, and `message`. A finding with severity `error` means part of the set cannot work as written. Fix these before you rely on the version.
+
+To see what changed from the previous version, use [List policy changes](#list-policy-changes).
 
 ---
 
 ## Get policy
 
 ```
-GET /v1/policies/{id}
+GET /v1/policies/{policy_id}
 ```
 
 **Required scope:** `read`
 
-Returns a single policy set with full rule definitions.
+Returns a single policy version with full rule definitions. A `policy_id` that is not your organization's in the key's environment returns `404 POLICY_NOT_FOUND`, the same as one that does not exist.
 
 **Example:**
 
 ```bash
 curl -H "Authorization: Bearer $API_KEY" \
-  https://api.hiitl.com/v1/policies/pol_abc123
+  https://api.hiitl.com/v1/policies/pol_f25b77396be04156b7da
 ```
 
 ```json
 {
-  "id": "pol_abc123",
-  "name": "payments-policy",
-  "version": "v2.1.0",
-  "active": true,
+  "policy_id": "pol_f25b77396be04156b7da",
+  "org_id": "org_northwindpay0001",
   "environment": "prod",
-  "content_hash": "sha256:a1b2c3d4...",
-  "created_at": "2025-01-10T09:00:00Z",
-  "created_by": "admin@company.com",
   "policy_set": {
     "name": "payments-policy",
     "version": "v2.1.0",
+    "description": "Payment processing controls",
     "scope": {
-      "org_id": "org_abc123def456ghi7",
+      "org_id": "org_northwindpay0001",
       "environment": "prod"
     },
     "rules": [
       {
         "name": "allow-payments",
-        "description": "Default allow for payments",
-        "enabled": true,
-        "priority": 1,
+        "description": "Allow payments that no other rule stops",
+        "priority": 10,
         "conditions": {
           "all_of": [
             { "field": "action", "operator": "equals", "value": "process_payment" }
           ]
         },
         "decision": "ALLOW",
-        "reason_code": "DEFAULT_ALLOW"
+        "reason_code": "PAYMENT_ALLOWED"
       }
     ]
-  }
+  },
+  "version": "2.1.0",
+  "content_hash": "f78bb2fcc14c3f98a6956fd7dac364c69966ffd22c4ffcb8fce727a817e5972e",
+  "is_active": false,
+  "created_at": "2026-11-04T03:56:59+00:00",
+  "updated_at": "2026-11-04T03:56:59+00:00",
+  "created_by": "key_7f3a9c2e41b84d06a5e1"
 }
 ```
 
 ---
 
+## List policy changes
+
+```
+GET /v1/policies/changes
+```
+
+**Required scope:** `read`
+
+Returns the change records for the authenticated org and environment, newest first. Creating a policy version, toggling a kill switch, and changing a rule's lifecycle stage each produce one.
+
+**Query parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `limit` | integer | Maximum number of records to return, from 1 to 1000. Defaults to 100 |
+
+**Example:**
+
+```bash
+curl -H "Authorization: Bearer $API_KEY" \
+  "https://api.hiitl.com/v1/policies/changes?limit=1"
+```
+
+```json
+{
+  "changes": [
+    {
+      "change_id": "chg_c3173ef46e244caf8a46",
+      "org_id": "org_northwindpay0001",
+      "environment": "prod",
+      "policy_id": "pol_abac472e7878432abf62",
+      "old_version": "2.1.0",
+      "new_version": "2.2.0",
+      "old_content_hash": "f78bb2fcc14c3f98a6956fd7dac364c69966ffd22c4ffcb8fce727a817e5972e",
+      "new_content_hash": "ae13f7fa19d6dae2fdec1867ae0669bf2bb7445cf546bb32a7bf2a6a6ca30039",
+      "diff": {
+        "rules_added": ["block-large-payments"],
+        "rules_removed": [],
+        "rules_modified": [
+          {
+            "rule_name": "review-refunds",
+            "fields": [
+              {
+                "path": "conditions.all_of",
+                "before": [
+                  { "field": "action", "operator": "equals", "value": "refund_payment" },
+                  { "field": "parameters.amount", "operator": "greater_than", "value": 500 }
+                ],
+                "after": [
+                  { "field": "action", "operator": "equals", "value": "refund_payment" },
+                  { "field": "parameters.amount", "operator": "greater_than", "value": 250 }
+                ]
+              }
+            ]
+          }
+        ],
+        "fields": [
+          { "path": "description", "before": "Payments controls", "after": "Payments and refunds controls" }
+        ],
+        "summary": "Policy updated"
+      },
+      "changed_by": "key_7f3a9c2e41b84d06a5e1",
+      "actor_type": "api_key",
+      "change_type": "UPDATE",
+      "created_at": "2026-11-04T03:57:00+00:00"
+    }
+  ],
+  "count": 1
+}
+```
+
+The `diff` names each rule added and each rule removed, and for each rule in both versions whose content changed, every field that changed with its value before and after. A field's `path` runs through the rule's objects by their keys, and a list is compared whole: a changed threshold in `all_of` shows as the list before and after. `fields` holds the policy set's own changed fields beside its rules. The version is the record's `old_version` and `new_version`, so the diff does not repeat it. A record written before this form holds the diff it was written with: `rules_added` as a count, `old_rule_count`, `new_rule_count`, and `rule_lifecycle_changes`, each rule whose stage changed with its old and new stage. No record is rewritten.
+
+---
+
 ## Policy versioning
 
-- Deployed versions are **immutable** -- they are never modified
+- The service never changes a deployed version
 - Creating a new version supersedes the previous one
-- Rollback means activating a previous version, not editing the current one
+- To roll back, post the earlier version's policy set again, as `GET /v1/policies/{policy_id}` returns it. It becomes the active version as it was stored, under its version string, each rule at the stage that version holds it, and its change record's `change_type` is `ROLLBACK`. A set that differs from every stored version is a new one: its rules land by the staging rules above
 - Every version has a SHA-256 `content_hash` computed at write time
-- The evaluator verifies the hash before using a policy
+- The hosted service verifies the stored hash before it evaluates with a policy. A mismatch fails the request with `500 POLICY_INTEGRITY_VIOLATION`, and the policy is not used
 
 <Note>
-All policy changes produce an immutable audit record: who changed what, when, from which version to which version, with content hashes before and after.
+Creating a policy version, toggling a kill switch, and changing a rule's lifecycle stage each produce a change record: `changed_by`, `actor_type`, `change_type`, when, the old and new versions, the content hashes before and after, and the `diff`. `actor_type` is read from the credential that made the change, never from `changed_by`: `api_key` for an API key, `human` for a dashboard session, `system` for a write the service makes itself (the onboarding default, an automatic rollback). A record written before `actor_type` was added has it `null`. No API endpoint changes or deletes a change record.
 </Note>

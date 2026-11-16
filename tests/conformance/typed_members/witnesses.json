@@ -1,0 +1,448 @@
+{
+  "provenance": "HTL-41 data-only valid route controls; types and null answers are read from routes.md. Multiple inbound witnesses prevent a dependent permission refusal from hiding a null acceptance.",
+  "witnesses": [
+    {
+      "id": "bidirectional",
+      "input": {
+        "name": "typed-route",
+        "version": "v1.0.0",
+        "description": "null boundary witness",
+        "purpose": [
+          "review"
+        ],
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "protocol": "webhook",
+        "metadata": {
+          "author": "fixture author",
+          "created_at": "2026-11-14T00:00:00Z",
+          "tags": [
+            "fixture"
+          ],
+          "untyped": null
+        },
+        "direction": "bidirectional",
+        "timing": "sync",
+        "endpoint": "https://review.example.test/decision",
+        "auth": {
+          "type": "bearer_token",
+          "secret_ref": "env:HTL41_ROUTE_FIXTURE",
+          "header": "Authorization",
+          "hmac_header": "X-HIITL-Signature"
+        },
+        "context": {
+          "fields": [
+            {
+              "field_path": "action",
+              "label": "Action",
+              "format": "text"
+            }
+          ],
+          "include_policy_ref": true,
+          "include_audit_context": false,
+          "risk_framing": {
+            "severity": "low",
+            "summary": "fixture",
+            "consequences": {
+              "if_approved": "continue",
+              "if_denied": "stop"
+            }
+          }
+        },
+        "response_schema": {
+          "decision_options": [
+            "approve",
+            "deny"
+          ],
+          "required_fields": [
+            "decision"
+          ],
+          "optional_fields": [
+            "notes"
+          ],
+          "reason_required_for": [
+            "deny"
+          ],
+          "modify_constraints": [
+            {
+              "field_path": "parameters.amount",
+              "constraint": "select_from",
+              "options": [
+                null,
+                0,
+                "sample"
+              ]
+            }
+          ]
+        },
+        "sla": {
+          "timeout": "1m",
+          "timeout_action": "fail_closed"
+        },
+        "escalation_ladder": {
+          "levels": [
+            {
+              "level": 1,
+              "route": "next-review",
+              "after": "1m"
+            }
+          ],
+          "max_escalation_depth": 1,
+          "final_timeout_action": "fail_closed"
+        },
+        "correlation": {
+          "token_field": "resume_token"
+        }
+      }
+    },
+    {
+      "id": "outbound",
+      "input": {
+        "name": "typed-route",
+        "version": "v1.0.0",
+        "description": "null boundary witness",
+        "purpose": [
+          "review"
+        ],
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "protocol": "webhook",
+        "metadata": {
+          "author": "fixture author",
+          "created_at": "2026-11-14T00:00:00Z",
+          "tags": [
+            "fixture"
+          ],
+          "untyped": null
+        },
+        "direction": "outbound",
+        "timing": "async",
+        "endpoint": "https://review.example.test/events",
+        "auth": {
+          "type": "bearer_token",
+          "secret_ref": "env:HTL41_ROUTE_FIXTURE",
+          "header": "Authorization",
+          "hmac_header": "X-HIITL-Signature"
+        },
+        "retry": {
+          "max_attempts": 3,
+          "backoff": "exponential",
+          "initial_delay_ms": 1000
+        },
+        "queue": {
+          "batch_size": 100,
+          "flush_interval": "30s"
+        },
+        "filters": {
+          "decisions": [
+            "ALLOW"
+          ],
+          "actions": [
+            "sample"
+          ],
+          "agents": [
+            "sample-agent"
+          ],
+          "sensitivity": [
+            "money"
+          ]
+        }
+      }
+    },
+    {
+      "id": "inbound-peer-permissions",
+      "input": {
+        "name": "typed-route",
+        "version": "v1.0.0",
+        "description": "null boundary witness",
+        "purpose": [
+          "review"
+        ],
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "protocol": "webhook",
+        "metadata": {
+          "author": "fixture author",
+          "created_at": "2026-11-14T00:00:00Z",
+          "tags": [
+            "fixture"
+          ],
+          "untyped": null
+        },
+        "direction": "inbound",
+        "timing": "async",
+        "inbound": {
+          "url": "https://review.example.test/inbound",
+          "auth": {
+            "type": "bearer_token",
+            "token_ref": "fixture-reference"
+          },
+          "payload_mapping": {
+            "signal_type": "$.type",
+            "agent_ref": "$.agent",
+            "severity": "$.severity",
+            "metadata": {
+              "source": "$.source"
+            }
+          },
+          "permissions": {
+            "can_enforce": true,
+            "can_propose": true,
+            "can_signal": true
+          },
+          "acceptance_mode": "propose"
+        }
+      }
+    },
+    {
+      "id": "inbound-enforce-scope",
+      "input": {
+        "name": "typed-route",
+        "version": "v1.0.0",
+        "description": "null boundary witness",
+        "purpose": [
+          "review"
+        ],
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "protocol": "webhook",
+        "metadata": {
+          "author": "fixture author",
+          "created_at": "2026-11-14T00:00:00Z",
+          "tags": [
+            "fixture"
+          ],
+          "untyped": null
+        },
+        "direction": "inbound",
+        "timing": "async",
+        "inbound": {
+          "url": "https://review.example.test/inbound",
+          "auth": {
+            "type": "bearer_token",
+            "token_ref": "fixture-reference"
+          },
+          "payload_mapping": {
+            "signal_type": "$.type",
+            "agent_ref": "$.agent",
+            "severity": "$.severity",
+            "metadata": {
+              "source": "$.source"
+            }
+          },
+          "permissions": {
+            "can_enforce": true,
+            "can_propose": true,
+            "can_signal": true,
+            "enforce_scope": [
+              "kill_switch:agent"
+            ]
+          },
+          "acceptance_mode": "propose"
+        }
+      }
+    }
+  ],
+  "untyped_controls": [
+    {
+      "id": "open-metadata-null",
+      "input": {
+        "name": "typed-route",
+        "version": "v1.0.0",
+        "description": "null boundary witness",
+        "purpose": [
+          "review"
+        ],
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "protocol": "webhook",
+        "metadata": {
+          "author": "fixture author",
+          "created_at": "2026-11-14T00:00:00Z",
+          "tags": [
+            "fixture"
+          ],
+          "untyped": null
+        },
+        "direction": "bidirectional",
+        "timing": "sync",
+        "endpoint": "https://review.example.test/decision",
+        "auth": {
+          "type": "bearer_token",
+          "secret_ref": "env:HTL41_ROUTE_FIXTURE",
+          "header": "Authorization",
+          "hmac_header": "X-HIITL-Signature"
+        },
+        "context": {
+          "fields": [
+            {
+              "field_path": "action",
+              "label": "Action",
+              "format": "text"
+            }
+          ],
+          "include_policy_ref": true,
+          "include_audit_context": false,
+          "risk_framing": {
+            "severity": "low",
+            "summary": "fixture",
+            "consequences": {
+              "if_approved": "continue",
+              "if_denied": "stop"
+            }
+          }
+        },
+        "response_schema": {
+          "decision_options": [
+            "approve",
+            "deny"
+          ],
+          "required_fields": [
+            "decision"
+          ],
+          "optional_fields": [
+            "notes"
+          ],
+          "reason_required_for": [
+            "deny"
+          ],
+          "modify_constraints": [
+            {
+              "field_path": "parameters.amount",
+              "constraint": "select_from",
+              "options": [
+                null,
+                0,
+                "sample"
+              ]
+            }
+          ]
+        },
+        "sla": {
+          "timeout": "1m",
+          "timeout_action": "fail_closed"
+        },
+        "escalation_ladder": {
+          "levels": [
+            {
+              "level": 1,
+              "route": "next-review",
+              "after": "1m"
+            }
+          ],
+          "max_escalation_depth": 1,
+          "final_timeout_action": "fail_closed"
+        },
+        "correlation": {
+          "token_field": "resume_token"
+        }
+      }
+    },
+    {
+      "id": "untyped-modify-option-null",
+      "input": {
+        "name": "typed-route",
+        "version": "v1.0.0",
+        "description": "null boundary witness",
+        "purpose": [
+          "review"
+        ],
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "protocol": "webhook",
+        "metadata": {
+          "author": "fixture author",
+          "created_at": "2026-11-14T00:00:00Z",
+          "tags": [
+            "fixture"
+          ],
+          "untyped": null
+        },
+        "direction": "bidirectional",
+        "timing": "sync",
+        "endpoint": "https://review.example.test/decision",
+        "auth": {
+          "type": "bearer_token",
+          "secret_ref": "env:HTL41_ROUTE_FIXTURE",
+          "header": "Authorization",
+          "hmac_header": "X-HIITL-Signature"
+        },
+        "context": {
+          "fields": [
+            {
+              "field_path": "action",
+              "label": "Action",
+              "format": "text"
+            }
+          ],
+          "include_policy_ref": true,
+          "include_audit_context": false,
+          "risk_framing": {
+            "severity": "low",
+            "summary": "fixture",
+            "consequences": {
+              "if_approved": "continue",
+              "if_denied": "stop"
+            }
+          }
+        },
+        "response_schema": {
+          "decision_options": [
+            "approve",
+            "deny"
+          ],
+          "required_fields": [
+            "decision"
+          ],
+          "optional_fields": [
+            "notes"
+          ],
+          "reason_required_for": [
+            "deny"
+          ],
+          "modify_constraints": [
+            {
+              "field_path": "parameters.amount",
+              "constraint": "select_from",
+              "options": [
+                null,
+                0,
+                "sample"
+              ]
+            }
+          ]
+        },
+        "sla": {
+          "timeout": "1m",
+          "timeout_action": "fail_closed"
+        },
+        "escalation_ladder": {
+          "levels": [
+            {
+              "level": 1,
+              "route": "next-review",
+              "after": "1m"
+            }
+          ],
+          "max_escalation_depth": 1,
+          "final_timeout_action": "fail_closed"
+        },
+        "correlation": {
+          "token_field": "resume_token"
+        }
+      }
+    }
+  ]
+}

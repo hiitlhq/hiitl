@@ -33,14 +33,14 @@ pnpm add @hiitl/sdk
     const hiitl = new HIITL();
     ```
 
-    That's it. Every `evaluate()` call is now logged locally in OBSERVE mode.
+    That's it. New evaluations are recorded locally in observe mode. A retry under a recorded idempotency key returns the original decision without another row. An audit write failure blocks even in observe mode.
   </Step>
 
   <Step title="Wrap a tool call">
     Add `evaluate()` before any action your agent takes.
 
     ```typescript
-    const decision = hiitl.evaluate({
+    const decision = await hiitl.evaluate({
       action: 'process_payment',
       parameters: {
         amount: 150.00,
@@ -56,41 +56,71 @@ pnpm add @hiitl/sdk
     }
     ```
 
-    With no policies loaded, every action is allowed and recorded. You get a complete audit trail immediately.
+    With no policies loaded and the record written successfully, this action is observed: `allowed` is `true`, `decision` is `OBSERVE`, and the call is recorded. `would_be` says what enforcement would have decided — `BLOCK` with `NO_MATCHING_RULE`, because no rule allows the action yet. A repeated idempotency key reuses its first decision; an audit write failure blocks even in observe mode.
+
+    <Note>
+      `evaluate()` returns a `Decision` in local mode and a `Promise<Decision>` in hybrid and hosted mode; its declared type is the union of the two. `await` it in every mode: the code type-checks and does not change when you add an API key.
+    </Note>
   </Step>
 
   <Step title="Add a policy">
-    Create `policy.yaml` to start enforcing rules:
+    Create `policy.yaml`. An action no rule matches is blocked once you enforce, so the policy allows payments and blocks the large ones:
 
     ```yaml policy.yaml
     policy_set:
       name: "payment-controls"
       version: "v1.0.0"
+      description: "Payment controls for the quickstart agent"
+      scope:
+        org_id: "org_devlocal0000000000"
+        environment: "dev"
       rules:
         - name: "block-high-value-payments"
-          enabled: true
+          description: "Payments over $500 are refused"
           priority: 100
           conditions:
             all_of:
+              - field: "action"
+                operator: "equals"
+                value: "process_payment"
               - field: "parameters.amount"
                 operator: "greater_than"
                 value: 500
           decision: "BLOCK"
           reason_code: "PAYMENT_TOO_HIGH"
+        - name: "allow-payments"
+          description: "Other payments proceed"
+          priority: 10
+          conditions:
+            field: "action"
+            operator: "equals"
+            value: "process_payment"
+          decision: "ALLOW"
+          reason_code: "PAYMENT_ALLOWED"
     ```
 
-    Point the SDK at it:
+    Point the SDK at it. The default mode, `OBSERVE_ALL`, observes policy refusals and records what the policy would have done:
 
     ```typescript
-    const hiitl = new HIITL({ policyPath: './policy.yaml' });
+    const hiitl = new HIITL({ policy_path: './policy.yaml' });
+
+    const decision = await hiitl.evaluate({
+      action: 'process_payment',
+      parameters: { amount: 1000.00 },
+    });
+    console.log(decision.decision);               // OBSERVE
+    console.log(decision.would_be);               // BLOCK
+    console.log(decision.would_be_reason_codes);  // ['PAYMENT_TOO_HIGH']
     ```
   </Step>
 
-  <Step title="See enforcement in action">
-    Now try a payment over the threshold:
+  <Step title="Enforce">
+    When the observations look right, enforce the policy with `mode: 'RESPECT_POLICY'` and try a payment over the threshold:
 
     ```typescript
-    const decision = hiitl.evaluate({
+    const hiitl = new HIITL({ policy_path: './policy.yaml', mode: 'RESPECT_POLICY' });
+
+    const decision = await hiitl.evaluate({
       action: 'process_payment',
       parameters: {
         amount: 1000.00,
@@ -113,16 +143,16 @@ pnpm add @hiitl/sdk
 Every `evaluate()` call returns a decision object with everything you need:
 
 ```typescript
-const decision = hiitl.evaluate({
+const decision = await hiitl.evaluate({
   action: 'process_payment',
   parameters: { amount: 50.00 },
 });
 
 decision.allowed          // true — safe to execute
 decision.decision         // "ALLOW"
-decision.reason_codes     // ["DEFAULT_ALLOW"]
+decision.reason_codes     // ["PAYMENT_ALLOWED"]
 decision.policy_version   // "v1.0.0"
-decision.timing           // { evaluation_ms: 0.4, total_ms: 0.8 }
+decision.timing           // { ingest_ms: ..., evaluation_ms: ..., total_ms: ... }
 ```
 
 <Tip>
@@ -134,11 +164,15 @@ decision.timing           // { evaluation_ms: 0.4, total_ms: 0.8 }
 | Decision | `allowed` | Meaning |
 |----------|-----------|---------|
 | `ALLOW` | `true` | Safe to proceed |
+| `OBSERVE` | `true` | Recorded, not enforced (`OBSERVE_ALL` mode); `would_be` holds the enforced decision |
 | `BLOCK` | `false` | Denied by policy |
 | `REQUIRE_APPROVAL` | `false` | Needs human review before execution |
+| `PAUSE` | `false` | Held for later processing |
+| `ESCALATE` | `false` | Escalated to a higher authority |
+| `ROUTE` | `false` | A sync route was asked and has not answered |
 | `RATE_LIMIT` | `false` | Too many requests — wait and retry |
 | `KILL_SWITCH` | `false` | Emergency stop — do not retry |
-| `SANDBOX` | `true` | Allowed in isolated environment |
+| `SANDBOX` | `true` | Caller uses its configured sandbox target |
 
 ## Configuration options
 
@@ -146,18 +180,23 @@ decision.timing           // { evaluation_ms: 0.4, total_ms: 0.8 }
 // Zero-config (observe mode, local evaluation)
 const hiitl = new HIITL();
 
-// Local with policies
-const hiitl = new HIITL({ policyPath: './policy.yaml' });
+// Local with policies, enforced
+const hiitl = new HIITL({ policy_path: './policy.yaml', mode: 'RESPECT_POLICY' });
 
-// Hosted (team collaboration, managed audit)
+// Hybrid (local evaluation, policies and audit synced with the hosted service)
+const hiitl = new HIITL({ api_key: process.env.HIITL_API_KEY });
+
+// Hosted (every evaluation is a call to the server; explicit opt-in)
 const hiitl = new HIITL({
-  apiKey: process.env.HIITL_API_KEY,
-  serverUrl: process.env.HIITL_SERVER_URL,
+  api_key: process.env.HIITL_API_KEY,
+  server_url: process.env.HIITL_SERVER_URL,
+  evaluation: 'remote',
+  signature_key: process.env.HIITL_SIGNATURE_KEY, // the API key's signing secret, shown when the key was created
 });
 ```
 
 <Note>
-  Mode is auto-detected. No `apiKey` means local evaluation. Add `apiKey` + `serverUrl` to switch to hosted mode. The `evaluate()` calls stay the same.
+  Options are snake_case, as in the Python SDK. Mode is auto-detected: no `api_key` means local evaluation, an `api_key` means hybrid, and hosted requires `evaluation: 'remote'` with `api_key` and `server_url`. An explicit option outranks its environment variable; mode follows those resolved settings. The `await`ed `evaluate()` calls stay the same.
 </Note>
 
 ## Next steps

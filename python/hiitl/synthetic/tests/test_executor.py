@@ -1,6 +1,7 @@
 """Tests for the scenario executor."""
 
 import pytest
+from types import SimpleNamespace
 
 from hiitl.core.evaluator import PolicyEvaluator
 from hiitl.core.types import PolicySet
@@ -11,12 +12,13 @@ from hiitl.synthetic.types import Scenario, ScenarioAssertion, ScenarioStep
 
 SIMPLE_POLICY = PolicySet(
     name="test-policy",
-    version="1.0.0",
+    version="v1.0.0",
+    description="The test-policy set",
+    scope={"org_id": "org_devlocal0000000000", "environment": "dev"},
     rules=[
         {
             "name": "allow-tool-a",
             "description": "Allow tool_a",
-            "enabled": True,
             "priority": 100,
             "conditions": {"field": "action", "operator": "equals", "value": "tool_a"},
             "decision": "ALLOW",
@@ -25,7 +27,6 @@ SIMPLE_POLICY = PolicySet(
         {
             "name": "block-tool-b",
             "description": "Block tool_b",
-            "enabled": True,
             "priority": 50,
             "conditions": {"field": "action", "operator": "equals", "value": "tool_b"},
             "decision": "BLOCK",
@@ -50,7 +51,7 @@ class TestScenarioExecutor:
                     name="Allow tool_a",
                     action="evaluate",
                     envelope={
-                        "tool": "tool_a",
+                        "action": "tool_a",
                         "operation": "execute",
                         "target": {"id": "123"},
                         "parameters": {},
@@ -72,7 +73,9 @@ class TestScenarioExecutor:
         assert result.status == "passed"
         assert result.steps_passed == 1
         assert result.steps_failed == 0
-        assert result.assertions_passed > 0
+        expected_fields = ["decision.decision", "decision.allowed"]
+        assert [a.field for a in result.steps[0].assertions if a.passed] == expected_fields
+        assert result.assertions_passed == len(expected_fields)
 
     def test_evaluate_step_fails_wrong_decision(self):
         """Step fails when actual decision doesn't match expected."""
@@ -86,7 +89,7 @@ class TestScenarioExecutor:
                     name="Expect BLOCK but get ALLOW",
                     action="evaluate",
                     envelope={
-                        "tool": "tool_a",
+                        "action": "tool_a",
                         "operation": "execute",
                         "target": {"id": "123"},
                         "parameters": {},
@@ -113,7 +116,7 @@ class TestScenarioExecutor:
             description="Test scenario",
             steps=[
                 ScenarioStep(step=1, name="Evaluate", action="evaluate",
-                    envelope={"tool": "tool_a", "operation": "execute",
+                    envelope={"action": "tool_a", "operation": "execute",
                               "target": {"id": "1"}, "parameters": {}}),
                 ScenarioStep(step=2, name="Approve", action="approve"),
                 ScenarioStep(step=3, name="Execute", action="execute"),
@@ -131,7 +134,7 @@ class TestScenarioExecutor:
         assert result.steps_passed == 1
         assert result.steps_skipped == 3
         assert result.steps[1].status == "skipped"
-        assert "Phase 2" in result.steps[1].skipped_reason
+        assert "not run by the synthetic runner" in result.steps[1].skipped_reason
 
     def test_assertion_failure_fails_step(self):
         """A failing assertion fails the step."""
@@ -145,7 +148,7 @@ class TestScenarioExecutor:
                     name="Wrong assertion",
                     action="evaluate",
                     envelope={
-                        "tool": "tool_a",
+                        "action": "tool_a",
                         "operation": "execute",
                         "target": {"id": "123"},
                         "parameters": {},
@@ -164,10 +167,14 @@ class TestScenarioExecutor:
         result = executor.run(scenario)
 
         assert result.status == "failed"
-        assert result.assertions_failed > 0
+        expected_fields = [a.field for a in scenario.steps[0].assertions]
+        assert [a.field for a in result.steps[0].assertions if not a.passed] == expected_fields
+        assert result.assertions_failed == len(expected_fields)
 
-    def test_multiple_evaluate_steps(self):
+    def test_multiple_evaluate_steps(self, monkeypatch):
         """Multiple evaluate steps work correctly."""
+        clock = iter([10.0, 10.125, 20.0, 20.5])
+        monkeypatch.setattr("hiitl.synthetic.executor.time", SimpleNamespace(perf_counter=lambda: next(clock)))
         scenario = Scenario(
             scenario_id="test",
             name="Test",
@@ -175,13 +182,13 @@ class TestScenarioExecutor:
             steps=[
                 ScenarioStep(
                     step=1, name="Allow", action="evaluate",
-                    envelope={"tool": "tool_a", "operation": "execute",
+                    envelope={"action": "tool_a", "operation": "execute",
                               "target": {"id": "1"}, "parameters": {}},
                     expected_decision="ALLOW",
                 ),
                 ScenarioStep(
                     step=2, name="Block", action="evaluate",
-                    envelope={"tool": "tool_b", "operation": "execute",
+                    envelope={"action": "tool_b", "operation": "execute",
                               "target": {"id": "2"}, "parameters": {}},
                     expected_decision="BLOCK",
                 ),
@@ -196,7 +203,8 @@ class TestScenarioExecutor:
 
         assert result.status == "passed"
         assert result.steps_passed == 2
-        assert result.total_latency_ms > 0
+        assert [step.latency_ms for step in result.steps] == [125.0, 500.0]
+        assert result.total_latency_ms == 625.0
 
     def test_grader_records_decisions(self):
         """PolicyGrader receives decisions from executed steps."""
@@ -208,7 +216,7 @@ class TestScenarioExecutor:
             steps=[
                 ScenarioStep(
                     step=1, name="Allow", action="evaluate",
-                    envelope={"tool": "tool_a", "operation": "execute",
+                    envelope={"action": "tool_a", "operation": "execute",
                               "target": {"id": "1"}, "parameters": {}},
                 ),
             ],
@@ -225,8 +233,10 @@ class TestScenarioExecutor:
         assert report.total_evaluations == 1
         assert report.decision_distribution.get("ALLOW", 0) == 1
 
-    def test_latency_tracking(self):
+    def test_latency_tracking(self, monkeypatch):
         """Each step records latency."""
+        clock = iter([10.0, 10.125])
+        monkeypatch.setattr("hiitl.synthetic.executor.time", SimpleNamespace(perf_counter=lambda: next(clock)))
         scenario = Scenario(
             scenario_id="test",
             name="Test",
@@ -234,7 +244,7 @@ class TestScenarioExecutor:
             steps=[
                 ScenarioStep(
                     step=1, name="Step 1", action="evaluate",
-                    envelope={"tool": "tool_a", "operation": "execute",
+                    envelope={"action": "tool_a", "operation": "execute",
                               "target": {"id": "1"}, "parameters": {}},
                 ),
             ],
@@ -247,7 +257,7 @@ class TestScenarioExecutor:
         result = executor.run(scenario)
 
         assert result.steps[0].latency_ms is not None
-        assert result.steps[0].latency_ms > 0
+        assert result.steps[0].latency_ms == 125.0
 
     def test_tool_field_mapping(self):
         """Scenario envelope 'tool' maps to Envelope 'action'."""
@@ -258,7 +268,7 @@ class TestScenarioExecutor:
             steps=[
                 ScenarioStep(
                     step=1, name="Map tool", action="evaluate",
-                    envelope={"tool": "tool_a", "operation": "execute",
+                    envelope={"action": "tool_a", "operation": "execute",
                               "target": {"id": "1"}, "parameters": {}},
                     expected_decision="ALLOW",
                 ),
@@ -281,7 +291,7 @@ class TestScenarioExecutor:
             steps=[
                 ScenarioStep(
                     step=1, name="Check codes", action="evaluate",
-                    envelope={"tool": "tool_a", "operation": "execute",
+                    envelope={"action": "tool_a", "operation": "execute",
                               "target": {"id": "1"}, "parameters": {}},
                     expected_reason_codes=["ALLOWED"],
                 ),
@@ -304,7 +314,7 @@ class TestScenarioExecutor:
             steps=[
                 ScenarioStep(
                     step=1, name="Step", action="evaluate",
-                    envelope={"tool": "tool_a", "operation": "execute",
+                    envelope={"action": "tool_a", "operation": "execute",
                               "target": {"id": "1"}, "parameters": {}},
                 ),
             ],

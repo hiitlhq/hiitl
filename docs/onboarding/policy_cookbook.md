@@ -1,6 +1,14 @@
-# Policy Cookbook - HIITL ECP
+# Policy Cookbook - hiitl ECP
 
 Practical policy examples for common scenarios. Copy, customize, and deploy.
+
+Every rule needs a `description`. A rule is switched on and off with `lifecycle_stage`: `active` is the default and `disabled` skips the rule. `enabled` and a per-rule `mode` are refused when the policy loads. A snippet that shows a single rule goes in a policy set's `rules:` list.
+
+These policies enforce only when the client is created with `mode="RESPECT_POLICY"` (TypeScript: `mode: 'RESPECT_POLICY'`). Under the default, `OBSERVE_ALL`, a BLOCK, approval or kill switch comes back as `OBSERVE`, with the rule's decision in `would_be`. Under `RESPECT_POLICY`, an action no rule matches is `BLOCK` with `NO_MATCHING_RULE`, so an enforcing policy carries ALLOW rules for what should go through.
+
+```python
+hiitl = HIITL(policy_path="./policy.yaml", mode="RESPECT_POLICY")
+```
 
 ---
 
@@ -30,17 +38,18 @@ Require approval for payments over $500.
 policy_set:
   name: "payment-approval-policy"
   version: "v1.0.0"
+  description: "Simple Amount Threshold"
   scope:
-    org_id: "org_abc123"
+    org_id: "org_devlocal0000000000"
     environment: "prod"
 
   rules:
     - name: "require-approval-high-value"
-      enabled: true
+      description: "Payments over $500 wait for a finance approver"
       priority: 100
       conditions:
         all_of:
-          - field: "tool"
+          - field: "action"
             operator: "equals"
             value: "process_payment"
           - field: "parameters.amount"
@@ -53,11 +62,11 @@ policy_set:
         reviewer_role: "finance_approver"
 
     - name: "allow-low-value-payments"
-      enabled: true
+      description: "Other payments proceed"
       priority: 1
       conditions:
         all_of:
-          - field: "tool"
+          - field: "action"
             operator: "equals"
             value: "process_payment"
       decision: "ALLOW"
@@ -72,17 +81,18 @@ Different approval levels based on amount.
 policy_set:
   name: "tiered-payment-approval"
   version: "v1.0.0"
+  description: "Tiered Approval Thresholds"
   scope:
-    org_id: "org_abc123"
+    org_id: "org_devlocal0000000000"
     environment: "prod"
 
   rules:
     - name: "executive-approval-required"
-      enabled: true
+      description: "Payments over $10,000 need the CFO"
       priority: 200
       conditions:
         all_of:
-          - field: "tool"
+          - field: "action"
             operator: "equals"
             value: "process_payment"
           - field: "parameters.amount"
@@ -95,11 +105,11 @@ policy_set:
         reviewer_role: "cfo"
 
     - name: "manager-approval-required"
-      enabled: true
+      description: "Payments over $1,000 need a finance manager"
       priority: 150
       conditions:
         all_of:
-          - field: "tool"
+          - field: "action"
             operator: "equals"
             value: "process_payment"
           - field: "parameters.amount"
@@ -112,11 +122,11 @@ policy_set:
         reviewer_role: "finance_manager"
 
     - name: "supervisor-approval-required"
-      enabled: true
+      description: "Payments over $500 need a team lead"
       priority: 100
       conditions:
         all_of:
-          - field: "tool"
+          - field: "action"
             operator: "equals"
             value: "process_payment"
           - field: "parameters.amount"
@@ -129,11 +139,11 @@ policy_set:
         reviewer_role: "team_lead"
 
     - name: "allow-small-payments"
-      enabled: true
+      description: "Payments of $500 or less proceed"
       priority: 1
       conditions:
         all_of:
-          - field: "tool"
+          - field: "action"
             operator: "equals"
             value: "process_payment"
       decision: "ALLOW"
@@ -146,11 +156,11 @@ Require approval for high-value OR low-confidence payments.
 
 ```yaml
 - name: "require-approval-risky-payment"
-  enabled: true
+  description: "Payments over $5,000, or over $1,000 at confidence below 0.8, need risk review"
   priority: 100
   conditions:
     all_of:
-      - field: "tool"
+      - field: "action"
         operator: "equals"
         value: "process_payment"
       - any_of:
@@ -175,7 +185,9 @@ Require approval for high-value OR low-confidence payments.
 
 ## Rate Limiting
 
-Rate limiting is configured at the **policy-set level** via `metadata.rate_limits`, not as individual rules. The rate limiter runs **post-evaluation** and only applies to ALLOW decisions — if a rule blocks or escalates an action, it is never counted against a rate limit.
+A rate limit is a `RATE_LIMIT` rule with a window: `rate_limit: {limit, window_seconds, scope}`. The scope is `action` (the default), `agent`, `user`, `org` or `user_action`. The rule never binds on its own. After evaluation, when the decision is ALLOW, the limiter reads each windowed rule that matched before it counts any. When one is over its limit, it returns `RATE_LIMIT` with reason code `RATE_LIMIT_EXCEEDED` and the rule's own remediation, and the call is counted in no window. Otherwise the call is counted in all of them. A blocked or escalated action is never counted. The limiter counts in every mode: under `OBSERVE_ALL`, a call past a limit is `OBSERVE` with `would_be: RATE_LIMIT`.
+
+A policy set's `metadata.rate_limits`, the earlier set-level form, still loads: each entry is compiled to a rule like these. New policies write the rule.
 
 ### Example 4: Per-Agent Rate Limit
 
@@ -185,30 +197,36 @@ Limit each agent to 100 actions per hour.
 policy_set:
   name: "agent-rate-limited-policy"
   version: "v1.0.0"
+  description: "Per-Agent Rate Limit"
   scope:
-    org_id: "org_abc123"
+    org_id: "org_devlocal0000000000"
     environment: "prod"
-
-  metadata:
-    rate_limits:
-      - scope: "agent_id"
-        window: "hour"
-        limit: 100
 
   rules:
     - name: "allow-payments"
-      enabled: true
+      description: "Payments proceed"
       priority: 1
       conditions:
         all_of:
-          - field: "tool"
+          - field: "action"
             operator: "equals"
             value: "process_payment"
       decision: "ALLOW"
       reason_code: "PAYMENT_ALLOWED"
+
+    - name: "actions-per-agent-hour"
+      description: "At most 100 actions an hour per agent"
+      priority: 0
+      conditions:
+        field: "action"
+        operator: "exists"
+        value: true
+      decision: "RATE_LIMIT"
+      reason_code: "AGENT_RATE"
+      rate_limit: {limit: 100, window_seconds: 3600, scope: "agent"}
 ```
 
-When an action is ALLOW'd by the rules, the rate limiter checks if the agent has exceeded 100 actions in the current hour. If so, the decision is overridden to `RATE_LIMIT` with reason code `RATE_LIMIT_EXCEEDED`.
+When an action is ALLOW'd by the rules, the rate limiter checks if the agent has exceeded 100 actions in the current hour. If so, the decision is overridden to `RATE_LIMIT` with reason code `RATE_LIMIT_EXCEEDED`, and `decision.rate_limit` carries the scope, window, limit, current count and `reset_at`.
 
 ### Example 5: Per-User Rate Limit
 
@@ -218,39 +236,52 @@ Limit each end-user to 10 emails per day.
 policy_set:
   name: "user-email-limit"
   version: "v1.0.0"
+  description: "Per-User Rate Limit"
   scope:
-    org_id: "org_abc123"
+    org_id: "org_devlocal0000000000"
     environment: "prod"
-
-  metadata:
-    rate_limits:
-      - scope: "user_id"
-        window: "day"
-        limit: 10
 
   rules:
     - name: "allow-emails"
-      enabled: true
+      description: "Emails go out"
       priority: 1
       conditions:
         all_of:
-          - field: "tool"
+          - field: "action"
             operator: "equals"
             value: "send_email"
       decision: "ALLOW"
       reason_code: "EMAIL_ALLOWED"
+
+    - name: "emails-per-user-day"
+      description: "At most 10 emails a day per user"
+      priority: 0
+      conditions:
+        field: "action"
+        operator: "equals"
+        value: "send_email"
+      decision: "RATE_LIMIT"
+      reason_code: "EMAIL_RATE"
+      rate_limit: {limit: 10, window_seconds: 86400, scope: "user"}
 ```
+
+The `user` scope counts by the `user_id` passed to `evaluate()`.
 
 ### Example 6: Org-Wide Global Rate Limit
 
 Limit all agents combined to 1000 database queries per minute.
 
 ```yaml
-metadata:
-  rate_limits:
-    - scope: "org"
-      window: "minute"
-      limit: 1000
+- name: "db-queries-per-org-minute"
+  description: "At most 1,000 database queries a minute across the org"
+  priority: 0
+  conditions:
+    field: "action"
+    operator: "equals"
+    value: "query_database"
+  decision: "RATE_LIMIT"
+  reason_code: "DB_QUERY_RATE"
+  rate_limit: {limit: 1000, window_seconds: 60, scope: "org"}
 ```
 
 ### Example 7: Multiple Simultaneous Limits
@@ -258,14 +289,27 @@ metadata:
 Apply both per-agent and org-wide limits. The first limit exceeded wins.
 
 ```yaml
-metadata:
-  rate_limits:
-    - scope: "agent_id"
-      window: "minute"
-      limit: 60
-    - scope: "org"
-      window: "hour"
-      limit: 5000
+- name: "actions-per-agent-minute"
+  description: "At most 60 actions a minute per agent"
+  priority: 0
+  conditions:
+    field: "action"
+    operator: "exists"
+    value: true
+  decision: "RATE_LIMIT"
+  reason_code: "AGENT_BURST"
+  rate_limit: {limit: 60, window_seconds: 60, scope: "agent"}
+
+- name: "actions-per-org-hour"
+  description: "At most 5,000 actions an hour across the org"
+  priority: 0
+  conditions:
+    field: "action"
+    operator: "exists"
+    value: true
+  decision: "RATE_LIMIT"
+  reason_code: "ORG_HOURLY"
+  rate_limit: {limit: 5000, window_seconds: 3600, scope: "org"}
 ```
 
 This allows bursting up to 60 per agent per minute while capping the organization at 5000 per hour total.
@@ -280,11 +324,11 @@ Require approval for granting admin permissions.
 
 ```yaml
 - name: "require-approval-admin-grants"
-  enabled: true
+  description: "Granting an admin, superuser or root role needs security review"
   priority: 200
   conditions:
     all_of:
-      - field: "tool"
+      - field: "action"
         operator: "equals"
         value: "grant_access"
       - field: "parameters.role"
@@ -303,14 +347,14 @@ Don't allow production permissions in dev environment.
 
 ```yaml
 - name: "block-prod-permissions-in-dev"
-  enabled: true
+  description: "Production scopes are never granted from dev"
   priority: 900
   conditions:
     all_of:
       - field: "environment"
         operator: "equals"
         value: "dev"
-      - field: "tool"
+      - field: "action"
         operator: "equals"
         value: "grant_access"
       - field: "parameters.scope"
@@ -326,11 +370,11 @@ Escalate if agent requests permissions it doesn't normally need.
 
 ```yaml
 - name: "escalate-unusual-permissions"
-  enabled: true
+  description: "Roles other than read_only and basic_user go to security ops"
   priority: 150
   conditions:
     all_of:
-      - field: "tool"
+      - field: "action"
         operator: "equals"
         value: "grant_access"
       - field: "parameters.role"
@@ -352,11 +396,12 @@ Emergency stop for all payment processing.
 
 ```yaml
 - name: "kill-switch-all-payments"
-  enabled: false  # Disabled by default, enable when incident declared
+  description: "Emergency stop for every payment"
+  lifecycle_stage: "disabled"  # Set to "active" when an incident is declared
   priority: 1000  # Highest priority
   conditions:
     all_of:
-      - field: "tool"
+      - field: "action"
         operator: "equals"
         value: "process_payment"
   decision: "KILL_SWITCH"
@@ -369,7 +414,8 @@ Stop one agent that's behaving abnormally.
 
 ```yaml
 - name: "kill-switch-agent-123"
-  enabled: false  # Enable when agent needs to be stopped
+  description: "Stops agent-123"
+  lifecycle_stage: "disabled"  # Set to "active" when the agent needs to be stopped
   priority: 1000
   conditions:
     all_of:
@@ -386,7 +432,8 @@ Emergency block for all database delete operations.
 
 ```yaml
 - name: "kill-switch-database-deletes"
-  enabled: false
+  description: "Stops every database delete"
+  lifecycle_stage: "disabled"
   priority: 1000
   conditions:
     all_of:
@@ -400,6 +447,13 @@ Emergency block for all database delete operations.
   reason_code: "DATABASE_DELETE_KILL_SWITCH"
 ```
 
+A kill switch is turned on by setting its `lifecycle_stage` to `active`. A matching `KILL_SWITCH` rule binds before every other rule, whatever its priority.
+
+- **Local policy file:** the next `evaluate()` reads the edited file.
+- **Hosted service:** `POST /v1/kill-switches/{rule_name}/activate` (admin scope) saves a new policy version with the rule active. Hosted evaluation applies it from the next evaluation. An SDK in hybrid mode picks it up with its next policy sync, every 5 minutes by default.
+
+See the [Kill Switch Runbook](kill_switch_runbook.md).
+
 ---
 
 ## Environment-Based Controls
@@ -410,7 +464,7 @@ Route all actions to sandbox endpoints in development.
 
 ```yaml
 - name: "sandbox-all-in-dev"
-  enabled: true
+  description: "Every dev action goes to the sandbox"
   priority: 10
   conditions:
     all_of:
@@ -423,13 +477,15 @@ Route all actions to sandbox endpoints in development.
     sandbox_endpoint: "https://sandbox-api.example.com"
 ```
 
+`SANDBOX` comes back with `allowed` true. Your code checks `decision.decision == "SANDBOX"` and sends the action to its sandbox.
+
 ### Example 15: Block Irreversible Actions in Dev
 
 Don't allow irreversible actions in development.
 
 ```yaml
 - name: "block-irreversible-in-dev"
-  enabled: true
+  description: "Irreversible actions are refused in dev"
   priority: 900
   conditions:
     all_of:
@@ -445,33 +501,39 @@ Don't allow irreversible actions in development.
 
 ### Example 16: Stricter Limits in Production
 
-Lower rate limits in production for safety. Use separate policy sets per environment with different `metadata.rate_limits`.
+Lower rate limits in production for safety. Use separate policy sets per environment, each with its own windowed `RATE_LIMIT` rule.
 
 ```yaml
 policy_set:
   name: "prod-email-policy"
   version: "v1.0.0"
+  description: "Stricter Limits in Production"
   scope:
-    org_id: "org_abc123"
+    org_id: "org_devlocal0000000000"
     environment: "prod"
-
-  metadata:
-    rate_limits:
-      - scope: "agent_id"
-        window: "hour"
-        limit: 50  # Conservative in prod (dev might use 100)
 
   rules:
     - name: "allow-emails"
-      enabled: true
+      description: "Emails go out"
       priority: 1
       conditions:
         all_of:
-          - field: "tool"
+          - field: "action"
             operator: "equals"
             value: "send_email"
       decision: "ALLOW"
       reason_code: "EMAIL_ALLOWED"
+
+    - name: "emails-per-agent-hour"
+      description: "At most 50 emails an hour per agent"
+      priority: 0
+      conditions:
+        field: "action"
+        operator: "equals"
+        value: "send_email"
+      decision: "RATE_LIMIT"
+      reason_code: "EMAIL_RATE"
+      rate_limit: {limit: 50, window_seconds: 3600, scope: "agent"}  # Conservative in prod (dev might use 100)
 ```
 
 ---
@@ -484,7 +546,7 @@ Block actions if estimated cost exceeds budget.
 
 ```yaml
 - name: "block-over-budget"
-  enabled: true
+  description: "Calls estimated above $100 are refused"
   priority: 100
   conditions:
     all_of:
@@ -495,19 +557,11 @@ Block actions if estimated cost exceeds budget.
   reason_code: "COST_EXCEEDS_BUDGET"
 ```
 
-### Example 18: Token Budget per Agent (Future)
+The caller supplies the estimate: `hiitl.evaluate("generate_report", cost_estimate={"dollars": 120.0})`, or `cost_estimate: { dollars: 120 }` in TypeScript. The estimate is the envelope's own (`tokens`, `dollars`, `api_calls`); a key it does not define is refused, naming it.
 
-> **Note**: Cost-based budgets (counting tokens or dollars instead of actions) are a designed extension point. Phase 1 supports action-count rate limiting. Token/cost-based budgets will be available in a future release.
+### Example 18: Token Budget per Agent (Not built)
 
-```yaml
-# Future: rate_limits will support custom dimensions
-metadata:
-  rate_limits:
-    - scope: "agent_id"
-      window: "day"
-      limit: 1000000
-      dimension: "tokens"  # Not yet supported — counts actions in Phase 1
-```
+> **Note**: A budget that counts tokens or dollars over a window is not built. A rate limit counts calls. A key a rate limit does not define, such as `dimension`, is refused when the policy loads. To cap the cost of a single call, use Example 17.
 
 ### Example 19: Approval for Expensive Actions
 
@@ -515,7 +569,7 @@ Require approval for actions estimated to cost > $10.
 
 ```yaml
 - name: "require-approval-expensive"
-  enabled: true
+  description: "Calls estimated above $10 need an ops lead"
   priority: 100
   conditions:
     all_of:
@@ -539,7 +593,7 @@ Actions involving both money and identity require review.
 
 ```yaml
 - name: "escalate-money-and-identity"
-  enabled: true
+  description: "Actions marked both money and identity go to fraud prevention"
   priority: 150
   conditions:
     all_of:
@@ -561,7 +615,7 @@ Route regulated data actions to sandbox in dev/stage.
 
 ```yaml
 - name: "sandbox-regulated-non-prod"
-  enabled: true
+  description: "Regulated-data actions in dev and stage go to the sandbox"
   priority: 50
   conditions:
     all_of:
@@ -583,7 +637,7 @@ Only specific agents can access PII.
 
 ```yaml
 - name: "block-pii-from-untrusted-agents"
-  enabled: true
+  description: "Only the customer-service and compliance agents touch PII"
   priority: 900
   conditions:
     all_of:
@@ -609,25 +663,20 @@ All payment controls in one policy set.
 policy_set:
   name: "comprehensive-payment-policy"
   version: "v2.0.0"
+  description: "Comprehensive Payment Policy"
   scope:
-    org_id: "org_abc123"
+    org_id: "org_devlocal0000000000"
     environment: "prod"
-
-  # Rate limiting applied post-evaluation on ALLOW decisions
-  metadata:
-    rate_limits:
-      - scope: "agent_id"
-        window: "hour"
-        limit: 100
 
   rules:
     # Layer 1: Kill switch (emergency stop)
     - name: "kill-switch-all-payments"
-      enabled: false
+      description: "Emergency stop for every payment"
+      lifecycle_stage: "disabled"
       priority: 1000
       conditions:
         all_of:
-          - field: "tool"
+          - field: "action"
             operator: "equals"
             value: "process_payment"
       decision: "KILL_SWITCH"
@@ -635,26 +684,26 @@ policy_set:
 
     # Layer 2: Block suspended agents
     - name: "block-suspended-agents"
-      enabled: true
+      description: "Suspended agents cannot pay"
       priority: 900
       conditions:
         all_of:
-          - field: "tool"
+          - field: "action"
             operator: "equals"
             value: "process_payment"
           - field: "agent_id"
             operator: "in"
-            value: []  # Empty list, populated when agent suspended
+            value: ["legacy-payout-agent"]  # Add an agent here to suspend it
       decision: "BLOCK"
       reason_code: "AGENT_SUSPENDED"
 
     # Layer 3: Approval workflows
     - name: "require-approval-high-value"
-      enabled: true
+      description: "Payments over $1,000 wait for a finance approver"
       priority: 100
       conditions:
         all_of:
-          - field: "tool"
+          - field: "action"
             operator: "equals"
             value: "process_payment"
           - field: "parameters.amount"
@@ -667,11 +716,11 @@ policy_set:
         reviewer_role: "finance_approver"
 
     - name: "require-approval-low-confidence"
-      enabled: true
+      description: "Payments over $500 at confidence below 0.8 need risk review"
       priority: 90
       conditions:
         all_of:
-          - field: "tool"
+          - field: "action"
             operator: "equals"
             value: "process_payment"
           - field: "parameters.amount"
@@ -688,22 +737,36 @@ policy_set:
 
     # Layer 4: Default allow (rate limiting applied automatically)
     - name: "allow-standard-payments"
-      enabled: true
+      description: "Other payments proceed"
       priority: 1
       conditions:
         all_of:
-          - field: "tool"
+          - field: "action"
             operator: "equals"
             value: "process_payment"
       decision: "ALLOW"
       reason_code: "STANDARD_PAYMENT"
+
+    # Rate limit: counted after evaluation, on ALLOW decisions
+    - name: "payments-per-agent-hour"
+      description: "At most 100 payments an hour per agent"
+      priority: 0
+      conditions:
+        field: "action"
+        operator: "equals"
+        value: "process_payment"
+      decision: "RATE_LIMIT"
+      reason_code: "PAYMENT_RATE"
+      rate_limit: {limit: 100, window_seconds: 3600, scope: "agent"}
 ```
 
-**How rate limiting interacts**: Rules are evaluated first (kill switch → blocks → approvals → allow). Only actions that receive an ALLOW decision are then checked against the `metadata.rate_limits`. Blocked or escalated actions never count against rate limits.
+**How rate limiting interacts**: Rules are evaluated first (kill switch → blocks → approvals → allow). Only actions that receive an ALLOW decision are then counted against the windowed `RATE_LIMIT` rule. Blocked or escalated actions never count against rate limits.
 
 ---
 
 ## Time-Based Rules
+
+A condition does not read the clock. The caller passes the time facts a rule needs as parameters, in its own timezone. For a fixed window of dates, a rule's `valid_from` and `valid_to` (ISO 8601) skip it outside that window.
 
 ### Example 24: After-Hours Approval
 
@@ -711,17 +774,17 @@ Require approval for high-value actions outside business hours.
 
 ```yaml
 - name: "after-hours-approval"
-  enabled: true
+  description: "Payments over $500 outside 9 AM - 5 PM need the on-call approver"
   priority: 120
   conditions:
     all_of:
-      - field: "tool"
+      - field: "action"
         operator: "equals"
         value: "process_payment"
       - field: "parameters.amount"
         operator: "greater_than"
         value: 500
-      - field: "metadata.hour_of_day"
+      - field: "parameters.hour_of_day"
         operator: "not_in"
         value: [9, 10, 11, 12, 13, 14, 15, 16, 17]  # 9 AM - 5 PM
   decision: "REQUIRE_APPROVAL"
@@ -731,20 +794,22 @@ Require approval for high-value actions outside business hours.
     reviewer_role: "on_call_approver"
 ```
 
+The caller passes the hour: `parameters={"amount": 900, "currency": "usd", "hour_of_day": 22}`.
+
 ### Example 25: Weekend Restrictions
 
 Block sensitive operations on weekends.
 
 ```yaml
 - name: "block-sensitive-on-weekends"
-  enabled: true
+  description: "Regulated actions are refused on weekends"
   priority: 900
   conditions:
     all_of:
       - field: "sensitivity"
         operator: "contains"
         value: "regulated"
-      - field: "metadata.day_of_week"
+      - field: "parameters.day_of_week"
         operator: "in"
         value: ["Saturday", "Sunday"]
   decision: "BLOCK"
@@ -763,27 +828,22 @@ Allow specific agent to bypass approval requirements.
 policy_set:
   name: "trusted-agent-overrides"
   version: "v1.0.0"
+  description: "Trusted Agent Exemption"
   scope:
-    org_id: "org_abc123"
+    org_id: "org_devlocal0000000000"
     environment: "prod"
-
-  metadata:
-    rate_limits:
-      - scope: "agent_id"
-        window: "hour"
-        limit: 100
 
   rules:
     # Trusted agent skips approval for higher amounts
     - name: "trusted-agent-allow-high-value"
-      enabled: true
+      description: "The trusted payment agent pays without approval"
       priority: 110  # Higher than approval rule
       conditions:
         all_of:
           - field: "agent_id"
             operator: "equals"
             value: "trusted-payment-agent"
-          - field: "tool"
+          - field: "action"
             operator: "equals"
             value: "process_payment"
       decision: "ALLOW"
@@ -791,11 +851,11 @@ policy_set:
 
     # Other agents need approval for high-value
     - name: "require-approval-high-value"
-      enabled: true
+      description: "Payments over $1,000 from other agents need approval"
       priority: 100
       conditions:
         all_of:
-          - field: "tool"
+          - field: "action"
             operator: "equals"
             value: "process_payment"
           - field: "parameters.amount"
@@ -805,18 +865,31 @@ policy_set:
       reason_code: "HIGH_VALUE_PAYMENT"
 
     - name: "allow-standard-payments"
-      enabled: true
+      description: "Other payments proceed"
       priority: 1
       conditions:
         all_of:
-          - field: "tool"
+          - field: "action"
             operator: "equals"
             value: "process_payment"
       decision: "ALLOW"
       reason_code: "STANDARD_PAYMENT"
+
+    - name: "actions-per-agent-hour"
+      description: "At most 100 actions an hour per agent"
+      priority: 0
+      conditions:
+        field: "action"
+        operator: "exists"
+        value: true
+      decision: "RATE_LIMIT"
+      reason_code: "AGENT_RATE"
+      rate_limit: {limit: 100, window_seconds: 3600, scope: "agent"}
 ```
 
-> **Note**: Rate limits apply uniformly to all agents via `metadata.rate_limits`. For different rate limits per agent, use separate policy sets per agent group.
+> **Note**: A rate limit applies to every call its rule's conditions match. For a different limit per agent group, write one windowed rule per group, with an `agent_id` condition (`operator: "in"`, the group's agents).
+
+The trusted agent's ALLOW binds over the approval rule because both are in the same class and it has the higher priority. A matching `BLOCK` or `KILL_SWITCH` rule would still bind over it.
 
 ### Example 27: Experimental Agent Sandbox
 
@@ -824,7 +897,7 @@ Route experimental agent to sandbox.
 
 ```yaml
 - name: "sandbox-experimental-agent"
-  enabled: true
+  description: "The experimental agent runs against the sandbox"
   priority: 100
   conditions:
     all_of:
@@ -841,16 +914,16 @@ Route experimental agent to sandbox.
 
 ## Local Mode Specific Considerations
 
-When using HIITL in local mode (embedded evaluator, SQLite, in-memory rate limiting), there are some important considerations to keep in mind when designing policies.
+When using hiitl in local mode (embedded evaluator, SQLite, in-memory rate limiting), there are some important considerations to keep in mind when designing policies.
 
 ### Local Mode Behavior
 
-| Feature | Local Mode | Hosted Mode |
-|---------|-----------|-------------|
-| **Evaluation** | In-process (< 1ms) | API call (~20-30ms) |
-| **Audit Log** | SQLite (./hiitl_audit.db) | PostgreSQL (managed) |
-| **Rate Limiting** | In-memory (per-instance) | PostgreSQL (shared across instances) |
-| **Policy Storage** | File (./policy.yaml) | API-managed or file |
+| Feature | Local Mode | Hybrid Mode | Hosted Mode |
+|---------|-----------|-------------|-------------|
+| **Evaluation** | In-process (< 1ms) | In-process | API call (~20-30ms) |
+| **Audit Log** | SQLite (./hiitl_audit.db) | SQLite (./hiitl_audit.db), uploaded to the hosted service in the background | PostgreSQL (managed) |
+| **Rate Limiting** | In-memory (per-instance) | In-memory (per-instance) | PostgreSQL (shared across instances) |
+| **Policy Storage** | File (`policy_path`) | Synced from the hosted service; `policy_path` is the fallback | The org's active policy on the hosted service |
 
 ### Example 28: Local Mode Policy Template
 
@@ -860,22 +933,15 @@ Policy optimized for local mode usage.
 policy_set:
   name: "local-mode-policy"
   version: "v1.0.0"
+  description: "Local Mode Policy Template"
   scope:
-    org_id: "org_local"  # Use "org_local" for local mode testing
+    org_id: "org_devlocal0000000000"  # Local mode does not read the set's scope; the hosted service requires your org_id here
     environment: "dev"
-
-  # Rate limiting (per-instance counters in local mode)
-  metadata:
-    rate_limits:
-      - scope: "agent_id"
-        window: "minute"
-        limit: 10
-        # NOTE: Counter resets on process restart in local mode
 
   rules:
     # Use simple, fast conditions for optimal performance
     - name: "block-high-risk-actions"
-      enabled: true
+      description: "Irreversible actions over $1,000 are refused"
       priority: 100
       conditions:
         all_of:
@@ -889,11 +955,27 @@ policy_set:
       reason_code: "HIGH_RISK_BLOCKED"
 
     - name: "default-allow"
-      enabled: true
+      description: "Everything else proceeds"
       priority: 1
-      conditions: {}
+      conditions:
+        field: "action"
+        operator: "exists"
+        value: true
       decision: "ALLOW"
       reason_code: "DEFAULT_ALLOW"
+
+    # Rate limiting (per-instance counters in local mode)
+    - name: "actions-per-agent-minute"
+      description: "At most 10 actions a minute per agent"
+      priority: 0
+      conditions:
+        field: "action"
+        operator: "exists"
+        value: true
+      decision: "RATE_LIMIT"
+      reason_code: "AGENT_RATE"
+      rate_limit: {limit: 10, window_seconds: 60, scope: "agent"}
+      # NOTE: Counter resets on process restart in local mode
 ```
 
 ### Example 29: Performance-Optimized Policy
@@ -902,41 +984,48 @@ Minimize latency with fast conditions.
 
 ```yaml
 # OPTIMIZED for < 1ms evaluation time
-rules:
-  # Fast: Simple equality check (priority first)
-  - name: "block-specific-tool"
-    enabled: true
-    priority: 100
-    conditions:
-      all_of:
-        - field: "tool"
-          operator: "equals"  # Fastest: hash lookup
-          value: "dangerous_tool"
-    decision: "BLOCK"
-    reason_code: "TOOL_BLOCKED"
+policy_set:
+  name: "performance-optimized"
+  version: "v1.0.0"
+  description: "Rules ordered so the common call matches first"
+  scope:
+    org_id: "org_devlocal0000000000"
+    environment: "prod"
+  rules:
+    # Fast: Simple equality check (priority first)
+    - name: "block-specific-tool"
+      description: "dangerous_tool is never run"
+      priority: 100
+      conditions:
+        all_of:
+          - field: "action"
+            operator: "equals"  # Fast: one equality comparison
+            value: "dangerous_tool"
+      decision: "BLOCK"
+      reason_code: "TOOL_BLOCKED"
 
-  # Medium: Numeric comparison
-  - name: "block-high-amounts"
-    enabled: true
-    priority: 90
-    conditions:
-      all_of:
-        - field: "parameters.amount"
-          operator: "greater_than"  # Fast: numeric
-          value: 5000
-    decision: "BLOCK"
-    reason_code: "AMOUNT_TOO_HIGH"
+    # Medium: Numeric comparison
+    - name: "block-high-amounts"
+      description: "Amounts over $5,000 are refused"
+      priority: 90
+      conditions:
+        all_of:
+          - field: "parameters.amount"
+            operator: "greater_than"  # Fast: numeric
+            value: 5000
+      decision: "BLOCK"
+      reason_code: "AMOUNT_TOO_HIGH"
 
-  # Avoid expensive operations (regex, deep nesting)
-  # This rule would be SLOW:
-  # - field: "parameters.deeply.nested.field"
-  #   operator: "matches"  # Slow: regex matching
-  #   value: "complex_.*_regex"
+    # Avoid expensive operations (regex, deep nesting)
+    # This rule would be SLOW:
+    # - field: "parameters.deeply.nested.field"
+    #   operator: "matches"  # Slow: regex matching
+    #   value: "complex_.*_regex"
 ```
 
 ### Rate Limiting Caveats in Local Mode
 
-**Important**: Local mode rate limiting is **per-instance** and **in-memory**.
+**Important**: Local mode rate limiting is **per-instance** and **in-memory**. Hybrid mode counts the same way: counters are not synced.
 
 **Implications**:
 1. **Not shared across instances**: Each instance has separate counters
@@ -945,12 +1034,14 @@ rules:
 
 **Example scenario**:
 ```yaml
-# Policy-level rate limit: 10 requests per hour per agent
-metadata:
-  rate_limits:
-    - scope: "agent_id"
-      window: "hour"
-      limit: 10
+# Rate limit rule: 10 requests per hour per agent
+- name: "actions-per-agent-hour"
+  description: "At most 10 actions an hour per agent"
+  priority: 0
+  conditions: {field: "action", operator: "exists", value: true}
+  decision: "RATE_LIMIT"
+  reason_code: "AGENT_RATE"
+  rate_limit: {limit: 10, window_seconds: 3600, scope: "agent"}
 
 # Local mode behavior:
 # Instance A: 10 requests OK
@@ -966,19 +1057,21 @@ metadata:
 **Solutions for local mode**:
 1. Accept per-instance limits for development
 2. Use conservative limits (divide by expected instance count)
-3. Migrate to hosted mode for production rate limiting
+3. Use hosted evaluation for production rate limiting
 
 ### Example 30: Local-Friendly Rate Limiting
 
 Conservative rate limits for local mode.
 
 ```yaml
-# Policy-level rate limits: conservative for local mode
-metadata:
-  rate_limits:
-    - scope: "tool"     # Broader scope = fewer counters
-      window: "minute"
-      limit: 5          # Conservative: 5 per instance = 10-20 total with 2-4 instances
+# Rate limit rule: conservative for local mode
+- name: "calls-per-action-minute"
+  description: "At most 5 calls a minute per action, per instance"
+  priority: 0
+  conditions: {field: "action", operator: "exists", value: true}
+  decision: "RATE_LIMIT"
+  reason_code: "ACTION_RATE"
+  rate_limit: {limit: 5, window_seconds: 60, scope: "action"}  # Conservative: 5 per instance = 10-20 total with 2-4 instances
 ```
 
 ### SQLite Audit Log Considerations
@@ -999,8 +1092,9 @@ metadata:
 ```python
 # Specify audit DB path explicitly
 hiitl = HIITL(
-    ...
-    audit_db_path="./data/hiitl_audit.db",  # Ensure ./data/ exists
+    policy_path="./policy.yaml",
+    mode="RESPECT_POLICY",
+    audit_db_path="./data/hiitl_audit.db",  # The SDK creates ./data/ if it is missing
 )
 
 # For serverless (Lambda, etc.), use /tmp
@@ -1029,6 +1123,12 @@ audit_db_path="/tmp/hiitl_audit.db"  # Ephemeral, but fast
    ENV HIITL_POLICY_PATH=/app/policy.yaml
    ```
 
+   Both SDKs read `HIITL_POLICY_PATH` when no `policy_path` is passed, so an enforcing client needs only its mode:
+
+   ```python
+   hiitl = HIITL(mode="RESPECT_POLICY")  # policy_path from HIITL_POLICY_PATH
+   ```
+
 3. **Version with Git** (policy is code):
    ```bash
    git add policy.yaml
@@ -1042,25 +1142,33 @@ Policy designed for rapid iteration during development.
 ```yaml
 policy_set:
   name: "dev-iteration-policy"
-  version: "v0.1.0-dev"
+  version: "v0.1.0"
+  description: "Local Mode Development Workflow"
   scope:
-    org_id: "org_local"
+    org_id: "org_devlocal0000000000"
     environment: "dev"
 
   rules:
     # Kill switch for quick disabling during debugging
     - name: "dev-kill-switch"
-      enabled: false  # Toggle this during debugging
+      description: "Stops every action while debugging"
+      lifecycle_stage: "disabled"  # Set to "active" while debugging
       priority: 1000
-      conditions: {}
+      conditions:
+        field: "action"
+        operator: "exists"
+        value: true
       decision: "KILL_SWITCH"
       reason_code: "DEV_DEBUGGING"
 
     # Log everything in dev (no rate limits)
     - name: "allow-all-log-everything"
-      enabled: true
+      description: "Everything proceeds in dev"
       priority: 1
-      conditions: {}
+      conditions:
+        field: "action"
+        operator: "exists"
+        value: true
       decision: "ALLOW"
       reason_code: "DEV_MODE_ALLOW_ALL"
 ```
@@ -1070,11 +1178,13 @@ policy_set:
 When ready for production, migrate from local → hosted:
 
 **Changes needed**:
-1. Update `org_id` from `"org_local"` to your real org ID
+1. Set the policy set's `scope.org_id` to your real org ID. The hosted service refuses a policy whose `scope` does not match the API key's org and environment.
 2. Update `environment` to `"prod"` (or `"stage"`)
-3. SDK change: Add `api_key` and `server_url` (mode auto-detects to hosted)
+3. SDK change:
+   - Python: an `api_key` gives hybrid mode (local evaluation, policies synced from the hosted service). Hosted evaluation needs `server_url` and `evaluation="remote"` as well.
+   - TypeScript: an `api_key` alone gives hybrid mode; `api_key` + `server_url` gives hosted evaluation.
 
-**Policy remains the same** (copy-paste your YAML to hosted dashboard).
+**Policy remains the same.** The hosted service takes the policy set as JSON: `POST /v1/policies` with `{"policy_set": {...}}` and an admin-scope key; the change is recorded under that key. It becomes the one active policy for that org and environment, and the previous one is deactivated.
 
 See: [Local → Hosted Migration Guide](local_to_hosted_migration.md)
 
@@ -1089,35 +1199,56 @@ See: [Local → Hosted Migration Guide](local_to_hosted_migration.md)
 - **100-399**: Threshold checks, approval requirements
 - **1-99**: Allow rules, default behaviors
 
-> **Note**: Rate limiting is configured at the policy-set level via `metadata.rate_limits`, not as individual rules with priorities. It applies post-evaluation to ALLOW decisions only.
+Precedence is DENY wins: a matching `KILL_SWITCH` rule binds over everything, a matching `BLOCK` over every other decision, whatever their priorities. Priority orders rules within each class, then the order they are written in.
+
+> **Note**: A windowed `RATE_LIMIT` rule never binds on its own, wherever its priority puts it. It is counted after evaluation, on ALLOW decisions only.
 
 ### 2. Start with Allow-All, Layer Restrictions
 
 Begin with a permissive policy and add restrictions incrementally:
 
 ```yaml
-rules:
-  # Start permissive
-  - name: "allow-all-default"
-    enabled: true
-    priority: 1
-    conditions: ...
-    decision: "ALLOW"
+policy_set:
+  name: "layered-restrictions"
+  version: "v1.0.0"
+  description: "Allow everything, then layer restrictions on top"
+  scope:
+    org_id: "org_devlocal0000000000"
+    environment: "prod"
+  rules:
+    # Start permissive
+    - name: "allow-all-default"
+      description: "Everything not caught below proceeds"
+      priority: 1
+      conditions: {field: "action", operator: "exists", value: true}
+      decision: "ALLOW"
+      reason_code: "DEFAULT_ALLOW"
 
-  # Add restrictions layer by layer
-  - name: "approval-layer"
-    enabled: true
-    priority: 100
-    ...
+    # Add restrictions layer by layer
+    - name: "approval-layer"
+      description: "Refunds over $500 wait for approval"
+      priority: 100
+      conditions:
+        all_of:
+          - field: "action"
+            operator: "equals"
+            value: "issue_refund"
+          - field: "parameters.amount"
+            operator: "greater_than"
+            value: 500
+      decision: "REQUIRE_APPROVAL"
+      reason_code: "LARGE_REFUND"
 ```
 
 ### 3. Use Metadata for Context
 
-Include metadata in rules for:
+A rule's `metadata` is free-form: it travels with the rule and is not copied into the decision. Use it to record:
 - SLA expectations
 - Reviewer roles
 - Sandbox endpoints
 - Escalation teams
+
+What a reviewer is sent (endpoint, SLA timeout, response options) lives on the route the rule names in `route:`. That route fills `decision.escalation_context`.
 
 ### 4. Test Policies Locally First
 
@@ -1143,5 +1274,5 @@ Always version policies (v1.0.0, v1.1.0, v2.0.0) to enable rollback and replay.
 
 **Need more examples?** Check:
 - [Policy Format Spec](../specs/policy_format.md) for full syntax reference
-- [GitHub Policy Templates](https://github.com/hiitlhq/hiitl/tree/main/policies) for industry-specific examples
-- [Discord Community](https://discord.gg/hiitl) for questions and discussions
+- [Pattern Repository](../../patterns/README.md) for starter policies by domain
+- [GitHub](https://github.com/hiitlhq/hiitl) for questions and issues

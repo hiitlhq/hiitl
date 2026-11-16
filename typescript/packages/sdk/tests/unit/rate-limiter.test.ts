@@ -2,14 +2,38 @@
  * Tests for RateLimiter - in-memory sliding window rate limiting.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { RateLimiter } from '../../src/rate-limiter.js';
-import type { RateLimitConfig } from '../../src/rate-limiter.js';
+import { PolicySetSchema, ENVELOPE_SCHEMA_VERSION } from '@hiitl/core';
 import type { Envelope, Decision } from '@hiitl/core';
+
+/** A set-level entry (`metadata.rate_limits`) — compiled by core's loader to a windowed RATE_LIMIT rule (T47). */
+type SetLimit = { scope: string; limit: number; window_seconds: number };
+type RateLimitConfig = SetLimit;
+
+/** The decision with the entries' compiled rules listed, as the evaluator lists the matching ones (T47: the limiter
+ * reads rules only). */
+function limited(decision: Decision, ...entries: SetLimit[]): Decision {
+  const ps = PolicySetSchema.parse({ name: 'p', version: 'v1.0.0', description: 'The p set', scope: { org_id: 'org_test000000000000000', environment: 'dev' }, rules: [], metadata: { rate_limits: entries } });
+  return {
+    ...decision,
+    rate_limit_rules: ps.rules.map((r) => ({
+      rule_name: r.name,
+      policy_set: 'p',
+      priority: r.priority,
+      reason_code: r.reason_code,
+      limit: r.rate_limit!.limit as number,
+      window_seconds: r.rate_limit!.window_seconds as number,
+      scope: r.rate_limit!.scope,
+    })),
+  };
+}
+/** The counter key a compiled set-level entry counts under. */
+const key = (scopeKey: string, i = 0) => `rule:metadata.rate_limits[${i}]:${scopeKey}`;
 
 // Test envelope
 const testEnvelope: Envelope = {
-  schema_version: 'v1.0',
+  schema_version: ENVELOPE_SCHEMA_VERSION,
   org_id: 'org_test000000000000000',
   environment: 'dev',
   agent_id: 'test-agent',
@@ -53,9 +77,7 @@ describe('RateLimiter', () => {
         window_seconds: 60,
       };
 
-      const result = limiter.checkAndIncrement(testEnvelope, testDecision, {
-        rate_limits: [rateConfig],
-      });
+      const result = limiter.checkAndIncrement(testEnvelope, limited(testDecision, rateConfig));
 
       expect(result).toBeNull(); // No rate limiting
     });
@@ -68,25 +90,17 @@ describe('RateLimiter', () => {
       };
 
       // Make 3 calls (at limit)
-      limiter.checkAndIncrement(testEnvelope, testDecision, {
-        rate_limits: [rateConfig],
-      });
-      limiter.checkAndIncrement(testEnvelope, testDecision, {
-        rate_limits: [rateConfig],
-      });
-      limiter.checkAndIncrement(testEnvelope, testDecision, {
-        rate_limits: [rateConfig],
-      });
+      limiter.checkAndIncrement(testEnvelope, limited(testDecision, rateConfig));
+      limiter.checkAndIncrement(testEnvelope, limited(testDecision, rateConfig));
+      limiter.checkAndIncrement(testEnvelope, limited(testDecision, rateConfig));
 
       // 4th call should be rate limited
-      const result = limiter.checkAndIncrement(testEnvelope, testDecision, {
-        rate_limits: [rateConfig],
-      });
+      const result = limiter.checkAndIncrement(testEnvelope, limited(testDecision, rateConfig));
 
       expect(result).not.toBeNull();
       expect(result!.decision).toBe('RATE_LIMIT');
       expect(result!.allowed).toBe(false);
-      expect(result!.reason_codes).toContain('RATE_LIMIT_EXCEEDED');
+      expect(result!.reason_codes).toEqual(['RATE_LIMIT_EXCEEDED']);
     });
 
     it('should include rate limit metadata in response', () => {
@@ -96,13 +110,9 @@ describe('RateLimiter', () => {
         window_seconds: 60,
       };
 
-      limiter.checkAndIncrement(testEnvelope, testDecision, {
-        rate_limits: [rateConfig],
-      });
+      limiter.checkAndIncrement(testEnvelope, limited(testDecision, rateConfig));
 
-      const result = limiter.checkAndIncrement(testEnvelope, testDecision, {
-        rate_limits: [rateConfig],
-      });
+      const result = limiter.checkAndIncrement(testEnvelope, limited(testDecision, rateConfig));
 
       expect(result).not.toBeNull();
       expect(result!.rate_limit).toBeDefined();
@@ -120,22 +130,20 @@ describe('RateLimiter', () => {
         window_seconds: 60,
       };
 
-      const start = new Date();
-      limiter.checkAndIncrement(testEnvelope, testDecision, {
-        rate_limits: [rateConfig],
-      });
-
-      const result = limiter.checkAndIncrement(testEnvelope, testDecision, {
-        rate_limits: [rateConfig],
-      });
-
-      const resetAt = new Date(result!.rate_limit!.reset_at);
-      const expectedReset = new Date(start.getTime() + 60 * 1000);
-
-      // Should be within 1 second of expected
-      expect(Math.abs(resetAt.getTime() - expectedReset.getTime())).toBeLessThan(
-        1000
-      );
+      const firstCall = new Date('2026-11-09T12:00:00Z');
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(firstCall);
+      try {
+        limiter.checkAndIncrement(testEnvelope, limited(testDecision, rateConfig));
+        // A later refused call still resets when the oldest counted call leaves its window.
+        vi.setSystemTime(new Date(firstCall.getTime() + 500));
+        const result = limiter.checkAndIncrement(testEnvelope, limited(testDecision, rateConfig));
+        expect(new Date(result!.rate_limit!.reset_at)).toEqual(
+          new Date(firstCall.getTime() + rateConfig.window_seconds * 1000)
+        );
+      } finally {
+        vi.useRealTimers();
+      }
     });
   });
 
@@ -148,26 +156,18 @@ describe('RateLimiter', () => {
       };
 
       // Make 2 calls (at limit)
-      limiter.checkAndIncrement(testEnvelope, testDecision, {
-        rate_limits: [rateConfig],
-      });
-      limiter.checkAndIncrement(testEnvelope, testDecision, {
-        rate_limits: [rateConfig],
-      });
+      limiter.checkAndIncrement(testEnvelope, limited(testDecision, rateConfig));
+      limiter.checkAndIncrement(testEnvelope, limited(testDecision, rateConfig));
 
       // 3rd call should be rate limited
-      const rateLimited = limiter.checkAndIncrement(testEnvelope, testDecision, {
-        rate_limits: [rateConfig],
-      });
+      const rateLimited = limiter.checkAndIncrement(testEnvelope, limited(testDecision, rateConfig));
       expect(rateLimited).not.toBeNull();
 
       // Wait for window to expire
       return new Promise((resolve) => {
         setTimeout(() => {
           // 4th call should succeed (window expired)
-          const result = limiter.checkAndIncrement(testEnvelope, testDecision, {
-            rate_limits: [rateConfig],
-          });
+          const result = limiter.checkAndIncrement(testEnvelope, limited(testDecision, rateConfig));
           expect(result).toBeNull();
           resolve(undefined);
         }, 1100); // Wait 1.1 seconds
@@ -183,14 +183,10 @@ describe('RateLimiter', () => {
         window_seconds: 60,
       };
 
-      limiter.checkAndIncrement(testEnvelope, testDecision, {
-        rate_limits: [rateConfig],
-      });
+      limiter.checkAndIncrement(testEnvelope, limited(testDecision, rateConfig));
 
       // Same org_id should be rate limited
-      const result = limiter.checkAndIncrement(testEnvelope, testDecision, {
-        rate_limits: [rateConfig],
-      });
+      const result = limiter.checkAndIncrement(testEnvelope, limited(testDecision, rateConfig));
 
       expect(result).not.toBeNull();
     });
@@ -202,14 +198,10 @@ describe('RateLimiter', () => {
         window_seconds: 60,
       };
 
-      limiter.checkAndIncrement(testEnvelope, testDecision, {
-        rate_limits: [rateConfig],
-      });
+      limiter.checkAndIncrement(testEnvelope, limited(testDecision, rateConfig));
 
       // Same user should be rate limited
-      const result = limiter.checkAndIncrement(testEnvelope, testDecision, {
-        rate_limits: [rateConfig],
-      });
+      const result = limiter.checkAndIncrement(testEnvelope, limited(testDecision, rateConfig));
       expect(result).not.toBeNull();
 
       // Different user should not be rate limited
@@ -217,11 +209,7 @@ describe('RateLimiter', () => {
         ...testEnvelope,
         user_id: 'user_bob',
       };
-      const resultDifferentUser = limiter.checkAndIncrement(
-        envelopeDifferentUser,
-        testDecision,
-        { rate_limits: [rateConfig] }
-      );
+      const resultDifferentUser = limiter.checkAndIncrement(envelopeDifferentUser, limited(testDecision, rateConfig));
       expect(resultDifferentUser).toBeNull();
     });
 
@@ -232,14 +220,10 @@ describe('RateLimiter', () => {
         window_seconds: 60,
       };
 
-      limiter.checkAndIncrement(testEnvelope, testDecision, {
-        rate_limits: [rateConfig],
-      });
+      limiter.checkAndIncrement(testEnvelope, limited(testDecision, rateConfig));
 
       // Same tool should be rate limited
-      const result = limiter.checkAndIncrement(testEnvelope, testDecision, {
-        rate_limits: [rateConfig],
-      });
+      const result = limiter.checkAndIncrement(testEnvelope, limited(testDecision, rateConfig));
       expect(result).not.toBeNull();
 
       // Different tool should not be rate limited
@@ -247,11 +231,7 @@ describe('RateLimiter', () => {
         ...testEnvelope,
         action: 'different_tool',
       };
-      const resultDifferentTool = limiter.checkAndIncrement(
-        envelopeDifferentTool,
-        testDecision,
-        { rate_limits: [rateConfig] }
-      );
+      const resultDifferentTool = limiter.checkAndIncrement(envelopeDifferentTool, limited(testDecision, rateConfig));
       expect(resultDifferentTool).toBeNull();
     });
 
@@ -262,14 +242,10 @@ describe('RateLimiter', () => {
         window_seconds: 60,
       };
 
-      limiter.checkAndIncrement(testEnvelope, testDecision, {
-        rate_limits: [rateConfig],
-      });
+      limiter.checkAndIncrement(testEnvelope, limited(testDecision, rateConfig));
 
       // Same user+tool should be rate limited
-      const result = limiter.checkAndIncrement(testEnvelope, testDecision, {
-        rate_limits: [rateConfig],
-      });
+      const result = limiter.checkAndIncrement(testEnvelope, limited(testDecision, rateConfig));
       expect(result).not.toBeNull();
 
       // Different user, same tool should not be rate limited
@@ -277,11 +253,7 @@ describe('RateLimiter', () => {
         ...testEnvelope,
         user_id: 'user_bob',
       };
-      const resultDifferentUser = limiter.checkAndIncrement(
-        envelopeDifferentUser,
-        testDecision,
-        { rate_limits: [rateConfig] }
-      );
+      const resultDifferentUser = limiter.checkAndIncrement(envelopeDifferentUser, limited(testDecision, rateConfig));
       expect(resultDifferentUser).toBeNull();
 
       // Same user, different tool should not be rate limited
@@ -289,11 +261,7 @@ describe('RateLimiter', () => {
         ...testEnvelope,
         action: 'different_tool',
       };
-      const resultDifferentTool = limiter.checkAndIncrement(
-        envelopeDifferentTool,
-        testDecision,
-        { rate_limits: [rateConfig] }
-      );
+      const resultDifferentTool = limiter.checkAndIncrement(envelopeDifferentTool, limited(testDecision, rateConfig));
       expect(resultDifferentTool).toBeNull();
     });
 
@@ -307,13 +275,9 @@ describe('RateLimiter', () => {
       const envelopeNoUser = { ...testEnvelope };
       delete (envelopeNoUser as any).user_id;
 
-      limiter.checkAndIncrement(envelopeNoUser, testDecision, {
-        rate_limits: [rateConfig],
-      });
+      limiter.checkAndIncrement(envelopeNoUser, limited(testDecision, rateConfig));
 
-      const result = limiter.checkAndIncrement(envelopeNoUser, testDecision, {
-        rate_limits: [rateConfig],
-      });
+      const result = limiter.checkAndIncrement(envelopeNoUser, limited(testDecision, rateConfig));
 
       expect(result).not.toBeNull();
     });
@@ -328,22 +292,16 @@ describe('RateLimiter', () => {
       };
 
       // User Alice
-      limiter.checkAndIncrement(testEnvelope, testDecision, {
-        rate_limits: [rateConfig],
-      });
+      limiter.checkAndIncrement(testEnvelope, limited(testDecision, rateConfig));
 
       // User Bob (different counter)
       const envelopeBob = { ...testEnvelope, user_id: 'user_bob' };
-      const resultBob = limiter.checkAndIncrement(envelopeBob, testDecision, {
-        rate_limits: [rateConfig],
-      });
+      const resultBob = limiter.checkAndIncrement(envelopeBob, limited(testDecision, rateConfig));
 
       expect(resultBob).toBeNull(); // Bob not rate limited
 
       // Alice should still be rate limited
-      const resultAlice = limiter.checkAndIncrement(testEnvelope, testDecision, {
-        rate_limits: [rateConfig],
-      });
+      const resultAlice = limiter.checkAndIncrement(testEnvelope, limited(testDecision, rateConfig));
       expect(resultAlice).not.toBeNull();
     });
   });
@@ -362,9 +320,7 @@ describe('RateLimiter', () => {
         allowed: false,
       };
 
-      const result = limiter.checkAndIncrement(testEnvelope, blockDecision, {
-        rate_limits: [rateConfig],
-      });
+      const result = limiter.checkAndIncrement(testEnvelope, limited(blockDecision, rateConfig));
 
       expect(result).toBeNull(); // No rate limiting for BLOCK
     });
@@ -382,9 +338,7 @@ describe('RateLimiter', () => {
         allowed: false,
       };
 
-      const result = limiter.checkAndIncrement(testEnvelope, pauseDecision, {
-        rate_limits: [rateConfig],
-      });
+      const result = limiter.checkAndIncrement(testEnvelope, limited(pauseDecision, rateConfig));
 
       expect(result).toBeNull();
     });
@@ -392,15 +346,13 @@ describe('RateLimiter', () => {
 
   describe('Missing Config', () => {
     it('should not rate limit when config is missing', () => {
-      const result = limiter.checkAndIncrement(testEnvelope, testDecision, {});
+      const result = limiter.checkAndIncrement(testEnvelope, testDecision);
 
       expect(result).toBeNull();
     });
 
     it('should not rate limit when rate_limits array is empty', () => {
-      const result = limiter.checkAndIncrement(testEnvelope, testDecision, {
-        rate_limits: [],
-      });
+      const result = limiter.checkAndIncrement(testEnvelope, limited(testDecision));
 
       expect(result).toBeNull();
     });
@@ -414,11 +366,9 @@ describe('RateLimiter', () => {
         window_seconds: 60,
       };
 
-      limiter.checkAndIncrement(testEnvelope, testDecision, {
-        rate_limits: [rateConfig],
-      });
+      limiter.checkAndIncrement(testEnvelope, limited(testDecision, rateConfig));
 
-      const stats = limiter.getCounterStats(testEnvelope.org_id);
+      const stats = limiter.getCounterStats(key(testEnvelope.org_id));
 
       expect(stats).toBeDefined();
       expect(stats!.events).toHaveLength(1);
@@ -441,16 +391,12 @@ describe('RateLimiter', () => {
         window_seconds: 60,
       };
 
-      limiter.checkAndIncrement(testEnvelope, testDecision, {
-        rate_limits: [rateConfig],
-      });
+      limiter.checkAndIncrement(testEnvelope, limited(testDecision, rateConfig));
 
       limiter.resetAll();
 
       // Should allow again after reset
-      const result = limiter.checkAndIncrement(testEnvelope, testDecision, {
-        rate_limits: [rateConfig],
-      });
+      const result = limiter.checkAndIncrement(testEnvelope, limited(testDecision, rateConfig));
 
       expect(result).toBeNull();
     });
@@ -462,16 +408,12 @@ describe('RateLimiter', () => {
         window_seconds: 60,
       };
 
-      limiter.checkAndIncrement(testEnvelope, testDecision, {
-        rate_limits: [rateConfig],
-      });
+      limiter.checkAndIncrement(testEnvelope, limited(testDecision, rateConfig));
 
-      limiter.reset(testEnvelope.org_id);
+      limiter.reset(key(testEnvelope.org_id));
 
       // Should allow again after reset
-      const result = limiter.checkAndIncrement(testEnvelope, testDecision, {
-        rate_limits: [rateConfig],
-      });
+      const result = limiter.checkAndIncrement(testEnvelope, limited(testDecision, rateConfig));
 
       expect(result).toBeNull();
     });
@@ -485,16 +427,74 @@ describe('RateLimiter', () => {
 
       expect(limiter.getActiveScopeCount()).toBe(0);
 
-      limiter.checkAndIncrement(testEnvelope, testDecision, {
-        rate_limits: [rateConfig],
-      });
+      limiter.checkAndIncrement(testEnvelope, limited(testDecision, rateConfig));
       expect(limiter.getActiveScopeCount()).toBe(1);
 
       const envelopeBob = { ...testEnvelope, user_id: 'user_bob' };
-      limiter.checkAndIncrement(envelopeBob, testDecision, {
-        rate_limits: [rateConfig],
-      });
+      limiter.checkAndIncrement(envelopeBob, limited(testDecision, rateConfig));
       expect(limiter.getActiveScopeCount()).toBe(2);
     });
+  });
+});
+
+// A windowed RATE_LIMIT rule meters (policy_format.md "Rate-limit rules";
+// R-0852): the evaluator lists it in rate_limit_rules; the limiter counts it
+// on an ALLOW binding under rule:<name>:<scope key>. Mirrors the Python cells.
+describe('RateLimiter — rate-limit rules', () => {
+  const withRules = (
+    rules: Array<[string, number, 'action' | 'agent' | 'user' | 'org']>,
+    decision = 'ALLOW'
+  ): Decision =>
+    ({
+      ...testDecision,
+      decision,
+      allowed: decision === 'ALLOW',
+      rate_limit_rules: rules.map(([name, limit, scope]) => ({
+        rule_name: name,
+        policy_set: 'p',
+        priority: 600,
+        reason_code: name.toUpperCase(),
+        limit,
+        window_seconds: 3600,
+        scope,
+      })),
+    }) as Decision;
+  const env = (agent: string): Envelope => ({ ...testEnvelope, agent_id: agent });
+
+  it('counts a matched rule window and names the rule when exceeded', () => {
+    const limiter = new RateLimiter();
+    const d = withRules([['refund_rate', 2, 'agent']]);
+    expect(limiter.checkAndIncrement(env('a'), d)).toBeNull();
+    expect(limiter.checkAndIncrement(env('a'), d)).toBeNull();
+    const out = limiter.checkAndIncrement(env('a'), d);
+    expect(out).not.toBeNull();
+    expect(out?.decision).toBe('RATE_LIMIT');
+    expect(out?.reason_codes).toEqual(['RATE_LIMIT_EXCEEDED']);
+    expect(out?.matched_rules?.map((m) => m.rule_name)).toEqual(['refund_rate']);
+    expect(out?.rate_limit).toMatchObject({ scope: 'agent', window: '3600s', limit: 2 });
+  });
+
+  it('keys the counter by the rule scope', () => {
+    const limiter = new RateLimiter();
+    const d = withRules([['refund_rate', 1, 'agent']]);
+    expect(limiter.checkAndIncrement(env('a1'), d)).toBeNull();
+    expect(limiter.checkAndIncrement(env('a2'), d)).toBeNull();
+    expect(limiter.checkAndIncrement(env('a1'), d)?.decision).toBe('RATE_LIMIT');
+  });
+
+  it('does not count a non-ALLOW binding', () => {
+    const limiter = new RateLimiter();
+    expect(limiter.checkAndIncrement(env('a'), withRules([['r', 1, 'agent']], 'BLOCK'))).toBeNull();
+    expect(limiter.checkAndIncrement(env('a'), withRules([['r', 1, 'agent']]))).toBeNull();
+  });
+
+  it('checks every listed rule, not only the first — compiled set-level limits included (parity with Python)', () => {
+    const limiter = new RateLimiter();
+    const d = limited(testDecision, { scope: 'org', limit: 100, window_seconds: 60 }, { scope: 'tool', limit: 1, window_seconds: 60 });
+    expect(limiter.checkAndIncrement(testEnvelope, d)).toBeNull();
+    const out = limiter.checkAndIncrement(testEnvelope, d);
+    expect(out?.decision).toBe('RATE_LIMIT');
+    expect(out?.matched_rules?.[0].rule_name).toBe('metadata.rate_limits[1]');
+    expect(out?.rate_limit?.scope).toBe('action');
   });
 });

@@ -1,0 +1,34 @@
+---
+title: "Secure development"
+description: "How hiitl is built and released, as practiced today, and the no-telemetry statement for local mode"
+---
+
+## Secure development lifecycle
+
+**Design before code.** Every change that affects what the evaluator decides starts from a written design in the repository's design documents, and a rulings register records each decision with its reason and date. A change the design did not anticipate stops and is reconciled with the design before it is built. The design documents and the register are in the private repository; the public specifications are the parts of them that describe the published interfaces.
+
+**Principles the code is held to.** No model in the decision path. Controls recognized by what code does, never by names. No magic numbers: a bound is declared, measured or taken from a record. Nothing is attested without proof: where the system cannot read something it says so. Every claim in the documentation is read against the code before it is published, and a sample policy is loaded through the shipped models before it is published.
+
+**Review by someone who did not write it.** Every change goes through a pull request. The reviewer is never the author; the review is against the design and the principles; the PR carries the evidence (the suites and their counts, the mutation result); nothing merges with a failing suite or an unclean secret scan. Changes to the evaluator's rules carry a mutation row: the rule is disabled in a scratch copy and a test must catch it.
+
+**Tests on every change.** The backend suite, on SQLite and on Postgres, where the tenant-isolation cases run against the database's row-level security, once more with the application's own tenant filters removed; the Python SDK suite on Linux and macOS; the cross-language conformance suite that runs the same cases through the Python and TypeScript evaluators and requires identical decisions; the TypeScript suites on Node 22, 24 and 26; `npm audit` and `pip-audit` on each package’s whole resolved dependency graph, failing on any known vulnerability; a secret scan; a build of the website.
+
+**Secrets.** No secret is in the repository; the only secret file is ignored and lives on the operator's machine. A secret scan of the files and of the whole history runs before every merge, and a hit is read and classified before it is allowed. Route secrets are referenced by environment variable name, never stored.
+
+**Dependencies.** The service's requirements are pinned to exact versions; the TypeScript packages carry lock files; the Python SDK declares minimum versions so that it installs beside a customer's own pins. Private and public CI audit the whole resolved graphs in both languages, including runtime, build, test and bootstrap dependencies (`npm audit`, `pip-audit`). Any known vulnerability fails, with no severity floor, scope filter or ignore list; a bump is reviewed like any other change. The container image is a minimal base image with a non-root user.
+
+**Releases.** Versioned semantically from one version file and tagged with that version; the SDKs and the gateway are published to PyPI and npm at that version; the service image is built from the tag, after the suites pass at it, and a push alone never deploys the service; the hosted service reports the version it was released at. The changelog states what moves together. Rollback is a redeploy of the previous tag.
+
+## Software bill of materials
+
+A CycloneDX SBOM for the Python and the TypeScript packages and for the hosted service, with the results of `pip-audit` and `npm audit`, is generated in CI on every change. It is published with each release from the next release onward, under `docs/security/` in the public repository, dated. The dependencies' licenses are read from it.
+
+## Vulnerability disclosure
+
+See `SECURITY.md` in the repository and [Security reporting](/reference/licensing-and-support#security-reporting): report privately; acknowledgment within two working days; an assessment within ten; fix and advisory published together.
+
+## No-telemetry statement, local mode
+
+A deployment of the core in local mode makes no connection to any endpoint operated by hiitl or by any third party on hiitl's behalf. There is no usage reporting, no license check, no update check, no crash reporting, and the telemetry collector has no destination. The local SDK sends only to the sync routes you configure. The MCP gateway also connects to configured upstream tool servers; those tools may make their own network calls. This can be verified by watching egress from the environment.
+
+A deployment that uses the hosted service (hybrid or hosted mode) connects to it for policy sync and the record's upload. The Python SDK also sends aggregate telemetry to the service unless its level (`telemetry_level`, or `HIITL_TELEMETRY_LEVEL`) is set to `off`; what each level sends is stated on [Data handling](/security/data-handling).

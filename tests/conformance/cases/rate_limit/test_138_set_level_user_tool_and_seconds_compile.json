@@ -1,0 +1,86 @@
+{
+  "test_id": "test_138_set_level_user_tool_and_seconds_compile",
+  "description": "Two set-level entries compile in order: user:tool with window_seconds \u2192 scope user_action; tool with a minute window \u2192 scope action. Both are listed, in the set's order, beside the binding ALLOW (T47).",
+  "envelope": {
+    "schema_version": "v2.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_finance_bot",
+    "action_id": "act_test1380000000000000",
+    "timestamp": "2026-02-14T10:00:00Z",
+    "operation": "execute",
+    "parameters": {
+      "amount": 500,
+      "currency": "USD"
+    },
+    "idempotency_key": "idem_test_138_set_level_user_tool_and_seconds_compile",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "transfer_money",
+    "user_id": "user_42"
+  },
+  "policy_set": {
+    "version": "v1.0.0",
+    "description": "Two set-level entries compile in order: user:tool with window_seconds → scope user_action; tool with a minute window → scope action. Both are listed, in the set's order, beside the binding ALLOW (T47).",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "allow_usd",
+        "priority": 100,
+        "conditions": {
+          "field": "parameters.currency",
+          "operator": "equals",
+          "value": "USD"
+        },
+        "decision": "ALLOW",
+        "reason_code": "ALLOW_USD",
+        "description": "Rule: allow_usd"
+      }
+    ],
+    "metadata": {
+      "rate_limits": [
+        {
+          "scope": "user:tool",
+          "window_seconds": 90,
+          "limit": 5
+        },
+        {
+          "scope": "tool",
+          "window": "minute",
+          "limit": 30
+        }
+      ]
+    }
+  },
+  "expected_decision": {
+    "decision": "ALLOW",
+    "allowed": true,
+    "reason_codes": [
+      "ALLOW_USD"
+    ],
+    "rate_limit_rules": [
+      {
+        "rule_name": "metadata.rate_limits[0]",
+        "policy_set": "test_policy",
+        "priority": 0,
+        "reason_code": "RATE_LIMIT_EXCEEDED",
+        "limit": 5,
+        "window_seconds": 90,
+        "scope": "user_action"
+      },
+      {
+        "rule_name": "metadata.rate_limits[1]",
+        "policy_set": "test_policy",
+        "priority": 0,
+        "reason_code": "RATE_LIMIT_EXCEEDED",
+        "limit": 30,
+        "window_seconds": 60,
+        "scope": "action"
+      }
+    ]
+  }
+}

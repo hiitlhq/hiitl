@@ -1,6 +1,6 @@
 # Performance Tuning
 
-How to optimize HIITL local mode.
+How to optimize hiitl local mode.
 
 ## Performance
 
@@ -46,18 +46,20 @@ decision = hiitl.evaluate(...)
 elapsed_ms = (time.perf_counter() - start) * 1000
 
 print(f"Total: {elapsed_ms:.2f}ms")
-print(f"SDK reports: {decision.timing['total_ms']:.2f}ms")
+print(f"SDK reports: {decision.timing.total_ms:.2f}ms")
 ```
 
 **TypeScript**:
 ```typescript
 const start = performance.now();
-const decision = hiitl.evaluate(...);
+const decision = await hiitl.evaluate({ ... });
 const elapsed_ms = performance.now() - start;
 
 console.log(`Total: ${elapsed_ms.toFixed(2)}ms`);
 console.log(`SDK reports: ${decision.timing.total_ms.toFixed(2)}ms`);
 ```
+
+`decision.timing` reports envelope validation and rule evaluation (`ingest_ms`, `evaluation_ms`, `total_ms`). The policy load, the rate-limit check and the audit write fall outside it, so the time you measure around the call is the larger figure.
 
 | Component | Target |
 |-----------|--------|
@@ -76,32 +78,60 @@ console.log(`SDK reports: ${decision.timing.total_ms.toFixed(2)}ms`);
 Keep rules under 50. More rules = slower evaluation.
 
 ```yaml
-# SLOW - checks all rules even if first matches
-rules:
-  - name: "rule-1"
-    priority: 100
-    conditions: { ... }
-  - name: "rule-2"
-    priority: 99
-    conditions: { ... }
-  # ... 98 more rules
-
-# FAST - high-priority rules match quickly
-rules:
-  - name: "block-high-risk"
-    priority: 1000  # Evaluated first
-    conditions:
-      all_of:
-        - field: "sensitivity"
-          operator: "contains"
-          value: "irreversible"
-    decision: "BLOCK"
-
-  - name: "default-allow"
-    priority: 1
-    conditions: {} # Always matches (fallback)
-    decision: "ALLOW"
+# SLOW - a call that matches late, or not at all, is checked against every rule before it
+policy_set:
+  name: "one-rule-per-action"
+  version: "v1.0.0"
+  description: "One rule per action, each matching on the action first"
+  scope:
+    org_id: "org_devlocal0000000000"
+    environment: "dev"
+  rules:
+    - name: "rule-1"
+      description: "Allow action_1"
+      priority: 100
+      conditions: {field: "action", operator: "equals", value: "action_1"}
+      decision: "ALLOW"
+      reason_code: "ACTION_1"
+    - name: "rule-2"
+      description: "Allow action_2"
+      priority: 99
+      conditions: {field: "action", operator: "equals", value: "action_2"}
+      decision: "ALLOW"
+      reason_code: "ACTION_2"
+    # ... 98 more rules like these
 ```
+
+```yaml
+# FAST - high-priority rules match quickly
+policy_set:
+  name: "few-broad-rules"
+  version: "v1.0.0"
+  description: "Broad rules that every call is checked against"
+  scope:
+    org_id: "org_devlocal0000000000"
+    environment: "dev"
+  rules:
+    - name: "block-high-risk"
+      description: "Irreversible actions are refused"
+      priority: 1000  # Evaluated first
+      conditions:
+        all_of:
+          - field: "sensitivity"
+            operator: "contains"
+            value: "irreversible"
+      decision: "BLOCK"
+      reason_code: "IRREVERSIBLE_ACTION"
+
+    - name: "default-allow"
+      description: "Everything else proceeds"
+      priority: 1
+      conditions: {field: "action", operator: "exists", value: true} # Always matches (fallback)
+      decision: "ALLOW"
+      reason_code: "DEFAULT_ALLOW"
+```
+
+Evaluation stops at the first active rule that matches. `KILL_SWITCH` rules are checked first, then `BLOCK` rules, then all others, whatever their priority; priority orders the rules within each of those groups.
 
 **Guideline**: Keep total rules < 50 for sub-millisecond evaluation
 
@@ -133,6 +163,7 @@ conditions:
 ```python
 # SLOW
 hiitl.evaluate(
+    "process_payment",
     parameters={
         "payment": {
             "details": {
@@ -144,6 +175,7 @@ hiitl.evaluate(
 
 # FAST
 hiitl.evaluate(
+    "process_payment",
     parameters={"amount": 1500, "currency": "usd"}
 )
 ```
@@ -151,20 +183,20 @@ hiitl.evaluate(
 ### 3. Optimize Condition Operators
 
 **Operator Performance** (fastest → slowest):
-1. `equals` (hash lookup)
+1. `equals` (direct comparison)
 2. `greater_than`, `less_than` (numeric comparison)
-3. `in` (set membership)
+3. `in` (membership in the listed values)
 4. `contains` (substring search)
 5. `matches` (regex - avoid if possible)
 
 ```yaml
 # SLOW - regex matching
-- field: "tool"
+- field: "action"
   operator: "matches"
   value: "payment_.*"
 
 # FAST - exact match or `in` operator
-- field: "tool"
+- field: "action"
   operator: "in"
   value: ["payment_transfer", "payment_refund", "payment_void"]
 ```
@@ -179,7 +211,7 @@ all_of:
   - field: "parameters.description"
     operator: "contains"
     value: "suspicious"  # Expensive string search
-  - field: "tool"
+  - field: "action"
     operator: "equals"
     value: "payment"  # Fast, but checked second
 ```
@@ -189,12 +221,12 @@ all_of:
 ```yaml
 # FAST - cheap condition first (may skip expensive check)
 all_of:
-  - field: "tool"
+  - field: "action"
     operator: "equals"
     value: "payment"  # Fast check first
   - field: "parameters.description"
     operator: "contains"
-    value: "suspicious"  # Only if tool matches
+    value: "suspicious"  # Only if action matches
 ```
 
 ---
@@ -203,10 +235,10 @@ all_of:
 
 ### Policy Caching (Automatic)
 
-HIITL automatically caches policies using file modification time (mtime).
+hiitl automatically caches policies using file modification time (mtime).
 
 **How it works**:
-1. First load: Read file, parse YAML/JSON, validate schema (~3-5ms)
+1. First load: Read file, parse YAML/JSON, validate schema (~3-5ms). Python loads the file on the first `evaluate()`; TypeScript loads it in the constructor.
 2. Subsequent loads: Check mtime, return cached if unchanged (~0.1ms)
 
 **Cache hit ratio**:
@@ -230,11 +262,10 @@ for i in range(100):
 
 ### Disable Caching (Not Recommended)
 
-If you need to force policy reload (e.g., hot-reloading in dev):
+Hot-reloading needs nothing extra: the mtime check runs on every `evaluate()`, so an edited policy file takes effect on the next call. If you need to force a reload anyway:
 ```python
-# Python - reload policy manually
-hiitl._policy_loader.cache.clear()
-policy = hiitl._policy_loader.load()
+# Python - drop the cached policy; the next evaluate() re-reads the file
+hiitl._policy_loader.invalidate_cache()
 ```
 
 ---
@@ -257,12 +288,18 @@ policy = hiitl._policy_loader.load()
 - SSD: 0.5-2ms write latency
 - NVMe: 0.1-0.5ms write latency
 
-### 3. WAL Mode (Enabled by Default)
+### 3. WAL Mode (Opt-In)
 
-SQLite WAL (Write-Ahead Logging) mode is automatically enabled:
+The SDK opens the audit database in SQLite's default journal mode; it does not turn on WAL (Write-Ahead Logging). WAL:
 - Allows concurrent reads during writes
 - Reduces lock contention
 - Improves write performance
+
+To use it, set it once on the database file. SQLite stores the setting in the file, and the SDK keeps writing to it:
+
+```bash
+sqlite3 hiitl_audit.db "PRAGMA journal_mode=WAL;"
+```
 
 ### 4. Batch Audit Writes (Advanced)
 
@@ -273,22 +310,16 @@ For extremely high throughput (> 10,000 ops/sec), batch writes:
 # This would batch multiple audit records into single transaction
 ```
 
-### 5. Periodic VACUUM
+### 5. Rotate the Audit Database
 
-SQLite databases can grow over time. Periodically vacuum to reclaim space:
+The audit database grows with every evaluation. To keep each file small, rotate: point `audit_db_path` at a new file on a schedule and archive the old file whole.
 
-```bash
-sqlite3 hiitl_audit.db "VACUUM;"
-```
-
-Or programmatically:
 ```python
-import sqlite3
-conn = sqlite3.connect("hiitl_audit.db")
-conn.execute("DELETE FROM audit_log WHERE timestamp < datetime('now', '-30 days')")
-conn.execute("VACUUM")
-conn.close()
+from datetime import datetime
+audit_db_path = f"./audit_{datetime.now().strftime('%Y%m')}.db"
 ```
+
+In hybrid mode the SDK uploads records only from the file it is currently writing.
 
 ---
 
@@ -306,12 +337,14 @@ Local mode uses in-memory rate limiting (no database):
 
 **Scope Performance** (fastest → slowest):
 1. `org` - Single counter for entire org
-2. `tool` - Counter per tool name
-3. `user_id` - Counter per user
-4. `user:tool` - Counter per (user, tool) pair
+2. `action` - Counter per action name
+3. `user` - Counter per user
+4. `user_action` - Counter per (user, action) pair
+
+These are the values of a `RATE_LIMIT` rule's `rate_limit.scope` (`agent`, a counter per agent, is the fifth).
 
 **Trade-off**:
-- Narrow scope (user:tool) = more counters = more memory
+- Narrow scope (user_action) = more counters = more memory
 - Broad scope (org) = fewer counters = less memory
 
 **Recommendation**: Use narrowest scope that meets requirements
@@ -336,10 +369,10 @@ Example:
 
 ### Auto-Generated Fields
 
-HIITL auto-generates these fields (you don't need to provide them):
-- `action_id`: `act_{uuid}`
+hiitl auto-generates these fields (you don't need to provide them):
+- `action_id`: `act_` + the first 20 hex characters of a UUID
 - `timestamp`: Current ISO timestamp
-- `idempotency_key`: `idem_{uuid}`
+- `idempotency_key`: `idem_` + a UUID's 32 hex characters
 - `signature`: HMAC-SHA256 (if signature_key provided)
 
 **Performance**: ~0.1ms for all auto-generation
@@ -351,6 +384,7 @@ HIITL auto-generates these fields (you don't need to provide them):
 ```python
 # SLOW - huge envelope
 hiitl.evaluate(
+    "upload_document",
     parameters={
         "document": "<massive 1MB PDF base64 string>",
         "metadata": { ... 10KB of metadata ... }
@@ -363,6 +397,7 @@ hiitl.evaluate(
 ```python
 # FAST - small envelope with reference
 hiitl.evaluate(
+    "upload_document",
     parameters={
         "document_id": "doc_abc123",  # Reference, not data
         "document_size_bytes": 1048576,
@@ -421,20 +456,8 @@ CMD ["python", "app.py"]
 ### Edge / CDN Workers
 
 **Cloudflare Workers / Vercel Edge**:
-- ✅ Local mode works great (sub-millisecond)
-- ❌ No SQLite support (no filesystem)
-- Solution: Disable audit logging for edge, log elsewhere
-
-```typescript
-// Vercel Edge Runtime
-const hiitl = new HIITL({
-  environment: 'prod',
-  agent_id: 'edge-worker',
-  org_id: process.env.ORG_ID,
-  policy_path: './policy.json',  // Bundled at build time
-  enable_audit: false,  // No filesystem on edge
-});
-```
+- ❌ The TypeScript SDK does not run on edge runtimes: it needs Node.js 22+ with a filesystem, because new evaluations are recorded in its SQLite audit database through `better-sqlite3` (a native module), and the audit write has no off switch
+- Solution: run the SDK in a Node.js runtime (on Vercel, the Node.js runtime rather than Edge)
 
 ---
 
@@ -470,7 +493,7 @@ import time
 def evaluate_action(i):
     start = time.perf_counter()
     decision = hiitl.evaluate(
-        tool="test_action",
+        "test_action",
         operation="execute",
         target={"id": f"target_{i}"},
         parameters={"value": i}
@@ -478,21 +501,23 @@ def evaluate_action(i):
     return (time.perf_counter() - start) * 1000
 
 # Concurrent load test
+wall_start = time.perf_counter()
 with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
     futures = [executor.submit(evaluate_action, i) for i in range(1000)]
     results = [f.result() for f in concurrent.futures.as_completed(futures)]
+wall_s = time.perf_counter() - wall_start
 
 print(f"Average: {sum(results) / len(results):.2f}ms")
-print(f"Throughput: {len(results) / (max(results) / 1000):.0f} ops/sec")
+print(f"Throughput: {len(results) / wall_s:.0f} ops/sec")
 ```
 
 ### Production Monitoring
 
 Track these metrics:
-- `decision.timing.total_ms` (end-to-end latency)
+- `decision.timing.total_ms` (evaluator time; time the call yourself for end-to-end latency)
 - Policy cache hit ratio
 - Audit DB size
-- Error rate (PolicyLoadError, AuditLogError)
+- Error rate (decisions with `error` set: `POLICY_ERROR`, `AUDIT_WRITE_FAILED`)
 
 ---
 

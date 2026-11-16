@@ -1,0 +1,166 @@
+{
+  "source": "988ca711",
+  "source_manifest_sha256": "cccfdb60171405cd902330cbd2fe120989ab2eee826deeeaacf19b6c72ffa1fc",
+  "shapes_sha256": "5bc8f4b6e3f7260474dd947b08e9b360e7522ba946ccc96c57f07d2f25000ffa",
+  "measurement_driver_sha256": "7617876bb63b097cc1895fc92a1123248a0f4860b34073137344c43c44c6eedf",
+  "runtime": "v22.22.3",
+  "iterations": 1500,
+  "warmup": 200,
+  "rows": [
+    {
+      "shape": "tiny_active",
+      "core": {
+        "p50_ms": 0.014583999999999264,
+        "p95_ms": 0.021758349999997498,
+        "p99_ms": 0.03059149000000445,
+        "numeric_visits": 41,
+        "admission_roots": 2
+      },
+      "sdk": {
+        "p50_ms": 0.43479200000001583,
+        "p95_ms": 0.5440020999999831,
+        "p99_ms": 0.6599419900000072,
+        "numeric_visits": 31,
+        "admission_roots": 2
+      },
+      "sdk_pull": {
+        "p50_ms": 0.4686459999999215,
+        "p95_ms": 0.6328211499998815,
+        "p99_ms": 0.917467260000003,
+        "numeric_visits": 54,
+        "admission_roots": 3
+      },
+      "sdk_disk": {
+        "p50_ms": 0.42258349999997336,
+        "p95_ms": 0.546885099999872,
+        "p99_ms": 0.7163602399997124,
+        "numeric_visits": 54,
+        "admission_roots": 3
+      }
+    },
+    {
+      "shape": "small_active",
+      "core": {
+        "p50_ms": 0.01264549999996234,
+        "p95_ms": 0.014627049999808149,
+        "p99_ms": 0.023266250000187925,
+        "numeric_visits": 97,
+        "admission_roots": 2
+      },
+      "sdk": {
+        "p50_ms": 0.42839600000002065,
+        "p95_ms": 0.5619607500000029,
+        "p99_ms": 0.7303483400000685,
+        "numeric_visits": 87,
+        "admission_roots": 2
+      },
+      "sdk_pull": {
+        "p50_ms": 0.4354169999999158,
+        "p95_ms": 0.5607249999996383,
+        "p99_ms": 0.7406663299997899,
+        "numeric_visits": 166,
+        "admission_roots": 3
+      },
+      "sdk_disk": {
+        "p50_ms": 0.43193750000000364,
+        "p95_ms": 0.5736773999996785,
+        "p99_ms": 0.735138750000151,
+        "numeric_visits": 166,
+        "admission_roots": 3
+      }
+    },
+    {
+      "shape": "medium_with_scope",
+      "core": {
+        "p50_ms": 0.047665999999480846,
+        "p95_ms": 0.05762705000033747,
+        "p99_ms": 0.24226917000023604,
+        "numeric_visits": 407,
+        "admission_roots": 2
+      },
+      "sdk": {
+        "p50_ms": 0.47912499999983993,
+        "p95_ms": 0.6577666500003033,
+        "p99_ms": 0.8615974099996492,
+        "numeric_visits": 397,
+        "admission_roots": 2
+      },
+      "sdk_pull": {
+        "p50_ms": 0.521416500000214,
+        "p95_ms": 0.7589729499995428,
+        "p99_ms": 0.8906796700003269,
+        "numeric_visits": 786,
+        "admission_roots": 3
+      },
+      "sdk_disk": {
+        "p50_ms": 0.5158750000000509,
+        "p95_ms": 0.7328902499999002,
+        "p99_ms": 0.8579909200005021,
+        "numeric_visits": 786,
+        "admission_roots": 3
+      }
+    },
+    {
+      "shape": "medium_with_staged",
+      "core": {
+        "p50_ms": 0.03775000000041473,
+        "p95_ms": 0.04350210000061452,
+        "p99_ms": 0.23033158000018372,
+        "numeric_visits": 321,
+        "admission_roots": 2
+      },
+      "sdk": {
+        "p50_ms": 0.4913539999997738,
+        "p95_ms": 0.6446854499994968,
+        "p99_ms": 0.8062587499996425,
+        "numeric_visits": 311,
+        "admission_roots": 2
+      },
+      "sdk_pull": {
+        "p50_ms": 0.5322289999994609,
+        "p95_ms": 0.7577542000001812,
+        "p99_ms": 0.890348829998893,
+        "numeric_visits": 614,
+        "admission_roots": 3
+      },
+      "sdk_disk": {
+        "p50_ms": 0.5277915000006033,
+        "p95_ms": 0.7592603999992207,
+        "p99_ms": 0.9550345799999195,
+        "numeric_visits": 614,
+        "admission_roots": 3
+      }
+    },
+    {
+      "shape": "large_with_staged",
+      "core": {
+        "p50_ms": 0.1606660000006741,
+        "p95_ms": 0.3478423000001385,
+        "p99_ms": 0.3812859200006823,
+        "numeric_visits": 1441,
+        "admission_roots": 2
+      },
+      "sdk": {
+        "p50_ms": 0.7022710000001098,
+        "p95_ms": 1.0035208000002056,
+        "p99_ms": 1.276647590000284,
+        "numeric_visits": 1431,
+        "admission_roots": 2
+      },
+      "sdk_pull": {
+        "p50_ms": 0.8611464999994496,
+        "p95_ms": 1.1952708500006337,
+        "p99_ms": 1.4288091600004553,
+        "numeric_visits": 2854,
+        "admission_roots": 3
+      },
+      "sdk_disk": {
+        "p50_ms": 0.8396040000006906,
+        "p95_ms": 1.1285645500007375,
+        "p99_ms": 1.3180071700014377,
+        "numeric_visits": 2854,
+        "admission_roots": 3
+      }
+    }
+  ]
+}

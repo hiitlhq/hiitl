@@ -3,12 +3,12 @@
 import hashlib
 import json
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
 
-from hiitl.core.types import Decision, DecisionType, Envelope, Timing
+from hiitl.core.types import Decision, DecisionType, ENVELOPE_SCHEMA_VERSION, Envelope, Timing
 from hiitl.sdk.audit import AuditLogger
 from hiitl.sdk.exceptions import AuditLogError
 
@@ -84,7 +84,7 @@ class TestAuditLoggerWrite:
     def sample_envelope(self):
         """Create sample envelope for testing."""
         return Envelope(
-            schema_version="v1.0",
+            schema_version=ENVELOPE_SCHEMA_VERSION,
             org_id="org_test000000000000",
             environment="dev",
             agent_id="test-agent",
@@ -137,7 +137,7 @@ class TestAuditLoggerWrite:
         assert row['org_id'] == "org_test000000000000"
         assert row['environment'] == "dev"
         assert row['action_id'] == "act_test00000000000000000"
-        assert row['tool_name'] == "test_tool"
+        assert row['action'] == "test_tool"
         assert row['agent_id'] == "test-agent"
         assert row['policy_version'] == "1.0.0"
         assert row['decision_type'] == "ALLOW"
@@ -182,14 +182,20 @@ class TestAuditLoggerWrite:
         conn.close()
 
         # Recompute hash
-        content = f"{row['event_id']}:{row['envelope']}:{row['decision']}"
-        expected_hash = hashlib.sha256(content.encode()).hexdigest()
+        from hiitl.core.canonical import audit_content_hash   # the one canonical serialisation (sync_engine.md §2.1)
+        expected_hash = audit_content_hash(row['event_id'], json.loads(row['envelope']), json.loads(row['decision']))
 
         assert row['content_hash'] == expected_hash
         assert len(row['content_hash']) == 64  # SHA-256 is 64 hex chars
 
-    def test_write_includes_timestamp(self, tmp_path, sample_envelope, sample_decision):
+    def test_write_includes_timestamp(self, tmp_path, sample_envelope, sample_decision, monkeypatch):
         """write() should include ISO 8601 timestamp."""
+        written_at = datetime(2026, 11, 9, 12, 34, 56, tzinfo=timezone.utc)
+        class Clock(datetime):
+            @classmethod
+            def now(cls, tz=None):
+                return written_at.astimezone(tz)
+        monkeypatch.setattr("hiitl.sdk.audit.datetime", Clock)
         logger = AuditLogger(tmp_path / "audit.db")
         event_id = logger.write(sample_envelope, sample_decision)
 
@@ -205,24 +211,20 @@ class TestAuditLoggerWrite:
         timestamp_str = row['timestamp']
         parsed = datetime.fromisoformat(timestamp_str)
 
-        # Should be recent (within last 10 seconds)
-        from datetime import timezone
-        now = datetime.now(timezone.utc)
-        delta = (now - parsed).total_seconds()
-        assert 0 <= delta < 10
+        assert parsed == written_at
 
     def test_write_accepts_dicts(self, tmp_path):
         """write() should accept dicts instead of Pydantic models."""
         logger = AuditLogger(tmp_path / "audit.db")
 
         envelope_dict = {
-            "schema_version": "v1.0",
+            "schema_version": ENVELOPE_SCHEMA_VERSION,
             "org_id": "org_test000000000000",
             "environment": "dev",
             "agent_id": "test-agent",
             "action_id": "act_test00000000000000000",
             "timestamp": "2026-02-15T10:00:00Z",
-            "tool_name": "test_tool",
+            "action": "test_tool",
             "operation": "execute",
             "parameters": {},
             "idempotency_key": "idem_test",
@@ -254,7 +256,7 @@ class TestAuditLoggerQuery:
         # Write 3 records for org1
         for i in range(3):
             envelope = Envelope(
-                schema_version="v1.0",
+                schema_version=ENVELOPE_SCHEMA_VERSION,
                 org_id="org_test000000000001",
                 environment="dev",
                 agent_id="test-agent",
@@ -280,7 +282,7 @@ class TestAuditLoggerQuery:
         # Write 2 records for org2
         for i in range(2):
             envelope = Envelope(
-                schema_version="v1.0",
+                schema_version=ENVELOPE_SCHEMA_VERSION,
                 org_id="org_test000000000002",
                 environment="dev",
                 agent_id="test-agent",
@@ -351,7 +353,7 @@ class TestAuditLoggerIntegrity:
         logger = AuditLogger(tmp_path / "audit.db")
 
         envelope = Envelope(
-            schema_version="v1.0",
+            schema_version=ENVELOPE_SCHEMA_VERSION,
             org_id="org_test000000000000",
             environment="dev",
             agent_id="test-agent",
@@ -383,7 +385,7 @@ class TestAuditLoggerIntegrity:
         logger = AuditLogger(tmp_path / "audit.db")
 
         envelope = Envelope(
-            schema_version="v1.0",
+            schema_version=ENVELOPE_SCHEMA_VERSION,
             org_id="org_test000000000000",
             environment="dev",
             agent_id="test-agent",

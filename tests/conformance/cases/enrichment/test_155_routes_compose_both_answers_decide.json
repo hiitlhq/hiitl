@@ -1,0 +1,96 @@
+{
+  "test_id": "test_155_routes_compose_both_answers_decide",
+  "description": "With both answers, the rule reading the second decides.",
+  "envelope": {
+    "schema_version": "v2.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_ops_bot",
+    "action_id": "act_test1550000000000000000",
+    "timestamp": "2026-10-11T10:00:00Z",
+    "operation": "execute",
+    "parameters": {
+      "body": "hello"
+    },
+    "idempotency_key": "idem_test_155",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "publish_post"
+  },
+  "policy_set": {
+    "version": "v1.0.0",
+    "description": "With both answers, the rule reading the second decides.",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "ask_risk",
+        "priority": 500,
+        "conditions": {
+          "field": "action",
+          "operator": "equals",
+          "value": "publish_post"
+        },
+        "decision": "ROUTE",
+        "reason_code": "RISK_CHECK",
+        "description": "Rule: ask_risk",
+        "route": "risk-score"
+      },
+      {
+        "name": "ask_review_when_high",
+        "priority": 400,
+        "conditions": {
+          "field": "external.risk-score.level",
+          "operator": "equals",
+          "value": "high"
+        },
+        "decision": "ROUTE",
+        "reason_code": "REVIEW_CHECK",
+        "description": "Rule: ask_review_when_high",
+        "route": "human-review"
+      },
+      {
+        "name": "block_denied",
+        "priority": 800,
+        "conditions": {
+          "field": "external.human-review.decision",
+          "operator": "equals",
+          "value": "deny"
+        },
+        "decision": "BLOCK",
+        "reason_code": "REVIEW_DENIED",
+        "description": "Rule: block_denied"
+      },
+      {
+        "name": "allow_otherwise",
+        "priority": 1,
+        "conditions": {
+          "field": "action",
+          "operator": "exists",
+          "value": true
+        },
+        "decision": "ALLOW",
+        "reason_code": "ALLOWED",
+        "description": "Rule: allow_otherwise"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "BLOCK",
+    "allowed": false,
+    "reason_codes": [
+      "REVIEW_DENIED"
+    ]
+  },
+  "enrichment": {
+    "risk-score": {
+      "level": "high"
+    },
+    "human-review": {
+      "decision": "deny"
+    }
+  }
+}

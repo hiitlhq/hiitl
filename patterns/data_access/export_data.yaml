@@ -10,7 +10,7 @@ tags: ["export", "data-access", "bulk", "privacy"]
 
 evaluate_examples:
   python: |
-    result = hiitl.evaluate("export_data", {
+    result = hiitl.evaluate("export_data", parameters={
         "format": "csv",
         "record_count": 5000,
         "includes_pii": True,
@@ -18,15 +18,15 @@ evaluate_examples:
     if result.ok:
         export_dataset(format="csv", record_count=5000)
   typescript: |
-    const result = hiitl.evaluate({
+    const result = await hiitl.evaluate({
       action: 'export_data',
-      params: {
+      parameters: {
         format: 'csv',
         record_count: 5000,
         includes_pii: true,
       },
     });
-    if (result.ok) {
+    if (result.allowed) {
       await exportDataset({ format: 'csv', recordCount: 5000 });
     }
 
@@ -36,7 +36,7 @@ context_enrichment:
     example: "user_8kN3mR7pQ2"
   - field: "sensitivity"
     why: "Data classification level determines which export controls apply (regulated data requires stricter oversight)"
-    example: "regulated"
+    example: ["regulated"]
   - field: "target.dataset"
     why: "The source dataset identifier enables dataset-specific export policies and compliance tracking"
     example: "customer_analytics"
@@ -51,7 +51,6 @@ starter_policies:
   - name: "allow-small-exports"
     description: "Auto-approve exports of fewer than 1,000 records that do not contain PII"
     priority: 200
-    enabled: true
     conditions:
       all_of:
         - field: "action"
@@ -66,14 +65,13 @@ starter_policies:
     decision: "ALLOW"
     reason_code: "EXPORT_AUTO_APPROVED"
     remediation:
-      type: "static"
+      type: "threshold"
       message: "Export auto-approved (under 1,000 records, no PII)"
       suggestion: "No action needed"
 
   - name: "approve-large-exports"
     description: "Require approval for exports of 1,000 or more records to prevent bulk data extraction"
     priority: 150
-    enabled: true
     conditions:
       all_of:
         - field: "action"
@@ -88,14 +86,13 @@ starter_policies:
     decision: "REQUIRE_APPROVAL"
     reason_code: "LARGE_EXPORT_NEEDS_APPROVAL"
     remediation:
-      type: "static"
+      type: "threshold"
       message: "Exports of 1,000 or more records require data steward approval"
       suggestion: "Submit an export request with the business justification. Consider whether a smaller sample or aggregated data would meet your needs."
 
   - name: "block-pii-export-in-dev"
     description: "Block all PII-containing exports in the dev environment to prevent test data leakage"
     priority: 100
-    enabled: true
     conditions:
       all_of:
         - field: "action"
@@ -110,14 +107,13 @@ starter_policies:
     decision: "BLOCK"
     reason_code: "PII_EXPORT_BLOCKED_IN_DEV"
     remediation:
-      type: "static"
+      type: "custom"
       message: "Exports containing PII are not permitted in the dev environment"
       suggestion: "Use anonymized or synthetic data for development purposes. If you need real PII for debugging, request a time-limited exception from the data protection team and work in a controlled staging environment."
 
   - name: "approve-pii-exports"
     description: "Require approval for any export containing personally identifiable information in production"
     priority: 110
-    enabled: true
     conditions:
       all_of:
         - field: "action"
@@ -132,22 +128,25 @@ starter_policies:
     decision: "REQUIRE_APPROVAL"
     reason_code: "PII_EXPORT_NEEDS_APPROVAL"
     remediation:
-      type: "static"
+      type: "custom"
       message: "Exports containing personally identifiable information require data protection officer approval"
       suggestion: "Submit the export request with a clear purpose statement, data minimization justification, and the intended use. Confirm that the destination meets your organization's data handling requirements."
 
   - name: "rate-limit-exports"
     description: "Limit each agent to 10 exports per hour to prevent systematic data extraction"
     priority: 50
-    enabled: true
     conditions:
       field: "action"
       operator: "equals"
       value: "export_data"
     decision: "RATE_LIMIT"
     reason_code: "EXPORT_RATE_EXCEEDED"
+    rate_limit:
+      limit: 10
+      window_seconds: 3600
+      scope: "agent"
     remediation:
-      type: "static"
+      type: "rate_limit"
       message: "This agent has exceeded the maximum of 10 data exports per hour"
       suggestion: "Consolidate your export needs into fewer, larger requests rather than many small ones. If you need higher export frequency, request a rate limit increase with business justification."
 

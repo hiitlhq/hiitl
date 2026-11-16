@@ -1,0 +1,44 @@
+{
+  "test_id": "test_181_policy_set_refuses_a_set_with_no_description",
+  "description": "A policy set's description is required: a set without one is refused at description, naming it (policy_format.md Policy Set Fields; HTL-22 row 165).",
+  "policy_set": {
+    "name": "payments_policy",
+    "version": "v1.0.0",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
+    "rules": [
+      {
+        "name": "allow_payments_to_known_accounts",
+        "description": "Payments to a known account are allowed",
+        "priority": 100,
+        "conditions": {
+          "all_of": [
+            {
+              "field": "action",
+              "operator": "equals",
+              "value": "process_payment"
+            },
+            {
+              "field": "target.account_id",
+              "operator": "starts_with",
+              "value": "acct_"
+            }
+          ]
+        },
+        "decision": "ALLOW",
+        "reason_code": "KNOWN_ACCOUNT"
+      }
+    ]
+  },
+  "expected_refusal": {
+    "artifact": "policy_set",
+    "at": [
+      "description"
+    ],
+    "names": [
+      "description"
+    ]
+  }
+}

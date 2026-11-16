@@ -1,0 +1,118 @@
+---
+title: "Routes"
+description: "Bidirectional sync routes, and outbound async routes: how an evaluation asks an endpoint of yours, and how records reach one"
+---
+
+A route is the third artifact beside the envelope and the policy. The envelope says what the agent wants to do; the policy says what must happen; a route says where hiitl asks a question and how it reads the answer. Policies stay the same across environments; only a route's target changes.
+
+## What is built
+
+**Bidirectional sync routes.** A rule with `decision: ROUTE` names a route. The evaluator posts the envelope's declared fields to the route's endpoint and waits for the answer; the answer's declared fields re-enter the evaluation as `external.<route>.<field>`, and the envelope is evaluated again with them. In local and hybrid mode the SDK posts directly; in hosted mode the service queues the ask and waits on it. This is the mechanism approvals and verifiers use (see [Approvals](/configuration/approvals)).
+
+**Outbound async routes.** An `outbound`, `async` route created on the hosted service receives each record the service writes for its org and environment that passes its `filters`: hosted evaluations, a hybrid SDK's records once uploaded, and results. See [Outbound routes](#outbound-routes) below.
+
+**What is accepted by the schema and not yet executed:** `inbound` routes, outbound `sync` routes, a pure-local SDK's outbound delivery, batching, escalation ladders, route-level retry settings. The schema accepts those fields today; nothing runs them. They are listed on [Limits and roadmap](/reference/limits-and-roadmap).
+
+## The three properties of a route
+
+| Property | Values | Meaning |
+|---|---|---|
+| **direction** | `bidirectional` and `outbound` (built); `inbound` (accepted, not executed) | `bidirectional`: hiitl sends context and waits for an answer; `outbound`: hiitl sends each record |
+| **timing** | `sync` for `bidirectional`, `async` for `outbound` (built) | `sync`: evaluation waits for the result; `async`: the record is sent after it is written |
+| **purpose** | `review`, `observability`, `compliance`, `security`, `policy-management`, `assessment` | a label for people; not enforced |
+
+## Defining a route
+
+```yaml
+name: finance-review
+version: v1.0.0
+description: High-value payments go to the finance channel for a decision
+direction: bidirectional
+timing: sync
+purpose: [review]
+endpoint: https://reviews.internal.example/finance      # your endpoint
+auth:
+  type: bearer_token
+  secret_ref: env:FINANCE_REVIEW_TOKEN                   # read from the environment at the time of the ask; never stored in the route
+context:
+  fields:
+    - field_path: action
+    - field_path: parameters.amount
+      label: Amount
+      format: currency
+    - field_path: parameters.recipient
+    - field_path: agent_id
+    - field_path: user_id
+  include_policy_ref: true
+  risk_framing:
+    severity: high
+    summary: A payment above the standing limit
+response_schema:
+  decision_options: [approve, deny]
+  required_fields: [decision]
+  optional_fields: [note]
+sla:
+  timeout: 15m
+  timeout_action: fail_closed
+```
+
+A policy rule names the route:
+
+```yaml
+- name: require-finance-above-limit
+  description: A payment above the standing limit is routed to finance before it runs
+  priority: 100
+  conditions:
+    all_of:
+      - field: parameters.amount
+        operator: greater_than
+        value: 500
+      - field: external.finance-review.decision
+        operator: exists
+        value: false
+  decision: ROUTE
+  reason_code: HIGH_VALUE_PAYMENT
+  route: finance-review
+```
+
+In local and hybrid mode routes are files in the directory the SDK is given (`routes_path`); the SDK asks only those. With the hosted service, routes created through `POST /v1/routes` or the dashboard are asked by the service in hosted-mode evaluation; a hybrid-mode SDK downloads them but does not yet apply them (see [Limits and roadmap](/reference/limits-and-roadmap)). A route's `version` is immutable; a change is a new version.
+
+## Auth
+
+A `bearer_token` or `api_key` secret is read from the environment variable named by `secret_ref` (`env:NAME`) into the request's header (`Authorization`, or the `header` the route names). The SDK reads it in its own process, and refuses to load a route whose `auth` it cannot send: another auth type, another `secret_ref` form, or a variable that is unset or empty.
+
+The hosted service holds no secret for an organization and reads none from its own environment, so it does not send a route that declares `auth`: the job ends `failed`, naming why, and a sync route's `sla.timeout_action` decides.
+
+`endpoint` must be an `https://` URL that names a host. Any other endpoint is refused when the route loads, including `http://localhost`; to test on your own machine, serve https locally.
+
+## Timeout and failure posture
+
+`sla.timeout` is a duration (`30s`, `15m`, `1h`). `sla.timeout_action` is required: `fail_open` lets the evaluation continue with an empty answer and records the route as `failed_open`; any other value closes, and the decision returns as `ROUTE` with `ROUTE_UNANSWERED` and `allowed: false`. Decide it per route, in the route, where the people who own that door can read it.
+
+## Reaching people
+
+A route reaches a person through an endpoint you run: it receives the fields, renders them where the person is (a Microsoft Teams card with buttons, a Slack message, a ticket), holds the request open, and returns the person's answer. hiitl does not need to know the channel; your endpoint does.
+
+## Outbound routes
+
+An outbound route sends records rather than asking a question. It is not named by a rule:
+
+```yaml
+name: audit-sink
+version: v1.0.0
+direction: outbound
+timing: async
+purpose: [observability]
+endpoint: https://events.internal.example/hiitl
+filters:
+  decisions: [BLOCK, KILL_SWITCH]
+  sensitivity: [money, pii]
+```
+
+- **What is sent.** The record as `GET /v1/audit/{event_id}` reads it, `event_type` included, with the fields your organization redacts redacted. An outbound route does not take `context`; a route declaring it is refused.
+- **Filters.** A route without `filters` receives every record. Each key it declares narrows: `decisions` reads the record's `decision_type`, `actions` its `action`, `agents` its `agent_id`, and `sensitivity` its envelope's `sensitivity`. A record passes a key when the key lists one of its values, and passes the filter when it passes every key declared. A value that is not a decision type, or not an envelope sensitivity, is refused when the route loads. The key that lists actions was once `tools`; a route naming `filters.tools` is refused when it loads, naming `filters.actions`.
+- **Delivery.** A record and its jobs are written together. The job is posted to `endpoint` and retried on failure, up to three attempts.
+
+## Reaching systems
+
+A verifier answers without a person: a route that returns whether a recipient is on an approved list, read by a rule as `external.recipient-check.approved`. The same mechanism, inside one evaluation.

@@ -1,0 +1,41 @@
+{
+  "test_id": "test_180_policy_set_refuses_a_set_with_no_scope",
+  "description": "A policy set's scope is required: a set without one is refused at scope, naming it (policy_format.md Policy Set Fields; HTL-22 row 165).",
+  "policy_set": {
+    "name": "payments_policy",
+    "version": "v1.0.0",
+    "description": "Payment controls for the finance agent",
+    "rules": [
+      {
+        "name": "allow_payments_to_known_accounts",
+        "description": "Payments to a known account are allowed",
+        "priority": 100,
+        "conditions": {
+          "all_of": [
+            {
+              "field": "action",
+              "operator": "equals",
+              "value": "process_payment"
+            },
+            {
+              "field": "target.account_id",
+              "operator": "starts_with",
+              "value": "acct_"
+            }
+          ]
+        },
+        "decision": "ALLOW",
+        "reason_code": "KNOWN_ACCOUNT"
+      }
+    ]
+  },
+  "expected_refusal": {
+    "artifact": "policy_set",
+    "at": [
+      "scope"
+    ],
+    "names": [
+      "scope"
+    ]
+  }
+}

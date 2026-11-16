@@ -1,0 +1,33 @@
+---
+title: "Licensing and support"
+description: "The open-source core, what it covers, and how support works"
+---
+
+## The licence
+
+The hiitl core is open source. The `LICENSE` file in the public repository is the grant: it covers the SDKs (Python and TypeScript), the evaluator and its conformance suite, the policy and route formats, and the MCP gateway. A deployment of the core in local mode needs no other licence, no account and no key from hiitl, and keeps working whatever happens to hiitl as a company. Third-party dependencies and their licences are listed in the software bill of materials published with each release.
+
+The licence named in the file, and the copyright holder, are what they say in the repository at the tag you deploy; this page does not restate them so that it can never disagree with the file.
+
+## What is not in the core
+
+The hosted hiitl service is hiitl's: the policy service and dashboard, the rule-promotion lifecycle with regression reports, the approval queue, sync to the SDKs, kill switches activated centrally, standards conformance reading of a codebase, and policy drafting assisted by a model over the service's own records. None of these is needed to run the control point in local mode, and none is a dependency of it.
+
+## Versions and upgrades
+
+Releases are tagged with semantic versions. The SDKs and the gateway are published to PyPI and npm at the same version as the tag. The changelog states, per release, what moves together. Policies and routes are data: an upgrade never changes them. Rollback is a redeploy of the previous tag.
+
+## Support
+
+Two forms, chosen by the customer:
+
+- **Community.** The public repository's issue tracker; the documentation; no response commitment.
+- **Contracted.** For a deployment operated with a partner or under an agreement with the vendor: named contacts, response times by severity, upgrade assistance, and a commitment to the shape the customer needs for go-live, shown at the gates the agreement names. The terms, including what happens to the deployment if the vendor ceases to exist (which, for an open-source core deployed in the customer's own project, is that it keeps running), sit in that agreement.
+
+## Security reporting
+
+Report a vulnerability privately to the address in the repository's `SECURITY.md`. We acknowledge within two working days, say what we found within ten, and publish a fix and an advisory together. We do not publish a report before a fix is available unless the reporter's own disclosure timeline requires it.
+
+## Trademark
+
+"hiitl" is the name of the project. You may say your deployment runs hiitl; you may not present a modified version as the official one.

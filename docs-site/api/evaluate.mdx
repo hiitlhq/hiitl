@@ -1,6 +1,6 @@
 ---
 title: "Evaluate"
-description: "POST /api/v1/evaluate"
+description: "POST /v1/evaluate"
 ---
 
 Submit an action for policy evaluation. Returns a decision indicating whether the action should proceed.
@@ -11,54 +11,142 @@ POST /v1/evaluate
 
 **Required scope:** `evaluate`
 
+The request body is the envelope, signed with your API key's signing secret. The service checks the signature, then evaluates the action against your organization's active policy for the API key's environment. The envelope's `org_id` and `environment` must be the API key's. The SDKs build, sign and send the envelope for you; see [Envelope Signing](/security/envelope-signing) to send one yourself.
+
+Hosted evaluation enforces the policy. An action that no rule matches is blocked with `NO_MATCHING_RULE`, so write `ALLOW` rules for the actions you mean to let through. If the environment has no active policy, the answer is the decision `POLICY_ERROR` (reason `POLICY_NOT_FOUND`) with status 404.
+
 ## Request body
+
+The body is an envelope ([envelope schema](/concepts/envelope)) with its signature as `envelope_signature`. A field the schema does not define is refused with a 422, naming it (`policy_refs`, which schema 1.x deprecated, is such a field from 2.0). The record stores the envelope as sent.
+
+<ParamField body="schema_version" type="string" required>
+  The envelope schema version, `"v2.0"`. An envelope carrying another major version is refused with `VALIDATION_ERROR`, naming the version it carries, the version taken and the migration note ([Migrating from schema 1.x](/concepts/envelope#migrating-from-schema-1x)).
+</ParamField>
+
+<ParamField body="org_id" type="string" required>
+  Your organization's id. Must be the API key's organization.
+</ParamField>
+
+<ParamField body="environment" type="string" required>
+  `dev`, `stage` or `prod`. Must be the API key's environment.
+</ParamField>
+
+<ParamField body="agent_id" type="string" required>
+  The agent submitting the action.
+</ParamField>
+
+<ParamField body="action_id" type="string" required>
+  A unique id for this action: `act_` followed by at least 20 letters or digits.
+</ParamField>
+
+<ParamField body="idempotency_key" type="string" required>
+  A client-generated key for this action, for safe retries. An envelope under a key this org and environment already recorded, for an envelope timestamped within the dedup window (24 hours) of this one, returns the first decision (its `action_id` names the first action) and writes no record. A decision carrying `error` is never the first: the action was not evaluated, so the same envelope sent again is. Two envelopes in flight at once under one new key are taken as if one came first: one is evaluated and recorded, and the other waits for it and returns its decision, on any number of service instances.
+</ParamField>
+
+<ParamField body="timestamp" type="string" required>
+  When the action was proposed, ISO 8601 with its UTC offset (e.g. `"2026-11-04T12:00:00Z"`). An envelope further than the dedup window (24 hours) from the service's clock is refused.
+</ParamField>
 
 <ParamField body="action" type="string" required>
   The tool or action name (e.g., `"process_payment"`, `"send_email"`).
 </ParamField>
 
+<ParamField body="envelope_signature" type="string" required>
+  HMAC-SHA256 signature of the envelope without this field, under the API key's signing secret, as a hex string. See [Envelope Signing](/security/envelope-signing).
+</ParamField>
+
+<ParamField body="signature_version" type="string" default="hmac-sha256-v1">
+  The signature's version, `hmac-sha256-v1`. It is signed with the rest of the envelope and recorded with it. Any other value is refused with `400 SIGNATURE_VERSION_UNSUPPORTED`. No header names the version.
+</ParamField>
+
 <ParamField body="operation" type="string">
-  The operation type. One of: `read`, `write`, `create`, `delete`, `execute`. Defaults to `"execute"`.
+  The operation type. One of: `read`, `write`, `create`, `update`, `delete`, `execute`. Defaults to `"execute"`.
 </ParamField>
 
 <ParamField body="target" type="object">
-  Resource identifiers for the action target.
+  Resource identifiers for the action target. Defaults to `{}`.
   ```json
-  { "account_id": "acct_123", "resource_type": "payment" }
+  { "account_id": "acct_8f3k2m", "resource_type": "payment" }
   ```
 </ParamField>
 
-<ParamField body="parameters" type="object" required>
-  Action parameters as structured JSON.
+<ParamField body="parameters" type="object">
+  Action parameters as structured JSON. Defaults to `{}`.
   ```json
   { "amount": 150.00, "currency": "usd" }
   ```
 </ParamField>
 
-<ParamField body="agent_id" type="string">
-  The agent submitting the action. Overrides the SDK default if set.
+<ParamField body="user_id" type="string">
+  The end user the action is on behalf of.
 </ParamField>
 
-<ParamField body="environment" type="string">
-  The environment (`dev`, `stage`, `prod`). Overrides the SDK default if set.
+<ParamField body="session_id" type="string">
+  Groups actions within a user session.
 </ParamField>
 
 <ParamField body="sensitivity" type="array">
-  Risk signal tags: `money`, `identity`, `permissions`, `regulated`, `irreversible`.
+  Risk signal tags: `money`, `identity`, `permissions`, `regulated`, `irreversible`, `pii`, `sensitive_data`.
 </ParamField>
 
 <ParamField body="cost_estimate" type="object">
-  Estimated cost of the action.
+  Estimated cost of the action: `tokens`, `dollars`, `api_calls`.
   ```json
   { "dollars": 1.50 }
   ```
 </ParamField>
 
-<ParamField body="idempotency_key" type="string">
-  Client-generated idempotency key. Auto-generated by the SDK if not provided.
+<ParamField body="confidence" type="number">
+  Confidence score from the upstream AI system, from `0` to `1`.
+</ParamField>
+
+<ParamField body="reason" type="string">
+  A brief reason for the action, for the audit trail. Do not send full prompts.
+</ParamField>
+
+<ParamField body="requested_scopes" type="array">
+  Permission scopes this call requests — free strings your code supplies, distinct from the verified principal's scopes. A policy compares them with `principal.scopes` (e.g. block a call that requests a scope the principal was not granted).
+</ParamField>
+
+<ParamField body="correlation_id" type="string">
+  Your own ID tying this action to others, such as a request ID. The SDKs set it from `evaluate()`'s `correlation_id` option.
+</ParamField>
+
+<ParamField body="trace_id" type="string">
+  The OpenTelemetry trace ID of the active span, 32 lowercase hex as W3C Trace Context writes it. The SDKs set it from the active span when the OpenTelemetry API is installed.
+</ParamField>
+
+<ParamField body="agent_instance_id" type="string">
+  Per-run instance identifier for the agent.
+</ParamField>
+
+<ParamField body="action_type" type="string">
+  A secondary classification for the action (e.g., `"payment"`).
+</ParamField>
+
+<ParamField body="prompt_hash" type="string">
+  A hash of the prompt that led to the action, for audit without logging the prompt.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Free-form metadata. Recorded, not used in evaluation.
+</ParamField>
+
+## Request headers
+
+<ParamField header="Authorization" type="string" required>
+  `Bearer <api_key>`. The key needs the `evaluate` scope.
+</ParamField>
+
+<ParamField header="X-Hiitl-Principal-Token" type="string">
+  A token from your identity provider for the user or service the action is on behalf of. The service verifies it with your organization's principal verifier (`PUT /v1/principal-verifier`, `admin` scope) and sets the envelope's `principal` from its claims. A token that does not verify sets no principal. A token sent when no verifier is configured is refused with the decision `VALIDATION_ERROR`, reason code `PRINCIPAL_VERIFIER_NOT_CONFIGURED`, at status 400, and recorded. The body cannot carry a `principal`.
 </ParamField>
 
 ## Response
+
+<ResponseField name="action_id" type="string" required>
+  The evaluated envelope's `action_id`. Under a repeated `idempotency_key`, the first action's: the response is the first decision.
+</ResponseField>
 
 <ResponseField name="decision" type="string" required>
   The policy decision: `ALLOW`, `BLOCK`, `REQUIRE_APPROVAL`, `PAUSE`, `SANDBOX`, `RATE_LIMIT`, `KILL_SWITCH`, `ESCALATE`, `ROUTE`.
@@ -69,34 +157,70 @@ POST /v1/evaluate
 </ResponseField>
 
 <ResponseField name="reason_codes" type="array" required>
-  Machine-readable reason codes from the matched policy rule.
+  Machine-readable reason codes: the matched rule's `reason_code`, or a code the service sets (`NO_MATCHING_RULE`, `RATE_LIMIT_EXCEEDED`).
 </ResponseField>
 
-<ResponseField name="policy_version" type="string">
-  The policy version used for evaluation (e.g., `"v2.1.0"`).
+<ResponseField name="policy_version" type="string" required>
+  The policy version used for evaluation (e.g., `"2.1.0"`).
 </ResponseField>
 
 <ResponseField name="envelope_hash" type="string">
-  SHA-256 hash of the evaluated envelope for integrity verification.
+  SHA-256 hash (hex) of the envelope the service evaluated, which is the envelope you sent, in its signed form: recompute it from your request. The same hash is stored with the audit record. See [Envelope Signing](/security/envelope-signing#envelope-hash-in-response).
 </ResponseField>
 
-<ResponseField name="timing" type="object">
-  Latency metadata.
+<ResponseField name="timing" type="object" required>
+  Latency metadata, in milliseconds.
+  - `ingest_ms` -- time spent loading the policy and writing the audit record
   - `evaluation_ms` -- time spent evaluating the policy
-  - `total_ms` -- total request time
+  - `total_ms` -- total time the service spent on the request
+</ResponseField>
+
+<ResponseField name="matched_rules" type="array">
+  The rule that decided: `rule_name`, `policy_set`, `priority`. `null` when no rule matched.
 </ResponseField>
 
 <ResponseField name="remediation" type="object">
-  Actionable guidance when a blocking rule fires. Includes `message`, `suggestion`, `type`, and `details`.
+  Actionable guidance when a blocking rule fires and the rule defines it. Includes `message`, `suggestion`, `type`, and optional `details`, exactly as the rule defines them.
 </ResponseField>
 
 <ResponseField name="rate_limit" type="object">
-  Rate limit counter snapshot (present when rate limiting is active).
-  - `current` -- current count
+  Rate limit counter snapshot (present on a `RATE_LIMIT` decision).
+  - `scope` -- what the counter is kept per (e.g., `agent`)
+  - `window` -- the window length, e.g. `"3600s"`
   - `limit` -- configured limit
-  - `window` -- window type
-  - `resets_at` -- when the window resets
+  - `current` -- calls already counted in the window
+  - `reset_at` -- when the oldest counted call leaves the window
 </ResponseField>
+
+<ResponseField name="rate_limit_rules" type="array">
+  The windowed `RATE_LIMIT` rules that matched this action: `rule_name`, `policy_set`, `priority`, `reason_code`, `limit`, `window_seconds`, `scope`.
+</ResponseField>
+
+<ResponseField name="staged_observations" type="array">
+  What each matching staged rule would have decided. Staged rules never decide.
+</ResponseField>
+
+<ResponseField name="resume_token" type="string">
+  For `REQUIRE_APPROVAL`, `PAUSE`, and `ESCALATE`: a token that correlates the decision with a reviewer's response.
+</ResponseField>
+
+<ResponseField name="route_ref" type="string">
+  For an escalation or `ROUTE` decision: the route named by the matched rule.
+</ResponseField>
+
+<ResponseField name="escalation_context" type="object">
+  For an escalation decision whose rule names a route: the context resolved from the route's configuration.
+</ResponseField>
+
+<ResponseField name="routes" type="array">
+  Each sync route the evaluation asked: `rule_name`, `route`, `outcome` (`answered`, `unanswered`, or `failed_open`), and the answer's `fields` or the `error`. `null` when no route was asked.
+</ResponseField>
+
+<ResponseField name="enrichment" type="object">
+  The route answers the final evaluation read. `null` when no route was asked.
+</ResponseField>
+
+A `REQUIRE_APPROVAL`, `PAUSE`, or `ESCALATE` decision is returned to the caller. Nothing is queued for review unless you open a review case.
 
 ## Example
 
@@ -104,13 +228,22 @@ POST /v1/evaluate
 
 ```bash
 curl -X POST https://api.hiitl.com/v1/evaluate \
-  -H "Authorization: Bearer hiitl_prod_abc123..." \
+  -H "Authorization: Bearer sk_prod_..." \
   -H "Content-Type: application/json" \
   -d '{
+    "schema_version": "v2.0",
+    "org_id": "org_northwindpay0001",
+    "environment": "prod",
+    "agent_id": "payment-agent",
+    "action_id": "act_7Hq2mX9vLp4Kd8RtWn3Y",
+    "idempotency_key": "idem_7Hq2mX9vLp4Kd8RtWn3Y",
+    "timestamp": "2026-11-04T12:00:00Z",
     "action": "process_payment",
     "operation": "execute",
-    "target": { "account_id": "acct_123" },
-    "parameters": { "amount": 150.00, "currency": "usd" }
+    "target": { "account_id": "acct_8f3k2m" },
+    "parameters": { "amount": 150.00, "currency": "usd" },
+    "signature_version": "hmac-sha256-v1",
+    "envelope_signature": "<HMAC-SHA256 of the envelope above, under the key'"'"'s signing secret>"
   }'
 ```
 
@@ -120,13 +253,36 @@ curl -X POST https://api.hiitl.com/v1/evaluate \
 {
   "decision": "ALLOW",
   "allowed": true,
-  "reason_codes": ["STANDARD_PAYMENT"],
-  "policy_version": "v2.1.0",
-  "envelope_hash": "sha256:a3f2b8c9d1e4f5a6b7c8d9e0f1a2b3c4...",
+  "reason_codes": ["PAYMENT_ALLOWED"],
+  "policy_version": "2.1.0",
+  "envelope_hash": "091f9062534331a6d577f480f1d2c1f3c179ac28b02b5798da1c2271807f208f",
   "timing": {
-    "evaluation_ms": 0.8,
-    "total_ms": 12.3
-  }
+    "ingest_ms": 1.57,
+    "evaluation_ms": 0.03,
+    "total_ms": 2.88
+  },
+  "matched_rules": [
+    { "rule_name": "allow-payments", "policy_set": "payments-policy", "priority": 10 }
+  ],
+  "remediation": null,
+  "rate_limit": null,
+  "rate_limit_rules": [
+    {
+      "rule_name": "limit-payments-per-agent",
+      "policy_set": "payments-policy",
+      "priority": 90,
+      "reason_code": "PAYMENT_RATE",
+      "limit": 100,
+      "window_seconds": 3600,
+      "scope": "agent"
+    }
+  ],
+  "staged_observations": [],
+  "resume_token": null,
+  "route_ref": null,
+  "escalation_context": null,
+  "routes": null,
+  "enrichment": null
 }
 ```
 
@@ -137,17 +293,22 @@ curl -X POST https://api.hiitl.com/v1/evaluate \
   "decision": "BLOCK",
   "allowed": false,
   "reason_codes": ["AMOUNT_EXCEEDS_LIMIT"],
-  "policy_version": "v2.1.0",
-  "envelope_hash": "sha256:d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9...",
+  "policy_version": "2.1.0",
+  "envelope_hash": "2c822cb475513b4d15861983217c9d0308645ffcb73eb27c9208a38257e884b4",
   "timing": {
-    "evaluation_ms": 0.6,
-    "total_ms": 11.8
+    "ingest_ms": 1.22,
+    "evaluation_ms": 0.02,
+    "total_ms": 1.33
   },
+  "matched_rules": [
+    { "rule_name": "block-large-payments", "policy_set": "payments-policy", "priority": 100 }
+  ],
   "remediation": {
     "message": "Payment amount exceeds the $10,000 limit.",
     "suggestion": "Reduce amount to $10,000 or below, or request approval.",
     "type": "threshold",
     "details": {
+      "field": "parameters.amount",
       "threshold": 10000,
       "max_allowed": 10000
     }
@@ -162,16 +323,82 @@ curl -X POST https://api.hiitl.com/v1/evaluate \
   "decision": "RATE_LIMIT",
   "allowed": false,
   "reason_codes": ["RATE_LIMIT_EXCEEDED"],
-  "policy_version": "v2.1.0",
+  "policy_version": "2.1.0",
+  "envelope_hash": "dde27998781fe487ef7619e4c374c55f66191e7c2d2157439dd32a5ce0b80492",
+  "matched_rules": [
+    { "rule_name": "limit-payments-per-agent", "policy_set": "payments-policy", "priority": 90 }
+  ],
   "rate_limit": {
-    "current": 101,
+    "scope": "agent",
+    "window": "3600s",
     "limit": 100,
-    "window": "hour",
-    "resets_at": "2025-01-15T13:00:00Z"
+    "current": 100,
+    "reset_at": "2026-11-04T04:57:00.955658Z"
   },
   "timing": {
-    "evaluation_ms": 0.4,
-    "total_ms": 10.2
+    "ingest_ms": 1.1,
+    "evaluation_ms": 0.01,
+    "total_ms": 1.93
   }
 }
 ```
+
+The first response is complete, and its `envelope_hash` is the hash of the request above. The second and third are shortened: fields that are `null` or empty are left out. The values are from one example run, against a policy with the two rules in the [Create policy](/api/policies#create-policy) example and a `RATE_LIMIT` rule that allows 100 payments an hour per agent. The timing values are not a latency figure.
+
+## Errors are decisions
+
+An envelope the service could not evaluate is answered with an error decision as the body, at the status its cause declares, and recorded under the API key's organization and environment. `allowed` is `false`, `error.code` is the decision, and the cause is the one reason code:
+
+| Status | Decision | Reason code | When |
+|--------|----------|-------------|------|
+| 403 | `SIGNATURE_INVALID` | `ENVELOPE_SIGNATURE_MISSING`, `ENVELOPE_SIGNATURE_VERIFICATION_FAILED` | The envelope has no `envelope_signature`, or it does not verify |
+| 400 | `SIGNATURE_INVALID` | `SIGNATURE_VERSION_UNSUPPORTED` | The envelope's `signature_version` is not `hmac-sha256-v1` |
+| 403 | `VALIDATION_ERROR` | `TENANT_MISMATCH`, `TIMESTAMP_OUT_OF_WINDOW` | The envelope is another organization's or environment's, or its timestamp is outside the window |
+| 400 | `VALIDATION_ERROR` | `PRINCIPAL_VERIFIER_NOT_CONFIGURED` | A principal token was sent and your organization has no principal verifier |
+| 422 | `VALIDATION_ERROR` | `ENVELOPE_VALIDATION_ERROR` | A field the envelope schema refuses; the message locates each |
+| 404 | `POLICY_ERROR` | `POLICY_NOT_FOUND` | No active policy for the key's environment |
+| 400 | `POLICY_ERROR` | `POLICY_VALIDATION_ERROR` | The active policy does not parse; the message names each problem |
+| 500 | `POLICY_ERROR` | `POLICY_INTEGRITY_VIOLATION`, `POLICY_EVALUATION_FAILED` | The stored policy failed its hash check, or could not be evaluated |
+
+An evaluation whose audit record cannot be written is `BLOCK` with `error.code` `AUDIT_WRITE_FAILED`, at status 500, and leaves no record: the record is what failed. Once the body is an envelope, any other failure is a decision too, at status 500 and fail-closed: a read of the audit store for the first decision under the envelope's `idempotency_key` that fails is `BLOCK` with `error.code` `AUDIT_READ_FAILED`, and an unexpected failure is `BLOCK` with `error.code` `EVALUATION_FAILED`. Each is recorded where the audit store answers, its message never carries the cause (the service logs it), and neither is the first decision under its key, so the envelope sent again once the fault clears is evaluated. A request that is no envelope is refused before one exists, with no decision and no record: a missing or unknown API key (401), a key without the `evaluate` scope (403), or a body that is not a JSON object, has no string `action_id`, or carries a number outside the numeric domain (the located 422 list, naming the field and its declared type and range, recommending text only where text is admitted). This numeric refusal is the one request with a string `action_id` that leaves no audit record at the service. The key is checked first, then its scope, then the body.
+
+**Response (no active policy, status 404):**
+
+```json
+{
+  "action_id": "act_01HQZ6X8Z9P5ABCDEFGHIJK",
+  "decision": "POLICY_ERROR",
+  "allowed": false,
+  "reason_codes": ["POLICY_NOT_FOUND"],
+  "policy_version": "",
+  "timing": { "ingest_ms": 0.0, "evaluation_ms": 0.0, "total_ms": 1.2 },
+  "envelope_hash": "dde27998781fe487ef7619e4c374c55f66191e7c2d2157439dd32a5ce0b80492",
+  "error": {
+    "code": "POLICY_ERROR",
+    "message": "No active policy found for org_id=org_northwindpay0001, environment=prod. Create a policy via POST /v1/policies before evaluating envelopes."
+  }
+}
+```
+
+Shortened: fields that are `null` or empty are left out. See [API Reference](/api/overview#common-errors) for the errors of the other endpoints.
+
+## Recording the result
+
+```
+POST /v1/actions/{action_id}/result
+```
+
+**Required scope:** `evaluate`
+
+After an action has run, send what happened: the body is `{"status": "succeeded" | "failed" | "canceled", "error": "...", "duration_ms": 145.3}`, with `error` and `duration_ms` optional. The result is read against the action's records in the key's organization and environment. An action ran when its latest decision allowed it, or when that decision held it for review (it carries a `resume_token`) and the latest transition of the action's review cases is `approved`, `modified`, or a recorded `timed_out` on a case whose `timeout_action` is `fail_open`.
+
+The service writes the result as a new record against the action's latest decision and returns it (200): it carries that decision's `envelope` and `decision` as stored, the `execution_result`, `event_type` `action.executed`, `action.failed` or `action.canceled`, and a `content_hash` over every term it carries. A result is refused with one of these codes in the [error format](/api/overview#error-format):
+
+| Status | Code | When |
+|--------|------|------|
+| 422 | `RESULT_INVALID` | `status` is not one of the three, `error` is not a string, `duration_ms` is not a non-negative number, or the body has another member |
+| 404 | `ACTION_NOT_FOUND` | No decision is recorded for the `action_id` |
+| 409 | `RESULT_ON_UNALLOWED_DECISION` | The decision did not allow the action and no review let it run, so it never ran and has no result |
+| 409 | `RESULT_ALREADY_RECORDED` | A different result is already recorded for the action |
+
+The same result sent again returns the record that holds it (200), so a retry is safe.

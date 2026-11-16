@@ -7,7 +7,7 @@ description: "Deterministic rules that govern what actions are allowed"
 
 A policy is a versioned, deterministic rule set evaluated against envelope fields. Policies are the configuration surface for hiitl — they define what gets allowed, blocked, escalated, or rate-limited.
 
-Policies are code. They are versioned, testable, reviewable, and immutable once deployed.
+Policies are code. They are versioned, testable and reviewable, and the hosted service never changes a version once it is deployed.
 
 ## Structure
 
@@ -19,7 +19,7 @@ policy_set:
   version: "v2.1.0"
   description: "Payment processing controls for production"
   scope:
-    org_id: "org_abc123def456ghi7"
+    org_id: "org_mycompany123456789"
     environment: "prod"
 
   rules:
@@ -31,6 +31,10 @@ policy_set:
       # ... rule definition
 ```
 
+On the hosted service, a policy set is stored and served per organization and environment. In a policy file, the set's `scope` is a label. To limit a rule to certain environments, agents or users, give the rule its own `scope` (see [Rule fields](#rule-fields)).
+
+Both loaders accept a file with or without the top-level `policy_set:` key.
+
 ## Rules
 
 A rule is the atomic unit of policy. Each rule has conditions (when does it apply?) and a decision (what outcome does it produce?).
@@ -38,7 +42,6 @@ A rule is the atomic unit of policy. Each rule has conditions (when does it appl
 ```yaml Example rule
 - name: "require-approval-high-value"
   description: "Require approval for payments over $500"
-  enabled: true
   priority: 100
   conditions:
     all_of:
@@ -58,15 +61,25 @@ A rule is the atomic unit of policy. Each rule has conditions (when does it appl
 |-------|------|----------|-------------|
 | `name` | string | Yes | Unique rule identifier within the policy set |
 | `description` | string | Yes | Human-readable explanation |
-| `enabled` | boolean | Yes | Whether the rule is active |
-| `priority` | integer | Yes | Evaluation order. Higher number = evaluated first |
+| `priority` | integer | Yes | Order within a decision class. Higher number wins (see [Priority and evaluation order](#priority-and-evaluation-order)) |
 | `conditions` | object | Yes | Condition tree (see below) |
-| `decision` | string | Yes | Decision outcome: `ALLOW`, `BLOCK`, `REQUIRE_APPROVAL`, `PAUSE`, `SANDBOX`, `KILL_SWITCH`, `ESCALATE`, `ROUTE` |
+| `decision` | string | Yes | Decision outcome: `ALLOW`, `BLOCK`, `REQUIRE_APPROVAL`, `PAUSE`, `SANDBOX`, `KILL_SWITCH`, `ESCALATE`, `ROUTE`, `RATE_LIMIT`. Any other value is refused, naming the rule. A rule never writes `OBSERVE`: to observe a rule, stage it |
 | `reason_code` | string | Yes | Machine-readable reason returned in the decision |
-| `mode` | string | No | `"enforce"` (default) or `"observe"`. In observe mode, the rule logs what it would do without enforcing. |
-| `route` | string | No | Route name for escalation decisions (`REQUIRE_APPROVAL`, `PAUSE`, `ESCALATE`) |
-| `remediation` | object | No | Structured guidance returned when a BLOCK or RATE_LIMIT rule fires |
+| `lifecycle_stage` | string | No | `"active"` (default), `"staged"`, `"draft"`, `"disabled"` or `"archived"`. See [Lifecycle stages](#lifecycle-stages-observe-before-you-enforce). |
+| `scope` | object | No | Limits the rule to listed `agents`, `users` or `environments` (`dev`, `stage`, `prod`), or to a `percentage` of matching envelopes |
+| `valid_from` / `valid_to` | string | No | ISO 8601 timestamps. Outside this window the rule is skipped |
+| `route` | string | No | Route name for escalation decisions (`REQUIRE_APPROVAL`, `PAUSE`, `ESCALATE`) and for `ROUTE` |
+| `remediation` | object | No | Structured guidance returned when the rule binds a decision that is not allowed, such as `BLOCK`. See [Remediation](#remediation) |
+| `rate_limit` | object | No | `RATE_LIMIT` rules only: the window the rule meters, `{ limit, window_seconds, scope }`. See [Rate-limit rules](#rate-limit-rules) |
+| `tests` | array | No | Envelopes the rule ships with and the decision each must get (`[{ envelope, expect }]`) |
+| `observation_window_days` | integer | No | For staged rules: how long to observe before a regression report. Defaults to `7` |
 | `metadata` | object | No | Additional data (SLA, reviewer info, etc.) |
+
+hiitl's own tools also write lineage fields (`suggested_by`, `requirement_citation`, `waits_on`) on the rules they generate.
+
+<Warning>
+A policy is refused when it loads if a rule or the set carries a field the policy format does not define. Rules written for hiitl 0.1 used `enabled` and `mode`; both keys are now refused. Replace `enabled: false` with `lifecycle_stage: "disabled"`, delete `enabled: true`, and replace `mode: "observe"` with `lifecycle_stage: "staged"`.
+</Warning>
 
 ## Conditions
 
@@ -125,9 +138,14 @@ conditions:
 | `starts_with` | string | String prefix match |
 | `ends_with` | string | String suffix match |
 | `matches` | string | Regex match |
-| `in` | all | Value is in a set (right-hand side is an array) |
-| `not_in` | all | Value is not in a set |
+| `in` | all | Value is in a set (right-hand side is an array). An array on the left matches when every element is in the set |
+| `not_in` | all | Value is not in a set. An array on the left matches when not every element is in the set |
 | `exists` | all | Field exists in the envelope (value is `true` or `false`) |
+| `conforms_to` | object | The field's value is an object that fits a parameter schema: `{ type: "object", properties, required, additionalProperties }` |
+
+A condition on a field the envelope does not carry is false, for every operator except `exists`.
+
+In place of a literal `value`, a condition can compare against another envelope field with `{"$field": "<path>"}`. For example, `value: {"$field": "parameters.limit"}` compares with the action's own `limit` parameter. A field reference has exactly one key. `$field`, `$declared` and `$uncalibrated` are reserved in policy values: a sibling key or a position that does not read the form makes the policy refuse at load. A caller’s own envelope data keeps these keys as data.
 
 ### Field path syntax
 
@@ -140,6 +158,7 @@ Use dot notation for nested envelope fields:
 | `target.account_id` | `envelope.target.account_id` |
 | `cost_estimate.dollars` | `envelope.cost_estimate.dollars` |
 | `sensitivity` | Array field (use `contains` operator) |
+| `external.<source>.<field>` | Not the envelope: the answer a sync route returned during this evaluation |
 
 ### Nested conditions
 
@@ -171,9 +190,11 @@ This reads: must be in prod AND must be process_payment AND (amount > $10,000 OR
 
 ## Priority and evaluation order
 
-Rules are evaluated in **priority order, highest first**. The first matching rule produces the decision.
+Among the rules that match, one rule binds and produces the decision. A matching `KILL_SWITCH` binds first, then a matching `BLOCK`, then a rule of any other decision. Within each of those classes the higher `priority` binds, then the rule defined first.
 
-The recommended priority ranges follow a fixed precedence:
+When you enforce (`mode="RESPECT_POLICY"`), an action no rule matches is blocked with `NO_MATCHING_RULE`. Give the actions you want to let through an `ALLOW` rule.
+
+The priority ranges below are a naming convention for authors. Precedence does not depend on them:
 
 | Priority range | Category |
 |----------------|----------|
@@ -186,18 +207,26 @@ The recommended priority ranges follow a fixed precedence:
 | 1 - 49 | Allow rules (default) |
 
 <Warning>
-**DENY always wins.** If any rule in the policy set produces a `BLOCK` or `KILL_SWITCH`, the action is blocked regardless of what other rules would allow. This is not configurable.
+**DENY always wins.** If an active rule that matches produces a `BLOCK` or `KILL_SWITCH`, that rule binds, whatever the priority of a rule that would allow. This is not configurable. Under the default `OBSERVE_ALL` mode, the call still returns `OBSERVE`, with the block in `would_be`.
 </Warning>
 
-## Rule modes: observe vs. enforce
+## Lifecycle stages: observe before you enforce
 
-Every rule has a `mode` field that defaults to `"enforce"`. Setting it to `"observe"` lets you see what a rule would do without actually enforcing it.
+Every rule has a `lifecycle_stage`, `"active"` by default. Set it to `"staged"` to see what a rule would do without enforcing it.
+
+| Stage | What the evaluator does |
+|-------|-------------------------|
+| `active` | Evaluates the rule. Its decision can bind |
+| `staged` | Evaluates the rule. It never binds; when it matches, it is recorded in `staged_observations` |
+| `draft` | Skips the rule |
+| `disabled` | Skips the rule. Use it to turn a rule off, such as a kill switch you are not using |
+| `archived` | Skips the rule |
 
 ```yaml
 - name: "block-high-value"
-  enabled: true
+  description: "Payments over $10,000 would be refused"
+  lifecycle_stage: "staged"   # observe what the rule would do; it does not bind
   priority: 900
-  mode: "observe"   # log the decision, don't enforce it
   conditions:
     all_of:
       - field: "parameters.amount"
@@ -207,15 +236,28 @@ Every rule has a `mode` field that defaults to `"enforce"`. Setting it to `"obse
   reason_code: "AMOUNT_EXCEEDS_LIMIT"
 ```
 
-When an observe-mode rule matches, the decision is `OBSERVE` with `allowed: true`. The `would_be` field shows what would have happened in enforce mode (e.g. `"BLOCK"`). This is how you validate policies before turning them on.
+When a staged rule matches, the decision comes from the active rules, and `staged_observations` shows what the staged rule would have done:
+
+```python
+decision.decision             # "ALLOW" (from an active allow rule)
+decision.staged_observations  # [StagedObservation(rule_name='block-high-value',
+                              #   policy_set='payments-policy', priority=900,
+                              #   would_be_decision='BLOCK',
+                              #   would_be_reason_codes=['AMOUNT_EXCEEDS_LIMIT'],
+                              #   would_be_binding=True)]
+```
+
+Staging is per rule. To observe a whole policy, use the SDK's default mode, `OBSERVE_ALL`: a call the policy would refuse returns `OBSERVE` with `allowed: true`, and `would_be` shows the enforced decision. A call the policy allows returns `ALLOW`.
+
+Writing a policy to the hosted service stages it. A rule written `active` that is not already active, unchanged, lands `staged` until it passes the promotion gate, and an edit to a staged or active rule lands beside it as its refinement. See [Create policy](/api/policies#create-policy).
 
 ## Remediation
 
-Rules that produce `BLOCK` or `RATE_LIMIT` decisions can include a `remediation` object with structured, actionable guidance.
+A rule that refuses an action, such as a `BLOCK` rule, can include a `remediation` object with structured, actionable guidance.
 
 ```yaml
 - name: "block-high-value-payments"
-  enabled: true
+  description: "Payments over $10,000 are refused"
   priority: 900
   conditions:
     all_of:
@@ -233,7 +275,31 @@ Rules that produce `BLOCK` or `RATE_LIMIT` decisions can include a `remediation`
       max_allowed: 10000
 ```
 
-When this rule fires, the [decision response](/concepts/decisions) includes the full `remediation` object. An AI agent reading the response can use `remediation.details` to self-correct and retry.
+When this rule binds under `RESPECT_POLICY`, the [decision response](/concepts/decisions) includes the `remediation` object as written, except the details that state a fact of the call, which are computed from it: `blocked_fields` written as `{ref, filter}` (the call's values at `ref` that are in `filter`), a threshold's `current_value` (the call's value at `field`) and a temporal `current_time` (the call's timestamp). An AI agent reading the response can use `remediation.details` to self-correct and retry.
+
+`message`, `suggestion` and `type` are required. `type` is one of `field_restriction`, `threshold`, `scope`, `rate_limit`, `temporal` or `custom`.
+
+## Rate-limit rules
+
+A `RATE_LIMIT` rule with a `rate_limit` window meters the calls it matches:
+
+```yaml
+- name: "limit-refunds"
+  description: "At most 20 refunds an hour per agent"
+  priority: 600
+  conditions:
+    field: "action"
+    operator: "equals"
+    value: "issue_refund"
+  decision: "RATE_LIMIT"
+  reason_code: "REFUND_RATE"
+  rate_limit:
+    limit: 20
+    window_seconds: 3600
+    scope: "agent"   # action (default), agent, user, org or user_action
+```
+
+A windowed rate-limit rule does not bind. The decision comes from the other rules. When that decision is `ALLOW`, the SDK reads every matching window before it counts any. If one is over its limit, the call returns `RATE_LIMIT` with reason code `RATE_LIMIT_EXCEEDED`: `matched_rules` names the rule, `rate_limit` carries that window's counter state, and `remediation` is the rule's own. The call is counted in no window. Otherwise it is counted in every window, and the `ALLOW` carries the counter state of the window nearest its limit. Under `OBSERVE_ALL` nothing is blocked: a call past a limit returns `OBSERVE` with `would_be: RATE_LIMIT`, and the counters count what enforcing would count. A limiter that fails never lets the call through: the decision is `BLOCK` with `RATE_LIMIT_SERVICE_ERROR`. The SDK keeps its counters in memory.
 
 ## Full example
 
@@ -243,13 +309,13 @@ policy_set:
   version: "v2.1.0"
   description: "Payment processing controls for production"
   scope:
-    org_id: "org_abc123def456ghi7"
+    org_id: "org_mycompany123456789"
     environment: "prod"
 
   rules:
     - name: "kill-switch-all-payments"
       description: "Emergency stop for all payments"
-      enabled: false
+      lifecycle_stage: "disabled"   # set to "active" to stop every payment
       priority: 1000
       conditions:
         all_of:
@@ -261,7 +327,6 @@ policy_set:
 
     - name: "block-suspended-agents"
       description: "Block payments from suspended agents"
-      enabled: true
       priority: 900
       conditions:
         all_of:
@@ -276,7 +341,6 @@ policy_set:
 
     - name: "require-approval-high-value"
       description: "Require approval for payments over $500"
-      enabled: true
       priority: 100
       conditions:
         all_of:
@@ -292,24 +356,30 @@ policy_set:
 
     - name: "allow-payments"
       description: "Default allow for payments"
-      enabled: true
-      priority: 1
+      priority: 10
       conditions:
         all_of:
           - field: "action"
             operator: "equals"
             value: "process_payment"
       decision: "ALLOW"
-      reason_code: "DEFAULT_ALLOW"
+      reason_code: "PAYMENT_ALLOWED"
 ```
+
+Enforced with `mode="RESPECT_POLICY"`, this set returns:
+
+- a $150 payment: `ALLOW`, `PAYMENT_ALLOWED`;
+- a $2,500 payment: `REQUIRE_APPROVAL`, `HIGH_VALUE_PAYMENT`, with `route_ref` `finance-review`;
+- any payment from `agent-123`: `BLOCK`, `AGENT_SUSPENDED`;
+- an action the set does not mention, such as `send_email`: `BLOCK`, `NO_MATCHING_RULE`.
 
 <Note>
 **JSON is the primary format.** Policies are JSON objects internally. YAML is a convenience layer for humans — YAML files are parsed and converted to JSON before evaluation.
 </Note>
 
-## Versioning and immutability
+## Versioning
 
-- Every policy set carries a **semver version** (e.g. `v2.1.0`).
-- Deployed versions are **immutable** — they are never modified, only superseded by a new version.
-- Rollback means **activating a previous version**, not editing the current one.
+- Every policy set carries a `version` string. Semver, such as `v2.1.0`, is the convention.
+- On the hosted service, a deployed version is never changed, only superseded by a new version. A change deployed under a version string already in use gets the next unused string.
+- Rollback means **deploying a previous version again**, not editing the current one.
 - Every [decision](/concepts/decisions) includes the policy version used, enabling replay and debugging.

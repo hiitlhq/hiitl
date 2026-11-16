@@ -1,0 +1,27 @@
+{
+  "name": "notes-policy",
+  "version": "v1.0.0",
+  "description": "Notes are never deleted by the agent",
+  "scope": {
+    "org_id": "org_devlocal0000000000",
+    "environment": "dev"
+  },
+  "rules": [
+    {
+      "name": "no_deletes",
+      "description": "Notes are never deleted by the agent",
+      "priority": 900,
+      "decision": "BLOCK",
+      "reason_code": "DELETE_BLOCKED",
+      "conditions": { "field": "action", "operator": "equals", "value": "delete_note" }
+    },
+    {
+      "name": "allow_otherwise",
+      "description": "Reading and writing notes is allowed",
+      "priority": 1,
+      "decision": "ALLOW",
+      "reason_code": "ALLOWED",
+      "conditions": { "field": "action", "operator": "exists", "value": true }
+    }
+  ]
+}

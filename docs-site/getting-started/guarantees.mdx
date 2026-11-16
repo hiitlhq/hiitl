@@ -1,0 +1,51 @@
+---
+title: "Guarantees"
+description: "What hiitl promises, what it does not, and how each promise is checked"
+---
+
+hiitl is a control point for the consequential actions an AI system takes. This page states what it guarantees in plain terms, so that a reviewer can test each one rather than take it on trust. Each guarantee names where it holds and how it is verified. What is not yet true of the build is on [Limits and roadmap](/reference/limits-and-roadmap), not here.
+
+## The guarantees
+
+**Every admitted envelope evaluated gets one decision, deterministically.**
+The evaluator reads the declared fields of the action (the envelope) against the policy set and returns exactly one outcome. Both SDKs apply the same rules to the same complete inputs: the envelope, policy, evaluation clock, route answers and rate-limit state. A validity window or a changed counter can change the answer even when envelope and policy bytes stay the same. No model is consulted in the decision path. *Verified by:* the cross-language conformance suite, which runs the same cases (envelope, policy set, expected decision) through the Python and TypeScript evaluators on every change.
+
+**A deny binds over any permit.**
+Among the matching active rules, a `KILL_SWITCH` or a `BLOCK` binds over a matching rule of any other decision, whatever their priorities, and a kill switch over a block. Among the rest the higher priority binds, then the one defined first. A deny added can only add restrictions. *Verified by:* the precedence tests in both evaluators and the lint that reads the same definition.
+
+**A rule that does not match does nothing.**
+A rule whose conditions do not match the envelope is skipped. A hundred rules on the books is not a hundred checks on one action. *Verified by:* the evaluator's matching tests.
+
+**A rule can be watched before it binds.**
+A rule with `lifecycle_stage: staged` is evaluated on every action and its would-have decision is recorded; it never binds. Promotion to `active` is a recorded act: a reviewed commit in local mode; in the hosted service a promotion that the service refuses without a ready regression report, with rollback to `staged`. The SDK's default mode, `OBSERVE_ALL`, observes policy refusals; it still blocks failures such as an unwritable audit record. *Verified by:* the lifecycle-stage tests; the rule-lifecycle endpoints' tests.
+
+**A no is information.**
+A block returns the rule's reason code and, where the rule carries one, its remediation (a message, a suggestion, a type), so the caller can retry within them. A `ROUTE` decision asks the route the rule names and the answer re-enters the evaluation; through the gateway with the hosted service, a pause opens a case a person resolves and the call resumes with their answer. The action stops; the agent does not. *Verified by:* the sync-route tests in the SDK; the review-case API tests; the gateway's review-flow tests.
+
+**Each new evaluation has a durable record, where the store answers.**
+The row carries the envelope, decision, matched rules and a content hash; the SDK never changes its content or deletes it. A retry within the dedup window returns the first decision and writes no second row. If the store cannot write the record, the action is blocked with `AUDIT_WRITE_FAILED`, even in `OBSERVE_ALL`; that failure has no record. Other refusals after an envelope exists are recorded where the store answers. A number outside the numeric domain is refused before an envelope exists, with no decision or record, even when the hosted request carries a string `action_id`; its located refusal names the declared type and range, recommending text only where text is admitted ([error responses](/api/evaluate#errors-are-decisions)). *Verified by:* the audit tests in both SDKs.
+
+**The evaluator keeps deciding when the service is unreachable.**
+In hybrid mode the SDK evaluates in-process from its cached policies and buffers rows for later upload, behind a circuit breaker. *Verified by:* the sync engine's tests.
+
+**The envelope is what the integrating system declared.**
+The evaluator reads declared envelope fields and policy conditions; rules may also read the evaluation clock, rate-limit state and declared sync-route answers. Through the gateway, the envelope's `parameters` are the tool call's arguments as the model made the call, which is what the policy judges. *Verified by:* the gateway's envelope tests.
+
+## What hiitl does not guarantee
+
+- It does not judge whether an action is wise. It judges whether the action, as declared, is within policy. Whether the declaration is faithful is the integrating system's responsibility: the envelope must be built from the actual call, never composed by the model.
+- It does not validate reasoning steps or intermediate outputs. The gate is at the action, not inside the agent's loop.
+- It does not make an action safe that bypasses it. Every path to the outside world must go through `evaluate()` or the gateway.
+- Local mode verifies an envelope with the same configured key it signs with. Without a key there is nothing to verify against; there is no separate trusted verifier in the local process.
+- It does not find sensitive content. The record leaves out what you declare ([Data handling](/security/data-handling#redaction)), and nothing else.
+
+## Where each guarantee runs
+
+| Guarantee | Local mode | Hybrid mode | Hosted mode |
+|---|---|---|---|
+| One deterministic decision | in-process | in-process | the policy service |
+| Deny binds | in-process | in-process | the policy service |
+| Watch before bind | `staged` in the file, under your change control | the service's lifecycle, synced | the service's lifecycle |
+| A no reaches a person | a sync route to your endpoint | a sync route, or the gateway's review case | the gateway's review case |
+| The record | SQLite, yours | SQLite, uploaded in batches | Postgres |
+| Keeps deciding when unreachable | nothing to reach; a route that does not answer falls to its posture | cached policies, circuit breaker | it does not: fail-closed `CONTROL_PLANE_UNAVAILABLE`, circuit breaker |

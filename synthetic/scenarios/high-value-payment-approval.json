@@ -13,7 +13,7 @@
       "action": "evaluate",
       "agent_id": "payment-agent",
       "envelope": {
-        "tool": "process_payment",
+        "action": "process_payment",
         "operation": "execute",
         "target": {
           "account_id": "acct_demo_123"
@@ -32,7 +32,7 @@
         {"field": "decision.allowed", "equals": false},
         {"field": "decision.decision", "equals": "REQUIRE_APPROVAL"},
         {"field": "decision.resume_token", "exists": true},
-        {"field": "decision.hitl_config_ref", "equals": "payment-approval"}
+        {"field": "decision.route_ref", "equals": "payment-approval"}
       ]
     },
     {

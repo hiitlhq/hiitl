@@ -2,7 +2,7 @@
   "test_id": "test_083_disabled_kill_switch",
   "description": "Disabled KILL_SWITCH rule is skipped, falls through to ALLOW",
   "envelope": {
-    "schema_version": "v1.0",
+    "schema_version": "v2.0",
     "org_id": "org_1234567890abcdef",
     "environment": "prod",
     "agent_id": "agent_payment_bot",
@@ -19,13 +19,17 @@
     "action": "process_payment"
   },
   "policy_set": {
-    "version": "1.0.0",
+    "version": "v1.0.0",
+    "description": "Disabled KILL_SWITCH rule is skipped, falls through to ALLOW",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
     "name": "disabled_kill_switch_policy",
     "rules": [
       {
         "name": "kill-switch-all-payments",
         "priority": 1000,
-        "enabled": false,
         "conditions": {
           "field": "action",
           "operator": "equals",
@@ -33,12 +37,12 @@
         },
         "decision": "KILL_SWITCH",
         "reason_code": "KILL_SWITCH_PAYMENTS_ACTIVE",
-        "description": "Emergency stop for all payment processing (DISABLED)"
+        "description": "Emergency stop for all payment processing (DISABLED)",
+        "lifecycle_stage": "disabled"
       },
       {
         "name": "allow-all-payments",
         "priority": 50,
-        "enabled": true,
         "conditions": {
           "field": "action",
           "operator": "equals",

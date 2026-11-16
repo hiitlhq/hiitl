@@ -1,0 +1,66 @@
+{
+  "test_id": "test_144_in_with_an_array_on_the_left_is_a_subset_test",
+  "description": "in with an array on the left (policy_format.md 2.6): every element in the set matches.",
+  "envelope": {
+    "schema_version": "v2.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_ops_bot",
+    "action_id": "act_test1440000000000000000",
+    "timestamp": "2026-10-09T10:00:00Z",
+    "operation": "execute",
+    "parameters": {},
+    "idempotency_key": "idem_test_144_e",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "grant_access",
+    "sensitivity": [
+      "money"
+    ]
+  },
+  "policy_set": {
+    "version": "v1.0.0",
+    "description": "in with an array on the left (policy_format.md 2.6): every element in the set matches.",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "only_money",
+        "priority": 900,
+        "conditions": {
+          "field": "sensitivity",
+          "operator": "in",
+          "value": [
+            "money",
+            "identity"
+          ]
+        },
+        "decision": "BLOCK",
+        "reason_code": "KNOWN_CLASSES",
+        "description": "Rule: only_money"
+      },
+      {
+        "name": "allow_otherwise",
+        "priority": 1,
+        "conditions": {
+          "field": "action",
+          "operator": "exists",
+          "value": true
+        },
+        "decision": "ALLOW",
+        "reason_code": "ALLOWED",
+        "description": "Rule: allow_otherwise"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "BLOCK",
+    "allowed": false,
+    "reason_codes": [
+      "KNOWN_CLASSES"
+    ]
+  }
+}

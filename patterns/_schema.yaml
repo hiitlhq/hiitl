@@ -11,20 +11,21 @@ name: "Human Readable Name"            # Display name
 description: "What this pattern covers" # 1-3 sentence description
 tags: ["tag1", "tag2"]                 # Searchable tags
 
-# SDK evaluate() examples — copy-paste ready
+# SDK evaluate() examples — the call for this action in Python and TypeScript.
+# The code after the call is illustrative.
 evaluate_examples:
   python: |
-    result = hiitl.evaluate("action_name", {
+    result = hiitl.evaluate("action_name", parameters={
         "param": "value",
     })
     if result.ok:
         execute_action()
   typescript: |
-    const result = hiitl.evaluate({
+    const result = await hiitl.evaluate({
       action: 'action_name',
-      params: { param: 'value' },
+      parameters: { param: 'value' },
     });
-    if (result.ok) {
+    if (result.allowed) {
       await executeAction();
     }
 
@@ -34,22 +35,42 @@ context_enrichment:
     why: "Why this field matters for policy evaluation"
     example: "example_value"
 
-# Starter policy rules — ready to copy into a policy file
+# Starter policy rules for this action. Copy them into the `rules:` list of a policy
+# file (a policy set needs `name`, `version` and `rules`). Under mode="RESPECT_POLICY"
+# an action no rule matches is blocked (NO_MATCHING_RULE), so the set must also allow
+# what the agent should do. Every rule needs a `description`.
+#   lifecycle_stage: active (default) | staged | disabled | draft | archived
+#   A RATE_LIMIT rule carries its window: rate_limit: {limit, window_seconds, scope}
+#   (scope: action | agent | user | org | user_action).
+#   remediation.type: field_restriction | threshold | scope | rate_limit | temporal | custom
 starter_policies:
   - name: "rule-name"
     description: "What this rule does"
     priority: 100
-    enabled: true
     conditions:
-      field: "parameters.amount"
-      operator: "greater_than"
-      value: 500
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "action_name"
+        - field: "parameters.amount"
+          operator: "greater_than"
+          value: 500
     decision: "REQUIRE_APPROVAL"
     reason_code: "REASON_CODE"
     remediation:
-      type: "static"
+      type: "threshold"
       message: "Why this was blocked and what to do"
       suggestion: "How to resolve"
+
+  - name: "allow-rule-name"
+    description: "What this rule lets through"
+    priority: 50
+    conditions:
+      field: "action"
+      operator: "equals"
+      value: "action_name"
+    decision: "ALLOW"
+    reason_code: "ALLOW_REASON_CODE"
 
 # Remediation examples — what developers see when actions are blocked
 remediation:

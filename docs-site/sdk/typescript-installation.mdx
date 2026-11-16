@@ -5,7 +5,7 @@ description: "Install the @hiitl/sdk package and run your first evaluation"
 
 ## Requirements
 
-- Node.js 18 or later
+- Node.js 22 or later
 - TypeScript 5.0+ (recommended, not required)
 
 ## Install
@@ -30,13 +30,13 @@ yarn add @hiitl/sdk
 import { HIITL } from '@hiitl/sdk';
 
 const hiitl = new HIITL();
-const decision = hiitl.evaluate({ action: 'hello_world' });
+const decision = await hiitl.evaluate({ action: 'hello_world' });
 
 console.log(decision.allowed);   // true
 console.log(decision.decision);  // "OBSERVE"
 ```
 
-Zero-config initialization uses local evaluation in OBSERVE mode. No API key, no server, no policy files required.
+Zero-config initialization uses local evaluation in `OBSERVE_ALL` mode. No API key, no server, no policy files required.
 
 ## Import
 
@@ -55,7 +55,7 @@ import type { Decision, Sensitivity, Operation } from '@hiitl/core';
 Or import SDK-specific types:
 
 ```typescript
-import type { EvaluateOptions, CostEstimate } from '@hiitl/sdk';
+import type { CostEstimate } from '@hiitl/sdk';
 ```
 
 ## What's included
@@ -65,19 +65,26 @@ The `@hiitl/sdk` package includes:
 | Component | Description |
 |-----------|-------------|
 | `HIITL` client | Main SDK class with `evaluate()` method |
-| `@hiitl/core` | Embedded deterministic policy engine (peer dependency) |
-| Audit logger | Local SQLite-backed append-only audit trail |
-| Rate limiter | In-process rate limiting with sliding/fixed windows |
+| `@hiitl/core` | Embedded deterministic policy engine (a dependency) |
+| Audit logger | Local SQLite-backed audit trail |
+| Rate limiter | In-process, in-memory rate limiting over a sliding window |
 | Route loader | Escalation route configuration |
 
 All components are initialized automatically. No additional infrastructure required for local mode.
 
 ## CommonJS and ESM
 
-The package ships as ESM. If you need CommonJS support, use dynamic import:
+The package ships as ESM. If you need CommonJS support, use dynamic import inside an async function:
 
 ```javascript
-const { HIITL } = await import('@hiitl/sdk');
+async function main() {
+  const { HIITL } = await import('@hiitl/sdk');
+  const hiitl = new HIITL();
+  const decision = await hiitl.evaluate({ action: 'hello_world' });
+  console.log(decision.decision);  // "OBSERVE"
+}
+
+main();
 ```
 
 ## Next steps

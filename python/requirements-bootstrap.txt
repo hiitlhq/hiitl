@@ -1,0 +1,6 @@
+# Installation tooling shared by private CI and the prepared public workflows.
+# Producer read 2026-11-12: pip26.3 is the current stable release and supports
+# CPython3.10–3.15. This is not an application dependency of the hiitl package.
+# https://pip.pypa.io/en/stable/news/#v26-3
+# https://pip.pypa.io/en/stable/installation/#compatibility
+pip==26.3

@@ -10,25 +10,19 @@ tags: ["infrastructure", "deployment", "ci-cd", "release"]
 
 evaluate_examples:
   python: |
-    result = hiitl.evaluate("deploy_service", {
-        "service_name": "payments-api",
-        "version": "2.4.1",
-        "environment": "staging",
-        "strategy": "rolling",
-    })
+    result = hiitl.evaluate("deploy_service",
+        parameters={"version": "2.4.1", "strategy": "rolling"},
+        target={"service": "payments-api", "environment": "stage"},
+    )
     if result.ok:
         deployment_service.deploy(service=name, version=ver, env=env, strategy=strategy)
   typescript: |
-    const result = hiitl.evaluate({
+    const result = await hiitl.evaluate({
       action: 'deploy_service',
-      params: {
-        service_name: 'payments-api',
-        version: '2.4.1',
-        environment: 'staging',
-        strategy: 'rolling',
-      },
+      parameters: { version: '2.4.1', strategy: 'rolling' },
+      target: { service: 'payments-api', environment: 'stage' },
     });
-    if (result.ok) {
+    if (result.allowed) {
       await deploymentService.deploy({ service: name, version: ver, env, strategy });
     }
 
@@ -40,11 +34,11 @@ context_enrichment:
     why: "Service name determines which deployment policies and approval chains apply"
     example: "payments-api"
   - field: "target.environment"
-    why: "Environment determines the risk level and approval requirements for the deployment"
-    example: "production"
+    why: "The environment being deployed to (dev, stage or prod) determines the risk level and approval requirements for the deployment"
+    example: "prod"
   - field: "sensitivity"
     why: "Deployments to critical services or those handling financial/PII data have elevated sensitivity"
-    example: "irreversible"
+    example: ["irreversible"]
   - field: "parameters.has_breaking_changes"
     why: "Breaking changes require additional review and may need coordinated rollout across dependent services"
     example: false
@@ -53,67 +47,79 @@ starter_policies:
   - name: "allow-dev-deploy"
     description: "Allow all deployments to the dev environment without restrictions"
     priority: 500
-    enabled: true
     conditions:
-      field: "environment"
-      operator: "equals"
-      value: "dev"
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "deploy_service"
+        - field: "target.environment"
+          operator: "equals"
+          value: "dev"
     decision: "ALLOW"
     reason_code: "DEPLOY_DEV_ALLOWED"
     remediation:
-      type: "static"
+      type: "custom"
       message: "Deployment to dev environment permitted"
       suggestion: "No action required"
 
   - name: "require-approval-staging"
     description: "Require approval for staging deployments to ensure QA readiness"
     priority: 150
-    enabled: true
     conditions:
-      field: "environment"
-      operator: "equals"
-      value: "stage"
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "deploy_service"
+        - field: "target.environment"
+          operator: "equals"
+          value: "stage"
     decision: "REQUIRE_APPROVAL"
     reason_code: "DEPLOY_STAGING_APPROVAL_REQUIRED"
     remediation:
-      type: "static"
+      type: "custom"
       message: "Staging deployments require approval to ensure the release has passed QA gates."
       suggestion: "Verify all automated tests pass and the change has been code-reviewed. Submit for approval with the release notes and test results summary."
 
   - name: "require-approval-production"
     description: "Require approval for production deployments with mandatory review"
     priority: 100
-    enabled: true
     conditions:
-      field: "environment"
-      operator: "equals"
-      value: "prod"
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "deploy_service"
+        - field: "target.environment"
+          operator: "equals"
+          value: "prod"
     decision: "REQUIRE_APPROVAL"
     reason_code: "DEPLOY_PROD_APPROVAL_REQUIRED"
     remediation:
-      type: "static"
+      type: "custom"
       message: "Production deployments require human approval from an authorized release manager."
       suggestion: "Ensure the version has been validated in staging. Submit for approval with: release notes, staging test results, rollback plan, and deployment window. Production deploys outside the maintenance window require additional justification."
 
   - name: "block-breaking-changes-without-plan"
-    description: "Block deployments flagged with breaking changes that lack a migration plan"
+    description: "Block deployments flagged with breaking changes until a migration plan is reviewed"
     priority: 70
-    enabled: true
     conditions:
-      field: "parameters.has_breaking_changes"
-      operator: "equals"
-      value: true
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "deploy_service"
+        - field: "parameters.has_breaking_changes"
+          operator: "equals"
+          value: true
     decision: "BLOCK"
     reason_code: "DEPLOY_BREAKING_CHANGE_BLOCKED"
     remediation:
-      type: "static"
+      type: "custom"
       message: "Deployments with breaking changes are blocked until a migration plan is reviewed."
       suggestion: "Create a migration plan documenting: affected downstream services, backward compatibility strategy, data migration steps, and rollback procedure. Submit the migration plan for architecture review before retrying the deployment."
 
   - name: "kill-switch-deployments"
     description: "Emergency kill switch to freeze all deployments during incidents"
     priority: 1
-    enabled: false
+    lifecycle_stage: disabled
     conditions:
       field: "action"
       operator: "equals"
@@ -121,7 +127,7 @@ starter_policies:
     decision: "KILL_SWITCH"
     reason_code: "DEPLOY_KILL_SWITCH_ACTIVE"
     remediation:
-      type: "static"
+      type: "custom"
       message: "All deployments have been frozen by an administrator kill switch, typically during an active incident."
       suggestion: "Check the incident channel for status updates. Deployments will resume when the kill switch is lifted by the on-call engineer or release manager."
 

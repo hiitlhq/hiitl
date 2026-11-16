@@ -3,22 +3,69 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { envelopeSignature, envelopeVerifies, ENVELOPE_SCHEMA_VERSION } from '@hiitl/core';
+import type { Envelope } from '@hiitl/core';
 import { createHostedConfig, HostedModeConfigSchema } from '../../src/config.js';
 import { HostedClient, backoffDelay } from '../../src/http-client.js';
 import { HIITL } from '../../src/client.js';
 import {
   ConfigurationError,
   ServerError,
-  NetworkError,
 } from '../../src/exceptions.js';
 import type { HostedModeConfig } from '../../src/config.js';
 
 // --- Test helpers ---
 
 const VALID_ORG_ID = 'org_mycompany123456789';
+const TEST_SIGNING_SECRET = 'test-signing-secret-0123456789abcdef';
+
+/**
+ * Each test's own store at audit_db_path. An outage a test meets is recorded there and pushed before the client's next
+ * call (row 192), so a store shared through the default path would carry one test's outage into another's sends.
+ */
+let storeDir: string;
+const store = (): string => join(storeDir, 'audit.db');
+beforeEach(() => {
+  storeDir = mkdtempSync(join(tmpdir(), 'hosted-'));
+});
+afterEach(() => rmSync(storeDir, { recursive: true, force: true }));
+
+/** A complete envelope, signed under TEST_SIGNING_SECRET over the one signed form — what HIITL hands HostedClient. */
+function signedEnvelope(fields: Record<string, unknown>): Envelope {
+  const envelope: Record<string, unknown> = {
+    schema_version: ENVELOPE_SCHEMA_VERSION,
+    org_id: VALID_ORG_ID,
+    environment: 'dev',
+    agent_id: 'test-agent',
+    action_id: 'act_0123456789abcdefghij',
+    idempotency_key: 'idem_hosted_test',
+    timestamp: '2026-11-04T12:00:00.000Z',
+    signature: '0'.repeat(64),
+    ...fields,
+  };
+  envelope.signature = envelopeSignature(TEST_SIGNING_SECRET, envelope);
+  return envelope as unknown as Envelope;
+}
+
+function hostedHIITL(extra: Record<string, unknown> = {}): HIITL {
+  return new HIITL({
+    audit_db_path: store(),
+    environment: 'dev',
+    agent_id: 'test-agent',
+    org_id: VALID_ORG_ID,
+    api_key: 'test-api-key-12345',
+    server_url: 'https://api.hiitl.com', evaluation: 'remote',
+    signature_key: TEST_SIGNING_SECRET,
+    ...extra,
+  });
+}
 
 function validHostedConfig(): HostedModeConfig {
   return createHostedConfig({
+    audit_db_path: store(),
     environment: 'dev',
     agent_id: 'test-agent',
     org_id: VALID_ORG_ID,
@@ -65,7 +112,7 @@ describe('HostedModeConfig', () => {
     expect(config.org_id).toBe(VALID_ORG_ID);
     expect(config.api_key).toBe('test-api-key-12345');
     expect(config.server_url).toBe('https://api.hiitl.com');
-    expect(config.timeout).toBe(5000);
+    expect(config.timeout).toBe(5);
     expect(config.max_retries).toBe(3);
   });
 
@@ -124,11 +171,11 @@ describe('HostedModeConfig', () => {
       org_id: VALID_ORG_ID,
       api_key: 'test-api-key-12345',
       server_url: 'https://api.hiitl.com',
-      timeout: 10000,
+      timeout: 10,
       max_retries: 5,
     });
 
-    expect(config.timeout).toBe(10000);
+    expect(config.timeout).toBe(10);
     expect(config.max_retries).toBe(5);
   });
 
@@ -149,18 +196,37 @@ describe('HostedModeConfig', () => {
 // --- HIITL Hosted Init ---
 
 describe('HIITL Hosted Init', () => {
-  it('should auto-detect hosted mode from api_key + server_url', () => {
+  it('should auto-detect hosted mode from api_key + server_url + evaluation remote (row 130)', () => {
     const hiitl = new HIITL({
       environment: 'dev',
       agent_id: 'test-agent',
       org_id: VALID_ORG_ID,
       api_key: 'test-api-key-12345',
-      server_url: 'https://api.hiitl.com',
+      server_url: 'https://api.hiitl.com', evaluation: 'remote',
+      signature_key: TEST_SIGNING_SECRET,
     });
 
     expect(hiitl.mode).toBe('hosted');
     expect(hiitl.hostedConfig).toBeDefined();
     expect(hiitl.config).toBeUndefined();
+  });
+
+  it('hosted mode without the signing secret is a ConfigurationError naming it (row 134)', () => {
+    vi.stubEnv('HIITL_SIGNATURE_KEY', '');
+    const unsigned = () =>
+      new HIITL({
+        environment: 'dev',
+        agent_id: 'test-agent',
+        org_id: VALID_ORG_ID,
+        api_key: 'test-api-key-12345',
+        server_url: 'https://api.hiitl.com', evaluation: 'remote',
+      });
+    try {
+      expect(unsigned).toThrow(ConfigurationError);
+      expect(unsigned).toThrow(/signature_key[\s\S]*signing_secret[\s\S]*HIITL_SIGNATURE_KEY/);
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 
   it('should allow zero-config local mode without policy_path', () => {
@@ -185,17 +251,18 @@ describe('HIITL Hosted Init', () => {
     ).toThrow(ConfigurationError);
   });
 
-  it('should auto-detect hybrid mode from api_key without server_url', () => {
-    // api_key without server_url → hybrid, but no policy_path → error
-    expect(
-      () =>
-        new HIITL({
-          environment: 'dev',
-          agent_id: 'test-agent',
-          org_id: VALID_ORG_ID,
-          api_key: 'test-api-key-12345',
-        })
-    ).toThrow(ConfigurationError);
+  it('should auto-detect hybrid mode from api_key without server_url (TICKET-121)', () => {
+    // api_key without server_url → hybrid mode. As of TICKET-121,
+    // hybrid no longer requires policy_path — the sync engine populates
+    // the cache. Constructor succeeds; mode resolves to 'hybrid'.
+    const hiitl = new HIITL({
+      environment: 'dev',
+      agent_id: 'test-agent',
+      org_id: VALID_ORG_ID,
+      api_key: 'test-api-key-12345',
+    });
+    expect(hiitl.mode).toBe('hybrid');
+    hiitl.close();
   });
 });
 
@@ -218,12 +285,12 @@ describe('HostedClient.evaluate', () => {
   it('should return ALLOW decision from server', async () => {
     fetchSpy.mockResolvedValue(mockFetchResponse(allowResponse()));
 
-    const decision = await client.evaluate({
+    const decision = await client.evaluate(signedEnvelope({
       action: 'payment',
       operation: 'execute',
       target: { account: 'acct_123' },
       parameters: { amount: 100 },
-    });
+    }));
 
     expect(decision.decision).toBe('ALLOW');
     expect(decision.allowed).toBe(true);
@@ -242,16 +309,16 @@ describe('HostedClient.evaluate', () => {
       })
     );
 
-    const decision = await client.evaluate({
+    const decision = await client.evaluate(signedEnvelope({
       action: 'payment',
       operation: 'execute',
       target: {},
       parameters: { amount: 10000 },
-    });
+    }));
 
     expect(decision.decision).toBe('BLOCK');
     expect(decision.allowed).toBe(false);
-    expect(decision.reason_codes).toContain('high_amount');
+    expect(decision.reason_codes).toEqual(['high_amount']);
   });
 
   it('should return escalation fields for REQUIRE_APPROVAL', async () => {
@@ -271,12 +338,12 @@ describe('HostedClient.evaluate', () => {
       })
     );
 
-    const decision = await client.evaluate({
+    const decision = await client.evaluate(signedEnvelope({
       action: 'payment',
       operation: 'execute',
       target: {},
       parameters: { amount: 5000 },
-    });
+    }));
 
     expect(decision.decision).toBe('REQUIRE_APPROVAL');
     expect(decision.resume_token).toBe('resume_abc123');
@@ -288,47 +355,41 @@ describe('HostedClient.evaluate', () => {
   it('should send Bearer auth header', async () => {
     fetchSpy.mockResolvedValue(mockFetchResponse(allowResponse()));
 
-    await client.evaluate({
+    await client.evaluate(signedEnvelope({
       action: 'test',
       operation: 'read',
       target: {},
       parameters: {},
-    });
+    }));
 
     expect(fetchSpy).toHaveBeenCalledOnce();
     const [, requestInit] = fetchSpy.mock.calls[0];
     expect(requestInit.headers.Authorization).toBe('Bearer test-api-key-12345');
   });
 
-  it('should send correct request body structure', async () => {
+  it('sends the envelope as the body, its signature named envelope_signature, and no version header', async () => {
     fetchSpy.mockResolvedValue(mockFetchResponse(allowResponse()));
-
-    await client.evaluate({
+    const envelope = signedEnvelope({
       action: 'payment',
       operation: 'execute',
       target: { account: 'acct_123' },
       parameters: { amount: 100 },
     });
 
+    await client.evaluate(envelope);
+
     const [url, requestInit] = fetchSpy.mock.calls[0];
     expect(url).toBe('https://api.hiitl.com/v1/evaluate');
-    const body = JSON.parse(requestInit.body);
-    expect(body.action).toBe('payment');
-    expect(body.operation).toBe('execute');
-    expect(body.target).toEqual({ account: 'acct_123' });
-    expect(body.parameters).toEqual({ amount: 100 });
-    expect(body.agent_id).toBe('test-agent');
+    const { signature, ...rest } = envelope;
+    expect(JSON.parse(requestInit.body)).toEqual({ ...rest, envelope_signature: signature });
+    // The version is the envelope's own signature_version; no header names it (row 171)
+    expect(Object.keys(requestInit.headers).map((name) => name.toLowerCase())).not.toContain('x-hiitl-signature-version');
   });
 
   it('should omit undefined optional fields from body', async () => {
     fetchSpy.mockResolvedValue(mockFetchResponse(allowResponse()));
 
-    await client.evaluate({
-      action: 'test',
-      operation: 'read',
-      target: {},
-      parameters: {},
-    });
+    await hostedHIITL().evaluate({ action: 'test', operation: 'read' });
 
     const body = JSON.parse(fetchSpy.mock.calls[0][1].body);
     expect(body.user_id).toBeUndefined();
@@ -340,11 +401,9 @@ describe('HostedClient.evaluate', () => {
   it('should include optional fields when provided', async () => {
     fetchSpy.mockResolvedValue(mockFetchResponse(allowResponse()));
 
-    await client.evaluate({
+    await hostedHIITL().evaluate({
       action: 'test',
       operation: 'read',
-      target: {},
-      parameters: {},
       user_id: 'user_123',
       session_id: 'sess_abc',
       confidence: 0.95,
@@ -363,12 +422,12 @@ describe('HostedClient.evaluate', () => {
       mockFetchResponse(allowResponse({ timing: { total_ms: 5.0 } }))
     );
 
-    const decision = await client.evaluate({
+    const decision = await client.evaluate(signedEnvelope({
       action: 'test',
       operation: 'read',
       target: {},
       parameters: {},
-    });
+    }));
 
     expect(decision.timing.total_ms).toBe(5.0);
     expect(decision.timing.evaluation_ms).toBe(5.0); // Defaults to total_ms
@@ -398,11 +457,11 @@ describe('HostedClient Errors', () => {
     );
 
     await expect(
-      client.evaluate({ action: 'test', operation: 'read', target: {}, parameters: {} })
+      client.evaluate(signedEnvelope({ action: 'test', operation: 'read', target: {}, parameters: {} }))
     ).rejects.toThrow(ServerError);
 
     try {
-      await client.evaluate({ action: 'test', operation: 'read', target: {}, parameters: {} });
+      await client.evaluate(signedEnvelope({ action: 'test', operation: 'read', target: {}, parameters: {} }));
     } catch (e: any) {
       expect(e.status_code).toBe(401);
     }
@@ -410,11 +469,11 @@ describe('HostedClient Errors', () => {
 
   it('should throw ServerError on 403', async () => {
     fetchSpy.mockResolvedValue(
-      mockFetchResponse({ detail: { code: 'INSUFFICIENT_SCOPE', message: 'Need evaluate scope' } }, 403)
+      mockFetchResponse({ detail: { error: 'INSUFFICIENT_SCOPE', message: 'Need evaluate scope' } }, 403)
     );
 
     try {
-      await client.evaluate({ action: 'test', operation: 'read', target: {}, parameters: {} });
+      await client.evaluate(signedEnvelope({ action: 'test', operation: 'read', target: {}, parameters: {} }));
     } catch (e: any) {
       expect(e).toBeInstanceOf(ServerError);
       expect(e.status_code).toBe(403);
@@ -424,11 +483,11 @@ describe('HostedClient Errors', () => {
 
   it('should throw ServerError on 404', async () => {
     fetchSpy.mockResolvedValue(
-      mockFetchResponse({ detail: { code: 'POLICY_NOT_FOUND', message: 'No active policy' } }, 404)
+      mockFetchResponse({ detail: { error: 'POLICY_NOT_FOUND', message: 'No active policy' } }, 404)
     );
 
     try {
-      await client.evaluate({ action: 'test', operation: 'read', target: {}, parameters: {} });
+      await client.evaluate(signedEnvelope({ action: 'test', operation: 'read', target: {}, parameters: {} }));
     } catch (e: any) {
       expect(e).toBeInstanceOf(ServerError);
       expect(e.status_code).toBe(404);
@@ -442,18 +501,19 @@ describe('HostedClient Errors', () => {
     );
 
     try {
-      await client.evaluate({ action: 'test', operation: 'read', target: {}, parameters: {} });
+      await client.evaluate(signedEnvelope({ action: 'test', operation: 'read', target: {}, parameters: {} }));
     } catch (e: any) {
       expect(e).toBeInstanceOf(ServerError);
       expect(e.status_code).toBe(500);
     }
   });
 
-  it('should throw NetworkError on fetch failure', async () => {
+  it('should answer CONTROL_PLANE_UNAVAILABLE on fetch failure', async () => {
     fetchSpy.mockRejectedValue(new TypeError('fetch failed'));
 
     // Use 0 retries to fail immediately
     const noRetryConfig = createHostedConfig({
+      audit_db_path: store(),
       environment: 'dev',
       agent_id: 'test-agent',
       org_id: VALID_ORG_ID,
@@ -463,9 +523,12 @@ describe('HostedClient Errors', () => {
     });
     const noRetryClient = new HostedClient(noRetryConfig);
 
-    await expect(
-      noRetryClient.evaluate({ action: 'test', operation: 'read', target: {}, parameters: {} })
-    ).rejects.toThrow(NetworkError);
+    // An error is a decision (row 174): fail-closed, the cause logged, not put in the message.
+    const decision = await noRetryClient.evaluate(signedEnvelope({ action: 'test', operation: 'read', target: {}, parameters: {} }));
+    expect(decision.decision).toBe('CONTROL_PLANE_UNAVAILABLE');
+    expect(decision.allowed).toBe(false);
+    expect(decision.reason_codes).toEqual(['CONTROL_PLANE_UNREACHABLE']);
+    expect(decision.error?.message).not.toContain('fetch failed');
   });
 });
 
@@ -492,6 +555,7 @@ describe('HostedClient Retry', () => {
       .mockResolvedValueOnce(mockFetchResponse(allowResponse()));
 
     const config = createHostedConfig({
+      audit_db_path: store(),
       environment: 'dev',
       agent_id: 'test-agent',
       org_id: VALID_ORG_ID,
@@ -501,21 +565,22 @@ describe('HostedClient Retry', () => {
     });
     const client = new HostedClient(config);
 
-    const decision = await client.evaluate({
+    const decision = await client.evaluate(signedEnvelope({
       action: 'test',
       operation: 'read',
       target: {},
       parameters: {},
-    });
+    }));
 
     expect(decision.decision).toBe('ALLOW');
     expect(fetchSpy).toHaveBeenCalledTimes(2);
   });
 
-  it('should exhaust retries and throw NetworkError', async () => {
-    fetchSpy.mockResolvedValue(mockFetchResponse({}, 503));
+  it('should exhaust retries and throw the last answer as a ServerError', async () => {
+    fetchSpy.mockResolvedValue(mockFetchResponse({ detail: { error: 'SERVICE_UNAVAILABLE', message: 'Server overloaded' } }, 503));
 
     const config = createHostedConfig({
+      audit_db_path: store(),
       environment: 'dev',
       agent_id: 'test-agent',
       org_id: VALID_ORG_ID,
@@ -525,9 +590,10 @@ describe('HostedClient Retry', () => {
     });
     const client = new HostedClient(config);
 
+    // the server answered each time, in its error format; the last answer is the error (as the Python SDK raises it)
     await expect(
-      client.evaluate({ action: 'test', operation: 'read', target: {}, parameters: {} })
-    ).rejects.toThrow(NetworkError);
+      client.evaluate(signedEnvelope({ action: 'test', operation: 'read', target: {}, parameters: {} }))
+    ).rejects.toMatchObject({ name: 'ServerError', status_code: 503 });
 
     // 1 initial + 2 retries = 3 total
     expect(fetchSpy).toHaveBeenCalledTimes(3);
@@ -539,6 +605,7 @@ describe('HostedClient Retry', () => {
     );
 
     const config = createHostedConfig({
+      audit_db_path: store(),
       environment: 'dev',
       agent_id: 'test-agent',
       org_id: VALID_ORG_ID,
@@ -549,7 +616,7 @@ describe('HostedClient Retry', () => {
     const client = new HostedClient(config);
 
     await expect(
-      client.evaluate({ action: 'test', operation: 'read', target: {}, parameters: {} })
+      client.evaluate(signedEnvelope({ action: 'test', operation: 'read', target: {}, parameters: {} }))
     ).rejects.toThrow(ServerError);
 
     // Only 1 call — no retries for 400
@@ -571,48 +638,21 @@ describe('HostedClient Signature', () => {
     vi.restoreAllMocks();
   });
 
-  it('should include signature when key is configured', async () => {
-    const config = createHostedConfig({
-      environment: 'dev',
-      agent_id: 'test-agent',
-      org_id: VALID_ORG_ID,
-      api_key: 'test-api-key-12345',
-      server_url: 'https://api.hiitl.com',
-      signature_key: 'my-secret-key',
-    });
-    const client = new HostedClient(config);
-
-    await client.evaluate({
+  it('the sent body verifies under the signing secret, and not once anything in it changes (row 134)', async () => {
+    await hostedHIITL().evaluate({
       action: 'payment',
-      operation: 'execute',
-      target: {},
-      parameters: { amount: 100 },
+      target: { account: 'acct_123' },
+      parameters: { amount: 100, items: [{ sku: 'a', note: null }] },
     });
 
-    const body = JSON.parse(fetchSpy.mock.calls[0][1].body);
-    expect(body.signature).toBeDefined();
-    expect(body.signature).toHaveLength(64); // HMAC-SHA256 hex digest
-  });
-
-  it('should not include signature when no key is configured', async () => {
-    const config = createHostedConfig({
-      environment: 'dev',
-      agent_id: 'test-agent',
-      org_id: VALID_ORG_ID,
-      api_key: 'test-api-key-12345',
-      server_url: 'https://api.hiitl.com',
-    });
-    const client = new HostedClient(config);
-
-    await client.evaluate({
-      action: 'payment',
-      operation: 'execute',
-      target: {},
-      parameters: {},
-    });
-
-    const body = JSON.parse(fetchSpy.mock.calls[0][1].body);
-    expect(body.signature).toBeUndefined();
+    const { envelope_signature, ...rest } = JSON.parse(fetchSpy.mock.calls[0][1].body);
+    const envelope = { ...rest, signature: envelope_signature };
+    expect(envelope_signature).toMatch(/^[a-f0-9]{64}$/);
+    expect(rest.signature_version).toBe('hmac-sha256-v1'); // row 171: the envelope names its version
+    expect(envelopeVerifies(TEST_SIGNING_SECRET, envelope)).toBe(true);
+    expect(envelopeVerifies('another-secret', envelope)).toBe(false);
+    const altered = { ...envelope, parameters: { ...envelope.parameters, items: [{ sku: 'b', note: null }] } };
+    expect(envelopeVerifies(TEST_SIGNING_SECRET, altered)).toBe(false);
   });
 });
 
@@ -650,11 +690,13 @@ describe('HIITL Hosted Evaluate', () => {
     fetchSpy.mockResolvedValue(mockFetchResponse(allowResponse()));
 
     const hiitl = new HIITL({
+      audit_db_path: store(),
       environment: 'dev',
       agent_id: 'test-agent',
       org_id: VALID_ORG_ID,
       api_key: 'test-api-key-12345',
-      server_url: 'https://api.hiitl.com',
+      server_url: 'https://api.hiitl.com', evaluation: 'remote',
+      signature_key: TEST_SIGNING_SECRET,
     });
 
     const decision = await hiitl.evaluate({
@@ -672,11 +714,13 @@ describe('HIITL Hosted Evaluate', () => {
     );
 
     const hiitl = new HIITL({
+      audit_db_path: store(),
       environment: 'dev',
       agent_id: 'test-agent',
       org_id: VALID_ORG_ID,
       api_key: 'test-api-key-12345',
-      server_url: 'https://api.hiitl.com',
+      server_url: 'https://api.hiitl.com', evaluation: 'remote',
+      signature_key: TEST_SIGNING_SECRET,
     });
 
     await expect(
@@ -688,11 +732,13 @@ describe('HIITL Hosted Evaluate', () => {
 
   it('should report mode as hosted', () => {
     const hiitl = new HIITL({
+      audit_db_path: store(),
       environment: 'dev',
       agent_id: 'test-agent',
       org_id: VALID_ORG_ID,
       api_key: 'test-api-key-12345',
-      server_url: 'https://api.hiitl.com',
+      server_url: 'https://api.hiitl.com', evaluation: 'remote',
+      signature_key: TEST_SIGNING_SECRET,
     });
 
     expect(hiitl.mode).toBe('hosted');
@@ -700,11 +746,13 @@ describe('HIITL Hosted Evaluate', () => {
 
   it('should throw when queryAudit is called in hosted mode', () => {
     const hiitl = new HIITL({
+      audit_db_path: store(),
       environment: 'dev',
       agent_id: 'test-agent',
       org_id: VALID_ORG_ID,
       api_key: 'test-api-key-12345',
-      server_url: 'https://api.hiitl.com',
+      server_url: 'https://api.hiitl.com', evaluation: 'remote',
+      signature_key: TEST_SIGNING_SECRET,
     });
 
     expect(() => hiitl.queryAudit({})).toThrow(/hosted mode/);
@@ -712,11 +760,13 @@ describe('HIITL Hosted Evaluate', () => {
 
   it('should not throw on close in hosted mode', () => {
     const hiitl = new HIITL({
+      audit_db_path: store(),
       environment: 'dev',
       agent_id: 'test-agent',
       org_id: VALID_ORG_ID,
       api_key: 'test-api-key-12345',
-      server_url: 'https://api.hiitl.com',
+      server_url: 'https://api.hiitl.com', evaluation: 'remote',
+      signature_key: TEST_SIGNING_SECRET,
     });
 
     expect(() => hiitl.close()).not.toThrow();
@@ -724,11 +774,13 @@ describe('HIITL Hosted Evaluate', () => {
 
   it('should report evalMode', () => {
     const hiitl = new HIITL({
+      audit_db_path: store(),
       environment: 'dev',
       agent_id: 'test-agent',
       org_id: VALID_ORG_ID,
       api_key: 'test-api-key-12345',
-      server_url: 'https://api.hiitl.com',
+      server_url: 'https://api.hiitl.com', evaluation: 'remote',
+      signature_key: TEST_SIGNING_SECRET,
       mode: 'RESPECT_POLICY',
     });
 

@@ -1,0 +1,13 @@
+export type JsonObject = Record<string, any>;
+export type Declaration = { path: string[]; value: any; address: string };
+export type Case = { id: string; input: JsonObject; expected: JsonObject; path?: (string | number)[]; declaration?: string };
+export const routeSchema: JsonObject;
+export const decisionSchema: JsonObject;
+export const witnesses: { id:string; input:JsonObject; omit_defaults?:boolean }[];
+export function copy<T>(value:T):T;
+export function schemaFromMarkdown(text:string):JsonObject;
+export function defaults(root:JsonObject,documents?:(file:string)=>JsonObject):Declaration[];
+export function applyDefaults(root:JsonObject,input:JsonObject):JsonObject;
+export function omissionCases(root?:JsonObject, inputs?:{id:string;input:JsonObject;omit_defaults?:boolean}[]):Case[];
+export function expectedContext(route:JsonObject, schema?:JsonObject):JsonObject;
+export function allCases():Case[];

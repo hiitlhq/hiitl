@@ -1,23 +1,27 @@
 # @hiitl/sdk
 
-TypeScript SDK for HIITL (Human-in-the-Loop) policy evaluation in local/edge mode.
+The TypeScript SDK for [hiitl](https://hiitl.com) — the control point for software that can act. Wrap any action your code is about to take with `evaluate()` and get a deterministic decision before it executes.
 
 ## Features
 
-- **🚀 Ultra-fast**: < 0.5ms average latency, 5000+ ops/sec throughput
-- **📦 Zero external dependencies**: Embedded evaluator, SQLite audit log, in-memory rate limiting
-- **🔒 Secure**: HMAC-SHA256 signatures, append-only audit log with SHA-256 integrity hashes
-- **💾 Persistent audit trail**: SQLite database with queryable history
-- **⚡ Smart caching**: Sub-millisecond cache hits with mtime-based invalidation
-- **🎯 Rate limiting**: Sliding window algorithm with configurable scopes (org, user, tool, user:tool)
-- **📝 Multiple formats**: JSON and YAML policy support
-- **🔍 Type-safe**: Full TypeScript types with Zod validation
+- **🚀 Ultra-fast** — <0.5ms average evaluation latency, 4,000+ ops/sec throughput
+- **🪐 Three modes** — **local** (zero config, no network), **hybrid** (local evaluator + background sync to the hosted backend), **hosted** (every call over the network, legacy)
+- **🔒 Integrity checks** — HMAC-SHA256 envelope signatures when you set `signature_key`, a SHA-256 content hash on every audit record, SHA-256 checks on the disk cache
+- **💾 Persistent audit trail** — SQLite-backed queryable history, drained to the hosted backend on a 30s interval in hybrid mode
+- **🧠 Background sync engine** — circuit-breaker-protected channels for audit upload + policy / route / kill-switch download, with ETag-conditional GETs for policies and routes
+- **⚡ Disk-backed cache** — POSIX-atomic writes, integrity-verified warm-start across SDK restarts
+- **🎯 Rate limiting** — sliding-window algorithm, counted per action, agent, user, org, or user and action
+- **📝 Multiple formats** — JSON and YAML policy support
+- **🔍 Type-safe** — full TypeScript types with Zod validation
+- **🤝 Cross-language parity** — the Python and TypeScript evaluators are checked against the [shared conformance fixtures](https://github.com/hiitlhq/hiitl/tree/main/tests/conformance/cases)
 
 ## Installation
 
 ```bash
-npm install @hiitl/sdk @hiitl/core
+npm install @hiitl/sdk
 ```
+
+(`@hiitl/core` is pulled in transitively — no need to install separately.)
 
 ## Quick Start
 
@@ -30,11 +34,12 @@ const hiitl = new HIITL({
   agent_id: 'payment-agent',
   org_id: 'org_mycompany123456789',
   policy_path: './policy.yaml',
+  mode: 'RESPECT_POLICY', // enforce; the default, OBSERVE_ALL, records what the policy would decide
 });
 
 // Evaluate an action
-const decision = hiitl.evaluate({
-  tool: 'payment_transfer',
+const decision = await hiitl.evaluate({
+  action: 'payment_transfer',
   operation: 'execute',
   target: { account: 'dest123' },
   parameters: { amount: 500, currency: 'USD' },
@@ -53,28 +58,44 @@ if (decision.allowed) {
 hiitl.close();
 ```
 
+`evaluate()` returns a `Decision` in local mode and a `Promise<Decision>` in hybrid and hosted mode. `await` it in every mode.
+
 ## Configuration
 
 ### Constructor Options
 
 ```typescript
 const hiitl = new HIITL({
-  // Required
-  environment: 'dev' | 'stage' | 'prod',
-  agent_id: string,
-  org_id: string, // Format: org_<18+ chars>
-  policy_path: string,
-
-  // Optional
+  // All options are optional. new HIITL() runs locally in OBSERVE_ALL mode.
+  environment: 'dev' | 'stage' | 'prod', // Default: 'dev'
+  agent_id: string, // Default: 'default'
+  org_id: string, // Format: org_<16+ letters or digits>
+  mode: 'OBSERVE_ALL' | 'RESPECT_POLICY', // Default: 'OBSERVE_ALL'
+  policy_path: string, // Required for RESPECT_POLICY in local mode
   audit_db_path: string, // Default: './hiitl_audit.db'
   enable_rate_limiting: boolean, // Default: true
-  signature_key: string, // For HMAC-SHA256 signatures
+  routes_path: string, // Directory of route config files
+  signature_key: string, // The API key's signing secret: signs every envelope. Required for hosted evaluation
+
+  // Hybrid and hosted mode
+  api_key: string, // Hybrid mode (local evaluation + background sync)
+  server_url: string, // The sync target; with evaluation: 'remote', the hosted server
+  evaluation: 'local' | 'remote', // Default: 'local'. 'remote' (with api_key + server_url): hosted mode
+  sync: boolean, // Default: true. false keeps a client with an api_key local
+  cache_dir: string, // Hybrid disk cache. Default: '~/.hiitl/cache/'
+  sync_init_timeout: number, // Seconds to wait for the first sync. Default: 10
+  cold_start_behavior: 'warn-and-observe' | 'fail-closed' | 'observe-silent', // Default: 'warn-and-observe'
+  timeout: number, // Hosted request timeout in ms. Default: 5000
+  max_retries: number, // Hosted request retries. Default: 3
+
+  principal_verifier: (token: string) => PrincipalClaims, // Checks evaluate({ principal_token })
+  route_fetch: typeof fetch, // The fetch sync routes are asked with. Default: global fetch
 });
 ```
 
 ### Environment Variables
 
-The SDK supports environment variable configuration (constructor args take precedence):
+The SDK reads each option from its `HIITL_*` variable when the constructor leaves it unset (the full list is on the configuration page); constructor args take precedence:
 
 ```bash
 export HIITL_ENVIRONMENT=dev
@@ -83,8 +104,11 @@ export HIITL_ORG_ID=org_mycompany123456789
 export HIITL_POLICY_PATH=./policy.yaml
 export HIITL_AUDIT_DB_PATH=./audit.db
 export HIITL_ENABLE_RATE_LIMITING=true
+export HIITL_ROUTES_PATH=./routes
 export HIITL_SIGNATURE_KEY=your-secret-key
 ```
+
+The mode follows the resolved settings: `HIITL_API_KEY` alone is hybrid mode, and with `HIITL_SERVER_URL` and `HIITL_EVALUATION=remote` it is hosted.
 
 ## Policy Format
 
@@ -93,13 +117,17 @@ export HIITL_SIGNATURE_KEY=your-secret-key
 ```json
 {
   "name": "payment-policy",
-  "version": "1.0",
+  "version": "v1.0.0",
+  "description": "Payment controls",
+  "scope": {
+    "org_id": "org_mycompany123456789",
+    "environment": "dev"
+  },
   "rules": [
     {
       "name": "allow-small-payments",
       "description": "Allow payments under $1000",
       "priority": 100,
-      "enabled": true,
       "decision": "ALLOW",
       "reason_code": "SMALL_AMOUNT",
       "conditions": {
@@ -112,7 +140,6 @@ export HIITL_SIGNATURE_KEY=your-secret-key
       "name": "pause-large-payments",
       "description": "Require approval for large payments",
       "priority": 90,
-      "enabled": true,
       "decision": "PAUSE",
       "reason_code": "LARGE_AMOUNT",
       "conditions": {
@@ -129,12 +156,15 @@ export HIITL_SIGNATURE_KEY=your-secret-key
 
 ```yaml
 name: payment-policy
-version: "1.0"
+version: "v1.0.0"
+description: "Payment controls"
+scope:
+  org_id: "org_mycompany123456789"
+  environment: "dev"
 rules:
   - name: allow-small-payments
     description: Allow payments under $1000
     priority: 100
-    enabled: true
     decision: ALLOW
     reason_code: SMALL_AMOUNT
     conditions:
@@ -145,7 +175,6 @@ rules:
   - name: pause-large-payments
     description: Require approval for large payments
     priority: 90
-    enabled: true
     decision: PAUSE
     reason_code: LARGE_AMOUNT
     conditions:
@@ -156,9 +185,9 @@ rules:
 
 ## API Reference
 
-### HIITL Class
+### `HIITL` Class
 
-#### `evaluate(options): Decision`
+#### `evaluate(options): Decision | Promise<Decision>`
 
 Evaluate an action against policy and return decision.
 
@@ -167,22 +196,27 @@ Evaluate an action against policy and return decision.
 ```typescript
 {
   // Required
-  tool: string,
-  operation: 'execute' | 'read' | 'write' | 'delete' | string,
-  target: Record<string, unknown>,
-  parameters: Record<string, unknown>,
+  action: string,
 
   // Optional
+  operation?: 'read' | 'write' | 'create' | 'delete' | 'execute' | 'update', // Default: 'execute'
+  target?: Record<string, unknown>, // Default: {}
+  parameters?: Record<string, unknown>, // Default: {}
   user_id?: string,
   session_id?: string,
-  idempotency_key?: string,
-  confidence?: number,
+  agent_id?: string, // Overrides the agent_id set at init
+  idempotency_key?: string, // Generated if omitted
+  confidence?: number, // 0 to 1
   reason?: string,
   sensitivity?: ('money' | 'identity' | 'permissions' | 'regulated' | 'irreversible' | 'pii' | 'sensitive_data')[],
-  cost_estimate?: {
+  cost_estimate?: {  // any other key is refused, naming it
     tokens?: number,
-    usd_cents?: number,
+    dollars?: number,
+    api_calls?: number,
   },
+  requested_scopes?: string[],  // scopes this call requests; compared with the verified principal's
+  principal_token?: string, // checked by the configured principal_verifier
+  correlation_id?: string, // your own ID tying this action to others, such as a request ID
 }
 ```
 
@@ -191,7 +225,9 @@ Evaluate an action against policy and return decision.
 ```typescript
 {
   action_id: string,
-  decision: 'ALLOW' | 'BLOCK' | 'PAUSE' | 'RATE_LIMIT',
+  decision: 'ALLOW' | 'OBSERVE' | 'BLOCK' | 'PAUSE' | 'REQUIRE_APPROVAL' | 'SANDBOX' | 'KILL_SWITCH'
+    | 'ESCALATE' | 'ROUTE' | 'RATE_LIMIT' | 'SIGNATURE_INVALID' | 'CONTROL_PLANE_UNAVAILABLE'
+    | 'VALIDATION_ERROR' | 'POLICY_ERROR',
   allowed: boolean,
   reason_codes: string[],
   policy_version: string,
@@ -200,6 +236,15 @@ Evaluate an action against policy and return decision.
     evaluation_ms: number,
     total_ms: number,
   },
+  matched_rules?: Array<{ rule_name: string, ... }>,
+  remediation?: { // when the matched rule defines it
+    message: string,
+    suggestion: string,
+    type: 'field_restriction' | 'threshold' | 'scope' | 'rate_limit' | 'temporal' | 'custom',
+    details?: Record<string, unknown>,
+  },
+  would_be?: string, // OBSERVE only: what enforcement would decide
+  would_be_reason_codes?: string[], // OBSERVE only
   rate_limit?: {
     scope: string,
     window: string,
@@ -210,15 +255,17 @@ Evaluate an action against policy and return decision.
 }
 ```
 
+Under the default `OBSERVE_ALL` mode, a decision that allows the call (`ALLOW`, `SANDBOX`) comes back as itself. Any other policy decision comes back `OBSERVE`, with `allowed` true, `reason_codes` `['OBSERVED']`, and `would_be` set to the rule's decision. A call past a windowed rate limit comes back `OBSERVE` with `would_be: RATE_LIMIT` under `OBSERVE_ALL`; under `RESPECT_POLICY` it comes back `RATE_LIMIT`. Failures such as an unwritable audit record still block in every mode.
+
 #### `queryAudit(options): AuditRecord[]`
 
-Query audit log records.
+Query local audit log records. Not available in hosted mode.
 
 ```typescript
 hiitl.queryAudit({
   org_id?: string, // Default: config.org_id
   action_id?: string,
-  decision_type?: 'ALLOW' | 'BLOCK' | 'PAUSE' | 'RATE_LIMIT',
+  decision_type?: string, // e.g. 'BLOCK', 'OBSERVE'
   limit?: number,
   offset?: number,
 });
@@ -226,7 +273,7 @@ hiitl.queryAudit({
 
 #### `close(): void`
 
-Close all resources (audit database). Should be called when done with the client.
+Closes the audit database. Call it when you are done with the client.
 
 ```typescript
 hiitl.close();
@@ -236,11 +283,60 @@ hiitl.close();
 
 ### Configuration in Policy
 
+A `RATE_LIMIT` rule carries its window. When the call would otherwise be allowed, the SDK counts it, and returns `RATE_LIMIT` with reason code `RATE_LIMIT_EXCEEDED` once the limit is passed:
+
 ```json
 {
   "name": "rate-limited-policy",
-  "version": "1.0",
-  "rules": [...],
+  "version": "v1.0.0",
+  "description": "Rate limits on the agent's actions",
+  "scope": {
+    "org_id": "org_mycompany123456789",
+    "environment": "dev"
+  },
+  "rules": [
+    {
+      "name": "limit-transfers-per-user",
+      "description": "At most 10 transfers a minute per user",
+      "priority": 600,
+      "conditions": { "field": "action", "operator": "equals", "value": "payment_transfer" },
+      "decision": "RATE_LIMIT",
+      "reason_code": "TRANSFER_RATE",
+      "rate_limit": { "limit": 10, "window_seconds": 60, "scope": "user" }
+    },
+    {
+      "name": "allow-transfers",
+      "description": "Transfers proceed within the limit",
+      "priority": 10,
+      "conditions": { "field": "action", "operator": "equals", "value": "payment_transfer" },
+      "decision": "ALLOW",
+      "reason_code": "TRANSFER_ALLOWED"
+    }
+  ]
+}
+```
+
+A set-level `metadata.rate_limits` list is also accepted. It is compiled to `RATE_LIMIT` rules when the policy loads:
+
+```json
+{
+  "name": "rate-limited-policy",
+  "version": "v1.0.0",
+  "description": "Rate limits on the agent's actions",
+  "scope": {
+    "org_id": "org_mycompany123456789",
+    "environment": "dev"
+  },
+  "rules": [
+    {
+      "name": "allow-transfers",
+      "description": "Transfers proceed within the limits",
+      "priority": 10,
+      "conditions": { "field": "action", "operator": "equals", "value": "payment_transfer" },
+      "decision": "ALLOW",
+      "reason_code": "TRANSFER_ALLOWED"
+    }
+  ],
   "metadata": {
     "rate_limits": [
       {
@@ -260,10 +356,15 @@ hiitl.close();
 
 ### Scope Types
 
-- **org**: Rate limit per organization
+On a rule's `rate_limit`:
+
+- **action** (the default): Rate limit per action
+- **agent**: Rate limit per agent
 - **user**: Rate limit per user
-- **tool**: Rate limit per tool
-- **user:tool**: Rate limit per user+tool combination
+- **org**: Rate limit per organization
+- **user_action**: Rate limit per user+action combination
+
+In `metadata.rate_limits`: `org` (the default), `agent`, `user`, `tool` (per action) and `user:tool` (per user+action).
 
 ### Sliding Window
 
@@ -271,24 +372,22 @@ The SDK uses a sliding window algorithm that automatically cleans up expired eve
 
 ## Audit Logging
 
-### SQLite Schema
+### Audit Records
 
-```sql
-CREATE TABLE audit_log (
-  event_id TEXT PRIMARY KEY,
-  timestamp TEXT NOT NULL,
-  org_id TEXT NOT NULL,
-  environment TEXT NOT NULL,
-  action_id TEXT NOT NULL,
-  envelope TEXT NOT NULL,
-  decision TEXT NOT NULL,
-  policy_version TEXT NOT NULL,
-  decision_type TEXT NOT NULL,
-  tool_name TEXT,
-  agent_id TEXT,
-  content_hash TEXT NOT NULL
-);
-```
+Each record in the local SQLite audit log holds:
+
+| Field | Contents |
+|-------|----------|
+| `event_id` | Unique event ID |
+| `timestamp` | When the decision was recorded |
+| `org_id`, `environment`, `agent_id` | Who acted, and where |
+| `action_id` | The evaluated action's ID |
+| `envelope` | The evaluated envelope (JSON) |
+| `decision` | The decision (JSON) |
+| `policy_version` | The policy version evaluated |
+| `decision_type` | `ALLOW`, `BLOCK`, `OBSERVE`, … |
+| `action` | The action name, as the envelope names it |
+| `content_hash` | SHA-256 of the record's content |
 
 ### Querying Audit Logs
 
@@ -300,8 +399,8 @@ const records = hiitl.queryAudit({
 });
 
 // Query by action
-const records = hiitl.queryAudit({
-  action_id: 'act_abc123',
+const actionRecords = hiitl.queryAudit({
+  action_id: decision.action_id,
 });
 
 // Query by decision type
@@ -316,8 +415,12 @@ const blockedRecords = hiitl.queryAudit({
 Each audit record includes a SHA-256 content hash for integrity verification:
 
 ```typescript
-const record = hiitl.queryAudit({ action_id: 'act_abc123' })[0];
-const isValid = verifyIntegrity(record); // Check if tampered
+import { AuditLogger } from '@hiitl/sdk';
+
+const record = hiitl.queryAudit({ action_id: decision.action_id })[0];
+const audit = new AuditLogger('./hiitl_audit.db');
+const isValid = audit.verifyIntegrity(record.event_id); // Recomputes the hash; false if the record changed
+audit.close();
 ```
 
 ## Performance
@@ -334,15 +437,20 @@ const isValid = verifyIntegrity(record); // Check if tampered
 
 1. **Use in-memory audit DB for maximum speed**: `audit_db_path: ':memory:'`
 2. **Disable rate limiting if not needed**: `enable_rate_limiting: false`
-3. **Keep policies small**: Only enabled rules are evaluated
+3. **Keep policies small**: `active` and `staged` rules are evaluated; `draft`, `disabled` and `archived` rules are skipped
 4. **Reuse client instance**: Initialization loads policy and creates DB
 
 ## Error Handling
 
 ### Error Types
 
+`evaluate()` throws only before an envelope exists. Once it does, a failure is a decision with `allowed` false and is
+recorded: `SIGNATURE_INVALID`, `POLICY_ERROR` (a policy file that goes missing or stops parsing), or `BLOCK` with
+`error.code` `AUDIT_WRITE_FAILED` when the audit record cannot be written (the one with no record).
+
 ```typescript
 import {
+  HIITL,
   HIITLError,
   ConfigurationError,
   PolicyLoadError,
@@ -351,32 +459,38 @@ import {
 } from '@hiitl/sdk';
 
 try {
-  const hiitl = new HIITL({ ... });
-  const decision = hiitl.evaluate({ ... });
+  const hiitl = new HIITL({ policy_path: './policy.yaml', mode: 'RESPECT_POLICY' });
+  const decision = await hiitl.evaluate({ action: 'payment_transfer', parameters: { amount: 500 } });
 } catch (error) {
   if (error instanceof ConfigurationError) {
     // Invalid configuration
   } else if (error instanceof PolicyLoadError) {
-    // Policy file not found or invalid
+    // Policy file not found or invalid when the client is constructed
   } else if (error instanceof EnvelopeValidationError) {
-    // Invalid envelope fields
+    // Invalid envelope fields: the envelope cannot be built
   } else if (error instanceof AuditLogError) {
-    // Audit database error
+    // The audit database cannot be created
   }
 }
 ```
 
 ### Helpful Error Messages
 
-All errors include helpful context and links to documentation:
+Errors say what went wrong and how to fix it. An invalid `org_id`:
 
 ```
-ConfigurationError: Invalid HIITL configuration: Invalid org_id format
+ConfigurationError: Invalid HIITL configuration: [
+  {
+    "validation": "regex",
+    "code": "invalid_string",
+    "message": "Invalid org_id. Must match the envelope's org_id pattern /^org_[a-zA-Z0-9]{16,}$/. Use the org id your API key belongs to, e.g. 'org_mycompany123456789'",
+    "path": [
+      "org_id"
+    ]
+  }
+]
 
 Check that all required parameters are provided and valid.
-Required: environment, agent_id, policy_path, org_id
-
-Org ID must match pattern: org_<18+ alphanumeric characters>
 ```
 
 ## Advanced Usage
@@ -387,10 +501,28 @@ For power users who need fine-grained control:
 
 ```typescript
 import { PolicyLoader, PolicyEvaluator, AuditLogger, RateLimiter } from '@hiitl/sdk';
+import type { Envelope } from '@hiitl/sdk';
 
 // Load policy
 const loader = new PolicyLoader('./policy.yaml');
 const policy = loader.load();
+
+// Build an envelope (the `HIITL` client does this for you)
+const envelope: Envelope = {
+  schema_version: 'v2.0',
+  org_id: 'org_mycompany123456789',
+  environment: 'dev',
+  agent_id: 'payment-agent',
+  action_id: 'act_7f3k9m2q8w4e6r1t5y0u',
+  idempotency_key: 'idem_7f3k9m2q8w4e6r1t5y0u',
+  action: 'payment_transfer',
+  operation: 'execute',
+  target: { account: 'dest123' },
+  parameters: { amount: 500, currency: 'USD' },
+  timestamp: new Date().toISOString(),
+  signature: '0'.repeat(64), // HMAC-SHA256 hex; the client signs when signature_key is set
+  signature_version: 'hmac-sha256-v1',
+};
 
 // Evaluate
 const evaluator = new PolicyEvaluator();
@@ -400,9 +532,9 @@ const decision = evaluator.evaluate(envelope, policy);
 const logger = new AuditLogger('./audit.db');
 logger.write(envelope, decision);
 
-// Rate limit
+// Rate limit: a RATE_LIMIT decision when a limit is passed, otherwise null
 const limiter = new RateLimiter();
-const rateLimited = limiter.checkAndIncrement(envelope, decision, policy.metadata);
+const rateLimited = limiter.checkAndIncrement(envelope, decision);
 ```
 
 ## TypeScript Support
@@ -410,11 +542,11 @@ const rateLimited = limiter.checkAndIncrement(envelope, decision, policy.metadat
 Full TypeScript types with strict validation:
 
 ```typescript
-import type { Decision, Envelope, PolicySet } from '@hiitl/sdk';
+import type { Decision, DecisionType, Envelope, PolicySet } from '@hiitl/sdk';
 
-const decision: Decision = hiitl.evaluate({ ... });
+const decision: Decision = await hiitl.evaluate({ action: 'payment_transfer', parameters: { amount: 500 } });
 console.log(decision.allowed); // Type: boolean
-console.log(decision.decision); // Type: 'ALLOW' | 'BLOCK' | 'PAUSE' | 'RATE_LIMIT'
+console.log(decision.decision); // Type: DecisionType ('ALLOW' | 'OBSERVE' | 'BLOCK' | 'PAUSE' | …)
 ```
 
 ## Examples
@@ -430,11 +562,12 @@ const hiitl = new HIITL({
   org_id: process.env.HIITL_ORG_ID!,
   policy_path: './policies/payment.yaml',
   signature_key: process.env.HIITL_SIGNATURE_KEY,
+  mode: 'RESPECT_POLICY',
 });
 
 async function processPayment(userId: string, amount: number, destination: string) {
-  const decision = hiitl.evaluate({
-    tool: 'payment_transfer',
+  const decision = await hiitl.evaluate({
+    action: 'payment_transfer',
     operation: 'execute',
     target: { account: destination },
     parameters: { amount, currency: 'USD' },
@@ -462,11 +595,12 @@ const hiitl = new HIITL({
   agent_id: 'db-agent',
   org_id: process.env.HIITL_ORG_ID!,
   policy_path: './policies/database.yaml',
+  mode: 'RESPECT_POLICY',
 });
 
 async function deleteUserData(userId: string, tableName: string) {
-  const decision = hiitl.evaluate({
-    tool: 'database',
+  const decision = await hiitl.evaluate({
+    action: 'database',
     operation: 'delete',
     target: { table: tableName },
     parameters: { user_id: userId },
@@ -484,7 +618,7 @@ async function deleteUserData(userId: string, tableName: string) {
 
 ## License
 
-MIT
+Apache-2.0
 
 ## Support
 

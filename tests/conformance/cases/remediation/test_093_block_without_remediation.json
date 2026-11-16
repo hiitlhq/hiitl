@@ -2,7 +2,7 @@
   "test_id": "test_093_block_without_remediation",
   "description": "BLOCK decision without remediation on rule \u2014 remediation absent from decision",
   "envelope": {
-    "schema_version": "v1.0",
+    "schema_version": "v2.0",
     "org_id": "org_1234567890abcdef",
     "environment": "prod",
     "agent_id": "agent_admin_bot",
@@ -20,13 +20,17 @@
     "action": "delete_user"
   },
   "policy_set": {
-    "version": "1.0.0",
+    "version": "v1.0.0",
+    "description": "BLOCK decision without remediation on rule — remediation absent from decision",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
     "name": "admin_policy",
     "rules": [
       {
         "name": "block_user_deletion",
         "priority": 100,
-        "enabled": true,
         "conditions": {
           "field": "action",
           "operator": "equals",

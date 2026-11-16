@@ -29,8 +29,11 @@ from typing import Any, Dict, Optional
 import yaml
 from pydantic import ValidationError
 
-from hiitl.core.route_types import Route
+from hiitl.core import routing
+from hiitl.core.route_types import Route, _route_input_shape
+from hiitl.core.numeric_domain import NumericDomainError, validate_numeric_domain, admitted_numbers
 from hiitl.sdk.exceptions import RouteLoadError
+from hiitl.sdk.policy_loader import load_yaml
 
 logger = logging.getLogger(__name__)
 
@@ -135,7 +138,8 @@ class RouteLoader:
 
         # Validate with Pydantic Route model
         try:
-            route = Route.model_validate(raw_config)
+            with admitted_numbers():
+                route = Route.model_validate(raw_config)
         except ValidationError as e:
             raise RouteLoadError(
                 f"Route config validation failed for {file_path}:\n{e}\n\n"
@@ -151,6 +155,11 @@ class RouteLoader:
                 f"The 'name' field in the route config must match the filename (without extension).\n"
                 f"See docs/specs/routes.md for naming conventions."
             )
+
+        # routes.md Validation Rules, "The party that sends reads the `auth`" (row 140): an auth it cannot send
+        refusal = routing.auth_refusal(route)
+        if refusal:
+            raise RouteLoadError(f"Route config {file_path} declares an auth the SDK cannot send: {refusal}")
 
         # Cache and return
         self._cache[config_name] = (current_mtime, route)
@@ -174,7 +183,9 @@ class RouteLoader:
             with open(file_path, "r", encoding="utf-8") as f:
                 if suffix == ".json":
                     try:
-                        return json.load(f)
+                        config = json.load(f)
+                        validate_numeric_domain(config, shape=_route_input_shape(Route))
+                        return config
                     except json.JSONDecodeError as e:
                         raise RouteLoadError(
                             f"Invalid JSON in route config {file_path}:\n{e}\n\n"
@@ -184,11 +195,12 @@ class RouteLoader:
 
                 elif suffix in (".yaml", ".yml"):
                     try:
-                        config = yaml.safe_load(f)
+                        config = load_yaml(f, admit=False)
+                        validate_numeric_domain(config, shape=_route_input_shape(Route))
                         if not isinstance(config, dict):
                             raise RouteLoadError(
                                 f"Invalid YAML in route config {file_path}: "
-                                f"expected a mapping/dict, got {type(config).__name__}.\n"
+                                f"<root>: expected a mapping/dict, got {type(config).__name__}.\n"
                                 "See docs/specs/routes.md for the schema."
                             )
                         return config
@@ -205,6 +217,8 @@ class RouteLoader:
                         "Supported formats: .json, .yaml, .yml"
                     )
 
+        except NumericDomainError as e:
+            raise RouteLoadError(f"Invalid numeric value in route config {file_path}: {e}") from e
         except OSError as e:
             raise RouteLoadError(
                 f"Cannot read route config file {file_path}: {e}"
@@ -213,78 +227,3 @@ class RouteLoader:
     def invalidate_cache(self) -> None:
         """Invalidate all cached configs, forcing reload on next get() call."""
         self._cache.clear()
-
-
-def resolve_escalation_context(route: Route) -> Dict[str, Any]:
-    """Resolve a Route into an escalation_context dict for the decision.
-
-    Extracts the key fields from the typed Route model and returns a
-    flattened escalation_context suitable for the Decision object.
-
-    The output includes:
-    - timeout: SLA timeout duration (e.g., "4h")
-    - timeout_action: What happens on timeout
-    - decision_options: What the reviewer can do
-    - endpoint: Where the escalation goes
-    - protocol: Transport protocol
-    - fields: What envelope fields the reviewer sees
-    - severity: Risk severity (if specified)
-    - summary: Risk summary (if specified)
-    - escalation_ladder: Multi-level escalation config (if present)
-    - token_field: Correlation token field name (if present)
-
-    Args:
-        route: Validated Route model
-
-    Returns:
-        Flattened escalation_context dict for the Decision
-    """
-    context: Dict[str, Any] = {
-        "endpoint": route.endpoint,
-        "protocol": route.protocol,
-    }
-
-    # SLA fields
-    if route.sla:
-        context["timeout"] = route.sla.timeout
-        context["timeout_action"] = route.sla.timeout_action
-
-    # Response schema
-    if route.response_schema:
-        context["decision_options"] = list(route.response_schema.decision_options)
-
-    # Context fields
-    if route.context and route.context.fields:
-        context["fields"] = [
-            {
-                "field_path": f.field_path,
-                "label": f.label,
-                "format": f.format,
-            }
-            for f in route.context.fields
-        ]
-
-    # Risk framing
-    if route.context and route.context.risk_framing:
-        rf = route.context.risk_framing
-        if rf.severity:
-            context["severity"] = rf.severity
-        if rf.summary:
-            context["summary"] = rf.summary
-
-    # Escalation ladder
-    if route.escalation_ladder and route.escalation_ladder.levels:
-        context["escalation_ladder"] = {
-            "levels": [
-                {"level": lv.level, "route": lv.route, "after": lv.after}
-                for lv in route.escalation_ladder.levels
-            ],
-            "max_escalation_depth": route.escalation_ladder.max_escalation_depth,
-            "final_timeout_action": route.escalation_ladder.final_timeout_action,
-        }
-
-    # Correlation
-    if route.correlation:
-        context["token_field"] = route.correlation.token_field
-
-    return context

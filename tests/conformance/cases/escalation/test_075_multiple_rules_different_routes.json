@@ -2,7 +2,7 @@
   "test_id": "test_075_multiple_rules_different_routes",
   "description": "Multiple rules with different routes - highest priority rule's config is selected",
   "envelope": {
-    "schema_version": "v1.0",
+    "schema_version": "v2.0",
     "org_id": "org_1234567890abcdef",
     "environment": "prod",
     "agent_id": "agent_finance_bot",
@@ -19,13 +19,17 @@
     "action": "wire_transfer"
   },
   "policy_set": {
-    "version": "1.0.0",
+    "version": "v1.0.0",
+    "description": "Multiple rules with different routes - highest priority rule's config is selected",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
     "name": "test_policy",
     "rules": [
       {
         "name": "low_priority_approval",
         "priority": 50,
-        "enabled": true,
         "conditions": {
           "field": "parameters.amount",
           "operator": "greater_than",
@@ -39,7 +43,6 @@
       {
         "name": "high_priority_escalation",
         "priority": 200,
-        "enabled": true,
         "conditions": {
           "field": "parameters.amount",
           "operator": "greater_than",

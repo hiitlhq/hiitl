@@ -1,0 +1,64 @@
+---
+title: "Operations"
+description: "Running the core in local mode: what to watch, the record, policy change control, upgrades, export, and the runbooks"
+---
+
+This page is for the team that runs hiitl inside its own environment in local mode (see [Self-hosted deployment](/deployment/self-hosted)). Where the hosted service does a job instead, it says so.
+
+## Monitoring
+
+- The record is the primary signal: one row per evaluation in the SDK's SQLite file, with the decision, the matched rules and the reason codes. Ship it to your log pipeline and build the dashboards there.
+- The Python SDK's `hiitl.status()` reports the client's mode, environment and organization; expose it through your agent's own health endpoint.
+- The signal that matters most: a drop in evaluations per responsibility. An agent that has found a way around the gate shows up first as silence. Alert on expected `evaluate()` volume per agent, not only on errors.
+- Alert also on: `ROUTE` decisions with reason `ROUTE_UNANSWERED` (a route timed out or failed; the action did not run); a `KILL_SWITCH` rule set `active` (deliberate and short); any `active` rule that has no prior `staged` history in your repository.
+
+## The record
+
+Each new evaluation of an admitted envelope writes one row where the store answers: the envelope as built, the decision, the matched rules, the reason codes, timestamps, and a content hash of the row (`sha256` over the event id, the canonical envelope and the canonical decision). The SDK writes rows and never changes their content or deletes them; in hybrid mode it marks a row as uploaded once the service has accepted it. The hash is an unkeyed SHA-256: it detects an accidental change to a stored row, not a deliberate one by someone with write access to the file. Treat the file as you treat an audit log: ship it, keep it immutable in your store, rotate the local file. Query it with any SQLite client or the SDK's audit queries.
+
+A value refused before the SDK can build an envelope produces no decision or audit row. This includes a number outside the numeric domain; pass it as text when the refusal directs you to do so. The hosted service uses the same boundary, even for a request carrying a string `action_id` ([error responses](/api/evaluate#errors-are-decisions)).
+
+## Policy change control
+
+Policies and routes are files in your repository. The lifecycle in local mode is your repository's:
+
+1. A new rule lands with `lifecycle_stage: staged`. It is evaluated on every action and its would-have decision is recorded under `staged_observations`; the action continues.
+2. Before it binds, read what it would have decided: a query over the record for that rule's name in `staged_observations`.
+3. Promotion is a commit that sets `lifecycle_stage: active`, reviewed by the people who own the concern, deployed to the agent hosts. Rollback is the reverting commit.
+4. The repository's history is the policy change record: who, when, what changed.
+
+A kill switch is a rule with `decision: KILL_SWITCH`, `active`. Enabling it is a commit and a deploy. Under `RESPECT_POLICY` every evaluation then returns `KILL_SWITCH`; under `OBSERVE_ALL` it returns `OBSERVE` with `would_be: KILL_SWITCH`. Decide the deploy path before you need it, and write it into the [kill-switch runbook](/patterns/kill-switch-runbook) for your deployment.
+
+## Backup and restore
+
+The state is the policy and route files (in your repository) and the record (in your store). There is nothing else. A restore of an agent host loses nothing but the rows not yet shipped.
+
+## Export
+
+The record is already yours, as SQLite files or whatever your pipeline turned them into. The policies and routes are in your repository. At the end of a contract there is nothing to export because nothing is held elsewhere.
+
+## Upgrades
+
+Roll the SDK and gateway versions in the agent hosts; the changelog states, per release, anything that moves together. Policies and routes are data: an upgrade never changes them. Rollback is a redeploy of the previous version.
+
+## Retention
+
+hiitl applies no retention of its own; your log pipeline's retention applies to the record. Where a row holds an identifier that is personal data, your pipeline's deletion is the erasure, and the row's content hash no longer verifies afterwards.
+
+## Runbooks
+
+**A route endpoint is unreachable.** The SDK asks the route and gets no answer within the route's timeout. With `timeout_action: fail_open` the evaluation continues with an empty answer and the row records the route as `failed_open`; with any other value the decision is `ROUTE` with `ROUTE_UNANSWERED` and `allowed: false`, and the gateway returns a structured error to the caller. Nothing is queued: a sync route either answers in time or does not. Restore the endpoint.
+
+**Stop everything now.** Set the kill-switch rule `active` and deploy. Lift it the same way, with the record showing both.
+
+**A policy is blocking legitimate work.** Revert the commit that set it `active`; the rule returns to `staged`. Read the record before promoting it again.
+
+**Approvals are piling up.** They are in your reviewer endpoint's queue. If a rule is generating more than the team carries, set it back to `staged` and narrow its conditions.
+
+**Rotate the signing key.** Deploy the new `signature_key` (the gateway's `HIITL_SIGNATURE_KEY`) to every agent host in one change window.
+
+**Something in the record looks wrong.** Rows are never edited by the SDK. Write a new record of what was found and what was decided and keep the original.
+
+## With the hosted service
+
+In hybrid mode the hosted service holds the policies and the record, renders regression reports, gates promotion, demotes an over-triggering rule to `staged` on its own, and holds the review-case queue the gateway uses. The SDK keeps the local file as its buffer and keeps deciding from cached policies when the service is unreachable, with a circuit breaker on the sync channel. A kill switch activated in the service is a new policy version; an SDK's kill-switch poll (thirty seconds by default) sees the change and pulls that version in the same poll.

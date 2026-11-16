@@ -10,7 +10,7 @@ tags: ["refund", "financial", "money", "chargeback"]
 
 evaluate_examples:
   python: |
-    result = hiitl.evaluate("issue_refund", {
+    result = hiitl.evaluate("issue_refund", parameters={
         "amount": 75.00,
         "original_transaction_id": "txn_Rk3mN8pQ2wX7",
         "reason": "customer_request",
@@ -22,15 +22,15 @@ evaluate_examples:
             reason="customer_request",
         )
   typescript: |
-    const result = hiitl.evaluate({
+    const result = await hiitl.evaluate({
       action: 'issue_refund',
-      params: {
+      parameters: {
         amount: 75.00,
         original_transaction_id: 'txn_Rk3mN8pQ2wX7',
         reason: 'customer_request',
       },
     });
-    if (result.ok) {
+    if (result.allowed) {
       await issueRefund({
         amount: 75.00,
         transactionId: 'txn_Rk3mN8pQ2wX7',
@@ -44,7 +44,7 @@ context_enrichment:
     example: "user_7hK3nP9mQ2"
   - field: "sensitivity"
     why: "Marks the action as a money movement so financial controls apply automatically"
-    example: "money"
+    example: ["money"]
   - field: "parameters.original_amount"
     why: "The original transaction amount enables policies that prevent refunds exceeding what was paid"
     example: 150.00
@@ -59,7 +59,6 @@ starter_policies:
   - name: "allow-small-refunds"
     description: "Auto-approve refunds under $50 — low risk, improves customer satisfaction speed"
     priority: 200
-    enabled: true
     conditions:
       all_of:
         - field: "action"
@@ -71,14 +70,13 @@ starter_policies:
     decision: "ALLOW"
     reason_code: "REFUND_AUTO_APPROVED"
     remediation:
-      type: "static"
+      type: "threshold"
       message: "Refund auto-approved (under $50 threshold)"
       suggestion: "No action needed"
 
   - name: "approve-large-refunds"
     description: "Require approval for refunds of $50 or more to prevent unauthorized returns"
     priority: 150
-    enabled: true
     conditions:
       all_of:
         - field: "action"
@@ -93,14 +91,13 @@ starter_policies:
     decision: "REQUIRE_APPROVAL"
     reason_code: "REFUND_NEEDS_APPROVAL"
     remediation:
-      type: "static"
+      type: "threshold"
       message: "Refunds of $50 or more require supervisor approval before processing"
       suggestion: "Submit this refund for supervisor review. Include the original transaction ID and reason for the refund."
 
   - name: "block-excessive-refunds"
     description: "Block refunds over $500 — must be processed through manual dispute resolution"
     priority: 100
-    enabled: true
     conditions:
       all_of:
         - field: "action"
@@ -112,14 +109,13 @@ starter_policies:
     decision: "BLOCK"
     reason_code: "REFUND_EXCEEDS_LIMIT"
     remediation:
-      type: "static"
+      type: "threshold"
       message: "Refunds over $500 cannot be issued by automated agents"
       suggestion: "Route this refund through the dispute resolution team. Refunds of this size require manual verification of the original transaction and management approval."
 
   - name: "block-refund-exceeds-original"
     description: "Block any refund where the amount exceeds the original transaction value"
     priority: 90
-    enabled: true
     conditions:
       all_of:
         - field: "action"
@@ -127,29 +123,29 @@ starter_policies:
           value: "issue_refund"
         - field: "parameters.amount"
           operator: "greater_than"
-          value: 0
-        - field: "parameters.reason"
-          operator: "equals"
-          value: "overpayment_correction"
+          value: {"$field": "parameters.original_amount"}
     decision: "BLOCK"
     reason_code: "REFUND_EXCEEDS_ORIGINAL"
     remediation:
-      type: "static"
-      message: "This refund was flagged because overpayment corrections must be handled manually to verify the discrepancy"
-      suggestion: "Verify the refund amount against the original transaction. Overpayment corrections require a finance team member to confirm the discrepancy before any refund is issued."
+      type: "threshold"
+      message: "The refund amount exceeds the original transaction amount"
+      suggestion: "Refund no more than the original transaction amount (parameters.original_amount). If more is owed, a finance team member must confirm the discrepancy and issue it manually."
 
   - name: "rate-limit-refunds-per-agent"
     description: "Limit each agent to 20 refunds per hour to catch automated refund loops"
     priority: 50
-    enabled: true
     conditions:
       field: "action"
       operator: "equals"
       value: "issue_refund"
     decision: "RATE_LIMIT"
     reason_code: "REFUND_RATE_EXCEEDED"
+    rate_limit:
+      limit: 20
+      window_seconds: 3600
+      scope: "agent"
     remediation:
-      type: "static"
+      type: "rate_limit"
       message: "This agent has exceeded the maximum of 20 refunds per hour"
       suggestion: "This limit exists to prevent automated refund loops. If bulk refunds are legitimately needed, use the batch refund workflow with explicit authorization."
 

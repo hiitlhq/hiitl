@@ -1,0 +1,659 @@
+{
+  "python/hiitl/sdk/admission.py::admit_sync": {
+    "entry": "SyncClient requests/replies and SyncCache writes/reads",
+    "response": "SyncError, existing channel and numeric cause",
+    "cells": [
+      "python/hiitl/sdk/tests/test_handback_sync_remedies.py"
+    ],
+    "qualification": null
+  },
+  "python/hiitl/sdk/admission.py::admit_configuration": {
+    "entry": "component constructors",
+    "response": "ConfigurationError",
+    "cells": [
+      "python/hiitl/sdk/tests/test_handback_numeric_errors.py"
+    ],
+    "qualification": null
+  },
+  "python/hiitl/sdk/audit.py::_admit_audit": {
+    "entry": "AuditLogger.write / write_result / hold_result",
+    "response": "AuditLogError, exact term path, no wire code",
+    "cells": [
+      "python/hiitl/sdk/tests/test_handback_record_errors.py",
+      "python/hiitl/sdk/tests/test_stored_history.py"
+    ],
+    "qualification": null
+  },
+  "python/hiitl/sdk/audit.py::envelope_record": {
+    "entry": "internal JSON form reader",
+    "response": "NumericDomainError",
+    "cells": [
+      "python/hiitl/sdk/tests/test_stored_history.py"
+    ],
+    "qualification": "Not a package export. SDK-owned envelope_record runs in its narrow admitted scope; no scope spans a callback or transport."
+  },
+  "python/hiitl/sdk/audit.py::_admitted_envelope_record": {
+    "entry": "SDK-owned record/form",
+    "response": "already admitted; no second numeric walk",
+    "cells": [
+      "python/hiitl/core/tests/test_handback_admission_cost.py"
+    ],
+    "qualification": "Only this synchronous call owns the input. New public AuditLogger calls still admit afresh."
+  },
+  "python/hiitl/sdk/audit.py::AuditLogger._write_admitted": {
+    "entry": "SDK-owned record/form",
+    "response": "already admitted; no second numeric walk",
+    "cells": [
+      "python/hiitl/core/tests/test_handback_admission_cost.py"
+    ],
+    "qualification": "Only this synchronous call owns the input. New public AuditLogger calls still admit afresh."
+  },
+  "python/hiitl/sdk/audit.py::AuditLogger.write": {
+    "entry": "AuditLogger.write / write_result / hold_result",
+    "response": "AuditLogError, exact term path, no wire code",
+    "cells": [
+      "python/hiitl/sdk/tests/test_handback_record_errors.py",
+      "python/hiitl/sdk/tests/test_stored_history.py"
+    ],
+    "qualification": null
+  },
+  "python/hiitl/sdk/audit.py::AuditLogger.write_result": {
+    "entry": "AuditLogger.write / write_result / hold_result",
+    "response": "AuditLogError, exact term path, no wire code",
+    "cells": [
+      "python/hiitl/sdk/tests/test_handback_record_errors.py",
+      "python/hiitl/sdk/tests/test_stored_history.py"
+    ],
+    "qualification": null
+  },
+  "python/hiitl/sdk/audit.py::AuditLogger.hold_result": {
+    "entry": "AuditLogger.write / write_result / hold_result",
+    "response": "AuditLogError, exact term path, no wire code",
+    "cells": [
+      "python/hiitl/sdk/tests/test_handback_record_errors.py",
+      "python/hiitl/sdk/tests/test_stored_history.py"
+    ],
+    "qualification": null
+  },
+  "python/hiitl/sdk/client.py::HIITL._init_hybrid": {
+    "entry": "HIITL constructor",
+    "response": "ConfigurationError",
+    "cells": [
+      "python/hiitl/sdk/tests/test_handback_numeric_errors.py"
+    ],
+    "qualification": "Hosted config consumes the settings this constructor already admitted; mutable supplied SyncConfig is admitted at this new constructor entry."
+  },
+  "python/hiitl/sdk/client.py::HIITL._init_hosted": {
+    "entry": "HIITL constructor",
+    "response": "ConfigurationError",
+    "cells": [
+      "python/hiitl/sdk/tests/test_handback_numeric_errors.py"
+    ],
+    "qualification": "Hosted config consumes the settings this constructor already admitted; mutable supplied SyncConfig is admitted at this new constructor entry."
+  },
+  "python/hiitl/sdk/client.py::HIITL.evaluate": {
+    "entry": "HIITL.evaluate, every mode",
+    "response": "EnvelopeValidationError, exact supplied path",
+    "cells": [
+      "python/hiitl/sdk/tests/test_handback_numeric_errors.py",
+      "python/hiitl/sdk/tests/test_handback_owned_inputs.py"
+    ],
+    "qualification": null
+  },
+  "python/hiitl/sdk/client.py::HIITL._verified_principal": {
+    "entry": "HIITL.evaluate principal verifier result",
+    "response": "existing invalid-verifier response: no verified principal, logged; policy decides",
+    "cells": [
+      "python/hiitl/sdk/tests/test_handback_numeric_errors.py"
+    ],
+    "qualification": "Raw verifier output is admitted before unknown claims are projected. 28ff5bbf records the TS decision correction."
+  },
+  "python/hiitl/sdk/client.py::HIITL._built_envelope": {
+    "entry": "HIITL.evaluate owned envelope construction",
+    "response": "EnvelopeValidationError for structural refusal; numeric input already admitted",
+    "cells": [
+      "python/hiitl/sdk/tests/test_handback_owned_inputs.py"
+    ],
+    "qualification": "Only the owned input enters this parse; no admission scope spans a verifier or transport."
+  },
+  "python/hiitl/sdk/client.py::HIITL.record_result": {
+    "entry": "HIITL.record_result / recordResult",
+    "response": "LifecycleError, RESULT_INVALID, flat result-body path",
+    "cells": [
+      "python/hiitl/sdk/tests/test_handback_numeric_errors.py"
+    ],
+    "qualification": null
+  },
+  "python/hiitl/sdk/config.py::_NumericSettings.numeric_input": {
+    "entry": "settings models / HIITL constructor",
+    "response": "Pydantic ValidationError, mapped to ConfigurationError by HIITL",
+    "cells": [
+      "python/hiitl/sdk/tests/test_handback_numeric_errors.py",
+      "python/hiitl/core/tests/test_handback_admission_cost.py"
+    ],
+    "qualification": null
+  },
+  "python/hiitl/sdk/http_client.py::_admit_response": {
+    "entry": "HostedClient current service response, any HTTP status",
+    "response": "ServerError, existing UNKNOWN_ERROR fallback, unchanged HTTP status, exact body path",
+    "cells": [
+      "python/hiitl/sdk/tests/test_handback_record_errors.py",
+      "python/hiitl/sdk/tests/test_stored_history.py"
+    ],
+    "qualification": "A supplied body is read before retry/classification; non-200 bodies already admitted by the transport reader are not walked again in Decision parsing. A stored result returned at HTTP200 is not admitted again."
+  },
+  "python/hiitl/sdk/http_client.py::HostedClient.evaluate": {
+    "entry": "exported HostedClient.evaluate",
+    "response": "EnvelopeValidationError, exact supplied path",
+    "cells": [
+      "python/hiitl/sdk/tests/test_handback_owned_inputs.py"
+    ],
+    "qualification": null
+  },
+  "python/hiitl/sdk/http_client.py::HostedClient._push_records": {
+    "entry": "HostedClient drain reached by evaluate/results",
+    "response": "ServerError for supplied acknowledgement; existing NumericDomainError for internally produced sequence",
+    "cells": [
+      "python/hiitl/sdk/tests/test_stored_history.py"
+    ],
+    "qualification": "5203d233 counter qualification retained. No new wire code, local final mark or disposition. The records sent are not admitted again."
+  },
+  "python/hiitl/sdk/http_client.py::HostedClient._push_results": {
+    "entry": "HostedClient pending-result drain",
+    "response": "existing NumericDomainError for held pending result; ServerError for current reply",
+    "cells": [
+      "python/hiitl/sdk/tests/test_stored_history.py"
+    ],
+    "qualification": "Pending-result response/disposition remains as at the reviewed head; no change to the separately verified audit-history upload."
+  },
+  "python/hiitl/sdk/http_client.py::HostedClient.record_result": {
+    "entry": "HostedClient.record_result / recordResult",
+    "response": "LifecycleError, RESULT_INVALID",
+    "cells": [
+      "python/hiitl/sdk/tests/test_handback_numeric_errors.py"
+    ],
+    "qualification": null
+  },
+  "python/hiitl/sdk/http_client.py::HostedClient._send_with_retry": {
+    "entry": "HostedClient current service response, any HTTP status",
+    "response": "ServerError, existing UNKNOWN_ERROR fallback, unchanged HTTP status, exact body path",
+    "cells": [
+      "python/hiitl/sdk/tests/test_handback_record_errors.py",
+      "python/hiitl/sdk/tests/test_stored_history.py"
+    ],
+    "qualification": "A supplied body is read before retry/classification; non-200 bodies already admitted by the transport reader are not walked again in Decision parsing. A stored result returned at HTTP200 is not admitted again."
+  },
+  "python/hiitl/sdk/http_client.py::HostedClient._parse_response": {
+    "entry": "HostedClient current service response, any HTTP status",
+    "response": "ServerError, existing UNKNOWN_ERROR fallback, unchanged HTTP status, exact body path",
+    "cells": [
+      "python/hiitl/sdk/tests/test_handback_record_errors.py",
+      "python/hiitl/sdk/tests/test_stored_history.py"
+    ],
+    "qualification": "A supplied body is read before retry/classification; non-200 bodies already admitted by the transport reader are not walked again in Decision parsing. A stored result returned at HTTP200 is not admitted again."
+  },
+  "python/hiitl/sdk/policy_loader.py::load_yaml": {
+    "entry": "internal shared YAML reader / PolicyLoader and RouteLoader",
+    "response": "standalone reader NumericDomainError; public loaders map at their owning typed shape",
+    "cells": [
+      "python/hiitl/sdk/tests/test_handback_numeric_errors.py"
+    ],
+    "qualification": "Public file paths defer generic admission until the owning declaration is available. Syntax errors retain syntax guidance."
+  },
+  "python/hiitl/sdk/policy_loader.py::PolicyLoader.load": {
+    "entry": "PolicyLoader.load, JSON and YAML",
+    "response": "PolicyLoadError, POLICY_VALIDATION_ERROR for numeric input",
+    "cells": [
+      "python/hiitl/sdk/tests/test_handback_numeric_errors.py"
+    ],
+    "qualification": null
+  },
+  "python/hiitl/sdk/route_loader.py::RouteLoader._load_file": {
+    "entry": "RouteLoader.get / file read, JSON and YAML",
+    "response": "RouteLoadError, located numeric cause",
+    "cells": [
+      "python/hiitl/sdk/tests/test_handback_numeric_errors.py"
+    ],
+    "qualification": null
+  },
+  "python/hiitl/sdk/route_loader.py::RouteLoader._parse_file": {
+    "entry": "RouteLoader.get / file read, JSON and YAML",
+    "response": "RouteLoadError, located numeric cause",
+    "cells": [
+      "python/hiitl/sdk/tests/test_handback_numeric_errors.py"
+    ],
+    "qualification": null
+  },
+  "python/hiitl/sdk/sync_cache.py::SyncCache.__init__": {
+    "entry": "SyncClient / SyncCache constructor",
+    "response": "ConfigurationError",
+    "cells": [
+      "python/hiitl/sdk/tests/test_handback_numeric_errors.py"
+    ],
+    "qualification": null
+  },
+  "python/hiitl/sdk/sync_cache.py::SyncCache._try_disk_write": {
+    "entry": "SyncClient channels / SyncCache public updates and disk reads",
+    "response": "SyncError, owning channel, exact supplied path",
+    "cells": [
+      "python/hiitl/sdk/tests/test_handback_sync_remedies.py",
+      "python/hiitl/sdk/tests/test_stored_history.py"
+    ],
+    "qualification": "Old audit records in upload_audit/uploadAudit bypass admission; only the new sequence and current reply are supplied."
+  },
+  "python/hiitl/sdk/sync_cache.py::SyncCache._read_json": {
+    "entry": "SyncClient channels / SyncCache public updates and disk reads",
+    "response": "SyncError, owning channel, exact supplied path",
+    "cells": [
+      "python/hiitl/sdk/tests/test_handback_sync_remedies.py",
+      "python/hiitl/sdk/tests/test_stored_history.py"
+    ],
+    "qualification": "Old audit records in upload_audit/uploadAudit bypass admission; only the new sequence and current reply are supplied."
+  },
+  "python/hiitl/sdk/sync_client.py::SyncClient.__init__": {
+    "entry": "SyncClient / SyncCache constructor",
+    "response": "ConfigurationError",
+    "cells": [
+      "python/hiitl/sdk/tests/test_handback_numeric_errors.py"
+    ],
+    "qualification": null
+  },
+  "python/hiitl/sdk/sync_client.py::SyncClient.upload_audit": {
+    "entry": "SyncClient channels / SyncCache public updates and disk reads",
+    "response": "SyncError, owning channel, exact supplied path",
+    "cells": [
+      "python/hiitl/sdk/tests/test_handback_sync_remedies.py",
+      "python/hiitl/sdk/tests/test_stored_history.py"
+    ],
+    "qualification": "Old audit records in upload_audit/uploadAudit bypass admission; only the new sequence and current reply are supplied."
+  },
+  "python/hiitl/sdk/sync_client.py::SyncClient.download_policies": {
+    "entry": "SyncClient channels / SyncCache public updates and disk reads",
+    "response": "SyncError, owning channel, exact supplied path",
+    "cells": [
+      "python/hiitl/sdk/tests/test_handback_sync_remedies.py",
+      "python/hiitl/sdk/tests/test_stored_history.py"
+    ],
+    "qualification": "Old audit records in upload_audit/uploadAudit bypass admission; only the new sequence and current reply are supplied."
+  },
+  "python/hiitl/sdk/sync_client.py::SyncClient.download_routes": {
+    "entry": "SyncClient channels / SyncCache public updates and disk reads",
+    "response": "SyncError, owning channel, exact supplied path",
+    "cells": [
+      "python/hiitl/sdk/tests/test_handback_sync_remedies.py",
+      "python/hiitl/sdk/tests/test_stored_history.py"
+    ],
+    "qualification": "Old audit records in upload_audit/uploadAudit bypass admission; only the new sequence and current reply are supplied."
+  },
+  "python/hiitl/sdk/sync_client.py::SyncClient.poll_kill_switches": {
+    "entry": "SyncClient channels / SyncCache public updates and disk reads",
+    "response": "SyncError, owning channel, exact supplied path",
+    "cells": [
+      "python/hiitl/sdk/tests/test_handback_sync_remedies.py",
+      "python/hiitl/sdk/tests/test_stored_history.py"
+    ],
+    "qualification": "Old audit records in upload_audit/uploadAudit bypass admission; only the new sequence and current reply are supplied."
+  },
+  "python/hiitl/sdk/sync_client.py::SyncClient.upload_telemetry": {
+    "entry": "SyncClient channels / SyncCache public updates and disk reads",
+    "response": "SyncError, owning channel, exact supplied path",
+    "cells": [
+      "python/hiitl/sdk/tests/test_handback_sync_remedies.py",
+      "python/hiitl/sdk/tests/test_stored_history.py"
+    ],
+    "qualification": "Old audit records in upload_audit/uploadAudit bypass admission; only the new sequence and current reply are supplied."
+  },
+  "python/hiitl/sdk/sync_client.py::SyncClient._send_with_retry": {
+    "entry": "SyncClient channels / SyncCache public updates and disk reads",
+    "response": "SyncError, owning channel, exact supplied path",
+    "cells": [
+      "python/hiitl/sdk/tests/test_handback_sync_remedies.py",
+      "python/hiitl/sdk/tests/test_stored_history.py"
+    ],
+    "qualification": "Old audit records in upload_audit/uploadAudit bypass admission; only the new sequence and current reply are supplied."
+  },
+  "python/hiitl/sdk/telemetry.py::TelemetryCollector.__init__": {
+    "entry": "TelemetryCollector constructor",
+    "response": "ConfigurationError",
+    "cells": [
+      "python/hiitl/sdk/tests/test_handback_numeric_errors.py"
+    ],
+    "qualification": null
+  },
+  "python/hiitl/sdk/telemetry.py::TelemetryCollector._record_admitted": {
+    "entry": "SDK-owned telemetry observation",
+    "response": "already admitted envelope/Decision",
+    "cells": [
+      "python/hiitl/core/tests/test_handback_admission_cost.py"
+    ],
+    "qualification": "The evaluator output is not supplied input."
+  },
+  "python/hiitl/sdk/telemetry.py::TelemetryCollector.record": {
+    "entry": "internal telemetry collector record / flush",
+    "response": "existing NumericDomainError; existing collector/sync response",
+    "cells": [
+      "python/hiitl/sdk/tests/test_numeric_boundaries.py"
+    ],
+    "qualification": "5203d233 telemetry qualification retained: no new code or final disposition. This class is not a Python package export; TypeScript supplies a sink interface."
+  },
+  "python/hiitl/sdk/telemetry.py::TelemetryCollector.flush": {
+    "entry": "internal telemetry collector record / flush",
+    "response": "existing NumericDomainError; existing collector/sync response",
+    "cells": [
+      "python/hiitl/sdk/tests/test_numeric_boundaries.py"
+    ],
+    "qualification": "5203d233 telemetry qualification retained: no new code or final disposition. This class is not a Python package export; TypeScript supplies a sink interface."
+  },
+  "typescript/packages/sdk/src/admission.ts::admitSync": {
+    "entry": "SyncClient requests/replies and SyncCache writes/reads",
+    "response": "SyncError, existing channel and numeric cause",
+    "cells": [
+      "typescript/packages/sdk/tests/unit/handback-sync-remedies.test.ts"
+    ],
+    "qualification": null
+  },
+  "typescript/packages/sdk/src/admission.ts::admitConfiguration": {
+    "entry": "component constructors",
+    "response": "ConfigurationError",
+    "cells": [
+      "typescript/packages/sdk/tests/unit/handback-numeric-errors.test.ts"
+    ],
+    "qualification": null
+  },
+  "typescript/packages/sdk/src/audit.ts::auditNumbers": {
+    "entry": "AuditLogger.write / write_result / hold_result",
+    "response": "AuditLogError, exact term path, no wire code",
+    "cells": [
+      "typescript/packages/sdk/tests/unit/handback-record-errors.test.ts",
+      "typescript/packages/sdk/tests/unit/stored-history.test.ts"
+    ],
+    "qualification": null
+  },
+  "typescript/packages/sdk/src/audit.ts::AuditLogger.write": {
+    "entry": "AuditLogger.write / write_result / hold_result",
+    "response": "AuditLogError, exact term path, no wire code",
+    "cells": [
+      "typescript/packages/sdk/tests/unit/handback-record-errors.test.ts",
+      "typescript/packages/sdk/tests/unit/stored-history.test.ts"
+    ],
+    "qualification": null
+  },
+  "typescript/packages/sdk/src/audit.ts::AuditLogger.writeResult": {
+    "entry": "AuditLogger.write / write_result / hold_result",
+    "response": "AuditLogError, exact term path, no wire code",
+    "cells": [
+      "typescript/packages/sdk/tests/unit/handback-record-errors.test.ts",
+      "typescript/packages/sdk/tests/unit/stored-history.test.ts"
+    ],
+    "qualification": null
+  },
+  "typescript/packages/sdk/src/audit.ts::AuditLogger.holdResult": {
+    "entry": "AuditLogger.write / write_result / hold_result",
+    "response": "AuditLogError, exact term path, no wire code",
+    "cells": [
+      "typescript/packages/sdk/tests/unit/handback-record-errors.test.ts",
+      "typescript/packages/sdk/tests/unit/stored-history.test.ts"
+    ],
+    "qualification": null
+  },
+  "typescript/packages/sdk/src/client.ts::HIITL.evaluate": {
+    "entry": "HIITL.evaluate, every mode",
+    "response": "EnvelopeValidationError, exact supplied path",
+    "cells": [
+      "typescript/packages/sdk/tests/unit/handback-numeric-errors.test.ts",
+      "typescript/packages/sdk/tests/unit/handback-owned-inputs.test.ts"
+    ],
+    "qualification": null
+  },
+  "typescript/packages/sdk/src/client.ts::HIITL._verifiedPrincipal": {
+    "entry": "HIITL.evaluate principal verifier result",
+    "response": "existing invalid-verifier response: no verified principal, logged; policy decides",
+    "cells": [
+      "typescript/packages/sdk/tests/unit/handback-numeric-errors.test.ts"
+    ],
+    "qualification": "Raw verifier output is admitted before unknown claims are projected. 28ff5bbf records the TS decision correction."
+  },
+  "typescript/packages/sdk/src/client.ts::HIITL._buildEnvelope.envelope": {
+    "entry": "HIITL.evaluate owned envelope construction",
+    "response": "EnvelopeValidationError for structural refusal; numeric input already admitted",
+    "cells": [
+      "typescript/packages/sdk/tests/unit/handback-owned-inputs.test.ts"
+    ],
+    "qualification": "Only the owned input enters this parse; no admission scope spans a verifier or transport."
+  },
+  "typescript/packages/sdk/src/client.ts::HIITL.recordResult": {
+    "entry": "HIITL.record_result / recordResult",
+    "response": "LifecycleError, RESULT_INVALID, flat result-body path",
+    "cells": [
+      "typescript/packages/sdk/tests/unit/handback-numeric-errors.test.ts"
+    ],
+    "qualification": null
+  },
+  "typescript/packages/sdk/src/config.ts::LocalModeConfigSchema": {
+    "entry": "public config schemas and createConfig/createHostedConfig",
+    "response": "ZodError / located safeParse issue, mapped to ConfigurationError by HIITL",
+    "cells": [
+      "typescript/packages/sdk/tests/unit/handback-numeric-errors.test.ts"
+    ],
+    "qualification": "The documented schema object surface is retained; handback-schema-surface.test.ts holds parse/clone/async/nesting."
+  },
+  "typescript/packages/sdk/src/config.ts::HostedModeConfigSchema": {
+    "entry": "public config schemas and createConfig/createHostedConfig",
+    "response": "ZodError / located safeParse issue, mapped to ConfigurationError by HIITL",
+    "cells": [
+      "typescript/packages/sdk/tests/unit/handback-numeric-errors.test.ts"
+    ],
+    "qualification": "The documented schema object surface is retained; handback-schema-surface.test.ts holds parse/clone/async/nesting."
+  },
+  "typescript/packages/sdk/src/config.ts::resolveSettings": {
+    "entry": "HIITL constructor",
+    "response": "ConfigurationError at constructor mapping",
+    "cells": [
+      "typescript/packages/sdk/tests/unit/handback-numeric-errors.test.ts",
+      "typescript/packages/sdk/tests/unit/handback-admission-cost.test.ts"
+    ],
+    "qualification": null
+  },
+  "typescript/packages/sdk/src/config.ts::_createResolvedConfig": {
+    "entry": "HIITL constructor owned resolved settings",
+    "response": "already admitted; no second numeric walk",
+    "cells": [
+      "typescript/packages/sdk/tests/unit/handback-admission-cost.test.ts"
+    ],
+    "qualification": "Private owned reader; public createConfig/createHostedConfig still admit their caller input."
+  },
+  "typescript/packages/sdk/src/config.ts::_createResolvedHostedConfig": {
+    "entry": "HIITL constructor owned resolved settings",
+    "response": "already admitted; no second numeric walk",
+    "cells": [
+      "typescript/packages/sdk/tests/unit/handback-admission-cost.test.ts"
+    ],
+    "qualification": "Private owned reader; public createConfig/createHostedConfig still admit their caller input."
+  },
+  "typescript/packages/sdk/src/http-client.ts::admitResponse": {
+    "entry": "HostedClient current service response, any HTTP status",
+    "response": "ServerError, existing UNKNOWN_ERROR fallback, unchanged HTTP status, exact body path",
+    "cells": [
+      "typescript/packages/sdk/tests/unit/handback-record-errors.test.ts",
+      "typescript/packages/sdk/tests/unit/stored-history.test.ts"
+    ],
+    "qualification": "A supplied body is read before retry/classification; non-200 bodies already admitted by the transport reader are not walked again in Decision parsing. A stored result returned at HTTP200 is not admitted again."
+  },
+  "typescript/packages/sdk/src/http-client.ts::HostedClient.evaluate": {
+    "entry": "exported HostedClient.evaluate",
+    "response": "EnvelopeValidationError, exact supplied path",
+    "cells": [
+      "typescript/packages/sdk/tests/unit/handback-owned-inputs.test.ts"
+    ],
+    "qualification": null
+  },
+  "typescript/packages/sdk/src/http-client.ts::HostedClient._pushRecords": {
+    "entry": "HostedClient drain reached by evaluate/results",
+    "response": "ServerError for supplied acknowledgement; existing NumericDomainError for internally produced sequence",
+    "cells": [
+      "typescript/packages/sdk/tests/unit/stored-history.test.ts"
+    ],
+    "qualification": "5203d233 counter qualification retained. No new wire code, local final mark or disposition. The records sent are not admitted again."
+  },
+  "typescript/packages/sdk/src/http-client.ts::HostedClient._pushResults": {
+    "entry": "HostedClient pending-result drain",
+    "response": "existing NumericDomainError for held pending result; ServerError for current reply",
+    "cells": [
+      "typescript/packages/sdk/tests/unit/stored-history.test.ts"
+    ],
+    "qualification": "Pending-result response/disposition remains as at the reviewed head; no change to the separately verified audit-history upload."
+  },
+  "typescript/packages/sdk/src/http-client.ts::HostedClient.recordResult": {
+    "entry": "HostedClient.record_result / recordResult",
+    "response": "LifecycleError, RESULT_INVALID",
+    "cells": [
+      "typescript/packages/sdk/tests/unit/handback-numeric-errors.test.ts"
+    ],
+    "qualification": null
+  },
+  "typescript/packages/sdk/src/http-client.ts::HostedClient._sendWithRetry": {
+    "entry": "HostedClient current service response, any HTTP status",
+    "response": "ServerError, existing UNKNOWN_ERROR fallback, unchanged HTTP status, exact body path",
+    "cells": [
+      "typescript/packages/sdk/tests/unit/handback-record-errors.test.ts",
+      "typescript/packages/sdk/tests/unit/stored-history.test.ts"
+    ],
+    "qualification": "A supplied body is read before retry/classification; non-200 bodies already admitted by the transport reader are not walked again in Decision parsing. A stored result returned at HTTP200 is not admitted again."
+  },
+  "typescript/packages/sdk/src/http-client.ts::HostedClient._parseResponse": {
+    "entry": "HostedClient current service response, any HTTP status",
+    "response": "ServerError, existing UNKNOWN_ERROR fallback, unchanged HTTP status, exact body path",
+    "cells": [
+      "typescript/packages/sdk/tests/unit/handback-record-errors.test.ts",
+      "typescript/packages/sdk/tests/unit/stored-history.test.ts"
+    ],
+    "qualification": "A supplied body is read before retry/classification; non-200 bodies already admitted by the transport reader are not walked again in Decision parsing. A stored result returned at HTTP200 is not admitted again."
+  },
+  "typescript/packages/sdk/src/policy-loader.ts::loadYaml": {
+    "entry": "internal shared YAML reader / PolicyLoader and RouteLoader",
+    "response": "standalone reader NumericDomainError; public loaders map at their owning typed shape",
+    "cells": [
+      "typescript/packages/sdk/tests/unit/handback-numeric-errors.test.ts"
+    ],
+    "qualification": "Public file paths defer generic admission until the owning declaration is available. Syntax errors retain syntax guidance."
+  },
+  "typescript/packages/sdk/src/policy-loader.ts::PolicyLoader.load": {
+    "entry": "PolicyLoader.load, JSON and YAML",
+    "response": "PolicyLoadError, POLICY_VALIDATION_ERROR for numeric input",
+    "cells": [
+      "typescript/packages/sdk/tests/unit/handback-numeric-errors.test.ts"
+    ],
+    "qualification": null
+  },
+  "typescript/packages/sdk/src/route-loader.ts::RouteLoader._loadFile": {
+    "entry": "RouteLoader.get / file read, JSON and YAML",
+    "response": "RouteLoadError, located numeric cause",
+    "cells": [
+      "typescript/packages/sdk/tests/unit/handback-numeric-errors.test.ts"
+    ],
+    "qualification": null
+  },
+  "typescript/packages/sdk/src/sync-cache.ts::SyncCache.constructor": {
+    "entry": "SyncClient / SyncCache constructor",
+    "response": "ConfigurationError",
+    "cells": [
+      "typescript/packages/sdk/tests/unit/handback-numeric-errors.test.ts"
+    ],
+    "qualification": null
+  },
+  "typescript/packages/sdk/src/sync-cache.ts::SyncCache.updatePolicies": {
+    "entry": "SyncClient channels / SyncCache public updates and disk reads",
+    "response": "SyncError, owning channel, exact supplied path",
+    "cells": [
+      "typescript/packages/sdk/tests/unit/handback-sync-remedies.test.ts",
+      "typescript/packages/sdk/tests/unit/stored-history.test.ts"
+    ],
+    "qualification": "Old audit records in upload_audit/uploadAudit bypass admission; only the new sequence and current reply are supplied."
+  },
+  "typescript/packages/sdk/src/sync-cache.ts::SyncCache.updateRoutes": {
+    "entry": "SyncClient channels / SyncCache public updates and disk reads",
+    "response": "SyncError, owning channel, exact supplied path",
+    "cells": [
+      "typescript/packages/sdk/tests/unit/handback-sync-remedies.test.ts",
+      "typescript/packages/sdk/tests/unit/stored-history.test.ts"
+    ],
+    "qualification": "Old audit records in upload_audit/uploadAudit bypass admission; only the new sequence and current reply are supplied."
+  },
+  "typescript/packages/sdk/src/sync-cache.ts::SyncCache.updateKillSwitches": {
+    "entry": "SyncClient channels / SyncCache public updates and disk reads",
+    "response": "SyncError, owning channel, exact supplied path",
+    "cells": [
+      "typescript/packages/sdk/tests/unit/handback-sync-remedies.test.ts",
+      "typescript/packages/sdk/tests/unit/stored-history.test.ts"
+    ],
+    "qualification": "Old audit records in upload_audit/uploadAudit bypass admission; only the new sequence and current reply are supplied."
+  },
+  "typescript/packages/sdk/src/sync-cache.ts::SyncCache._readJson": {
+    "entry": "SyncClient channels / SyncCache public updates and disk reads",
+    "response": "SyncError, owning channel, exact supplied path",
+    "cells": [
+      "typescript/packages/sdk/tests/unit/handback-sync-remedies.test.ts",
+      "typescript/packages/sdk/tests/unit/stored-history.test.ts"
+    ],
+    "qualification": "Old audit records in upload_audit/uploadAudit bypass admission; only the new sequence and current reply are supplied."
+  },
+  "typescript/packages/sdk/src/sync-client.ts::SyncClient.constructor": {
+    "entry": "SyncClient / SyncCache constructor",
+    "response": "ConfigurationError",
+    "cells": [
+      "typescript/packages/sdk/tests/unit/handback-numeric-errors.test.ts"
+    ],
+    "qualification": null
+  },
+  "typescript/packages/sdk/src/sync-client.ts::SyncClient.uploadAudit": {
+    "entry": "SyncClient channels / SyncCache public updates and disk reads",
+    "response": "SyncError, owning channel, exact supplied path",
+    "cells": [
+      "typescript/packages/sdk/tests/unit/handback-sync-remedies.test.ts",
+      "typescript/packages/sdk/tests/unit/stored-history.test.ts"
+    ],
+    "qualification": "Old audit records in upload_audit/uploadAudit bypass admission; only the new sequence and current reply are supplied."
+  },
+  "typescript/packages/sdk/src/sync-client.ts::SyncClient.uploadTelemetry": {
+    "entry": "SyncClient channels / SyncCache public updates and disk reads",
+    "response": "SyncError, owning channel, exact supplied path",
+    "cells": [
+      "typescript/packages/sdk/tests/unit/handback-sync-remedies.test.ts",
+      "typescript/packages/sdk/tests/unit/stored-history.test.ts"
+    ],
+    "qualification": "Old audit records in upload_audit/uploadAudit bypass admission; only the new sequence and current reply are supplied."
+  },
+  "typescript/packages/sdk/src/sync-client.ts::SyncClient._parseJsonOrEmpty": {
+    "entry": "SyncClient channels / SyncCache public updates and disk reads",
+    "response": "SyncError, owning channel, exact supplied path",
+    "cells": [
+      "typescript/packages/sdk/tests/unit/handback-sync-remedies.test.ts",
+      "typescript/packages/sdk/tests/unit/stored-history.test.ts"
+    ],
+    "qualification": "Old audit records in upload_audit/uploadAudit bypass admission; only the new sequence and current reply are supplied."
+  },
+  "python/hiitl/sdk/http_client.py::HostedClient.__init__": {
+    "entry": "direct HostedClient constructor with supplied settings",
+    "response": "ConfigurationError, owning numeric type/range and exact member path",
+    "cells": [
+      "python/hiitl/sdk/tests/test_handback_owned_inputs.py"
+    ],
+    "qualification": "The separate internal factory consumes only settings the HIITL constructor already admitted; mutated settings at a new direct constructor are admitted afresh."
+  },
+  "typescript/packages/sdk/src/http-client.ts::HostedClient.constructor": {
+    "entry": "direct HostedClient constructor with supplied settings",
+    "response": "ConfigurationError, owning numeric type/range and exact member path",
+    "cells": [
+      "typescript/packages/sdk/tests/unit/handback-owned-inputs.test.ts"
+    ],
+    "qualification": "The separate internal factory consumes only settings the HIITL constructor already admitted; mutated settings at a new direct constructor are admitted afresh."
+  },
+  "python/hiitl/sdk/http_client.py::HostedClient._from_admitted": {
+    "entry": "HIITL constructor owned settings",
+    "response": "already admitted; no second numeric walk",
+    "cells": [
+      "python/hiitl/sdk/tests/test_handback_owned_inputs.py"
+    ],
+    "qualification": "Private synchronous factory, no callback or transport in the admitted scope."
+  }
+}

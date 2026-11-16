@@ -1,0 +1,1880 @@
+{
+  "authority": "aa0cf726/88579bbd; existing telemetry/counter responses under 5203d233",
+  "sites": [
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/admission.py",
+      "line": 31,
+      "owner": "admit_sync",
+      "guard": "validate_numeric_domain",
+      "arguments": [
+        "value",
+        "path",
+        "shape=shape if shape is not None else sync_numeric_shape(channel)"
+      ],
+      "entry": "SyncClient requests/replies and SyncCache writes/reads",
+      "response": "SyncError, existing channel and numeric cause",
+      "cells": [
+        "python/hiitl/sdk/tests/test_handback_sync_remedies.py"
+      ],
+      "qualification": null
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/admission.py",
+      "line": 55,
+      "owner": "admit_configuration",
+      "guard": "validate_numeric_domain",
+      "arguments": [
+        "values",
+        "shape=_argument_numbers(owner)"
+      ],
+      "entry": "component constructors",
+      "response": "ConfigurationError",
+      "cells": [
+        "python/hiitl/sdk/tests/test_handback_numeric_errors.py"
+      ],
+      "qualification": null
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/audit.py",
+      "line": 55,
+      "owner": "_admit_audit",
+      "guard": "validate_numeric_domain",
+      "arguments": [
+        "value",
+        "path",
+        "shape=shape"
+      ],
+      "entry": "AuditLogger.write / write_result / hold_result",
+      "response": "AuditLogError, exact term path, no wire code",
+      "cells": [
+        "python/hiitl/sdk/tests/test_handback_record_errors.py",
+        "python/hiitl/sdk/tests/test_stored_history.py"
+      ],
+      "qualification": null
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/audit.py",
+      "line": 64,
+      "owner": "envelope_record",
+      "guard": "validate_numeric_domain",
+      "arguments": [
+        "envelope"
+      ],
+      "entry": "internal JSON form reader",
+      "response": "NumericDomainError",
+      "cells": [
+        "python/hiitl/sdk/tests/test_stored_history.py"
+      ],
+      "qualification": "Not a package export. SDK-owned envelope_record runs in its narrow admitted scope; no scope spans a callback or transport."
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/audit.py",
+      "line": 136,
+      "owner": "_admitted_envelope_record",
+      "guard": "admitted_numbers",
+      "arguments": [],
+      "entry": "SDK-owned record/form",
+      "response": "already admitted; no second numeric walk",
+      "cells": [
+        "python/hiitl/core/tests/test_handback_admission_cost.py"
+      ],
+      "qualification": "Only this synchronous call owns the input. New public AuditLogger calls still admit afresh."
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/audit.py",
+      "line": 295,
+      "owner": "AuditLogger._write_admitted",
+      "guard": "admitted_numbers",
+      "arguments": [],
+      "entry": "SDK-owned record/form",
+      "response": "already admitted; no second numeric walk",
+      "cells": [
+        "python/hiitl/core/tests/test_handback_admission_cost.py"
+      ],
+      "qualification": "Only this synchronous call owns the input. New public AuditLogger calls still admit afresh."
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/audit.py",
+      "line": 322,
+      "owner": "AuditLogger.write",
+      "guard": "_admit_audit",
+      "arguments": [
+        "envelope",
+        "('envelope',)",
+        "shape=model_shape(Envelope)"
+      ],
+      "entry": "AuditLogger.write / write_result / hold_result",
+      "response": "AuditLogError, exact term path, no wire code",
+      "cells": [
+        "python/hiitl/sdk/tests/test_handback_record_errors.py",
+        "python/hiitl/sdk/tests/test_stored_history.py"
+      ],
+      "qualification": null
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/audit.py",
+      "line": 323,
+      "owner": "AuditLogger.write",
+      "guard": "_admit_audit",
+      "arguments": [
+        "decision",
+        "('decision',)",
+        "shape=policy_shape(Decision, Envelope)"
+      ],
+      "entry": "AuditLogger.write / write_result / hold_result",
+      "response": "AuditLogError, exact term path, no wire code",
+      "cells": [
+        "python/hiitl/sdk/tests/test_handback_record_errors.py",
+        "python/hiitl/sdk/tests/test_stored_history.py"
+      ],
+      "qualification": null
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/audit.py",
+      "line": 396,
+      "owner": "AuditLogger.write_result",
+      "guard": "_admit_audit",
+      "arguments": [
+        "execution_result",
+        "('execution_result',)",
+        "shape=RESULT_NUMBER_SHAPE"
+      ],
+      "entry": "AuditLogger.write / write_result / hold_result",
+      "response": "AuditLogError, exact term path, no wire code",
+      "cells": [
+        "python/hiitl/sdk/tests/test_handback_record_errors.py",
+        "python/hiitl/sdk/tests/test_stored_history.py"
+      ],
+      "qualification": null
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/audit.py",
+      "line": 397,
+      "owner": "AuditLogger.write_result",
+      "guard": "_admit_audit",
+      "arguments": [
+        "review",
+        "('review',)"
+      ],
+      "entry": "AuditLogger.write / write_result / hold_result",
+      "response": "AuditLogError, exact term path, no wire code",
+      "cells": [
+        "python/hiitl/sdk/tests/test_handback_record_errors.py",
+        "python/hiitl/sdk/tests/test_stored_history.py"
+      ],
+      "qualification": null
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/audit.py",
+      "line": 757,
+      "owner": "AuditLogger.hold_result",
+      "guard": "_admit_audit",
+      "arguments": [
+        "execution_result",
+        "('execution_result',)",
+        "shape=RESULT_NUMBER_SHAPE"
+      ],
+      "entry": "AuditLogger.write / write_result / hold_result",
+      "response": "AuditLogError, exact term path, no wire code",
+      "cells": [
+        "python/hiitl/sdk/tests/test_handback_record_errors.py",
+        "python/hiitl/sdk/tests/test_stored_history.py"
+      ],
+      "qualification": null
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/client.py",
+      "line": 461,
+      "owner": "HIITL._init_hybrid",
+      "guard": "validate_numeric_domain",
+      "arguments": [
+        "sync_config",
+        "shape=SyncConfig.numeric_shape()"
+      ],
+      "entry": "HIITL constructor",
+      "response": "ConfigurationError",
+      "cells": [
+        "python/hiitl/sdk/tests/test_handback_numeric_errors.py"
+      ],
+      "qualification": "Hosted config consumes the settings this constructor already admitted; mutable supplied SyncConfig is admitted at this new constructor entry."
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/client.py",
+      "line": 607,
+      "owner": "HIITL._init_hosted",
+      "guard": "admitted_numbers",
+      "arguments": [],
+      "entry": "HIITL constructor",
+      "response": "ConfigurationError",
+      "cells": [
+        "python/hiitl/sdk/tests/test_handback_numeric_errors.py"
+      ],
+      "qualification": "Hosted config consumes the settings this constructor already admitted; mutable supplied SyncConfig is admitted at this new constructor entry."
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/client.py",
+      "line": 729,
+      "owner": "HIITL.evaluate",
+      "guard": "validate_numeric_domain",
+      "arguments": [
+        "fields",
+        "shape=call_numeric_shape(HIITL.evaluate, Envelope)"
+      ],
+      "entry": "HIITL.evaluate, every mode",
+      "response": "EnvelopeValidationError, exact supplied path",
+      "cells": [
+        "python/hiitl/sdk/tests/test_handback_numeric_errors.py",
+        "python/hiitl/sdk/tests/test_handback_owned_inputs.py"
+      ],
+      "qualification": null
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/client.py",
+      "line": 755,
+      "owner": "HIITL._verified_principal",
+      "guard": "validate_numeric_domain",
+      "arguments": [
+        "supplied(claims)"
+      ],
+      "entry": "HIITL.evaluate principal verifier result",
+      "response": "existing invalid-verifier response: no verified principal, logged; policy decides",
+      "cells": [
+        "python/hiitl/sdk/tests/test_handback_numeric_errors.py"
+      ],
+      "qualification": "Raw verifier output is admitted before unknown claims are projected. 28ff5bbf records the TS decision correction."
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/client.py",
+      "line": 1079,
+      "owner": "HIITL._built_envelope",
+      "guard": "admitted_numbers",
+      "arguments": [],
+      "entry": "HIITL.evaluate owned envelope construction",
+      "response": "EnvelopeValidationError for structural refusal; numeric input already admitted",
+      "cells": [
+        "python/hiitl/sdk/tests/test_handback_owned_inputs.py"
+      ],
+      "qualification": "Only the owned input enters this parse; no admission scope spans a verifier or transport."
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/client.py",
+      "line": 1184,
+      "owner": "HIITL.record_result",
+      "guard": "validate_numeric_domain",
+      "arguments": [
+        "{key: value for key, value in locals().items() if key != 'self'}",
+        "shape={**RESULT_NUMBER_SHAPE, 'properties': {**RESULT_NUMBER_SHAPE['properties'], 'action_id': {'type': 'string'}}}"
+      ],
+      "entry": "HIITL.record_result / recordResult",
+      "response": "LifecycleError, RESULT_INVALID, flat result-body path",
+      "cells": [
+        "python/hiitl/sdk/tests/test_handback_numeric_errors.py"
+      ],
+      "qualification": null
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/config.py",
+      "line": 173,
+      "owner": "_NumericSettings.numeric_input",
+      "guard": "validate_numbers",
+      "arguments": [
+        "cls.__name__",
+        "value",
+        "shape=shape"
+      ],
+      "entry": "settings models / HIITL constructor",
+      "response": "Pydantic ValidationError, mapped to ConfigurationError by HIITL",
+      "cells": [
+        "python/hiitl/sdk/tests/test_handback_numeric_errors.py",
+        "python/hiitl/core/tests/test_handback_admission_cost.py"
+      ],
+      "qualification": null
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/config.py",
+      "line": 176,
+      "owner": "_NumericSettings.numeric_input",
+      "guard": "admitted_numbers",
+      "arguments": [],
+      "entry": "settings models / HIITL constructor",
+      "response": "Pydantic ValidationError, mapped to ConfigurationError by HIITL",
+      "cells": [
+        "python/hiitl/sdk/tests/test_handback_numeric_errors.py",
+        "python/hiitl/core/tests/test_handback_admission_cost.py"
+      ],
+      "qualification": null
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/config.py",
+      "line": 187,
+      "owner": "_NumericSettings.numeric_input",
+      "guard": "validate_numbers",
+      "arguments": [
+        "cls.__name__",
+        "converted",
+        "shape=shape"
+      ],
+      "entry": "settings models / HIITL constructor",
+      "response": "Pydantic ValidationError, mapped to ConfigurationError by HIITL",
+      "cells": [
+        "python/hiitl/sdk/tests/test_handback_numeric_errors.py",
+        "python/hiitl/core/tests/test_handback_admission_cost.py"
+      ],
+      "qualification": null
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/http_client.py",
+      "line": 50,
+      "owner": "_admit_response",
+      "guard": "validate_numeric_domain",
+      "arguments": [
+        "data",
+        "shape=shape if shape is not None else policy_shape(Decision, Envelope)"
+      ],
+      "entry": "HostedClient current service response, any HTTP status",
+      "response": "ServerError, existing UNKNOWN_ERROR fallback, unchanged HTTP status, exact body path",
+      "cells": [
+        "python/hiitl/sdk/tests/test_handback_record_errors.py",
+        "python/hiitl/sdk/tests/test_stored_history.py"
+      ],
+      "qualification": "A supplied body is read before retry/classification; non-200 bodies already admitted by the transport reader are not walked again in Decision parsing. A stored result returned at HTTP200 is not admitted again."
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/http_client.py",
+      "line": 64,
+      "owner": "HostedClient.__init__",
+      "guard": "validate_numeric_domain",
+      "arguments": [
+        "config",
+        "shape=HostedModeConfig.numeric_shape()"
+      ],
+      "entry": "direct HostedClient constructor with supplied settings",
+      "response": "ConfigurationError, owning numeric type/range and exact member path",
+      "cells": [
+        "python/hiitl/sdk/tests/test_handback_owned_inputs.py"
+      ],
+      "qualification": "The separate internal factory consumes only settings the HIITL constructor already admitted; mutated settings at a new direct constructor are admitted afresh."
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/http_client.py",
+      "line": 91,
+      "owner": "HostedClient._from_admitted",
+      "guard": "admitted_numbers",
+      "arguments": [],
+      "entry": "HIITL constructor owned settings",
+      "response": "already admitted; no second numeric walk",
+      "cells": [
+        "python/hiitl/sdk/tests/test_handback_owned_inputs.py"
+      ],
+      "qualification": "Private synchronous factory, no callback or transport in the admitted scope."
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/http_client.py",
+      "line": 129,
+      "owner": "HostedClient.evaluate",
+      "guard": "validate_numeric_domain",
+      "arguments": [
+        "envelope",
+        "shape=model_shape(Envelope)"
+      ],
+      "entry": "exported HostedClient.evaluate",
+      "response": "EnvelopeValidationError, exact supplied path",
+      "cells": [
+        "python/hiitl/sdk/tests/test_handback_owned_inputs.py"
+      ],
+      "qualification": null
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/http_client.py",
+      "line": 229,
+      "owner": "HostedClient._push_records",
+      "guard": "validate_numeric_domain",
+      "arguments": [
+        "self._sequence",
+        "('sync_sequence',)",
+        "shape={'type':'integer'}"
+      ],
+      "entry": "HostedClient drain reached by evaluate/results",
+      "response": "ServerError for supplied acknowledgement; existing NumericDomainError for internally produced sequence",
+      "cells": [
+        "python/hiitl/sdk/tests/test_stored_history.py"
+      ],
+      "qualification": "5203d233 counter qualification retained. No new wire code, local final mark or disposition. The records sent are not admitted again."
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/http_client.py",
+      "line": 241,
+      "owner": "HostedClient._push_records",
+      "guard": "_admit_response",
+      "arguments": [
+        "data",
+        "response.status_code",
+        "shape=NUMERIC_DECLARATIONS['audit_ack']"
+      ],
+      "entry": "HostedClient drain reached by evaluate/results",
+      "response": "ServerError for supplied acknowledgement; existing NumericDomainError for internally produced sequence",
+      "cells": [
+        "python/hiitl/sdk/tests/test_stored_history.py"
+      ],
+      "qualification": "5203d233 counter qualification retained. No new wire code, local final mark or disposition. The records sent are not admitted again."
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/http_client.py",
+      "line": 256,
+      "owner": "HostedClient._push_results",
+      "guard": "validate_numeric_domain",
+      "arguments": [
+        "result",
+        "('execution_result',)"
+      ],
+      "entry": "HostedClient pending-result drain",
+      "response": "existing NumericDomainError for held pending result; ServerError for current reply",
+      "cells": [
+        "python/hiitl/sdk/tests/test_stored_history.py"
+      ],
+      "qualification": "Pending-result response/disposition remains as at the reviewed head; no change to the separately verified audit-history upload."
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/http_client.py",
+      "line": 286,
+      "owner": "HostedClient.record_result",
+      "guard": "validate_numeric_domain",
+      "arguments": [
+        "result",
+        "shape=RESULT_NUMBER_SHAPE"
+      ],
+      "entry": "HostedClient.record_result / recordResult",
+      "response": "LifecycleError, RESULT_INVALID",
+      "cells": [
+        "python/hiitl/sdk/tests/test_handback_numeric_errors.py"
+      ],
+      "qualification": null
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/http_client.py",
+      "line": 319,
+      "owner": "HostedClient._send_with_retry",
+      "guard": "_admit_response",
+      "arguments": [
+        "current",
+        "response.status_code",
+        "shape=NUMERIC_DECLARATIONS['audit_ack'] if path=='/v1/sync/audit' else None"
+      ],
+      "entry": "HostedClient current service response, any HTTP status",
+      "response": "ServerError, existing UNKNOWN_ERROR fallback, unchanged HTTP status, exact body path",
+      "cells": [
+        "python/hiitl/sdk/tests/test_handback_record_errors.py",
+        "python/hiitl/sdk/tests/test_stored_history.py"
+      ],
+      "qualification": "A supplied body is read before retry/classification; non-200 bodies already admitted by the transport reader are not walked again in Decision parsing. A stored result returned at HTTP200 is not admitted again."
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/http_client.py",
+      "line": 375,
+      "owner": "HostedClient._parse_response",
+      "guard": "_admit_response",
+      "arguments": [
+        "data",
+        "response.status_code"
+      ],
+      "entry": "HostedClient current service response, any HTTP status",
+      "response": "ServerError, existing UNKNOWN_ERROR fallback, unchanged HTTP status, exact body path",
+      "cells": [
+        "python/hiitl/sdk/tests/test_handback_record_errors.py",
+        "python/hiitl/sdk/tests/test_stored_history.py"
+      ],
+      "qualification": "A supplied body is read before retry/classification; non-200 bodies already admitted by the transport reader are not walked again in Decision parsing. A stored result returned at HTTP200 is not admitted again."
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/http_client.py",
+      "line": 391,
+      "owner": "HostedClient._parse_response",
+      "guard": "admitted_numbers",
+      "arguments": [],
+      "entry": "HostedClient current service response, any HTTP status",
+      "response": "ServerError, existing UNKNOWN_ERROR fallback, unchanged HTTP status, exact body path",
+      "cells": [
+        "python/hiitl/sdk/tests/test_handback_record_errors.py",
+        "python/hiitl/sdk/tests/test_stored_history.py"
+      ],
+      "qualification": "A supplied body is read before retry/classification; non-200 bodies already admitted by the transport reader are not walked again in Decision parsing. A stored result returned at HTTP200 is not admitted again."
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/policy_loader.py",
+      "line": 91,
+      "owner": "load_yaml",
+      "guard": "validate_numeric_domain",
+      "arguments": [
+        "value"
+      ],
+      "entry": "internal shared YAML reader / PolicyLoader and RouteLoader",
+      "response": "standalone reader NumericDomainError; public loaders map at their owning typed shape",
+      "cells": [
+        "python/hiitl/sdk/tests/test_handback_numeric_errors.py"
+      ],
+      "qualification": "Public file paths defer generic admission until the owning declaration is available. Syntax errors retain syntax guidance."
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/policy_loader.py",
+      "line": 168,
+      "owner": "PolicyLoader.load",
+      "guard": "validate_numeric_domain",
+      "arguments": [
+        "policy_dict",
+        "shape=shape"
+      ],
+      "entry": "PolicyLoader.load, JSON and YAML",
+      "response": "PolicyLoadError, POLICY_VALIDATION_ERROR for numeric input",
+      "cells": [
+        "python/hiitl/sdk/tests/test_handback_numeric_errors.py"
+      ],
+      "qualification": null
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/policy_loader.py",
+      "line": 179,
+      "owner": "PolicyLoader.load",
+      "guard": "admitted_numbers",
+      "arguments": [],
+      "entry": "PolicyLoader.load, JSON and YAML",
+      "response": "PolicyLoadError, POLICY_VALIDATION_ERROR for numeric input",
+      "cells": [
+        "python/hiitl/sdk/tests/test_handback_numeric_errors.py"
+      ],
+      "qualification": null
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/route_loader.py",
+      "line": 141,
+      "owner": "RouteLoader._load_file",
+      "guard": "admitted_numbers",
+      "arguments": [],
+      "entry": "RouteLoader.get / file read, JSON and YAML",
+      "response": "RouteLoadError, located numeric cause",
+      "cells": [
+        "python/hiitl/sdk/tests/test_handback_numeric_errors.py"
+      ],
+      "qualification": null
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/route_loader.py",
+      "line": 187,
+      "owner": "RouteLoader._parse_file",
+      "guard": "validate_numeric_domain",
+      "arguments": [
+        "config",
+        "shape=_route_input_shape(Route)"
+      ],
+      "entry": "RouteLoader.get / file read, JSON and YAML",
+      "response": "RouteLoadError, located numeric cause",
+      "cells": [
+        "python/hiitl/sdk/tests/test_handback_numeric_errors.py"
+      ],
+      "qualification": null
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/route_loader.py",
+      "line": 199,
+      "owner": "RouteLoader._parse_file",
+      "guard": "validate_numeric_domain",
+      "arguments": [
+        "config",
+        "shape=_route_input_shape(Route)"
+      ],
+      "entry": "RouteLoader.get / file read, JSON and YAML",
+      "response": "RouteLoadError, located numeric cause",
+      "cells": [
+        "python/hiitl/sdk/tests/test_handback_numeric_errors.py"
+      ],
+      "qualification": null
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/sync_cache.py",
+      "line": 117,
+      "owner": "SyncCache.__init__",
+      "guard": "admit_configuration",
+      "arguments": [
+        "type(self).__init__",
+        "{\"max_stale_age\": max_stale_age}"
+      ],
+      "entry": "SyncClient / SyncCache constructor",
+      "response": "ConfigurationError",
+      "cells": [
+        "python/hiitl/sdk/tests/test_handback_numeric_errors.py"
+      ],
+      "qualification": null
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/sync_cache.py",
+      "line": 435,
+      "owner": "SyncCache._try_disk_write",
+      "guard": "admit_sync",
+      "arguments": [
+        "sync_channel(filename)",
+        "data",
+        "shape=sync_numeric_shape(sync_channel(filename), cache=True)"
+      ],
+      "entry": "SyncClient channels / SyncCache public updates and disk reads",
+      "response": "SyncError, owning channel, exact supplied path",
+      "cells": [
+        "python/hiitl/sdk/tests/test_handback_sync_remedies.py",
+        "python/hiitl/sdk/tests/test_stored_history.py"
+      ],
+      "qualification": "Old audit records in upload_audit/uploadAudit bypass admission; only the new sequence and current reply are supplied."
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/sync_cache.py",
+      "line": 573,
+      "owner": "SyncCache._read_json",
+      "guard": "admit_sync",
+      "arguments": [
+        "sync_channel(filename)",
+        "data",
+        "shape=sync_numeric_shape(sync_channel(filename), cache=True)"
+      ],
+      "entry": "SyncClient channels / SyncCache public updates and disk reads",
+      "response": "SyncError, owning channel, exact supplied path",
+      "cells": [
+        "python/hiitl/sdk/tests/test_handback_sync_remedies.py",
+        "python/hiitl/sdk/tests/test_stored_history.py"
+      ],
+      "qualification": "Old audit records in upload_audit/uploadAudit bypass admission; only the new sequence and current reply are supplied."
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/sync_client.py",
+      "line": 104,
+      "owner": "SyncClient.__init__",
+      "guard": "admit_configuration",
+      "arguments": [
+        "type(self).__init__",
+        "{\"timeout\": timeout, \"max_retries\": max_retries}"
+      ],
+      "entry": "SyncClient / SyncCache constructor",
+      "response": "ConfigurationError",
+      "cells": [
+        "python/hiitl/sdk/tests/test_handback_numeric_errors.py"
+      ],
+      "qualification": null
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/sync_client.py",
+      "line": 152,
+      "owner": "SyncClient.upload_audit",
+      "guard": "admit_sync",
+      "arguments": [
+        "'audit'",
+        "sync_sequence",
+        "('sync_sequence',)",
+        "shape={'type':'integer'}"
+      ],
+      "entry": "SyncClient channels / SyncCache public updates and disk reads",
+      "response": "SyncError, owning channel, exact supplied path",
+      "cells": [
+        "python/hiitl/sdk/tests/test_handback_sync_remedies.py",
+        "python/hiitl/sdk/tests/test_stored_history.py"
+      ],
+      "qualification": "Old audit records in upload_audit/uploadAudit bypass admission; only the new sequence and current reply are supplied."
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/sync_client.py",
+      "line": 171,
+      "owner": "SyncClient.upload_audit",
+      "guard": "admit_sync",
+      "arguments": [
+        "'audit'",
+        "data"
+      ],
+      "entry": "SyncClient channels / SyncCache public updates and disk reads",
+      "response": "SyncError, owning channel, exact supplied path",
+      "cells": [
+        "python/hiitl/sdk/tests/test_handback_sync_remedies.py",
+        "python/hiitl/sdk/tests/test_stored_history.py"
+      ],
+      "qualification": "Old audit records in upload_audit/uploadAudit bypass admission; only the new sequence and current reply are supplied."
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/sync_client.py",
+      "line": 214,
+      "owner": "SyncClient.download_policies",
+      "guard": "admit_sync",
+      "arguments": [
+        "'policy'",
+        "data"
+      ],
+      "entry": "SyncClient channels / SyncCache public updates and disk reads",
+      "response": "SyncError, owning channel, exact supplied path",
+      "cells": [
+        "python/hiitl/sdk/tests/test_handback_sync_remedies.py",
+        "python/hiitl/sdk/tests/test_stored_history.py"
+      ],
+      "qualification": "Old audit records in upload_audit/uploadAudit bypass admission; only the new sequence and current reply are supplied."
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/sync_client.py",
+      "line": 258,
+      "owner": "SyncClient.download_routes",
+      "guard": "admit_sync",
+      "arguments": [
+        "'routes'",
+        "data"
+      ],
+      "entry": "SyncClient channels / SyncCache public updates and disk reads",
+      "response": "SyncError, owning channel, exact supplied path",
+      "cells": [
+        "python/hiitl/sdk/tests/test_handback_sync_remedies.py",
+        "python/hiitl/sdk/tests/test_stored_history.py"
+      ],
+      "qualification": "Old audit records in upload_audit/uploadAudit bypass admission; only the new sequence and current reply are supplied."
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/sync_client.py",
+      "line": 283,
+      "owner": "SyncClient.poll_kill_switches",
+      "guard": "admit_sync",
+      "arguments": [
+        "'kill_switches'",
+        "data"
+      ],
+      "entry": "SyncClient channels / SyncCache public updates and disk reads",
+      "response": "SyncError, owning channel, exact supplied path",
+      "cells": [
+        "python/hiitl/sdk/tests/test_handback_sync_remedies.py",
+        "python/hiitl/sdk/tests/test_stored_history.py"
+      ],
+      "qualification": "Old audit records in upload_audit/uploadAudit bypass admission; only the new sequence and current reply are supplied."
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/sync_client.py",
+      "line": 316,
+      "owner": "SyncClient.upload_telemetry",
+      "guard": "admit_sync",
+      "arguments": [
+        "'telemetry'",
+        "payload",
+        "shape=TELEMETRY_UPLOAD_SHAPE"
+      ],
+      "entry": "SyncClient channels / SyncCache public updates and disk reads",
+      "response": "SyncError, owning channel, exact supplied path",
+      "cells": [
+        "python/hiitl/sdk/tests/test_handback_sync_remedies.py",
+        "python/hiitl/sdk/tests/test_stored_history.py"
+      ],
+      "qualification": "Old audit records in upload_audit/uploadAudit bypass admission; only the new sequence and current reply are supplied."
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/sync_client.py",
+      "line": 335,
+      "owner": "SyncClient.upload_telemetry",
+      "guard": "admit_sync",
+      "arguments": [
+        "'telemetry'",
+        "data"
+      ],
+      "entry": "SyncClient channels / SyncCache public updates and disk reads",
+      "response": "SyncError, owning channel, exact supplied path",
+      "cells": [
+        "python/hiitl/sdk/tests/test_handback_sync_remedies.py",
+        "python/hiitl/sdk/tests/test_stored_history.py"
+      ],
+      "qualification": "Old audit records in upload_audit/uploadAudit bypass admission; only the new sequence and current reply are supplied."
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/sync_client.py",
+      "line": 376,
+      "owner": "SyncClient._send_with_retry",
+      "guard": "admit_sync",
+      "arguments": [
+        "sync_channel(path)",
+        "current"
+      ],
+      "entry": "SyncClient channels / SyncCache public updates and disk reads",
+      "response": "SyncError, owning channel, exact supplied path",
+      "cells": [
+        "python/hiitl/sdk/tests/test_handback_sync_remedies.py",
+        "python/hiitl/sdk/tests/test_stored_history.py"
+      ],
+      "qualification": "Old audit records in upload_audit/uploadAudit bypass admission; only the new sequence and current reply are supplied."
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/telemetry.py",
+      "line": 178,
+      "owner": "TelemetryCollector.__init__",
+      "guard": "admit_configuration",
+      "arguments": [
+        "type(self).__init__",
+        "{\"buffer_size\": buffer_size, \"sample_rate\": sample_rate}"
+      ],
+      "entry": "TelemetryCollector constructor",
+      "response": "ConfigurationError",
+      "cells": [
+        "python/hiitl/sdk/tests/test_handback_numeric_errors.py"
+      ],
+      "qualification": null
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/telemetry.py",
+      "line": 206,
+      "owner": "TelemetryCollector._record_admitted",
+      "guard": "admitted_numbers",
+      "arguments": [],
+      "entry": "SDK-owned telemetry observation",
+      "response": "already admitted envelope/Decision",
+      "cells": [
+        "python/hiitl/core/tests/test_handback_admission_cost.py"
+      ],
+      "qualification": "The evaluator output is not supplied input."
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/telemetry.py",
+      "line": 220,
+      "owner": "TelemetryCollector.record",
+      "guard": "validate_numeric_domain",
+      "arguments": [
+        "envelope",
+        "('envelope',)",
+        "shape=model_shape(Envelope)"
+      ],
+      "entry": "internal telemetry collector record / flush",
+      "response": "existing NumericDomainError; existing collector/sync response",
+      "cells": [
+        "python/hiitl/sdk/tests/test_numeric_boundaries.py"
+      ],
+      "qualification": "5203d233 telemetry qualification retained: no new code or final disposition. This class is not a Python package export; TypeScript supplies a sink interface."
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/telemetry.py",
+      "line": 221,
+      "owner": "TelemetryCollector.record",
+      "guard": "validate_numeric_domain",
+      "arguments": [
+        "decision",
+        "('decision',)",
+        "shape=policy_shape(Decision, Envelope)"
+      ],
+      "entry": "internal telemetry collector record / flush",
+      "response": "existing NumericDomainError; existing collector/sync response",
+      "cells": [
+        "python/hiitl/sdk/tests/test_numeric_boundaries.py"
+      ],
+      "qualification": "5203d233 telemetry qualification retained: no new code or final disposition. This class is not a Python package export; TypeScript supplies a sink interface."
+    },
+    {
+      "language": "python",
+      "path": "python/hiitl/sdk/telemetry.py",
+      "line": 361,
+      "owner": "TelemetryCollector.flush",
+      "guard": "validate_numeric_domain",
+      "arguments": [
+        "record",
+        "shape=NUMERIC_DECLARATIONS['telemetry']"
+      ],
+      "entry": "internal telemetry collector record / flush",
+      "response": "existing NumericDomainError; existing collector/sync response",
+      "cells": [
+        "python/hiitl/sdk/tests/test_numeric_boundaries.py"
+      ],
+      "qualification": "5203d233 telemetry qualification retained: no new code or final disposition. This class is not a Python package export; TypeScript supplies a sink interface."
+    },
+    {
+      "language": "typescript",
+      "path": "typescript/packages/sdk/src/admission.ts",
+      "line": 8,
+      "owner": "admitSync",
+      "guard": "assertSchemaNumbers",
+      "arguments": [
+        "value",
+        "schema",
+        "path"
+      ],
+      "entry": "SyncClient requests/replies and SyncCache writes/reads",
+      "response": "SyncError, existing channel and numeric cause",
+      "cells": [
+        "typescript/packages/sdk/tests/unit/handback-sync-remedies.test.ts"
+      ],
+      "qualification": null
+    },
+    {
+      "language": "typescript",
+      "path": "typescript/packages/sdk/src/admission.ts",
+      "line": 20,
+      "owner": "admitConfiguration",
+      "guard": "assertSchemaNumbers",
+      "arguments": [
+        "value",
+        "schema"
+      ],
+      "entry": "component constructors",
+      "response": "ConfigurationError",
+      "cells": [
+        "typescript/packages/sdk/tests/unit/handback-numeric-errors.test.ts"
+      ],
+      "qualification": null
+    },
+    {
+      "language": "typescript",
+      "path": "typescript/packages/sdk/src/audit.ts",
+      "line": 43,
+      "owner": "auditNumbers",
+      "guard": "assertSchemaNumbers",
+      "arguments": [
+        "value",
+        "schema",
+        "path"
+      ],
+      "entry": "AuditLogger.write / write_result / hold_result",
+      "response": "AuditLogError, exact term path, no wire code",
+      "cells": [
+        "typescript/packages/sdk/tests/unit/handback-record-errors.test.ts",
+        "typescript/packages/sdk/tests/unit/stored-history.test.ts"
+      ],
+      "qualification": null
+    },
+    {
+      "language": "typescript",
+      "path": "typescript/packages/sdk/src/audit.ts",
+      "line": 43,
+      "owner": "auditNumbers",
+      "guard": "assertNumericDomain",
+      "arguments": [
+        "value",
+        "path"
+      ],
+      "entry": "AuditLogger.write / write_result / hold_result",
+      "response": "AuditLogError, exact term path, no wire code",
+      "cells": [
+        "typescript/packages/sdk/tests/unit/handback-record-errors.test.ts",
+        "typescript/packages/sdk/tests/unit/stored-history.test.ts"
+      ],
+      "qualification": null
+    },
+    {
+      "language": "typescript",
+      "path": "typescript/packages/sdk/src/audit.ts",
+      "line": 338,
+      "owner": "AuditLogger.write",
+      "guard": "auditNumbers",
+      "arguments": [
+        "envelope",
+        "['envelope']",
+        "EnvelopeSchema"
+      ],
+      "entry": "AuditLogger.write / write_result / hold_result",
+      "response": "AuditLogError, exact term path, no wire code",
+      "cells": [
+        "typescript/packages/sdk/tests/unit/handback-record-errors.test.ts",
+        "typescript/packages/sdk/tests/unit/stored-history.test.ts"
+      ],
+      "qualification": null
+    },
+    {
+      "language": "typescript",
+      "path": "typescript/packages/sdk/src/audit.ts",
+      "line": 339,
+      "owner": "AuditLogger.write",
+      "guard": "auditNumbers",
+      "arguments": [
+        "decision",
+        "['decision']",
+        "DecisionSchema"
+      ],
+      "entry": "AuditLogger.write / write_result / hold_result",
+      "response": "AuditLogError, exact term path, no wire code",
+      "cells": [
+        "typescript/packages/sdk/tests/unit/handback-record-errors.test.ts",
+        "typescript/packages/sdk/tests/unit/stored-history.test.ts"
+      ],
+      "qualification": null
+    },
+    {
+      "language": "typescript",
+      "path": "typescript/packages/sdk/src/audit.ts",
+      "line": 386,
+      "owner": "AuditLogger.writeResult",
+      "guard": "auditNumbers",
+      "arguments": [
+        "executionResult",
+        "['execution_result']",
+        "ResultNumberSchema"
+      ],
+      "entry": "AuditLogger.write / write_result / hold_result",
+      "response": "AuditLogError, exact term path, no wire code",
+      "cells": [
+        "typescript/packages/sdk/tests/unit/handback-record-errors.test.ts",
+        "typescript/packages/sdk/tests/unit/stored-history.test.ts"
+      ],
+      "qualification": null
+    },
+    {
+      "language": "typescript",
+      "path": "typescript/packages/sdk/src/audit.ts",
+      "line": 387,
+      "owner": "AuditLogger.writeResult",
+      "guard": "auditNumbers",
+      "arguments": [
+        "review",
+        "['review']"
+      ],
+      "entry": "AuditLogger.write / write_result / hold_result",
+      "response": "AuditLogError, exact term path, no wire code",
+      "cells": [
+        "typescript/packages/sdk/tests/unit/handback-record-errors.test.ts",
+        "typescript/packages/sdk/tests/unit/stored-history.test.ts"
+      ],
+      "qualification": null
+    },
+    {
+      "language": "typescript",
+      "path": "typescript/packages/sdk/src/audit.ts",
+      "line": 761,
+      "owner": "AuditLogger.holdResult",
+      "guard": "auditNumbers",
+      "arguments": [
+        "executionResult",
+        "['execution_result']",
+        "ResultNumberSchema"
+      ],
+      "entry": "AuditLogger.write / write_result / hold_result",
+      "response": "AuditLogError, exact term path, no wire code",
+      "cells": [
+        "typescript/packages/sdk/tests/unit/handback-record-errors.test.ts",
+        "typescript/packages/sdk/tests/unit/stored-history.test.ts"
+      ],
+      "qualification": null
+    },
+    {
+      "language": "typescript",
+      "path": "typescript/packages/sdk/src/client.ts",
+      "line": 695,
+      "owner": "HIITL.evaluate",
+      "guard": "assertSchemaNumbers",
+      "arguments": [
+        "options",
+        "EvaluateNumbers"
+      ],
+      "entry": "HIITL.evaluate, every mode",
+      "response": "EnvelopeValidationError, exact supplied path",
+      "cells": [
+        "typescript/packages/sdk/tests/unit/handback-numeric-errors.test.ts",
+        "typescript/packages/sdk/tests/unit/handback-owned-inputs.test.ts"
+      ],
+      "qualification": null
+    },
+    {
+      "language": "typescript",
+      "path": "typescript/packages/sdk/src/client.ts",
+      "line": 1048,
+      "owner": "HIITL._verifiedPrincipal",
+      "guard": "assertNumericDomain",
+      "arguments": [
+        "c"
+      ],
+      "entry": "HIITL.evaluate principal verifier result",
+      "response": "existing invalid-verifier response: no verified principal, logged; policy decides",
+      "cells": [
+        "typescript/packages/sdk/tests/unit/handback-numeric-errors.test.ts"
+      ],
+      "qualification": "Raw verifier output is admitted before unknown claims are projected. 28ff5bbf records the TS decision correction."
+    },
+    {
+      "language": "typescript",
+      "path": "typescript/packages/sdk/src/client.ts",
+      "line": 1127,
+      "owner": "HIITL._buildEnvelope.envelope",
+      "guard": "parseAdmittedNumbers",
+      "arguments": [
+        "EnvelopeSchema",
+        "envelopeData"
+      ],
+      "entry": "HIITL.evaluate owned envelope construction",
+      "response": "EnvelopeValidationError for structural refusal; numeric input already admitted",
+      "cells": [
+        "typescript/packages/sdk/tests/unit/handback-owned-inputs.test.ts"
+      ],
+      "qualification": "Only the owned input enters this parse; no admission scope spans a verifier or transport."
+    },
+    {
+      "language": "typescript",
+      "path": "typescript/packages/sdk/src/client.ts",
+      "line": 1190,
+      "owner": "HIITL.recordResult",
+      "guard": "assertSchemaNumbers",
+      "arguments": [
+        "{action_id,status,...options}",
+        "ResultNumberSchema.extend({action_id:EnvelopeSchema.shape.action_id})"
+      ],
+      "entry": "HIITL.record_result / recordResult",
+      "response": "LifecycleError, RESULT_INVALID, flat result-body path",
+      "cells": [
+        "typescript/packages/sdk/tests/unit/handback-numeric-errors.test.ts"
+      ],
+      "qualification": null
+    },
+    {
+      "language": "typescript",
+      "path": "typescript/packages/sdk/src/config.ts",
+      "line": 117,
+      "owner": "LocalModeConfigSchema",
+      "guard": "numericInput",
+      "arguments": [
+        "LocalModeConfigObject"
+      ],
+      "entry": "public config schemas and createConfig/createHostedConfig",
+      "response": "ZodError / located safeParse issue, mapped to ConfigurationError by HIITL",
+      "cells": [
+        "typescript/packages/sdk/tests/unit/handback-numeric-errors.test.ts"
+      ],
+      "qualification": "The documented schema object surface is retained; handback-schema-surface.test.ts holds parse/clone/async/nesting."
+    },
+    {
+      "language": "typescript",
+      "path": "typescript/packages/sdk/src/config.ts",
+      "line": 195,
+      "owner": "HostedModeConfigSchema",
+      "guard": "numericInput",
+      "arguments": [
+        "HostedModeConfigObject"
+      ],
+      "entry": "public config schemas and createConfig/createHostedConfig",
+      "response": "ZodError / located safeParse issue, mapped to ConfigurationError by HIITL",
+      "cells": [
+        "typescript/packages/sdk/tests/unit/handback-numeric-errors.test.ts"
+      ],
+      "qualification": "The documented schema object surface is retained; handback-schema-surface.test.ts holds parse/clone/async/nesting."
+    },
+    {
+      "language": "typescript",
+      "path": "typescript/packages/sdk/src/config.ts",
+      "line": 581,
+      "owner": "resolveSettings",
+      "guard": "assertSchemaNumbers",
+      "arguments": [
+        "merged",
+        "ConstructorNumberSchema"
+      ],
+      "entry": "HIITL constructor",
+      "response": "ConfigurationError at constructor mapping",
+      "cells": [
+        "typescript/packages/sdk/tests/unit/handback-numeric-errors.test.ts",
+        "typescript/packages/sdk/tests/unit/handback-admission-cost.test.ts"
+      ],
+      "qualification": null
+    },
+    {
+      "language": "typescript",
+      "path": "typescript/packages/sdk/src/config.ts",
+      "line": 630,
+      "owner": "_createResolvedConfig",
+      "guard": "parseAdmittedNumbers",
+      "arguments": [
+        "LocalModeConfigSchema",
+        "options"
+      ],
+      "entry": "HIITL constructor owned resolved settings",
+      "response": "already admitted; no second numeric walk",
+      "cells": [
+        "typescript/packages/sdk/tests/unit/handback-admission-cost.test.ts"
+      ],
+      "qualification": "Private owned reader; public createConfig/createHostedConfig still admit their caller input."
+    },
+    {
+      "language": "typescript",
+      "path": "typescript/packages/sdk/src/config.ts",
+      "line": 632,
+      "owner": "_createResolvedHostedConfig",
+      "guard": "parseAdmittedNumbers",
+      "arguments": [
+        "HostedModeConfigSchema",
+        "options"
+      ],
+      "entry": "HIITL constructor owned resolved settings",
+      "response": "already admitted; no second numeric walk",
+      "cells": [
+        "typescript/packages/sdk/tests/unit/handback-admission-cost.test.ts"
+      ],
+      "qualification": "Private owned reader; public createConfig/createHostedConfig still admit their caller input."
+    },
+    {
+      "language": "typescript",
+      "path": "typescript/packages/sdk/src/http-client.ts",
+      "line": 49,
+      "owner": "admitResponse",
+      "guard": "assertSchemaNumbers",
+      "arguments": [
+        "data",
+        "schema"
+      ],
+      "entry": "HostedClient current service response, any HTTP status",
+      "response": "ServerError, existing UNKNOWN_ERROR fallback, unchanged HTTP status, exact body path",
+      "cells": [
+        "typescript/packages/sdk/tests/unit/handback-record-errors.test.ts",
+        "typescript/packages/sdk/tests/unit/stored-history.test.ts"
+      ],
+      "qualification": "A supplied body is read before retry/classification; non-200 bodies already admitted by the transport reader are not walked again in Decision parsing. A stored result returned at HTTP200 is not admitted again."
+    },
+    {
+      "language": "typescript",
+      "path": "typescript/packages/sdk/src/http-client.ts",
+      "line": 78,
+      "owner": "HostedClient.constructor",
+      "guard": "assertSchemaNumbers",
+      "arguments": [
+        "config",
+        "HostedModeConfigSchema"
+      ],
+      "entry": "direct HostedClient constructor with supplied settings",
+      "response": "ConfigurationError, owning numeric type/range and exact member path",
+      "cells": [
+        "typescript/packages/sdk/tests/unit/handback-owned-inputs.test.ts"
+      ],
+      "qualification": "The separate internal factory consumes only settings the HIITL constructor already admitted; mutated settings at a new direct constructor are admitted afresh."
+    },
+    {
+      "language": "typescript",
+      "path": "typescript/packages/sdk/src/http-client.ts",
+      "line": 129,
+      "owner": "HostedClient.evaluate",
+      "guard": "assertSchemaNumbers",
+      "arguments": [
+        "envelope",
+        "EnvelopeSchema"
+      ],
+      "entry": "exported HostedClient.evaluate",
+      "response": "EnvelopeValidationError, exact supplied path",
+      "cells": [
+        "typescript/packages/sdk/tests/unit/handback-owned-inputs.test.ts"
+      ],
+      "qualification": null
+    },
+    {
+      "language": "typescript",
+      "path": "typescript/packages/sdk/src/http-client.ts",
+      "line": 261,
+      "owner": "HostedClient._pushRecords",
+      "guard": "assertSchemaNumbers",
+      "arguments": [
+        "this.sequence",
+        "z.number().int()",
+        "['sync_sequence']"
+      ],
+      "entry": "HostedClient drain reached by evaluate/results",
+      "response": "ServerError for supplied acknowledgement; existing NumericDomainError for internally produced sequence",
+      "cells": [
+        "typescript/packages/sdk/tests/unit/stored-history.test.ts"
+      ],
+      "qualification": "5203d233 counter qualification retained. No new wire code, local final mark or disposition. The records sent are not admitted again."
+    },
+    {
+      "language": "typescript",
+      "path": "typescript/packages/sdk/src/http-client.ts",
+      "line": 266,
+      "owner": "HostedClient._pushRecords",
+      "guard": "admitResponse",
+      "arguments": [
+        "data",
+        "status",
+        "AckNumbers"
+      ],
+      "entry": "HostedClient drain reached by evaluate/results",
+      "response": "ServerError for supplied acknowledgement; existing NumericDomainError for internally produced sequence",
+      "cells": [
+        "typescript/packages/sdk/tests/unit/stored-history.test.ts"
+      ],
+      "qualification": "5203d233 counter qualification retained. No new wire code, local final mark or disposition. The records sent are not admitted again."
+    },
+    {
+      "language": "typescript",
+      "path": "typescript/packages/sdk/src/http-client.ts",
+      "line": 289,
+      "owner": "HostedClient._pushResults",
+      "guard": "assertNumericDomain",
+      "arguments": [
+        "result",
+        "['execution_result']"
+      ],
+      "entry": "HostedClient pending-result drain",
+      "response": "existing NumericDomainError for held pending result; ServerError for current reply",
+      "cells": [
+        "typescript/packages/sdk/tests/unit/stored-history.test.ts"
+      ],
+      "qualification": "Pending-result response/disposition remains as at the reviewed head; no change to the separately verified audit-history upload."
+    },
+    {
+      "language": "typescript",
+      "path": "typescript/packages/sdk/src/http-client.ts",
+      "line": 325,
+      "owner": "HostedClient.recordResult",
+      "guard": "assertSchemaNumbers",
+      "arguments": [
+        "result",
+        "ResultNumberSchema"
+      ],
+      "entry": "HostedClient.record_result / recordResult",
+      "response": "LifecycleError, RESULT_INVALID",
+      "cells": [
+        "typescript/packages/sdk/tests/unit/handback-numeric-errors.test.ts"
+      ],
+      "qualification": null
+    },
+    {
+      "language": "typescript",
+      "path": "typescript/packages/sdk/src/http-client.ts",
+      "line": 386,
+      "owner": "HostedClient._sendWithRetry",
+      "guard": "admitResponse",
+      "arguments": [
+        "data",
+        "response.status",
+        "path==='/v1/sync/audit'?AckNumbers:DecisionSchema"
+      ],
+      "entry": "HostedClient current service response, any HTTP status",
+      "response": "ServerError, existing UNKNOWN_ERROR fallback, unchanged HTTP status, exact body path",
+      "cells": [
+        "typescript/packages/sdk/tests/unit/handback-record-errors.test.ts",
+        "typescript/packages/sdk/tests/unit/stored-history.test.ts"
+      ],
+      "qualification": "A supplied body is read before retry/classification; non-200 bodies already admitted by the transport reader are not walked again in Decision parsing. A stored result returned at HTTP200 is not admitted again."
+    },
+    {
+      "language": "typescript",
+      "path": "typescript/packages/sdk/src/http-client.ts",
+      "line": 427,
+      "owner": "HostedClient._parseResponse",
+      "guard": "admitResponse",
+      "arguments": [
+        "data",
+        "status"
+      ],
+      "entry": "HostedClient current service response, any HTTP status",
+      "response": "ServerError, existing UNKNOWN_ERROR fallback, unchanged HTTP status, exact body path",
+      "cells": [
+        "typescript/packages/sdk/tests/unit/handback-record-errors.test.ts",
+        "typescript/packages/sdk/tests/unit/stored-history.test.ts"
+      ],
+      "qualification": "A supplied body is read before retry/classification; non-200 bodies already admitted by the transport reader are not walked again in Decision parsing. A stored result returned at HTTP200 is not admitted again."
+    },
+    {
+      "language": "typescript",
+      "path": "typescript/packages/sdk/src/policy-loader.ts",
+      "line": 62,
+      "owner": "loadYaml",
+      "guard": "assertNumericDomain",
+      "arguments": [
+        "value"
+      ],
+      "entry": "internal shared YAML reader / PolicyLoader and RouteLoader",
+      "response": "standalone reader NumericDomainError; public loaders map at their owning typed shape",
+      "cells": [
+        "typescript/packages/sdk/tests/unit/handback-numeric-errors.test.ts"
+      ],
+      "qualification": "Public file paths defer generic admission until the owning declaration is available. Syntax errors retain syntax guidance."
+    },
+    {
+      "language": "typescript",
+      "path": "typescript/packages/sdk/src/policy-loader.ts",
+      "line": 151,
+      "owner": "PolicyLoader.load",
+      "guard": "assertSchemaNumbers",
+      "arguments": [
+        "policyDict",
+        "wrapped?z.object({policy_set:PolicySetSchema}):PolicySetSchema"
+      ],
+      "entry": "PolicyLoader.load, JSON and YAML",
+      "response": "PolicyLoadError, POLICY_VALIDATION_ERROR for numeric input",
+      "cells": [
+        "typescript/packages/sdk/tests/unit/handback-numeric-errors.test.ts"
+      ],
+      "qualification": null
+    },
+    {
+      "language": "typescript",
+      "path": "typescript/packages/sdk/src/policy-loader.ts",
+      "line": 169,
+      "owner": "PolicyLoader.load",
+      "guard": "parseAdmittedNumbers",
+      "arguments": [
+        "PolicySetSchema",
+        "unwrapped"
+      ],
+      "entry": "PolicyLoader.load, JSON and YAML",
+      "response": "PolicyLoadError, POLICY_VALIDATION_ERROR for numeric input",
+      "cells": [
+        "typescript/packages/sdk/tests/unit/handback-numeric-errors.test.ts"
+      ],
+      "qualification": null
+    },
+    {
+      "language": "typescript",
+      "path": "typescript/packages/sdk/src/route-loader.ts",
+      "line": 201,
+      "owner": "RouteLoader._loadFile",
+      "guard": "assertSchemaNumbers",
+      "arguments": [
+        "rawConfig",
+        "RouteSchema"
+      ],
+      "entry": "RouteLoader.get / file read, JSON and YAML",
+      "response": "RouteLoadError, located numeric cause",
+      "cells": [
+        "typescript/packages/sdk/tests/unit/handback-numeric-errors.test.ts"
+      ],
+      "qualification": null
+    },
+    {
+      "language": "typescript",
+      "path": "typescript/packages/sdk/src/route-loader.ts",
+      "line": 221,
+      "owner": "RouteLoader._loadFile",
+      "guard": "parseAdmittedNumbers",
+      "arguments": [
+        "RouteSchema",
+        "rawConfig"
+      ],
+      "entry": "RouteLoader.get / file read, JSON and YAML",
+      "response": "RouteLoadError, located numeric cause",
+      "cells": [
+        "typescript/packages/sdk/tests/unit/handback-numeric-errors.test.ts"
+      ],
+      "qualification": null
+    },
+    {
+      "language": "typescript",
+      "path": "typescript/packages/sdk/src/sync-cache.ts",
+      "line": 183,
+      "owner": "SyncCache.constructor",
+      "guard": "admitConfiguration",
+      "arguments": [
+        "opts",
+        "SyncCacheNumbers"
+      ],
+      "entry": "SyncClient / SyncCache constructor",
+      "response": "ConfigurationError",
+      "cells": [
+        "typescript/packages/sdk/tests/unit/handback-numeric-errors.test.ts"
+      ],
+      "qualification": null
+    },
+    {
+      "language": "typescript",
+      "path": "typescript/packages/sdk/src/sync-cache.ts",
+      "line": 297,
+      "owner": "SyncCache.updatePolicies",
+      "guard": "admitSync",
+      "arguments": [
+        "'policy'",
+        "data"
+      ],
+      "entry": "SyncClient channels / SyncCache public updates and disk reads",
+      "response": "SyncError, owning channel, exact supplied path",
+      "cells": [
+        "typescript/packages/sdk/tests/unit/handback-sync-remedies.test.ts",
+        "typescript/packages/sdk/tests/unit/stored-history.test.ts"
+      ],
+      "qualification": "Old audit records in upload_audit/uploadAudit bypass admission; only the new sequence and current reply are supplied."
+    },
+    {
+      "language": "typescript",
+      "path": "typescript/packages/sdk/src/sync-cache.ts",
+      "line": 360,
+      "owner": "SyncCache.updateRoutes",
+      "guard": "admitSync",
+      "arguments": [
+        "'routes'",
+        "data",
+        "[]",
+        "syncNumberSchema('routes',true)"
+      ],
+      "entry": "SyncClient channels / SyncCache public updates and disk reads",
+      "response": "SyncError, owning channel, exact supplied path",
+      "cells": [
+        "typescript/packages/sdk/tests/unit/handback-sync-remedies.test.ts",
+        "typescript/packages/sdk/tests/unit/stored-history.test.ts"
+      ],
+      "qualification": "Old audit records in upload_audit/uploadAudit bypass admission; only the new sequence and current reply are supplied."
+    },
+    {
+      "language": "typescript",
+      "path": "typescript/packages/sdk/src/sync-cache.ts",
+      "line": 410,
+      "owner": "SyncCache.updateKillSwitches",
+      "guard": "admitSync",
+      "arguments": [
+        "'kill_switches'",
+        "tick"
+      ],
+      "entry": "SyncClient channels / SyncCache public updates and disk reads",
+      "response": "SyncError, owning channel, exact supplied path",
+      "cells": [
+        "typescript/packages/sdk/tests/unit/handback-sync-remedies.test.ts",
+        "typescript/packages/sdk/tests/unit/stored-history.test.ts"
+      ],
+      "qualification": "Old audit records in upload_audit/uploadAudit bypass admission; only the new sequence and current reply are supplied."
+    },
+    {
+      "language": "typescript",
+      "path": "typescript/packages/sdk/src/sync-cache.ts",
+      "line": 651,
+      "owner": "SyncCache._readJson",
+      "guard": "admitSync",
+      "arguments": [
+        "syncChannel(filename)",
+        "parsed",
+        "[]",
+        "syncNumberSchema(syncChannel(filename),true)"
+      ],
+      "entry": "SyncClient channels / SyncCache public updates and disk reads",
+      "response": "SyncError, owning channel, exact supplied path",
+      "cells": [
+        "typescript/packages/sdk/tests/unit/handback-sync-remedies.test.ts",
+        "typescript/packages/sdk/tests/unit/stored-history.test.ts"
+      ],
+      "qualification": "Old audit records in upload_audit/uploadAudit bypass admission; only the new sequence and current reply are supplied."
+    },
+    {
+      "language": "typescript",
+      "path": "typescript/packages/sdk/src/sync-client.ts",
+      "line": 127,
+      "owner": "SyncClient.constructor",
+      "guard": "admitConfiguration",
+      "arguments": [
+        "opts",
+        "SyncClientNumbers"
+      ],
+      "entry": "SyncClient / SyncCache constructor",
+      "response": "ConfigurationError",
+      "cells": [
+        "typescript/packages/sdk/tests/unit/handback-numeric-errors.test.ts"
+      ],
+      "qualification": null
+    },
+    {
+      "language": "typescript",
+      "path": "typescript/packages/sdk/src/sync-client.ts",
+      "line": 161,
+      "owner": "SyncClient.uploadAudit",
+      "guard": "admitSync",
+      "arguments": [
+        "'audit'",
+        "syncSequence",
+        "['sync_sequence']",
+        "z.number().int()"
+      ],
+      "entry": "SyncClient channels / SyncCache public updates and disk reads",
+      "response": "SyncError, owning channel, exact supplied path",
+      "cells": [
+        "typescript/packages/sdk/tests/unit/handback-sync-remedies.test.ts",
+        "typescript/packages/sdk/tests/unit/stored-history.test.ts"
+      ],
+      "qualification": "Old audit records in upload_audit/uploadAudit bypass admission; only the new sequence and current reply are supplied."
+    },
+    {
+      "language": "typescript",
+      "path": "typescript/packages/sdk/src/sync-client.ts",
+      "line": 268,
+      "owner": "SyncClient.uploadTelemetry",
+      "guard": "admitSync",
+      "arguments": [
+        "'telemetry'",
+        "payload",
+        "[]",
+        "TelemetryUploadNumberSchema"
+      ],
+      "entry": "SyncClient channels / SyncCache public updates and disk reads",
+      "response": "SyncError, owning channel, exact supplied path",
+      "cells": [
+        "typescript/packages/sdk/tests/unit/handback-sync-remedies.test.ts",
+        "typescript/packages/sdk/tests/unit/stored-history.test.ts"
+      ],
+      "qualification": "Old audit records in upload_audit/uploadAudit bypass admission; only the new sequence and current reply are supplied."
+    },
+    {
+      "language": "typescript",
+      "path": "typescript/packages/sdk/src/sync-client.ts",
+      "line": 421,
+      "owner": "SyncClient._parseJsonOrEmpty",
+      "guard": "admitSync",
+      "arguments": [
+        "channel",
+        "parsed"
+      ],
+      "entry": "SyncClient channels / SyncCache public updates and disk reads",
+      "response": "SyncError, owning channel, exact supplied path",
+      "cells": [
+        "typescript/packages/sdk/tests/unit/handback-sync-remedies.test.ts",
+        "typescript/packages/sdk/tests/unit/stored-history.test.ts"
+      ],
+      "qualification": "Old audit records in upload_audit/uploadAudit bypass admission; only the new sequence and current reply are supplied."
+    }
+  ],
+  "public_exports": [
+    {
+      "language": "python",
+      "name": "HIITL"
+    },
+    {
+      "language": "python",
+      "name": "PolicyLoader"
+    },
+    {
+      "language": "python",
+      "name": "RouteLoader"
+    },
+    {
+      "language": "python",
+      "name": "AuditLogger"
+    },
+    {
+      "language": "python",
+      "name": "RateLimiter"
+    },
+    {
+      "language": "python",
+      "name": "LocalModeConfig"
+    },
+    {
+      "language": "python",
+      "name": "SyncConfig"
+    },
+    {
+      "language": "python",
+      "name": "HIITLError"
+    },
+    {
+      "language": "python",
+      "name": "PolicyLoadError"
+    },
+    {
+      "language": "python",
+      "name": "RouteLoadError"
+    },
+    {
+      "language": "python",
+      "name": "AuditLogError"
+    },
+    {
+      "language": "python",
+      "name": "ConfigurationError"
+    },
+    {
+      "language": "python",
+      "name": "EnvelopeValidationError"
+    },
+    {
+      "language": "python",
+      "name": "SyncError"
+    },
+    {
+      "language": "typescript",
+      "name": "HIITL",
+      "module": "./client.js"
+    },
+    {
+      "language": "typescript",
+      "name": "createConfig",
+      "module": "./config.js"
+    },
+    {
+      "language": "typescript",
+      "name": "createHostedConfig",
+      "module": "./config.js"
+    },
+    {
+      "language": "typescript",
+      "name": "HIITLError",
+      "module": "./exceptions.js"
+    },
+    {
+      "language": "typescript",
+      "name": "ConfigurationError",
+      "module": "./exceptions.js"
+    },
+    {
+      "language": "typescript",
+      "name": "PolicyLoadError",
+      "module": "./exceptions.js"
+    },
+    {
+      "language": "typescript",
+      "name": "RouteLoadError",
+      "module": "./exceptions.js"
+    },
+    {
+      "language": "typescript",
+      "name": "AuditLogError",
+      "module": "./exceptions.js"
+    },
+    {
+      "language": "typescript",
+      "name": "EnvelopeValidationError",
+      "module": "./exceptions.js"
+    },
+    {
+      "language": "typescript",
+      "name": "ServerError",
+      "module": "./exceptions.js"
+    },
+    {
+      "language": "typescript",
+      "name": "NetworkError",
+      "module": "./exceptions.js"
+    },
+    {
+      "language": "typescript",
+      "name": "SyncError",
+      "module": "./exceptions.js"
+    },
+    {
+      "language": "typescript",
+      "name": "ColdStartError",
+      "module": "./exceptions.js"
+    },
+    {
+      "language": "typescript",
+      "name": "LifecycleError",
+      "module": "./exceptions.js"
+    },
+    {
+      "language": "typescript",
+      "name": "PolicyEvaluator",
+      "module": "@hiitl/core"
+    },
+    {
+      "language": "typescript",
+      "name": "PolicyLoader",
+      "module": "./policy-loader.js"
+    },
+    {
+      "language": "typescript",
+      "name": "RouteLoader",
+      "module": "./route-loader.js"
+    },
+    {
+      "language": "typescript",
+      "name": "resolveEscalationContext",
+      "module": "./route-loader.js"
+    },
+    {
+      "language": "typescript",
+      "name": "AuditLogger",
+      "module": "./audit.js"
+    },
+    {
+      "language": "typescript",
+      "name": "RateLimiter",
+      "module": "./rate-limiter.js"
+    },
+    {
+      "language": "typescript",
+      "name": "HostedClient",
+      "module": "./http-client.js"
+    },
+    {
+      "language": "typescript",
+      "name": "SyncEngine",
+      "module": "./sync-engine.js"
+    },
+    {
+      "language": "typescript",
+      "name": "SyncCache",
+      "module": "./sync-cache.js"
+    },
+    {
+      "language": "typescript",
+      "name": "SyncClient",
+      "module": "./sync-client.js"
+    },
+    {
+      "language": "typescript",
+      "name": "backoffWithJitter",
+      "module": "./sync-client.js"
+    },
+    {
+      "language": "typescript",
+      "name": "CircuitBreaker",
+      "module": "./circuit-breaker.js"
+    },
+    {
+      "language": "typescript",
+      "name": "CircuitState",
+      "module": "./circuit-breaker.js"
+    },
+    {
+      "language": "typescript",
+      "name": "consoleLogger",
+      "module": "./logger.js"
+    }
+  ],
+  "source_sha256": {
+    "python/hiitl/sdk/admission.py": "a0f7784b4beebc2e476ae516b45ae8dd65f1d36b210c6f4923e2c27cabce8d3c",
+    "python/hiitl/sdk/audit.py": "93b1586bd413f6980136e576abb4c880329dfede21c5a0c21aac56075c8820aa",
+    "python/hiitl/sdk/client.py": "a8b360861a65977e5b424661e5149804b0eddfc9c3a3ff15ba36e8bfad34d655",
+    "python/hiitl/sdk/config.py": "a834dcfb2dc126c01e6ef06a2c48588d6b0badcb322778b1df8137b5ea1b96d3",
+    "python/hiitl/sdk/http_client.py": "529f603273b62ba32ca50a1989f349b57116d105ec4d3ec1adb72edde2501448",
+    "python/hiitl/sdk/policy_loader.py": "cc6f696c3271f84a6caad1ff629dc6256162bab54dfa6f7efde3cce27633d854",
+    "python/hiitl/sdk/route_loader.py": "94f21a0a62fbe4f9373b32bc6a113447dd085831aed8fbea721f78427423c000",
+    "python/hiitl/sdk/sync_cache.py": "8e1191db121b7d9a54c06c18dbbef2b927902d9a1dde5c110b541784ad91e6de",
+    "python/hiitl/sdk/sync_client.py": "cb23fe7ee383cf718edeb905624482bb3140b4bfdeb681204892c6c6a5107ce0",
+    "python/hiitl/sdk/telemetry.py": "078f551b40c70e338bbeedc692d6b970639378a992de64aea4032128065af205",
+    "typescript/packages/sdk/src/admission.ts": "7520b8ec59927af815e6c709727ca90c307c887179cfe8cfa05f08f63345ff8f",
+    "typescript/packages/sdk/src/audit.ts": "d6e76e7ecc538506b0b86510a476896908076b3ae2ed4bd89df16f7a600e95c8",
+    "typescript/packages/sdk/src/client.ts": "b5d7f6acefab84ddac8e8cdf12cb6d2d81576e800feb00a01c102460d0f6a45b",
+    "typescript/packages/sdk/src/config.ts": "c1274eaa9439bb74251d20f80e0cb835aa05c7542cd83f8622a0c4b016bfd400",
+    "typescript/packages/sdk/src/http-client.ts": "740dd4bbe96aa9273f52255597726de54d103d0eb594ca67ea0fdfa4c18733fd",
+    "typescript/packages/sdk/src/policy-loader.ts": "4c8f2a1d54e664e9e8070036188e48e63b86c0cd49f72523ec19c2a99127f3b1",
+    "typescript/packages/sdk/src/route-loader.ts": "00a6744e9bbf2ebad27ead9568b8cde1579fb01804b21147dbec91a778921979",
+    "typescript/packages/sdk/src/sync-cache.ts": "d679f3df2b0cfc707c1c1c95386385250edbe387c5defd547dd4d5f561d6202c",
+    "typescript/packages/sdk/src/sync-client.ts": "8d144df690e6919e30533d1f9f8fc06ee20b6e1700e13a1cce3537aa42cfea47"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "test_id": "test_188_envelope_refuses_tool_name_beside_action",
+  "description": "An envelope that carries tool_name beside action is refused at tool_name alone, and the refusal names action: there is no alias and no dual handling at 2.0 (HTL-27 row 225, ruled 2026-11-08).",
+  "envelope": {
+    "schema_version": "v2.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_finance_bot",
+    "action_id": "act_test18800000000000000000",
+    "timestamp": "2026-02-14T12:00:00.000Z",
+    "operation": "execute",
+    "parameters": {
+      "amount": 100
+    },
+    "idempotency_key": "idem_test_188",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "process_payment",
+    "tool_name": "process_payment"
+  },
+  "expected_refusal": {
+    "artifact": "envelope",
+    "at": [
+      "tool_name"
+    ],
+    "names": [
+      "tool_name",
+      "action"
+    ]
+  }
+}

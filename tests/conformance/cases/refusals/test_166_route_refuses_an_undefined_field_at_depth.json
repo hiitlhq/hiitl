@@ -1,0 +1,31 @@
+{
+  "test_id": "test_166_route_refuses_an_undefined_field_at_depth",
+  "description": "A route refuses a field routes.md does not define at any depth, naming it: escalation is the route's escalation_ladder, never an sla key (routes.md 1.3; R-0872; HTL-20 row 147).",
+  "route": {
+    "name": "finance-review",
+    "version": "v1.0.0",
+    "direction": "bidirectional",
+    "timing": "sync",
+    "endpoint": "https://hooks.example.com/finance-review",
+    "response_schema": {
+      "decision_options": [
+        "approve",
+        "deny"
+      ]
+    },
+    "sla": {
+      "timeout": "4h",
+      "timeout_action": "fail_closed",
+      "escalate_after": "1h"
+    }
+  },
+  "expected_refusal": {
+    "artifact": "route",
+    "at": [
+      "sla.escalate_after"
+    ],
+    "names": [
+      "escalate_after"
+    ]
+  }
+}

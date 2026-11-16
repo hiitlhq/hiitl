@@ -12,7 +12,7 @@ import random
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
-from hiitl.core.types import Envelope
+from hiitl.core.types import ENVELOPE_SCHEMA_VERSION, Envelope
 
 from .agent_loader import AgentPersona
 
@@ -25,7 +25,7 @@ class EnvelopeFactory:
 
     Args:
         agent: AgentPersona with behavior_profile
-        org_id: Organization ID (must match pattern ^org_[a-zA-Z0-9]{16,}$)
+        org_id: Organization ID (must match ORG_ID_PATTERN, envelope_schema.json's)
         environment: "dev", "stage", or "prod"
         seed: Optional random seed for deterministic generation
     """
@@ -56,7 +56,7 @@ class EnvelopeFactory:
         sensitivity = self._agent.sensitivity_flags.get(tool)
 
         return Envelope(
-            schema_version="v1.0",
+            schema_version=ENVELOPE_SCHEMA_VERSION,
             org_id=self._org_id,
             environment=self._environment,
             agent_id=self._agent.agent_id,
@@ -68,7 +68,7 @@ class EnvelopeFactory:
             parameters=params,
             timestamp=datetime.now(timezone.utc),
             signature="0" * 64,
-            sensitivity=sensitivity if sensitivity else None,
+            **({"sensitivity": sensitivity} if sensitivity is not None else {}),
         )
 
     def generate_batch(self, count: int) -> List[Envelope]:

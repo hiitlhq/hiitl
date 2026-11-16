@@ -40,6 +40,31 @@ export { PolicyEvaluator } from './evaluator.js';
  */
 export { evaluate } from './evaluator.js';
 
+/**
+ * Observe mode, and a windowed rule's refusal and a limiter's failure as decisions (ecp_evaluate_spec.md **Observe
+ * Mode**; policy_format.md **Rate-limit rules**) — one definition, used by the evaluator and the SDK's limiter.
+ */
+export { observe } from './evaluator.js';
+/** The kill switches a version makes live (sync_engine.md 2.4; HTL-29 row 131). */
+export { liveKillSwitches } from './evaluator.js';
+export { counterState, tightest, withCounter, limitExceeded, limiterFailed } from './rate-limits.js';
+/** An error is a decision (decision_response.md "Error Handling"; HTL-22 row 159). */
+export {
+  ERROR_DECISIONS, ERROR_MESSAGES, FAIL_OPEN_MESSAGES, FAIL_MODES, errorDecision, auditWriteFailed, outage, errorBlock,
+} from './error-decisions.js';
+export type { FailMode } from './error-decisions.js';
+export {
+  RESULT_STATUSES, ResultNumberSchema, EVALUATED, LIFECYCLE_MESSAGES, RECORD_REFUSALS, eventType, executionResult, unreadReview,
+  decisionRefusal, resultRefusal, resultConflict, recordedResult,
+} from './lifecycle.js';
+export type { ResultStatus, ExecutionResult, LifecycleRecord, Review, UnreadReview } from './lifecycle.js';
+export type { Enrichment } from './evaluator.js';
+export * as routing from './routing.js';
+/** Where hiitl sends: an `https` URL naming a host, a route's `endpoint` and a `server_url` alike (row 140). */
+export { httpsRefusal } from './transport.js';
+/** A date-time, read by RFC 3339's grammar: every field the specs type `date-time` (HTL-29 review, condition 5). */
+export { dateTimeRefusal, readDateTime, DateTimeSchema } from './date-time.js';
+
 // ============================================================================
 // Type exports - TypeScript types for type safety
 // ============================================================================
@@ -50,6 +75,11 @@ export { evaluate } from './evaluator.js';
 export type { Envelope } from './types.js';
 
 /**
+ * CostEstimate type - the envelope's cost estimate (envelope_schema.json v1.4).
+ */
+export type { CostEstimate } from './types.js';
+
+/**
  * PolicySet type - policy set structure.
  */
 export type { PolicySet } from './types.js';
@@ -57,7 +87,7 @@ export type { PolicySet } from './types.js';
 /**
  * Decision type - decision response structure.
  */
-export type { Decision } from './types.js';
+export type { Decision, DecisionMetadata } from './types.js';
 
 /**
  * Rule type - individual rule structure.
@@ -84,6 +114,30 @@ export type { MatchedRule } from './types.js';
  */
 export type { Remediation } from './types.js';
 
+/**
+ * StagedObservation type - "would have" observations from staged rules.
+ *
+ * Staged rules don't bind decisions but their matches are recorded
+ * on every Decision via `Decision.staged_observations` (always an
+ * array, empty when no staged rule matched). See Block 1B / 9b for
+ * the side-by-side evaluation model.
+ */
+export type { StagedObservation } from './types.js';
+
+/**
+ * T-130: a matching windowed RATE_LIMIT rule (R-0852), the rate-limit
+ * window, the verified principal (A7).
+ */
+export type { RateLimitRule, RateLimitWindow, Principal } from './types.js';
+/** A rule read with a field the call does not carry, skipped and flagged (`Decision.missing_fields`; HTL-22 row 176). */
+export type { MissingField } from './types.js';
+export { PRODUCED_DECISIONS } from './types.js'; // the decisions a rule never writes (policy_format.md 2.10)
+export { hasPlaceholder, PLACEHOLDER_KEY, DECLARED_KEY, FIELD_REF_KEY, fieldRef, conforms, schemaError, PrincipalSchema } from './types.js';
+export { AUDIT_FURTHER, canonicalJson, canonicalHash, auditContentHash, envelopeSignedForm, envelopeSignature, envelopeVerifies, envelopeHash } from './canonical.js';
+
+/** What a store writes: each declared field's value replaced (event_format.md §Redaction; HTL-20 row 139). */
+export { Redaction, MARKER, valueHash, HASH_PREFIX, KEY_BYTES, ORG_FIELDS } from './redaction.js';
+
 // ============================================================================
 // Schema exports - Zod schemas for runtime validation
 // ============================================================================
@@ -105,17 +159,21 @@ export type { Remediation } from './types.js';
  * }
  * ```
  */
-export { EnvelopeSchema } from './types.js';
+export { EnvelopeSchema, ORG_ID_PATTERN, DEDUP_WINDOW_SECONDS } from './types.js';
+export { ENVELOPE_SCHEMA_VERSION, ENVELOPE_MIGRATION_NOTE, ENVELOPE_RENAMED, renamedNote } from './types.js';
 
 /**
  * PolicySetSchema - Zod schema for policy set validation.
  */
-export { PolicySetSchema } from './types.js';
+export { PolicySetSchema, PolicySetScopeSchema, VERSION_PATTERN } from './types.js';
+
+/** The decision types and sensitivity labels, the sources a route's filter values are taken from (HTL-29 row 131). */
+export { DecisionTypeSchema, SensitivitySchema } from './types.js';
 
 /**
  * DecisionSchema - Zod schema for decision response validation.
  */
-export { DecisionSchema } from './types.js';
+export { DecisionSchema, DecisionMetadataSchema } from './types.js';
 
 /**
  * RemediationSchema - Zod schema for remediation validation.
@@ -172,7 +230,7 @@ export { RemediationType } from './types.js';
 /**
  * Route type - route configuration structure.
  */
-export type { Route } from './route-types.js';
+export type { Route, RouteInput } from './route-types.js';
 
 /**
  * RouteSchema - Zod schema for route validation.
@@ -194,3 +252,15 @@ export { RouteSchema } from './route-types.js';
  */
 export { RouteDirection, RouteTiming, RoutePurpose, RouteProtocol } from './route-types.js';
 export { TimeoutAction, RouteDecisionOption, BackoffStrategy } from './route-types.js';
+
+// HTL43: one numeric admission helper, shared by model and SDK boundaries.
+export { assertNumericDomain, NumericDomainError, NUMERIC_BOUND } from './numeric-domain.js';
+export { integer } from './integer.js';
+
+// Verify historical stored bytes without creating a new admitted record.
+export { auditHashMatches } from './canonical.js';
+
+// Typed operand failures carry only authored operator/path diagnostics.
+export { OperatorKindError } from './operator-kinds.js';
+
+export { numericInput, assertSchemaNumbers, parseAdmittedNumbers, copySuppliedInput } from "./own-data.js";

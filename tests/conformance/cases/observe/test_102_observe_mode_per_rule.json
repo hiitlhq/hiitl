@@ -1,9 +1,9 @@
 {
   "test_id": "test_102_observe_mode_per_rule",
-  "description": "RESPECT_POLICY mode: rule with mode=observe returns OBSERVE instead of enforcing",
+  "description": "Staged rule is skipped in binding evaluation. With no active rules matching, falls through to NO_MATCHING_RULE → BLOCK. Block 1B will extend this test to verify staged_observations records the 'would have' decision.",
   "mode": "RESPECT_POLICY",
   "envelope": {
-    "schema_version": "v1.0",
+    "schema_version": "v2.0",
     "org_id": "org_1234567890abcdef",
     "environment": "prod",
     "agent_id": "agent_finance_bot",
@@ -19,13 +19,17 @@
     "signature": "0000000000000000000000000000000000000000000000000000000000000000"
   },
   "policy_set": {
-    "version": "1.0.0",
+    "version": "v1.0.0",
+    "description": "Staged rule is skipped in binding evaluation. With no active rules matching, falls through to NO_MATCHING_RULE → BLOCK. Block 1B will extend this test to verify staged_observations records the 'would have' decision.",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
     "name": "test_policy",
     "rules": [
       {
         "name": "block_high_value",
         "priority": 100,
-        "enabled": true,
         "conditions": {
           "all_of": [
             {
@@ -43,15 +47,15 @@
         "decision": "BLOCK",
         "reason_code": "AMOUNT_EXCEEDS_LIMIT",
         "description": "Block payments over 10000",
-        "mode": "observe"
+        "lifecycle_stage": "staged"
       }
     ]
   },
   "expected_decision": {
-    "decision": "OBSERVE",
-    "allowed": true,
-    "reason_codes": ["OBSERVED"],
-    "would_be": "BLOCK",
-    "would_be_reason_codes": ["AMOUNT_EXCEEDS_LIMIT"]
+    "decision": "BLOCK",
+    "allowed": false,
+    "reason_codes": [
+      "NO_MATCHING_RULE"
+    ]
   }
 }

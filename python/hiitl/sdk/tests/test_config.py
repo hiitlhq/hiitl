@@ -3,7 +3,7 @@
 import pytest
 from pydantic import ValidationError
 
-from hiitl.core.types import Environment
+from hiitl.core.types import ORG_ID_PATTERN, Environment
 from hiitl.sdk.config import LocalModeConfig
 
 
@@ -51,28 +51,37 @@ class TestLocalModeConfig:
         assert "environment" in str(exc_info.value).lower()
 
     def test_org_id_pattern_validation(self):
-        """org_id must match pattern org_[a-z0-9]{18,}."""
+        """org_id must match the envelope's org_id pattern (ORG_ID_PATTERN), so every id the service mints is taken."""
         # Valid org_ids
         valid_org_ids = [
             "org_mycompany123456789",
             "org_test000000000000000",
             "org_abc123def456ghi789",
-            "org_" + "x" * 18,  # Exactly 18 chars
+            "org_" + "x" * 18,
             "org_" + "y" * 100,  # Much longer
+            "org_0123456789abcdef",  # the service's mint: 16 hex characters
+            "org_MyCompany12345678",  # the envelope takes either case
         ]
 
+        refused = []
         for org_id in valid_org_ids:
-            config = LocalModeConfig(
-                environment="dev",
-                agent_id="test-agent",
-                org_id=org_id,
-                policy_path="./policy.yaml",
-            )
+            try:
+                config = LocalModeConfig(
+                    environment="dev",
+                    agent_id="test-agent",
+                    org_id=org_id,
+                    policy_path="./policy.yaml",
+                )
+            except ValidationError:
+                refused.append(org_id)
+                continue
             assert config.org_id == org_id
+        assert refused == [], "every id the envelope takes is taken"
 
         # Invalid org_ids
         invalid_org_ids = [
-            "org_short",  # Too short (< 18 chars)
+            "org_short",  # Too short (< 16 chars)
+            "org_" + "a" * 15,  # One short
             "org_",  # No chars after prefix
             "mycompany12345678",  # Missing org_ prefix
             "ORG_UPPERCASE00000000",  # Uppercase not allowed
@@ -181,5 +190,5 @@ class TestLocalModeConfig:
             )
         error_msg = str(exc_info.value)
         assert "org_" in error_msg
-        assert "18" in error_msg  # Mentions length requirement
+        assert ORG_ID_PATTERN in error_msg  # Names the length requirement, in the envelope's own pattern
         assert "example" in error_msg.lower() or "mycompany" in error_msg

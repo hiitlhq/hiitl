@@ -1,0 +1,13 @@
+export type JsonObject = Record<string, any>;
+export type Declaration = { address:string; path:(string|number)[]; types:string[]; allows_null:boolean };
+export type NullCase = { id:string; declaration:string; path:(string|number)[]; control:JsonObject; input:any; expected_accept:boolean };
+export type NullShape = { allows_null:boolean; properties?:Record<string,NullShape>; items?:NullShape; additionalProperties?:NullShape };
+export type Documents = (file:string)=>JsonObject;
+export const routeSchema:JsonObject;
+export function canonicalJson(value:any):string;
+export function valid(schema:JsonObject,value:any,documents?:Documents):boolean;
+export function typedMembers(schema:JsonObject,documents?:Documents):Declaration[];
+export function nullCases(schema:JsonObject,witnesses:{id:string;input:JsonObject}[],documents?:Documents):NullCase[];
+export function nullShape(schema:JsonObject,documents?:Documents):NullShape;
+export function routeCorpus():{source_hashes:Record<string,string>;witness_hash:string;declarations:Declaration[];cases:NullCase[];untyped_controls:{id:string;input:JsonObject}[]};
+export function generatedArtifacts():Record<string,string>;

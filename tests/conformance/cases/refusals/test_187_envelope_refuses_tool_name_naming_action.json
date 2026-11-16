@@ -1,0 +1,31 @@
+{
+  "test_id": "test_187_envelope_refuses_tool_name_naming_action",
+  "description": "An envelope built to schema 1.x, which names its action tool_name, is refused: tool_name is a field the 2.0 schema does not define, and the refusal names action, the field it was renamed (envelope_schema.json 1.1), which this envelope does not carry (HTL-27 row 225, ruled 2026-11-08; was test_107, which read tool_name as the action).",
+  "envelope": {
+    "schema_version": "v2.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_finance_bot",
+    "action_id": "act_test18700000000000000000",
+    "timestamp": "2026-02-14T12:00:00.000Z",
+    "tool_name": "process_payment",
+    "operation": "execute",
+    "parameters": {
+      "amount": 100
+    },
+    "idempotency_key": "idem_test_187",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "expected_refusal": {
+    "artifact": "envelope",
+    "at": [
+      "action",
+      "tool_name"
+    ],
+    "names": [
+      "tool_name",
+      "action"
+    ]
+  }
+}

@@ -1,13 +1,13 @@
 [![PyPI](https://img.shields.io/pypi/v/hiitl)](https://pypi.org/project/hiitl/)
 [![CI](https://github.com/hiitlhq/hiitl/actions/workflows/ci.yml/badge.svg)](https://github.com/hiitlhq/hiitl/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://pypi.org/project/hiitl/)
 
 # hiitl
 
-The control point for AI agents.
+The control point for software that can act.
 
-Every consequential action your agent takes — payments, emails, data access, permission changes — passes through hiitl before execution. You get visibility immediately. Add policies when you're ready.
+Every consequential action — payments, deployments, data access, claim approvals, permission changes — passes through hiitl before execution. Whether it's an AI agent, a data pipeline, or an automated workflow, you get visibility immediately. Add policies when you're ready.
 
 ```python
 from hiitl import HIITL
@@ -23,18 +23,18 @@ if decision.allowed:
     send_email(...)
 ```
 
-No API key. No config. Every action is logged. Add policies when you're ready.
+No API key. No config. Actions are observed and recorded locally. Add policies when you're ready.
 
 ---
 
 ## Why hiitl exists
 
-AI systems are starting to take real actions — approving claims, issuing payments, granting access, modifying data. But there's no standard way to observe what they're doing, enforce rules before they act, or intervene when something goes wrong.
+Software is increasingly acting on its own — AI agents approving claims, pipelines deploying to production, workflows issuing payments, automation granting access. But there's no standard way to observe what these systems are doing, enforce rules before they act, or intervene when something goes wrong.
 
-hiitl is the missing layer: a deterministic control point that sits between AI decision and execution.
+hiitl is the missing layer: a deterministic control point that sits between decision and execution.
 
 ```
-Agent decides → hiitl evaluates → Action executes (or doesn't)
+System decides → hiitl evaluates → Action executes (or doesn't)
 ```
 
 ## How it works
@@ -56,7 +56,7 @@ Agent decides → hiitl evaluates → Action executes (or doesn't)
                     └───────────────────┘
 ```
 
-Every action produces an immutable audit record, even if blocked.
+Each new evaluation of an admitted envelope produces an immutable audit record, including refusals after the envelope exists. A retry under a recorded idempotency key within the configured dedup window returns its original decision without another row. If the record cannot be written, the action is blocked with `AUDIT_WRITE_FAILED`; that failure has no record. A number outside the numeric domain is refused before an envelope exists, with no decision or record, even at the hosted entry when the request carries a string `action_id`; the refusal names the field and its declared type and range, recommending text only where text is admitted.
 
 ---
 
@@ -86,18 +86,18 @@ from hiitl import HIITL
 
 hiitl = HIITL()
 
-# Every call is logged. In OBSERVE mode (default), nothing is blocked.
+# OBSERVE_ALL records what policy would decide without enforcing that policy.
 decision = hiitl.evaluate("process_payment", parameters={
     "amount": 500.00,
     "currency": "USD",
     "account_id": "acct_123",
 })
 
-if decision.allowed:  # Always true in OBSERVE mode
+if decision.allowed:  # Check even in OBSERVE_ALL: an audit write failure blocks
     process_payment(...)
 
 # decision.observed == True
-# decision.would_be == "BLOCK" (if a policy would have blocked it)
+# decision.would_be == "BLOCK" (with no policy loaded, every would-be decision is BLOCK with NO_MATCHING_RULE)
 ```
 
 **TypeScript**
@@ -106,7 +106,7 @@ import { HIITL } from '@hiitl/sdk';
 
 const hiitl = new HIITL();
 
-const decision = hiitl.evaluate({
+const decision = await hiitl.evaluate({
   action: 'process_payment',
   parameters: { amount: 500.00, currency: 'USD' },
 });
@@ -122,12 +122,15 @@ When you're ready for enforcement, write a policy and switch to `RESPECT_POLICY`
 
 **policy.yaml**
 ```yaml
-version: "1.0.0"
+version: "v1.0.0"
 name: payment_controls
+description: Payment controls for the quickstart agent
+scope:
+  org_id: "org_devlocal0000000000"
+  environment: dev
 rules:
   - name: block_large_payments
     priority: 900
-    enabled: true
     description: Payments over $1,000 require approval
     conditions:
       all_of:
@@ -142,7 +145,6 @@ rules:
 
   - name: allow_normal_payments
     priority: 100
-    enabled: true
     description: Allow standard payments
     conditions:
       field: action
@@ -174,7 +176,7 @@ elif decision.blocked:
 
 # decision.decision == "REQUIRE_APPROVAL"
 # decision.reason_codes == ["LARGE_PAYMENT"]
-# decision.policy_version == "1.0.0"
+# decision.policy_version == "v1.0.0"
 ```
 
 ### 3. Go to production
@@ -186,7 +188,9 @@ hiitl = HIITL(
     agent_id="payment-agent",
     org_id="org_yourcompany1234567",
     api_key="sk_live_...",
-    server_url="https://ecp.hiitl.com",
+    signature_key="...",       # the signing secret shown when the API key was created
+    server_url="https://api.hiitl.com",
+    evaluation="remote",          # hosted evaluation is an explicit opt-in; api_key alone runs hybrid mode
     environment="prod",
     mode="RESPECT_POLICY",
 )
@@ -198,31 +202,69 @@ decision = hiitl.evaluate("process_payment", parameters={
 })
 ```
 
+### Beyond agents: pipelines and workflows
+
+hiitl works with any software that takes consequential actions. Here's a deployment pipeline:
+
+```python
+# CI/CD pipeline — require approval for production deploys
+decision = hiitl.evaluate("deploy_service", parameters={
+    "service": "payment-api",
+    "environment": "production",
+    "version": "2.4.1",
+})
+
+if decision.allowed:
+    deploy(...)
+elif decision.needs_approval:
+    notify_oncall(decision)  # Routes to Slack, PagerDuty, etc.
+```
+
+And an automated claims workflow:
+
+```python
+# Claims processing — block high-value claims, audit everything
+decision = hiitl.evaluate("approve_claim", parameters={
+    "claim_id": "CLM-4829",
+    "amount": 24000.00,
+    "category": "property_damage",
+})
+
+if decision.allowed:
+    approve_claim(...)
+elif decision.blocked:
+    flag_for_manual_review(decision)
+```
+
+Same `evaluate()` call. Same policies. Same audit trail.
+
 ---
 
 ## What you get
 
-**Observe** — Log every action your agents attempt. See patterns before writing rules.
+**Observe** — Record new evaluations of the actions your systems send through hiitl. See patterns before writing rules.
 
 **Enforce** — Deterministic policy evaluation in single-digit milliseconds. No LLM inference at decision time.
 
-**Intervene** — Block, pause, require approval, rate limit, kill switch. Nine decision types for different situations.
+**Intervene** — Block, pause, require approval, rate limit, kill switch. [Decision types](docs/specs/decision_response.md) cover different situations, including recorded error decisions.
 
-**Record** — Immutable audit trail for every action, even blocked ones. Policy version attached to every decision.
+**Record** — Immutable records of new evaluations, including blocked actions. A duplicate reuses its first decision; an unwritable record blocks the action. Decisions identify the policy version used.
 
 ### Decision types
+
+Selected policy outcomes are shown below; the [decision specification](docs/specs/decision_response.md) defines the full response set.
 
 | Decision | What happens |
 |----------|-------------|
 | `ALLOW` | Action proceeds |
 | `BLOCK` | Action denied |
 | `OBSERVE` | Action proceeds, would-be decision logged |
-| `REQUIRE_APPROVAL` | Queued for human review |
+| `REQUIRE_APPROVAL` | Returned for a person's decision; the MCP gateway opens a review case with the hosted service |
 | `PAUSE` | Held for later processing |
 | `RATE_LIMIT` | Rate limit exceeded |
 | `KILL_SWITCH` | Emergency stop active |
 | `ESCALATE` | Routed to higher authority |
-| `SANDBOX` | Routed to sandbox environment |
+| `SANDBOX` | Caller executes against its own configured sandbox target |
 
 ### Decision object
 
@@ -233,12 +275,12 @@ decision.allowed        # bool — can the action proceed?
 decision.decision       # str — "ALLOW", "BLOCK", etc.
 decision.reason_codes   # list — why this decision was made
 decision.policy_version # str — which policy version was used
-decision.timing         # dict — evaluation_ms, total_ms
+decision.timing         # Timing — ingest_ms, evaluation_ms, total_ms
 
 # Convenience properties
 decision.ok             # alias for .allowed
-decision.blocked        # True if BLOCK
-decision.needs_approval # True if REQUIRE_APPROVAL
+decision.blocked        # True if BLOCK, KILL_SWITCH or RATE_LIMIT
+decision.needs_approval # True if REQUIRE_APPROVAL, PAUSE or ESCALATE
 decision.observed       # True if OBSERVE mode
 decision.would_be       # str — what enforce mode would have done (OBSERVE only)
 ```
@@ -249,7 +291,7 @@ decision.would_be       # str — what enforce mode would have done (OBSERVE onl
 
 ### Multi-language native evaluators
 
-The policy engine runs natively in Python and TypeScript — no cross-language dependencies, no subprocess calls. Both implementations are validated by the same [conformance test suite](tests/conformance/) (75 tests).
+The policy engine runs natively in Python and TypeScript — no cross-language dependencies, no subprocess calls. Both implementations are validated by the same [conformance test suite](tests/conformance/).
 
 ```
 ┌─────────────────────────────┐
@@ -270,9 +312,11 @@ The policy engine runs natively in Python and TypeScript — no cross-language d
 
 ### Deployment modes
 
-**Local** — Zero dependencies, runs in-process. SQLite audit log. Sub-millisecond evaluation. Perfect for development and edge deployment.
+**Local** — Runs in-process with four runtime dependencies (pydantic, pydantic-settings, PyYAML, httpx). SQLite audit log. Policies and routes as files.
 
-**Hosted** — Managed service with PostgreSQL, team collaboration, API-based policy management. Same `evaluate()` call, different backend.
+**Hybrid** — The same in-process evaluator, with policies synced from the hosted service and the audit log uploaded to it; keeps deciding from its cache when the service is unreachable.
+
+**Hosted** — Evaluation on the service, with PostgreSQL, team collaboration, API-based policy management. An explicit opt-in (`evaluation="remote"` in Python; `evaluation: 'remote'` in TypeScript), with an API key, signing secret and `server_url`.
 
 ---
 
@@ -315,8 +359,8 @@ See [examples/](examples/) for standalone, runnable examples:
 
 ### Prerequisites
 
-- Python 3.12+
-- Node.js 18+
+- Python 3.10+
+- Node.js 22+
 
 ### Setup
 
@@ -325,7 +369,7 @@ git clone https://github.com/hiitlhq/hiitl.git
 cd hiitl
 
 # Python
-cd python && pip install -e ".[dev]" && cd ..
+cd python && pip install -e . && pip install pytest && cd ..
 
 # TypeScript
 cd typescript/packages/core && npm install && cd ../../..
@@ -335,7 +379,7 @@ cd typescript/packages/sdk && npm install && cd ../../..
 ### Tests
 
 ```bash
-# Python conformance tests (75 tests)
+# Python conformance tests (the shared cases in tests/conformance/cases)
 cd python && python -m pytest hiitl/core/tests/conformance/
 
 # TypeScript conformance tests
@@ -347,7 +391,7 @@ cd python && python -m pytest
 
 ### Conformance tests
 
-Both evaluators must produce identical decisions for identical inputs. The [conformance suite](tests/conformance/) defines 75 test cases as JSON — each is an (envelope, policy, expected decision) tuple that runs against both implementations.
+Both evaluators must produce identical decisions for identical complete inputs, including the policy, envelope, clock, route answers and limiter state. The [conformance suite](tests/conformance/) defines the shared test cases as JSON — each is an (envelope, policy, expected decision) tuple that runs against both implementations.
 
 ---
 
@@ -361,12 +405,10 @@ hiitl/
 ├── typescript/packages/
 │   ├── core/           # Policy evaluator + types
 │   └── sdk/            # TypeScript SDK (local + hosted)
-├── tests/conformance/  # 75 cross-language conformance tests
+├── tests/conformance/  # Shared cross-language conformance cases
 ├── patterns/           # 25 action pattern templates
-├── docs/
-│   ├── specs/          # Language-neutral specifications
-│   ├── onboarding/     # Quickstarts and guides
-│   └── security/       # Security architecture
+├── docs/specs/         # Language-neutral specifications
+├── docs/onboarding/    # Quickstarts and guides
 └── examples/           # Standalone runnable examples
 ```
 
@@ -378,4 +420,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, testing, and PR gu
 
 ## License
 
-[MIT](LICENSE)
+[Apache-2.0](LICENSE). Copyright 2026 Trevor Foster; see [NOTICE](NOTICE).

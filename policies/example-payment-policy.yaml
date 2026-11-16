@@ -7,7 +7,7 @@ policy_set:
   version: "v1.0.0"
   description: "Production payment processing controls"
   scope:
-    org_id: "org_your_org_id"  # Replace with your org ID
+    org_id: "org_devlocal0000000000"  # Replace with your org ID
     environment: "prod"          # dev, stage, or prod
 
   rules:
@@ -17,11 +17,11 @@ policy_set:
 
     - name: "kill-switch-all-payments"
       description: "Emergency stop for all payment processing"
-      enabled: false  # Disabled by default, enable during incident
+      lifecycle_stage: disabled  # Disabled by default, enable during incident
       priority: 1000
       conditions:
         all_of:
-          - field: "tool_name"
+          - field: "action"
             operator: "equals"
             value: "process_payment"
       decision: "KILL_SWITCH"
@@ -36,11 +36,10 @@ policy_set:
 
     - name: "block-suspended-agents"
       description: "Block payments from suspended agents"
-      enabled: true
       priority: 900
       conditions:
         all_of:
-          - field: "tool_name"
+          - field: "action"
             operator: "equals"
             value: "process_payment"
           - field: "agent_id"
@@ -51,11 +50,10 @@ policy_set:
 
     - name: "block-negative-amounts"
       description: "Block payments with negative amounts"
-      enabled: true
       priority: 900
       conditions:
         all_of:
-          - field: "tool_name"
+          - field: "action"
             operator: "equals"
             value: "process_payment"
           - field: "parameters.amount"
@@ -70,29 +68,23 @@ policy_set:
 
     - name: "rate-limit-payments-per-agent"
       description: "Limit each agent to 100 payments per hour"
-      enabled: true
       priority: 500
       conditions:
         all_of:
-          - field: "tool_name"
+          - field: "action"
             operator: "equals"
             value: "process_payment"
       decision: "RATE_LIMIT"
       reason_code: "AGENT_PAYMENT_RATE_LIMIT"
-      metadata:
-        rate_limit:
-          scope: "agent_id"
-          window: "hour"
-          limit: 100
-          window_type: "sliding"
+      # the window on the rule — one representation (policy_format.md "Rate-limit rules"; T47)
+      rate_limit: {limit: 100, window_seconds: 3600, scope: agent}
 
     - name: "rate-limit-large-payments"
       description: "Stricter limit for high-value payments (>$1000)"
-      enabled: true
       priority: 510
       conditions:
         all_of:
-          - field: "tool_name"
+          - field: "action"
             operator: "equals"
             value: "process_payment"
           - field: "parameters.amount"
@@ -100,12 +92,8 @@ policy_set:
             value: 1000
       decision: "RATE_LIMIT"
       reason_code: "HIGH_VALUE_PAYMENT_RATE_LIMIT"
-      metadata:
-        rate_limit:
-          scope: "agent_id"
-          window: "hour"
-          limit: 20
-          window_type: "sliding"
+      # the window on the rule — one representation (policy_format.md "Rate-limit rules"; T47)
+      rate_limit: {limit: 20, window_seconds: 3600, scope: agent}
 
     # ============================================
     # Layer 4: Approval Requirements (Priority 100-399)
@@ -113,11 +101,10 @@ policy_set:
 
     - name: "require-approval-very-high-value"
       description: "Executive approval for payments over $10,000"
-      enabled: true
       priority: 200
       conditions:
         all_of:
-          - field: "tool_name"
+          - field: "action"
             operator: "equals"
             value: "process_payment"
           - field: "parameters.amount"
@@ -132,11 +119,10 @@ policy_set:
 
     - name: "require-approval-high-value"
       description: "Manager approval for payments over $1,000"
-      enabled: true
       priority: 150
       conditions:
         all_of:
-          - field: "tool_name"
+          - field: "action"
             operator: "equals"
             value: "process_payment"
           - field: "parameters.amount"
@@ -150,11 +136,10 @@ policy_set:
 
     - name: "require-approval-low-confidence"
       description: "Approval required for low-confidence payments"
-      enabled: true
       priority: 120
       conditions:
         all_of:
-          - field: "tool_name"
+          - field: "action"
             operator: "equals"
             value: "process_payment"
           - field: "parameters.amount"
@@ -175,11 +160,10 @@ policy_set:
 
     - name: "escalate-unusual-currency"
       description: "Escalate payments in unusual currencies"
-      enabled: true
       priority: 100
       conditions:
         all_of:
-          - field: "tool_name"
+          - field: "action"
             operator: "equals"
             value: "process_payment"
           - field: "parameters.currency"
@@ -196,11 +180,10 @@ policy_set:
 
     - name: "allow-standard-payments"
       description: "Allow normal payments that passed all checks"
-      enabled: true
       priority: 1
       conditions:
         all_of:
-          - field: "tool_name"
+          - field: "action"
             operator: "equals"
             value: "process_payment"
       decision: "ALLOW"

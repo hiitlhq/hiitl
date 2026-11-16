@@ -9,7 +9,7 @@ tags: ["external", "webhook", "notification", "event"]
 
 evaluate_examples:
   python: |
-    result = hiitl.evaluate("webhook_trigger", {
+    result = hiitl.evaluate("webhook_trigger", parameters={
         "destination_url": "https://hooks.slack.com/services/T00/B00/xxx",
         "event_type": "order_completed",
         "payload_size": 2048,
@@ -17,15 +17,15 @@ evaluate_examples:
     if result.ok:
         dispatch_webhook()
   typescript: |
-    const result = hiitl.evaluate({
+    const result = await hiitl.evaluate({
       action: 'webhook_trigger',
-      params: {
+      parameters: {
         destination_url: 'https://hooks.slack.com/services/T00/B00/xxx',
         event_type: 'order_completed',
         payload_size: 2048,
       },
     });
-    if (result.ok) {
+    if (result.allowed) {
       await dispatchWebhook();
     }
 
@@ -35,7 +35,7 @@ context_enrichment:
     example: "https://hooks.slack.com/services/T00/B00/xxx"
   - field: "sensitivity"
     why: "Webhooks carrying sensitive event data (PII, financial events) require stricter destination controls"
-    example: "identity"
+    example: ["identity"]
   - field: "parameters.event_type"
     why: "Event type classification determines which destinations are appropriate and what data minimization rules apply"
     example: "order_completed"
@@ -50,7 +50,6 @@ starter_policies:
   - name: "allow-whitelisted-destinations"
     description: "Allow webhook dispatch to pre-approved destination domains"
     priority: 500
-    enabled: true
     conditions:
       all_of:
         - field: "action"
@@ -62,14 +61,13 @@ starter_policies:
     decision: "ALLOW"
     reason_code: "WHITELISTED_DESTINATION_ALLOWED"
     remediation:
-      type: "static"
+      type: "custom"
       message: "Webhook dispatch to approved destination permitted"
       suggestion: "No action needed"
 
   - name: "block-external-in-dev"
     description: "Block all external webhook dispatches from dev and staging environments"
     priority: 100
-    enabled: true
     conditions:
       all_of:
         - field: "action"
@@ -81,29 +79,31 @@ starter_policies:
     decision: "BLOCK"
     reason_code: "NON_PROD_WEBHOOK_BLOCKED"
     remediation:
-      type: "static"
+      type: "custom"
       message: "Webhook dispatches are blocked in non-production environments to prevent test data from reaching live endpoints and external systems."
       suggestion: "Use a webhook testing service (e.g., webhook.site) configured as an internal test destination, or use dry-run mode to validate webhook payloads without dispatching. Switch to the production environment for live webhook delivery."
 
   - name: "rate-limit-webhooks"
-    description: "Rate-limit webhook dispatches per destination to protect downstream receivers and detect event storms"
+    description: "Rate-limit webhook dispatches per agent to protect downstream receivers and detect event storms"
     priority: 300
-    enabled: true
     conditions:
       field: "action"
       operator: "equals"
       value: "webhook_trigger"
     decision: "RATE_LIMIT"
     reason_code: "WEBHOOK_RATE_LIMITED"
+    rate_limit:
+      limit: {"$uncalibrated": "webhook_trigger calls per agent per hour, set from your own traffic"}
+      window_seconds: 3600
+      scope: "agent"
     remediation:
-      type: "static"
+      type: "rate_limit"
       message: "Webhook dispatch rate limit exceeded. Rate limits protect downstream receivers from event storms and detect runaway automation."
       suggestion: "Implement event batching or debouncing to reduce webhook volume. If higher throughput is needed, coordinate with the destination service owner and request a rate limit increase from your administrator."
 
   - name: "require-approval-new-destinations"
     description: "Require security team approval before dispatching webhooks to destinations not on the approved list"
     priority: 200
-    enabled: true
     conditions:
       all_of:
         - field: "action"
@@ -121,14 +121,13 @@ starter_policies:
     decision: "REQUIRE_APPROVAL"
     reason_code: "NEW_DESTINATION_REQUIRES_APPROVAL"
     remediation:
-      type: "static"
+      type: "custom"
       message: "Webhook dispatch to an unrecognized destination requires security team approval. This prevents data leakage through unauthorized endpoints."
       suggestion: "Submit a destination approval request to your security team. Include the destination URL, the types of events that will be sent, and the data fields included in the payload. Once approved, add the destination domain to the allowlist policy."
 
   - name: "block-oversized-payloads"
     description: "Block webhook dispatches with abnormally large payloads that may indicate data exfiltration"
     priority: 150
-    enabled: true
     conditions:
       all_of:
         - field: "action"
@@ -140,7 +139,7 @@ starter_policies:
     decision: "BLOCK"
     reason_code: "OVERSIZED_WEBHOOK_PAYLOAD_BLOCKED"
     remediation:
-      type: "static"
+      type: "threshold"
       message: "Webhook payload size exceeds the 100KB limit. Abnormally large payloads may indicate data exfiltration or misconfigured event serialization."
       suggestion: "Review the webhook payload to remove unnecessary fields. If the event data legitimately exceeds the size limit, split it into multiple smaller events or include a reference URL instead of inline data. Contact your administrator if the payload size limit needs adjustment."
 

@@ -1,0 +1,66 @@
+---
+title: "Data handling"
+description: "What hiitl holds, where, who can reach it, how it is protected, how long it stays, and what leaves"
+---
+
+hiitl has two planes. The open-source core runs in your environment (local mode); the hosted service is operated by hiitl and used in hybrid and hosted modes. This page says what each holds today. Where the build is short of the design, it says so and names the row on [Limits and roadmap](/reference/limits-and-roadmap).
+
+## What is held, by plane
+
+| Data | Local mode (the core, in your environment) | With the hosted service |
+|---|---|---|
+| **Policies and routes** | files in your repository | the service's database: every version with a SHA-256 content hash, and a change record per version |
+| **The decision record** | a SQLite file per SDK instance (`./hiitl_audit.db` by default), yours; one row per evaluation: the envelope as built, with each field in the client's `redact_fields` (and in hybrid mode the organization's) stored as `[REDACTED]`, the decision, the matched rules, the reason codes, timestamps, a content hash of the row as stored | the same rows, uploaded in batches to the service's database, which also applies the organization's redaction policy before it stores each one; the local file is the buffer |
+| **Approvals** | your reviewer endpoint's own store | review cases: the case and what a timeout takes; each transition (from, to, who, what, when) appended, never written over |
+| **API keys** | none | a SHA-256 hash of the key, its scopes, and the key's HMAC signing secret, [encrypted](#encryption) |
+| **Rate-limit counters** | in the agent's process | per organization and environment in the database |
+| **Telemetry** (Python SDK) | none sent: no destination | counts, never a value: on by default at the `standard` level, evaluation and decision counts per action and agent, and latency; a parameter is counted only for an action you name in `telemetry_parameter_tools` (none by default), as a count, or for a string the number of distinct values; `full` adds a numeric parameter's mean when its values differ and the store records it as given (a declared field sends its count only); no level sends a parameter's value, and `off` sends nothing. The level is the client's `telemetry_level`, or `HIITL_TELEMETRY_LEVEL` |
+
+## What is in the envelope
+
+The envelope carries the action as the integrating system declared it: the tool, the target, the `parameters`, the amount, the scope, who is acting and for whom, a reason string. What goes into `parameters` is the integrating system's choice. Through the MCP gateway, `parameters` are the tool call's arguments as the model made the call, so an argument that carries content (the text to write, the message to send) is in the envelope and in the record. In local mode that record stays on your host.
+
+## Redaction
+
+You declare which fields the record never holds. Each store applies the declaration of whoever writes it, before every write:
+
+- **The SDK's store:** the client's `redact_fields` ([Python](/sdk/python-configuration), [TypeScript](/sdk/typescript-configuration)). A hybrid-mode row is uploaded already redacted.
+- **The organization:** its redaction policy, set by an `admin` key with `PUT /v1/redaction-policy` (`{"manual_redact_fields": ["parameters.account_number"]}`) and read with `GET`. It applies to every row the service stores with the call's values: the row `/v1/evaluate` writes, each row the SDKs upload, a review case's call and decision, a reviewer's modified arguments, and a route job's payload. A hybrid-mode SDK pulls it with its policies and applies it with its own `redact_fields`, at every write to its local file. Each change writes a change record: who made it, the content hashes before and after, and the paths added and removed. A change whose record cannot be written is refused.
+- **The gateway:** every tool argument is recorded by name with its value as an HMAC-SHA256 hash, unless `recorded_arguments` in `hiitl-mcp.yaml` names it for that tool. The key is made at the gateway's first start and kept beside its audit file (`<audit_db_path>.value_hash.key`, readable by its owner only); it is never synced or recorded. Keep it with the file: two rows' hashes compare under the same key. The upstream server still receives the real arguments.
+
+A declared field is a dotted path to a member of one of the envelope's objects (`parameters.…`, `target.…`), never a top-level field, and its value is stored as `[REDACTED]`. A remediation that states the call's value at a declared field stores the marker in its place. Evaluation always sees the call whole. The envelope's signature and `envelope_hash` cover the envelope as sent, so you can recompute them from your own copy; the row's content hash covers the row as stored.
+
+What redaction does not do:
+
+- It does not find sensitive fields for you: hiitl reads what you declare, not the content.
+- A declared path the call does not carry redacts nothing; the SDK's store names it in the record's `redaction` member (`{"absent": [...]}`), so a misspelled path shows in the record.
+- A route or reviewer is sent the stored form, so it receives `[REDACTED]` at a declared field. A reviewer's modified arguments that hold the marker are refused at the gateway, which never forwards it.
+- A hybrid-mode SDK applies the organization's list from its first successful pull; a row written before then holds the client's own `redact_fields` only.
+
+No model is called by the control point. The hosted service's policy-drafting feature sends summaries derived from the record to a model provider on hiitl's own account; it is not part of local mode.
+
+## Identities and scopes
+
+**Local mode.** Agents are identified by `agent_id` and `org_id` in every envelope and record. Who may change a policy is your repository's review; who may approve is your reviewer endpoint's authentication. There is no hiitl account.
+
+**Hosted service.** Agents hold API keys with scopes: `evaluate`, `read`, `admin`, and `full` (every scope, for development). A key is bound to one organization and one environment. People sign in to the dashboard through the service's identity provider; a signed-in user holds every scope in the current phase. Organizations are isolated in the database by row-level security on the tables that carry `org_id`: a tenant request runs as a database role whose policy requires `org_id` to equal the request's; the service's own background workers run as the owner role, which the policy does not bind. Environments are separate in the tables that carry an environment column (policies, decisions, keys, routes, cases).
+
+## Signing and hashes
+
+An envelope carries an HMAC-SHA256 signature when the client is given a `signature_key`, in one signing form across both SDKs and the hosted service (RFC 8785). In local mode the SDK checks the signature before it evaluates and records the envelope it signed; the record is written by the same process that signs. The hosted service evaluates only an envelope signed with the API key's signing secret and refuses one that is unsigned or does not verify (HTTP 403). Every stored row carries a SHA-256 content hash of its content.
+
+## Integrity of the record
+
+The SDK never changes a row's content or deletes a row; in hybrid mode it marks a row as uploaded. The hosted service exposes no endpoint that updates or deletes a decision.
+
+## Retention and erasure
+
+hiitl applies no retention of its own. In local mode your log pipeline's retention applies. Where a row holds an identifier that is personal data, your deletion is the erasure, and the row's content hash no longer verifies afterwards, which is the honest trace. Document the procedure in your data-protection record; hiitl does not do it silently.
+
+## Encryption
+
+In local mode the record is a file under your disk encryption. With the hosted service, TLS in transit and the database's encryption at rest. Each API key's signing secret is also encrypted in its column (AES-256-GCM), under a key the service holds outside the database; the service does not start without that key.
+
+## The operator
+
+If a partner operates hiitl inside your environment, their access is through your identities: an operator role granted by you, with your single sign-on, multi-factor, just-in-time access and logging, revocable by you. hiitl has no vendor back door; revoking the operator leaves the deployment running.

@@ -1,0 +1,101 @@
+# hiitl-mcp-proxy config — drop-in MCP governance.
+#
+# This config tells the proxy which upstream MCP servers to spawn (or
+# connect to) and how to talk to hiitl. Every tool call flows through
+# hiitl.evaluate() before being forwarded to the right upstream.
+#
+# To use:
+#   1. pip install 'hiitl[mcp]'
+#   2. Point Claude Desktop at hiitl-mcp-proxy (see claude_desktop_config.json).
+#   3. Edit this file: list the MCP servers you used to run directly.
+#   4. Restart Claude Desktop.
+
+# Optional. Unset: the proxy reads HIITL_API_KEY from its environment
+# (the `env` of its entry in the MCP client's config); with neither,
+# pure-local mode (no hosted sync — policies from local files, audit to
+# local SQLite). Values here are read as written: a ${VAR} is that string.
+# api_key: "sk-hiitl-..."
+
+# Optional. Local mode: with a policy file and no api_key, the SDK
+# evaluates the file in-process and its rules bind (RESPECT_POLICY).
+# A ROUTE rule's sync route, from routes_path, is asked before the call
+# runs. Write the paths absolute: the MCP client picks the working
+# directory. The envelope signature key is never set here — put
+# HIITL_SIGNATURE_KEY in the proxy's environment instead.
+# policy_path: "/Users/me/hiitl/policy.json"
+# routes_path: "/Users/me/hiitl/routes"
+# audit_db_path: "/Users/me/hiitl/audit.db"
+# mode: OBSERVE_ALL      # records what the policy would decide; blocks nothing
+
+# Optional. The audit record holds each tool argument by name with an
+# HMAC-SHA256 hash of its value, so it holds nothing the model sent unless
+# you name it here: per tool, the arguments recorded as given. Policies
+# evaluate the real arguments, and the upstream receives them.
+# recorded_arguments:
+#   write_file: [path]
+
+# Optional. The hiitl backend URL. Required for the full review flow
+# (PAUSE / REQUIRE_APPROVAL / ESCALATE decisions wait for a human via
+# Server-Sent Events). When unset, those calls are blocked with a
+# message that they need human approval, and the upstream is not
+# called. Set this alongside `api_key` to enable the review flow.
+# server_url: "https://api.hiitl.com"
+
+# Per-tool-call timeout. evaluate() runs in-process and is microseconds;
+# this budget covers forwarding to a slow upstream.
+timeout_seconds: 30
+
+# The longest the proxy waits on a review case. A decision whose route's
+# sla.timeout fits within this waits the route's timeout, and a timeout
+# takes the route's sla.timeout_action; otherwise the case waits this long
+# and a timeout is refused (fail_closed). The MCP client (Claude Desktop,
+# etc.) has its own request timeout — make sure THIS value is shorter than
+# that, or Claude will give up before the reviewer responds. 300 (5 min)
+# is the default; the bounds are 10 to 3600.
+review_timeout_seconds: 300
+
+# dev | stage | prod. Sets the `environment` field on every envelope so
+# policies that scope by environment work correctly.
+environment: dev
+
+# Shows up on audit rows and in the behavior dashboard. Override
+# per-deployment if you run the proxy in multiple agent contexts.
+agent_id: claude-desktop
+
+# Each entry under `servers` is a labeled upstream. The label is just
+# for diagnostics — tool names are NOT namespaced by label. If two
+# servers expose the same tool name, the proxy fails to start with a
+# clear error pointing at the collision.
+servers:
+
+  # Stdio transport — proxy spawns this as a child process and talks
+  # over its stdin/stdout. This is what most MCP servers use today.
+  filesystem:
+    command: npx
+    args:
+      - "-y"
+      - "@modelcontextprotocol/server-filesystem"
+      - "/Users/YOUR_USERNAME/Documents"
+
+  # Another stdio upstream. You can list as many as you want.
+  github:
+    command: npx
+    args:
+      - "-y"
+      - "@modelcontextprotocol/server-github"
+    # A secret by reference: when the proxy starts, it reads
+    # GITHUB_PERSONAL_ACCESS_TOKEN from its own environment (the `env` of
+    # its entry in claude_desktop_config.json) and passes the value to
+    # the upstream; an unset variable stops the start, naming it. A value
+    # under `env:` is passed as written. The upstream's environment is
+    # these, plus PATH, HOME and the like — never the rest of the proxy's.
+    secret_refs:
+      GITHUB_PERSONAL_ACCESS_TOKEN: "env:GITHUB_PERSONAL_ACCESS_TOKEN"
+
+  # SSE transport — for remote MCP servers you reach over HTTP.
+  # Uncomment and fill in if you have one.
+  #
+  # remote-tools:
+  #   url: "https://mcp.example.com/sse"
+  #   headers:
+  #     Authorization: "Bearer your-token-here"

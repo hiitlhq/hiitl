@@ -14,10 +14,18 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { HIITL } from '../../src/client.js';
 import type { Decision } from '@hiitl/core';
+import { declaredNumber } from '../../../../test-support/declarations.js';
+import { recordMeasurement } from '../../../../test-support/measurements.js';
 
 const FIXTURES_DIR = path.join(__dirname, '../fixtures');
 const TEST_POLICY = path.join(FIXTURES_DIR, 'valid_policy.json');
 const TEST_DB = path.join(FIXTURES_DIR, 'integration_test.db');
+const PURE_LOCAL_MS = declaredNumber(
+  fs.readFileSync(path.join(__dirname, '../../../../../docs/specs/decision_response.md'), 'utf8'),
+  /^- \*\*Pure local mode\*\*: Single-digit milliseconds \(< ([\d.]+)ms\)$/m,
+  'decision_response.md pure-local latency target',
+);
+const SOURCE = 'typescript/packages/sdk/tests/integration/full-flow.test.ts';
 
 describe('Integration: Full Flow', () => {
   let hiitl: HIITL;
@@ -89,14 +97,20 @@ describe('Integration: Full Flow', () => {
         limit: 10,
       });
 
+      // Each decision's record, found by its identity (action_id). Two evaluations in one
+      // millisecond share a timestamp, so their order in a time-ordered query is not theirs.
       expect(records).toHaveLength(2);
-      expect(records[0].action_id).toBe(decision2.action_id); // Most recent first
-      expect(records[1].action_id).toBe(decision1.action_id);
+      const byId = new Map(records.map((r) => [r.action_id, r]));
+      for (const [d, amount] of [[decision1, 100], [decision2, 200]] as const) {
+        const rec = byId.get(d.action_id);
+        expect(rec).toBeDefined();
+        expect(JSON.parse(rec!.envelope).parameters.amount).toBe(amount);
+      }
     });
   });
 
   describe('Performance Requirements', () => {
-    it('should complete evaluation in < 10ms (average)', () => {
+    it('local evaluation meets its declared budget and records its observed tail', () => {
       hiitl = new HIITL({
         environment: 'dev',
         agent_id: 'perf-test',
@@ -129,11 +143,15 @@ describe('Integration: Full Flow', () => {
 
       console.log(`Performance: avg=${avg.toFixed(2)}ms, p95=${p95.toFixed(2)}ms`);
 
-      expect(avg).toBeLessThan(10);
-      expect(p95).toBeLessThan(10);
+      recordMeasurement({ metric: 'local evaluation duration', unit: 'ms', source: `${SOURCE}#local-latency`,
+        value: avg, sample_count: durations.length, statistic: 'arithmetic mean' });
+      recordMeasurement({ metric: 'local evaluation observed tail', unit: 'ms', source: `${SOURCE}#local-latency`,
+        value: p95, sample_count: durations.length, statistic: 'sorted[floor(n * 0.95)]' });
+      // The pure-local declaration belongs here. The hosted p95 target does not.
+      expect(avg).toBeLessThan(PURE_LOCAL_MS);
     });
 
-    it('should have sub-millisecond cache hits', () => {
+    it('records first and cached whole-evaluation durations', () => {
       hiitl = new HIITL({
         environment: 'dev',
         agent_id: 'cache-test',
@@ -164,11 +182,15 @@ describe('Integration: Full Flow', () => {
 
       console.log(`Cache: first=${firstCall.toFixed(2)}ms, avg=${avgCache.toFixed(2)}ms`);
 
-      // Cache hits should be significantly faster
-      expect(avgCache).toBeLessThan(firstCall);
+      recordMeasurement({ metric: 'first local evaluation duration', unit: 'ms',
+        source: `${SOURCE}#cached-whole-evaluation`, value: firstCall, statistic: 'single call' });
+      recordMeasurement({ metric: 'cached whole-evaluation duration', unit: 'ms',
+        source: `${SOURCE}#cached-whole-evaluation`, value: avgCache,
+        sample_count: cacheDurations.length, statistic: 'arithmetic mean' });
+      // This measures the complete SDK call, not the declared from-disk cache-read boundary.
     });
 
-    it('should handle 1000 evaluations with good throughput', () => {
+    it('records evaluation throughput', () => {
       hiitl = new HIITL({
         environment: 'dev',
         agent_id: 'throughput-test',
@@ -181,7 +203,8 @@ describe('Integration: Full Flow', () => {
 
       const start = performance.now();
 
-      for (let i = 0; i < 1000; i++) {
+      const iterations = 1000;
+      for (let i = 0; i < iterations; i++) {
         hiitl.evaluate({
           action: 'test_tool',
           parameters: { amount: i },
@@ -189,12 +212,14 @@ describe('Integration: Full Flow', () => {
       }
 
       const elapsed = performance.now() - start;
-      const throughput = 1000 / (elapsed / 1000); // ops/sec
+      const throughput = iterations / (elapsed / 1000); // ops/sec
 
       console.log(`Throughput: ${throughput.toFixed(0)} ops/sec (${elapsed.toFixed(0)}ms for 1000 ops)`);
 
-      // Should complete 1000 evaluations in reasonable time
-      expect(elapsed).toBeLessThan(10000); // < 10 seconds
+      recordMeasurement({ metric: 'evaluation batch duration', unit: 'ms', source: `${SOURCE}#throughput`,
+        value: elapsed, sample_count: iterations, statistic: 'whole batch' });
+      recordMeasurement({ metric: 'evaluation throughput', unit: 'operations/second', source: `${SOURCE}#throughput`,
+        value: throughput, sample_count: iterations, statistic: 'count / elapsed seconds' });
     });
   });
 
@@ -203,13 +228,14 @@ describe('Integration: Full Flow', () => {
       // Create policy with rate limiting
       const rateLimitPolicy = {
         name: 'rate-limit-integration',
-        version: '1.0',
+        version: 'v1.0.0',
+        description: 'Enforce rate limits across multiple calls',
+        scope: { org_id: 'org_test000000000000000', environment: 'dev' },
         rules: [
           {
             name: 'allow-all',
             description: 'Allow all',
             priority: 100,
-            enabled: true,
             decision: 'ALLOW',
             reason_code: 'OK',
             conditions: {

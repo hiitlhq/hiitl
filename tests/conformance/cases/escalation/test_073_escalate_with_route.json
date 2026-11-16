@@ -2,7 +2,7 @@
   "test_id": "test_073_escalate_with_route",
   "description": "ESCALATE rule with route passes reference to decision.route_ref",
   "envelope": {
-    "schema_version": "v1.0",
+    "schema_version": "v2.0",
     "org_id": "org_1234567890abcdef",
     "environment": "prod",
     "agent_id": "agent_security_scanner",
@@ -19,13 +19,17 @@
     "action": "modify_permissions"
   },
   "policy_set": {
-    "version": "1.0.0",
+    "version": "v1.0.0",
+    "description": "ESCALATE rule with route passes reference to decision.route_ref",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
     "name": "test_policy",
     "rules": [
       {
         "name": "escalate_permission_changes",
         "priority": 100,
-        "enabled": true,
         "conditions": {
           "field": "action",
           "operator": "equals",

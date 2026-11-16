@@ -2,7 +2,7 @@
   "test_id": "test_051_null_field_value",
   "description": "Test handling of null/missing field values",
   "envelope": {
-    "schema_version": "v1.0",
+    "schema_version": "v2.0",
     "org_id": "org_1234567890abcdef",
     "environment": "prod",
     "agent_id": "agent_finance_bot",
@@ -18,13 +18,17 @@
     "action": "transfer_money"
   },
   "policy_set": {
-    "version": "1.0.0",
+    "version": "v1.0.0",
+    "description": "Test handling of null/missing field values",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
     "name": "test_policy",
     "rules": [
       {
         "name": "require_currency",
         "priority": 100,
-        "enabled": true,
         "conditions": {
           "field": "parameters.currency",
           "operator": "exists",

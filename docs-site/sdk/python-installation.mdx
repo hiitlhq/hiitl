@@ -5,7 +5,7 @@ description: "Install the hiitl Python SDK and run your first evaluation"
 
 ## Requirements
 
-- Python 3.12 or later
+- Python 3.10 or later
 
 ## Install
 
@@ -35,7 +35,7 @@ print(decision.allowed)   # True
 print(decision.decision)  # OBSERVE
 ```
 
-Zero-config initialization uses local evaluation in OBSERVE mode. No API key, no server, no policy files required.
+Zero-config initialization uses local evaluation in `OBSERVE_ALL` mode. No API key, no server, no policy files required.
 
 ## Import
 
@@ -59,8 +59,8 @@ The `hiitl` package includes:
 |-----------|-------------|
 | `HIITL` client | Main SDK class with `evaluate()` method |
 | Policy evaluator | Embedded deterministic policy engine |
-| Audit logger | Local SQLite-backed append-only audit trail |
-| Rate limiter | In-process rate limiting with sliding/fixed windows |
+| Audit logger | Local SQLite-backed audit trail |
+| Rate limiter | In-process, in-memory rate limiting over a sliding window |
 | Route loader | Escalation route configuration |
 
 All components are initialized automatically. No additional infrastructure required for local mode.
@@ -71,7 +71,9 @@ The SDK has minimal dependencies:
 
 - `pydantic` and `pydantic-settings` for configuration and type validation
 - `pyyaml` for YAML policy file support
-- `httpx` for hosted mode HTTP client (only used when connecting to an ECP server)
+- `httpx` for calls to the hosted service (hybrid sync and hosted mode) and to sync routes
+
+The optional `mcp` extra (`pip install "hiitl[mcp]"`) adds the `mcp` package for the MCP proxy.
 
 ## Next steps
 

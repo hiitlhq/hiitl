@@ -12,7 +12,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from hiitl.sdk.telemetry import TelemetryCollector
+from hiitl._version import __version__
+from hiitl.sdk.telemetry import _MAX_PARAMS_PER_TOOL, TelemetryCollector
 
 
 # ── Test helpers ───────────────────────────────────────────────
@@ -60,6 +61,7 @@ def _make_collector(**kwargs):
         "level": "full",
         "buffer_size": 60,
         "sample_rate": 1.0,
+        "parameter_tools": ("send_email",),   # the helper envelope's action; tracking is opt-in per tool (§6)
     }
     defaults.update(kwargs)
     return TelemetryCollector(**defaults)
@@ -140,10 +142,19 @@ class TestTelemetryCollection:
         assert set(by_agent["agent-a"]["tools_used"]) == {"send_email", "process_payment"}
         assert by_agent["agent-b"]["action_count"] == 1
 
-    def test_latency_percentiles(self):
-        """Latency statistics computed correctly."""
+    @pytest.mark.parametrize("latencies,expected", [
+        ([0.1, 0.2, 0.3, 0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 5.0],
+         {"p50": 1.25, "p95": 4.55, "p99": 4.91, "min": 0.1, "max": 5.0, "mean": 1.76}),
+        ([9.0, 1.0, 4.0],
+         {"p50": 4.0, "p95": 8.5, "p99": 8.9, "min": 1.0, "max": 9.0, "mean": 4.667}),
+        ([2.3456],
+         {"p50": 2.346, "p95": 2.346, "p99": 2.346, "min": 2.346, "max": 2.346, "mean": 2.346}),
+        ([8.0, 2.0, 2.0, 8.0],
+         {"p50": 5.0, "p95": 8.0, "p99": 8.0, "min": 2.0, "max": 8.0, "mean": 5.0}),
+    ], ids=["even", "odd-unsorted", "singleton-rounded", "duplicates"])
+    def test_latency_percentiles(self, latencies, expected):
+        """Telemetry §6: interpolate at (n-1)*p, retaining duplicates, then round to three decimals."""
         collector = _make_collector()
-        latencies = [0.1, 0.2, 0.3, 0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 5.0]
         for lat in latencies:
             collector.record(
                 _make_envelope(action="test_tool"),
@@ -152,15 +163,12 @@ class TestTelemetryCollection:
         record = collector.flush()
 
         ts = record["tool_summaries"][0]
-        assert "latency" in ts
-        assert ts["latency"]["min"] == 0.1
-        assert ts["latency"]["max"] == 5.0
-        assert ts["latency"]["p50"] > 0
-        assert ts["latency"]["p95"] > ts["latency"]["p50"]
-        assert ts["latency"]["mean"] > 0
+        assert ts["latency"] == expected
 
-    def test_system_metrics_present(self):
+    def test_system_metrics_present(self, monkeypatch):
         """System metrics include uptime and total evaluations."""
+        clock = iter([100.0, 112.5])
+        monkeypatch.setattr("hiitl.sdk.telemetry.time", SimpleNamespace(monotonic=lambda: next(clock)))
         collector = _make_collector()
         collector.record(
             _make_envelope(),
@@ -171,7 +179,7 @@ class TestTelemetryCollection:
         assert "system_metrics" in record
         sm = record["system_metrics"]
         assert sm["total_evaluations"] == 1
-        assert sm["uptime_seconds"] >= 0
+        assert sm["uptime_seconds"] == 12.5
 
     def test_reason_code_counts(self):
         """Reason codes aggregated correctly."""
@@ -204,7 +212,7 @@ class TestParameterDiscovery:
     """Test automatic parameter discovery and aggregation."""
 
     def test_numeric_parameter_stats(self):
-        """Numeric parameters produce min/max/mean/count stats."""
+        """Numeric parameters produce a count, and at `full` a mean; never a min or max (row 142)."""
         collector = _make_collector()
         for amount in [10.0, 50.0, 100.0, 200.0]:
             collector.record(
@@ -217,10 +225,7 @@ class TestParameterDiscovery:
         param_stats = {p["parameter_path"]: p for p in ts["parameter_stats"]}
         assert "amount" in param_stats
         ns = param_stats["amount"]["numeric_stats"]
-        assert ns["min"] == 10.0
-        assert ns["max"] == 200.0
-        assert ns["count"] == 4
-        assert ns["mean"] == 90.0
+        assert ns == {"count": 4, "mean": 90.0}
 
     def test_categorical_parameter_stats(self):
         """Categorical parameters produce distinct_count."""
@@ -238,28 +243,29 @@ class TestParameterDiscovery:
         cs = param_stats["currency"]["categorical_stats"]
         assert cs["distinct_count"] == 3
 
-    def test_max_20_parameters_per_tool(self):
-        """Only first 20 parameters tracked per tool."""
+    def test_parameters_per_tool_stop_at_the_cap(self):
+        """Only the first parameters up to the per-tool cap are tracked."""
         collector = _make_collector()
-        # Record 25 distinct parameters, each 3+ times to pass noise filter
-        for i in range(25):
+        # Record more distinct parameters than the cap, each 3+ times to pass noise filter
+        names = [f"param_{i}" for i in range(_MAX_PARAMS_PER_TOOL + 5)]
+        for i, name in enumerate(names):
             for _ in range(3):
                 collector.record(
-                    _make_envelope(parameters={f"param_{i}": i * 1.0}),
+                    _make_envelope(parameters={name: i * 1.0}),
                     _make_decision(),
                 )
         record = collector.flush()
 
         ts = record["tool_summaries"][0]
-        assert len(ts.get("parameter_stats", [])) <= 20
+        assert [p["parameter_path"] for p in ts["parameter_stats"]] == names[:_MAX_PARAMS_PER_TOOL]
 
     def test_params_seen_fewer_than_3_times_excluded(self):
         """Parameters seen < 3 times are excluded from output."""
         collector = _make_collector()
         # "amount" seen 4 times, "rare_param" seen 2 times
-        for _ in range(4):
+        for amount in (100.0, 120.0, 140.0, 160.0):
             collector.record(
-                _make_envelope(parameters={"amount": 100.0}),
+                _make_envelope(parameters={"amount": amount}),
                 _make_decision(),
             )
         for _ in range(2):
@@ -302,13 +308,13 @@ class TestPrivacyBoundaries:
         assert "super_secret_value" not in record_str
         assert "usd" not in record_str
 
-        # Numeric stats (min/max) may contain the value — that's aggregated, not raw
-        # Categorical distinct_count should be present
+        # No numeric value either: no min, max or (at standard) mean — counts only (row 142)
+        assert "42.5" not in record_str
         ts = record["tool_summaries"][0]
         cat_params = [p for p in ts.get("parameter_stats", []) if p["stat_type"] == "categorical"]
-        for cp in cat_params:
-            assert "top_values" not in cp["categorical_stats"]
-            assert cp["categorical_stats"]["distinct_count"] >= 1
+        assert {p["parameter_path"]: p["categorical_stats"] for p in cat_params} == {
+            "currency": {"distinct_count": 1}, "secret": {"distinct_count": 1},
+        }
 
     def test_target_cardinality_is_count_only(self):
         """Target cardinality is a count, never actual target content."""
@@ -409,8 +415,10 @@ class TestRedactionLevels:
         assert "target_cardinality" not in ts
         assert "reason_code_counts" not in ts
 
-        # Agent summaries not present at minimal
-        assert "agent_summaries" not in record
+        # Agent counts are sent at every level; distinct_users is Standard+ (§3.2)
+        (agent,) = record["agent_summaries"]
+        assert "distinct_users" not in agent
+        assert agent["action_count"] == 5
 
         # System metrics always present
         assert "system_metrics" in record
@@ -433,16 +441,15 @@ class TestRedactionLevels:
                     assert "top_values" not in ps["categorical_stats"]
 
     def test_full_redaction(self):
-        """Full level: includes categorical top_values."""
+        """Full level: adds a numeric mean; no categorical value at any level (row 142)."""
         collector = _make_collector(level="full")
         self._record_data(collector)
         record = collector.flush()
 
-        ts = record["tool_summaries"][0]
-        if "parameter_stats" in ts:
-            for ps in ts["parameter_stats"]:
-                if ps["stat_type"] == "categorical":
-                    assert "top_values" in ps["categorical_stats"]
+        stats = {ps["parameter_path"]: ps for ps in record["tool_summaries"][0]["parameter_stats"]}
+        assert stats["amount"]["numeric_stats"] == {"count": 5, "mean": 20.0}
+        assert stats["currency"]["categorical_stats"] == {"distinct_count": 1}
+        assert "usd" not in json.dumps(record)
 
     def test_off_level(self):
         """Off level: record() is no-op, flush() returns None."""
@@ -541,8 +548,9 @@ class TestTelemetryRecordFormat:
         for field in required_fields:
             assert field in record, f"Missing required field: {field}"
 
-        assert record["telemetry_version"] == "1.0"
+        assert record["telemetry_version"] == "2.0"
         assert record["sdk_language"] == "python"
+        assert record["sdk_version"] == __version__
 
     def test_empty_window_produces_valid_record(self):
         """Empty window (no evaluations) produces valid record."""
@@ -625,26 +633,26 @@ class TestSyncIntegration:
         assert param.default is None
 
     def test_config_validates_telemetry_level(self):
-        """SyncConfig rejects invalid telemetry_level values."""
-        from hiitl.sdk.config import SyncConfig
+        """The client's settings reject invalid telemetry_level values (row 172: a top-level setting)."""
+        from hiitl.sdk.config import ClientSettings
 
         with pytest.raises(Exception):
-            SyncConfig(telemetry_level="invalid_level")
+            ClientSettings(telemetry_level="invalid_level")
 
     def test_config_accepts_valid_telemetry_levels(self):
-        """SyncConfig accepts all valid telemetry_level values."""
-        from hiitl.sdk.config import SyncConfig
+        """The client's settings accept all valid telemetry_level values."""
+        from hiitl.sdk.config import ClientSettings
 
         for level in ("full", "standard", "minimal", "off"):
-            config = SyncConfig(telemetry_level=level)
+            config = ClientSettings(telemetry_level=level)
             assert config.telemetry_level == level
 
     def test_config_telemetry_defaults(self):
-        """SyncConfig has correct telemetry defaults."""
-        from hiitl.sdk.config import SyncConfig
+        """SyncConfig and the client's settings have correct telemetry defaults."""
+        from hiitl.sdk.config import ClientSettings, SyncConfig
 
         config = SyncConfig()
         assert config.telemetry_sync_interval == 60
-        assert config.telemetry_level == "standard"
+        assert ClientSettings().telemetry_level == "standard"
         assert config.telemetry_buffer_size == 60
         assert config.telemetry_sample_rate == 1.0

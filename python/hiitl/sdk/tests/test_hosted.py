@@ -5,9 +5,10 @@ Tests cover:
 - HIITL client in hosted mode initialization
 - HTTP client request/response handling
 - Retry logic on transient failures
-- Error handling (server errors, network errors)
+- Error handling (server errors; an unreachable service is CONTROL_PLANE_UNAVAILABLE, row 174)
 - Escalation fields in response
 - Context manager support
+- The body is the signed envelope (row 134): hosted mode needs the signing secret
 """
 
 import json
@@ -15,12 +16,12 @@ import json
 import httpx
 import pytest
 
-from hiitl.core.types import DecisionType
+from hiitl.core.canonical import envelope_signature, envelope_verifies
+from hiitl.core.types import DecisionType, ENVELOPE_SCHEMA_VERSION
 from hiitl.sdk.client import HIITL
 from hiitl.sdk.config import HostedModeConfig
 from hiitl.sdk.exceptions import (
     ConfigurationError,
-    NetworkError,
     ServerError,
 )
 from hiitl.sdk.http_client import HostedClient, _backoff_delay
@@ -32,6 +33,27 @@ TEST_ORG_ID = "org_test000000000000000"
 TEST_SERVER_URL = "https://ecp.example.com"
 TEST_API_KEY = "sk_test_1234567890abcdef"
 TEST_AGENT_ID = "test-agent"
+TEST_SIGNING_SECRET = "test-signing-secret-0123456789abcdef"
+
+
+@pytest.fixture(autouse=True)
+def _store_in_tmp(monkeypatch, tmp_path):
+    """An outage is recorded at `audit_db_path` and pushed before the next call (HTL-23 row 192), whose default is in
+    the working directory: each test's is its own, so one test's outage is never another's push."""
+    monkeypatch.chdir(tmp_path)
+
+
+def _envelope(**fields) -> dict:
+    """A signed envelope as HIITL._build_envelope records it (the HostedClient's input)."""
+    env = {
+        "schema_version": ENVELOPE_SCHEMA_VERSION,
+        "org_id": TEST_ORG_ID, "environment": "dev", "agent_id": TEST_AGENT_ID,
+        "action_id": "act_0123456789abcdefghij", "idempotency_key": "idem_test", "action": "test",
+        "operation": "read", "timestamp": "2026-11-04T12:00:00Z", "target": {}, "parameters": {},
+        "signature_version": "hmac-sha256-v1", **fields,
+    }
+    env["signature"] = envelope_signature(TEST_SIGNING_SECRET, env)
+    return env
 
 ALLOW_RESPONSE = {
     "decision": "ALLOW",
@@ -95,7 +117,7 @@ class TestHostedModeConfig:
         assert config.server_url == "https://ecp.example.com"
 
     def test_invalid_server_url(self):
-        with pytest.raises(Exception, match="Must start with"):
+        with pytest.raises(Exception, match=r"server_url \(HIITL_SERVER_URL\) is 'not-a-url'\. hiitl sends only to an https URL"):
             HostedModeConfig(
                 environment="dev",
                 agent_id=TEST_AGENT_ID,
@@ -142,6 +164,12 @@ class TestHostedModeConfig:
 
 
 class TestHIITLHostedInit:
+    # Hosted mode (evaluation="remote") is the EXPLICIT opt-in path for
+    # network-only evaluation. Without `evaluation="remote"`, providing
+    # `api_key` alone yields hybrid mode (local eval + background sync) —
+    # see `test_auto_detect_hybrid` below. These tests pin the hosted
+    # behavior specifically.
+
     def test_hosted_mode_init(self):
         hiitl = HIITL(
             environment="dev",
@@ -149,6 +177,8 @@ class TestHIITLHostedInit:
             org_id=TEST_ORG_ID,
             api_key=TEST_API_KEY,
             server_url=TEST_SERVER_URL,
+            evaluation="remote",
+            signature_key=TEST_SIGNING_SECRET,
         )
         assert hiitl.mode == "hosted"
         assert isinstance(hiitl.config, HostedModeConfig)
@@ -172,24 +202,43 @@ class TestHIITLHostedInit:
             org_id=TEST_ORG_ID,
             audit_db_path=str(tmp_path / "audit.db"),
         )
-        assert hiitl.mode == "local"
+        try:
+            assert hiitl.mode == "local"
+        finally:
+            hiitl.close()
 
-    def test_auto_detect_hosted(self):
-        """api_key + server_url -> hosted mode."""
+    def test_evaluation_remote_yields_hosted_mode(self):
+        """api_key + server_url + evaluation='remote' -> hosted mode.
+
+        Renamed from `test_auto_detect_hosted` — hosted mode is no longer
+        auto-detected from server_url presence; it requires an explicit
+        opt-in via `evaluation="remote"`. The implicit path (api_key
+        alone) is now hybrid mode (see next test).
+        """
         hiitl = HIITL(
             environment="dev",
             agent_id=TEST_AGENT_ID,
             org_id=TEST_ORG_ID,
             api_key=TEST_API_KEY,
             server_url=TEST_SERVER_URL,
+            evaluation="remote",
+            signature_key=TEST_SIGNING_SECRET,
         )
         assert hiitl.mode == "hosted"
         hiitl.close()
 
     def test_auto_detect_hybrid(self, tmp_path):
-        """api_key without server_url -> hybrid mode."""
+        """api_key without server_url -> hybrid mode.
+
+        IMPORTANT: hybrid mode spawns a background sync engine. The
+        `try/finally hiitl.close()` is load-bearing for test isolation —
+        without it, the sync engine's retry loop continues across test
+        boundaries and makes spurious HTTP requests that pollute later
+        httpx_mock-based tests (notably TestHostedClientRetry, which
+        asserts on exact request counts).
+        """
         policy_file = tmp_path / "policy.json"
-        policy_file.write_text('{"version":"1.0.0","name":"test","rules":[]}')
+        policy_file.write_text('{"version":"v1.0.0","name":"test","description":"No rules","scope":{"org_id":"org_test000000000000000","environment":"dev"},"rules":[]}')
         hiitl = HIITL(
             environment="dev",
             agent_id=TEST_AGENT_ID,
@@ -198,12 +247,15 @@ class TestHIITLHostedInit:
             policy_path=str(policy_file),
             audit_db_path=str(tmp_path / "audit.db"),
         )
-        assert hiitl.mode == "hybrid"
+        try:
+            assert hiitl.mode == "hybrid"
+        finally:
+            hiitl.close()
 
     def test_auto_detect_local(self, tmp_path):
         """No api_key -> local mode."""
         policy_file = tmp_path / "policy.json"
-        policy_file.write_text('{"version":"1.0.0","name":"test","rules":[]}')
+        policy_file.write_text('{"version":"v1.0.0","name":"test","description":"No rules","scope":{"org_id":"org_test000000000000000","environment":"dev"},"rules":[]}')
         hiitl = HIITL(
             environment="dev",
             agent_id=TEST_AGENT_ID,
@@ -211,22 +263,28 @@ class TestHIITLHostedInit:
             policy_path=str(policy_file),
             audit_db_path=str(tmp_path / "audit.db"),
         )
-        assert hiitl.mode == "local"
+        try:
+            assert hiitl.mode == "local"
+        finally:
+            hiitl.close()
 
-    def test_sync_false_forces_local(self, tmp_path):
-        """sync=False with api_key -> local mode."""
-        policy_file = tmp_path / "policy.json"
-        policy_file.write_text('{"version":"1.0.0","name":"test","rules":[]}')
-        hiitl = HIITL(
-            environment="dev",
-            agent_id=TEST_AGENT_ID,
-            org_id=TEST_ORG_ID,
-            api_key=TEST_API_KEY,
-            policy_path=str(policy_file),
-            audit_db_path=str(tmp_path / "audit.db"),
-            sync=False,
-        )
-        assert hiitl.mode == "local"
+    # NOTE: `test_sync_false_forces_local` was deleted. The original test
+    # passed `sync=False` to the HIITL constructor expecting hybrid →
+    # local downgrade behavior. That parameter was never implemented;
+    # the test errored out with TypeError. If "API key present but sync
+    # disabled = pure local mode" becomes a real product need, design
+    # and add the parameter intentionally (and re-add a test against
+    # the actual feature). For now, the path to local mode is "don't
+    # pass an api_key".
+
+    def test_hosted_mode_without_the_signing_secret_is_a_configuration_error(self, monkeypatch):
+        """Every key holds a signing secret and the service refuses an unsigned envelope (row 134): hosted mode
+        refuses to start without it, naming where the secret is shown."""
+        monkeypatch.delenv("HIITL_SIGNATURE_KEY", raising=False)
+        with pytest.raises(ConfigurationError, match="signature_key") as e:
+            HIITL(environment="dev", agent_id=TEST_AGENT_ID, org_id=TEST_ORG_ID, api_key=TEST_API_KEY,
+                  server_url=TEST_SERVER_URL, evaluation="remote")
+        assert "signing_secret" in str(e.value)
 
     def test_context_manager(self):
         with HIITL(
@@ -235,6 +293,8 @@ class TestHIITLHostedInit:
             org_id=TEST_ORG_ID,
             api_key=TEST_API_KEY,
             server_url=TEST_SERVER_URL,
+            evaluation="remote",
+            signature_key=TEST_SIGNING_SECRET,
         ) as hiitl:
             assert hiitl.mode == "hosted"
 
@@ -265,12 +325,8 @@ class TestHostedClientEvaluate:
         )
 
         client = self._make_client()
-        decision = client.evaluate(
-            action="read_file",
-            operation="read",
-            target={"path": "/tmp/test"},
-            parameters={},
-        )
+        decision = client.evaluate(_envelope(
+            action="read_file", operation="read", target={"path": "/tmp/test"}, parameters={}))
 
         assert decision.decision == DecisionType.ALLOW
         assert decision.allowed is True
@@ -288,12 +344,8 @@ class TestHostedClientEvaluate:
         )
 
         client = self._make_client()
-        decision = client.evaluate(
-            action="process_payment",
-            operation="execute",
-            target={"account_id": "acct_123"},
-            parameters={"amount": 10000},
-        )
+        decision = client.evaluate(_envelope(action="process_payment", operation="execute",
+                                             target={"account_id": "acct_123"}, parameters={"amount": 10000}))
 
         assert decision.decision == DecisionType.BLOCK
         assert decision.allowed is False
@@ -309,12 +361,8 @@ class TestHostedClientEvaluate:
         )
 
         client = self._make_client()
-        decision = client.evaluate(
-            action="process_payment",
-            operation="execute",
-            target={"account_id": "acct_123"},
-            parameters={"amount": 5000},
-        )
+        decision = client.evaluate(_envelope(action="process_payment", operation="execute",
+                                             target={"account_id": "acct_123"}, parameters={"amount": 5000}))
 
         assert decision.decision == DecisionType.REQUIRE_APPROVAL
         assert decision.allowed is False
@@ -333,12 +381,7 @@ class TestHostedClientEvaluate:
         )
 
         client = self._make_client()
-        client.evaluate(
-            action="test_tool",
-            operation="read",
-            target={},
-            parameters={},
-        )
+        client.evaluate(_envelope(action="test_tool", operation="read", target={}, parameters={}))
 
         request = httpx_mock.get_request()
         assert request.headers["Authorization"] == f"Bearer {TEST_API_KEY}"
@@ -353,26 +396,18 @@ class TestHostedClientEvaluate:
         )
 
         client = self._make_client()
-        client.evaluate(
-            action="process_payment",
-            operation="execute",
-            target={"account_id": "acct_123"},
-            parameters={"amount": 100},
-            user_id="user_42",
-            session_id="sess_99",
-            reason="Monthly subscription",
-        )
+        envelope = _envelope(action="process_payment", operation="execute", target={"account_id": "acct_123"},
+                             parameters={"amount": 100}, user_id="user_42", session_id="sess_99",
+                             reason="Monthly subscription")
+        client.evaluate(envelope)
 
         request = httpx_mock.get_request()
         body = json.loads(request.content)
-        assert body["action"] == "process_payment"
-        assert body["operation"] == "execute"
-        assert body["target"] == {"account_id": "acct_123"}
-        assert body["parameters"] == {"amount": 100}
-        assert body["agent_id"] == TEST_AGENT_ID
-        assert body["user_id"] == "user_42"
-        assert body["session_id"] == "sess_99"
-        assert body["reason"] == "Monthly subscription"
+        # The body is the envelope, its signature under envelope_signature (the security architecture §1.3)
+        assert body == {**{k: v for k, v in envelope.items() if k != "signature"},
+                        "envelope_signature": envelope["signature"]}
+        # The version is the envelope's own signature_version; no header names it (row 171)
+        assert "X-Hiitl-Signature-Version" not in request.headers
         client.close()
 
     def test_optional_fields_omitted_when_none(self, httpx_mock):
@@ -383,22 +418,18 @@ class TestHostedClientEvaluate:
             status_code=200,
         )
 
-        client = self._make_client()
-        client.evaluate(
-            action="test",
-            operation="read",
-            target={},
-            parameters={},
-        )
+        with HIITL(environment="dev", agent_id=TEST_AGENT_ID, org_id=TEST_ORG_ID, api_key=TEST_API_KEY,
+                   server_url=TEST_SERVER_URL, evaluation="remote", signature_key=TEST_SIGNING_SECRET) as hiitl:
+            hiitl.evaluate("test", operation="read")
 
         request = httpx_mock.get_request()
         body = json.loads(request.content)
+        assert "principal" not in body
         assert "user_id" not in body
         assert "session_id" not in body
         assert "reason" not in body
         assert "sensitivity" not in body
         assert "cost_estimate" not in body
-        client.close()
 
     def test_sensitivity_enum_serialized(self, httpx_mock):
         from hiitl.core.types import Sensitivity
@@ -410,19 +441,13 @@ class TestHostedClientEvaluate:
             status_code=200,
         )
 
-        client = self._make_client()
-        client.evaluate(
-            action="test",
-            operation="read",
-            target={},
-            parameters={},
-            sensitivity=[Sensitivity.MONEY, Sensitivity.PII],
-        )
+        with HIITL(environment="dev", agent_id=TEST_AGENT_ID, org_id=TEST_ORG_ID, api_key=TEST_API_KEY,
+                   server_url=TEST_SERVER_URL, evaluation="remote", signature_key=TEST_SIGNING_SECRET) as hiitl:
+            hiitl.evaluate("test", operation="read", sensitivity=[Sensitivity.MONEY, Sensitivity.PII])
 
         request = httpx_mock.get_request()
         body = json.loads(request.content)
         assert body["sensitivity"] == ["money", "pii"]
-        client.close()
 
 
 # -- Error Handling Tests --
@@ -451,7 +476,7 @@ class TestHostedClientErrors:
 
         client = self._make_client()
         with pytest.raises(ServerError) as exc_info:
-            client.evaluate(action="test", operation="read", target={}, parameters={})
+            client.evaluate(_envelope(action="test", operation="read", target={}, parameters={}))
 
         assert exc_info.value.status_code == 401
         assert exc_info.value.error_code == "AUTHENTICATION_FAILED"
@@ -468,7 +493,7 @@ class TestHostedClientErrors:
 
         client = self._make_client()
         with pytest.raises(ServerError) as exc_info:
-            client.evaluate(action="test", operation="read", target={}, parameters={})
+            client.evaluate(_envelope(action="test", operation="read", target={}, parameters={}))
 
         assert exc_info.value.status_code == 403
         assert exc_info.value.error_code == "INSUFFICIENT_SCOPE"
@@ -484,7 +509,7 @@ class TestHostedClientErrors:
 
         client = self._make_client()
         with pytest.raises(ServerError) as exc_info:
-            client.evaluate(action="test", operation="read", target={}, parameters={})
+            client.evaluate(_envelope(action="test", operation="read", target={}, parameters={}))
 
         assert exc_info.value.status_code == 404
         assert exc_info.value.error_code == "POLICY_NOT_FOUND"
@@ -500,7 +525,7 @@ class TestHostedClientErrors:
 
         client = self._make_client()
         with pytest.raises(ServerError) as exc_info:
-            client.evaluate(action="test", operation="read", target={}, parameters={})
+            client.evaluate(_envelope(action="test", operation="read", target={}, parameters={}))
 
         assert exc_info.value.status_code == 500
         client.close()
@@ -515,7 +540,7 @@ class TestHostedClientErrors:
 
         client = self._make_client()
         with pytest.raises(ServerError) as exc_info:
-            client.evaluate(action="test", operation="read", target={}, parameters={})
+            client.evaluate(_envelope(action="test", operation="read", target={}, parameters={}))
 
         assert "Insufficient permissions" in str(exc_info.value)
         client.close()
@@ -527,11 +552,13 @@ class TestHostedClientErrors:
         )
 
         client = self._make_client()
-        with pytest.raises(NetworkError) as exc_info:
-            client.evaluate(action="test", operation="read", target={}, parameters={})
+        decision = client.evaluate(_envelope(action="test", operation="read", target={}, parameters={}))
 
-        assert TEST_SERVER_URL in str(exc_info.value)
-        assert "Troubleshooting" in str(exc_info.value)
+        # An error is a decision (row 174): fail-closed, the cause logged, not put in the message.
+        assert decision.decision == DecisionType.CONTROL_PLANE_UNAVAILABLE
+        assert decision.allowed is False
+        assert decision.reason_codes == ["CONTROL_PLANE_UNREACHABLE"]
+        assert "Connection refused" not in decision.error.message
         client.close()
 
 
@@ -564,9 +591,7 @@ class TestHostedClientRetry:
         )
 
         client = self._make_client(max_retries=1)
-        decision = client.evaluate(
-            action="test", operation="read", target={}, parameters={}
-        )
+        decision = client.evaluate(_envelope(action="test", operation="read", target={}, parameters={}))
 
         assert decision.allowed is True
         assert len(httpx_mock.get_requests()) == 2
@@ -583,7 +608,7 @@ class TestHostedClientRetry:
 
         client = self._make_client(max_retries=2)
         with pytest.raises(ServerError) as exc_info:
-            client.evaluate(action="test", operation="read", target={}, parameters={})
+            client.evaluate(_envelope(action="test", operation="read", target={}, parameters={}))
 
         assert exc_info.value.status_code == 503
         assert len(httpx_mock.get_requests()) == 3
@@ -599,7 +624,7 @@ class TestHostedClientRetry:
 
         client = self._make_client(max_retries=2)
         with pytest.raises(ServerError) as exc_info:
-            client.evaluate(action="test", operation="read", target={}, parameters={})
+            client.evaluate(_envelope(action="test", operation="read", target={}, parameters={}))
 
         assert exc_info.value.status_code == 400
         assert len(httpx_mock.get_requests()) == 1
@@ -615,7 +640,7 @@ class TestHostedClientRetry:
 
         client = self._make_client(max_retries=2)
         with pytest.raises(ServerError):
-            client.evaluate(action="test", operation="read", target={}, parameters={})
+            client.evaluate(_envelope(action="test", operation="read", target={}, parameters={}))
 
         assert len(httpx_mock.get_requests()) == 1
         client.close()
@@ -625,57 +650,26 @@ class TestHostedClientRetry:
 
 
 class TestHostedClientSignature:
-    def test_signature_computed_when_key_provided(self, httpx_mock):
-        httpx_mock.add_response(
-            url=f"{TEST_SERVER_URL}/v1/evaluate",
-            method="POST",
-            json=ALLOW_RESPONSE,
-            status_code=200,
-        )
-
-        config = HostedModeConfig(
-            environment="dev",
-            agent_id=TEST_AGENT_ID,
-            org_id=TEST_ORG_ID,
-            api_key=TEST_API_KEY,
-            server_url=TEST_SERVER_URL,
-            signature_key="my_secret_key",
-        )
-        client = HostedClient(config)
-        client.evaluate(
-            action="test", operation="read", target={}, parameters={}
-        )
+    def test_the_sent_body_verifies_under_the_signing_secret(self, httpx_mock):
+        """What HIITL sends is the envelope it built and signed over the one signed form (row 127): renamed back to
+        `signature`, the body verifies under the secret through hiitl.core.canonical, and a changed value does not."""
+        httpx_mock.add_response(url=f"{TEST_SERVER_URL}/v1/evaluate", method="POST", json=ALLOW_RESPONSE,
+                                status_code=200)
+        with HIITL(environment="dev", agent_id=TEST_AGENT_ID, org_id=TEST_ORG_ID, api_key=TEST_API_KEY,
+                   server_url=TEST_SERVER_URL, evaluation="remote", signature_key=TEST_SIGNING_SECRET) as hiitl:
+            hiitl.evaluate("process_payment", parameters={"amount": 150.0, "items": [{"sku": "a"}]},
+                           target={"account_id": "acct_123"}, user_id="user_42")
 
         request = httpx_mock.get_request()
         body = json.loads(request.content)
-        assert "envelope_signature" in body
-        assert len(body["envelope_signature"]) == 64
-        client.close()
-
-    def test_no_signature_without_key(self, httpx_mock):
-        httpx_mock.add_response(
-            url=f"{TEST_SERVER_URL}/v1/evaluate",
-            method="POST",
-            json=ALLOW_RESPONSE,
-            status_code=200,
-        )
-
-        config = HostedModeConfig(
-            environment="dev",
-            agent_id=TEST_AGENT_ID,
-            org_id=TEST_ORG_ID,
-            api_key=TEST_API_KEY,
-            server_url=TEST_SERVER_URL,
-        )
-        client = HostedClient(config)
-        client.evaluate(
-            action="test", operation="read", target={}, parameters={}
-        )
-
-        request = httpx_mock.get_request()
-        body = json.loads(request.content)
-        assert "envelope_signature" not in body
-        client.close()
+        assert "X-Hiitl-Signature-Version" not in request.headers    # row 171: the envelope names its version
+        assert body.get("signature_version") == "hmac-sha256-v1"
+        envelope = {**{k: v for k, v in body.items() if k != "envelope_signature"},
+                    "signature": body["envelope_signature"]}
+        assert envelope_verifies(TEST_SIGNING_SECRET, envelope)
+        assert not envelope_verifies("another-secret-0123456789abcdef0123", envelope)
+        envelope["parameters"]["items"][0]["sku"] = "b"
+        assert not envelope_verifies(TEST_SIGNING_SECRET, envelope)
 
 
 # -- Backoff Tests --
@@ -699,6 +693,11 @@ class TestBackoffDelay:
 class TestHIITLHostedEvaluate:
     """Test evaluate() through the HIITL class (end-to-end with mocked HTTP)."""
 
+    # All evaluate-flow tests below pin hosted mode explicitly via
+    # `evaluation="remote"`. Without it, providing api_key+server_url
+    # yields hybrid mode — which would start a background sync engine
+    # that hits unregistered URLs in httpx_mock, blowing up the test.
+
     def test_evaluate_allow(self, httpx_mock):
         httpx_mock.add_response(
             url=f"{TEST_SERVER_URL}/v1/evaluate",
@@ -713,6 +712,8 @@ class TestHIITLHostedEvaluate:
             org_id=TEST_ORG_ID,
             api_key=TEST_API_KEY,
             server_url=TEST_SERVER_URL,
+            evaluation="remote",
+            signature_key=TEST_SIGNING_SECRET,
         ) as hiitl:
             decision = hiitl.evaluate(
                 "read_file",
@@ -737,6 +738,8 @@ class TestHIITLHostedEvaluate:
             org_id=TEST_ORG_ID,
             api_key=TEST_API_KEY,
             server_url=TEST_SERVER_URL,
+            evaluation="remote",
+            signature_key=TEST_SIGNING_SECRET,
         ) as hiitl:
             decision = hiitl.evaluate(
                 "process_payment",
@@ -762,6 +765,8 @@ class TestHIITLHostedEvaluate:
             org_id=TEST_ORG_ID,
             api_key=TEST_API_KEY,
             server_url=TEST_SERVER_URL,
+            evaluation="remote",
+            signature_key=TEST_SIGNING_SECRET,
         ) as hiitl:
             decision = hiitl.evaluate(
                 "process_payment",
@@ -788,6 +793,8 @@ class TestHIITLHostedEvaluate:
             org_id=TEST_ORG_ID,
             api_key=TEST_API_KEY,
             server_url=TEST_SERVER_URL,
+            evaluation="remote",
+            signature_key=TEST_SIGNING_SECRET,
             max_retries=0,
         ) as hiitl:
             with pytest.raises(ServerError) as exc_info:
@@ -803,6 +810,8 @@ class TestHIITLHostedEvaluate:
             org_id=TEST_ORG_ID,
             api_key=TEST_API_KEY,
             server_url=TEST_SERVER_URL,
+            evaluation="remote",
+            signature_key=TEST_SIGNING_SECRET,
         )
         assert hiitl.mode == "hosted"
         hiitl.close()

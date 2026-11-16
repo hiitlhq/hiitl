@@ -1,7 +1,7 @@
-"""Per-channel circuit breaker for sync engine resilience.
+"""Per-channel circuit breaker for the sync engine and the hosted client.
 
 Implements a standard circuit breaker pattern to prevent repeated failures
-from overwhelming the sync engine or server.
+from overwhelming the sync engine, the hosted client or the server.
 
 States:
     CLOSED (normal) → requests flow normally
@@ -36,10 +36,11 @@ class CircuitBreaker:
     """Per-channel circuit breaker.
 
     Each sync channel (audit, policy, routes, kill switches) gets its own
-    CircuitBreaker instance so failures in one channel don't affect others.
+    CircuitBreaker instance so failures in one channel don't affect others,
+    and the hosted client holds one for its evaluate calls.
 
     Args:
-        name: Channel name for logging (e.g., "audit", "policy")
+        name: Channel name for logging (e.g., "audit", "policy", "hosted")
         failure_threshold: Consecutive failures before opening (default: 5)
         reset_timeout: Seconds in OPEN state before probing (default: 60)
     """
@@ -69,7 +70,7 @@ class CircuitBreaker:
             ):
                 self._state = CircuitState.HALF_OPEN
                 logger.info(
-                    "Sync circuit breaker [%s] → HALF_OPEN (probing after %.0fs)",
+                    "Circuit breaker [%s] → HALF_OPEN (probing after %.0fs)",
                     self.name,
                     self.reset_timeout,
                 )
@@ -97,7 +98,7 @@ class CircuitBreaker:
             self._state = CircuitState.CLOSED
             if previous != CircuitState.CLOSED:
                 logger.info(
-                    "Sync circuit breaker [%s] → CLOSED (recovered from %s)",
+                    "Circuit breaker [%s] → CLOSED (recovered from %s)",
                     self.name,
                     previous.value,
                 )
@@ -112,7 +113,7 @@ class CircuitBreaker:
                 # Probe failed — back to OPEN
                 self._state = CircuitState.OPEN
                 logger.warning(
-                    "Sync circuit breaker [%s] → OPEN (probe failed, "
+                    "Circuit breaker [%s] → OPEN (probe failed, "
                     "will retry in %.0fs)",
                     self.name,
                     self.reset_timeout,
@@ -123,8 +124,8 @@ class CircuitBreaker:
             ):
                 self._state = CircuitState.OPEN
                 logger.error(
-                    "Sync circuit breaker [%s] → OPEN after %d consecutive "
-                    "failures. Sync paused for %.0fs.",
+                    "Circuit breaker [%s] → OPEN after %d consecutive "
+                    "failures. Calls paused for %.0fs.",
                     self.name,
                     self._failure_count,
                     self.reset_timeout,

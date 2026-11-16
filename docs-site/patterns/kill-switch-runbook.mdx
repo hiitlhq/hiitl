@@ -3,7 +3,7 @@ title: "Kill Switch Runbook"
 description: "Emergency stop operations guide"
 ---
 
-Kill switches are the highest-priority enforcement mechanism in hiitl. They are `KILL_SWITCH` rules within policies (priority 1000+) that block all matching actions when enabled.
+Kill switches are the highest-precedence enforcement mechanism in hiitl. They are `KILL_SWITCH` rules within policies that stop every matching action while the rule is active.
 
 ## When to use kill switches
 
@@ -14,12 +14,12 @@ Kill switches are the highest-priority enforcement mechanism in hiitl. They are 
 
 ## How kill switches work
 
-Kill switches are regular policy rules with `decision: "KILL_SWITCH"`. They follow the same first-match-wins priority system -- high priority (1000+) ensures they evaluate before ALLOW rules.
+Kill switches are regular policy rules with `decision: "KILL_SWITCH"`. Precedence is deny-wins: a matching active `KILL_SWITCH` rule binds before any `BLOCK` rule, and a `BLOCK` rule before any other decision, whatever their priorities. Priority orders rules within the same class.
 
-- `enabled: true` -- the evaluator matches the rule and returns `allowed: false`
-- `enabled: false` -- the rule is skipped and lower-priority rules evaluate normally
+- `lifecycle_stage: active` (the default) -- the rule binds. In hosted mode, and in an SDK constructed with `mode="RESPECT_POLICY"`, a matching action returns `KILL_SWITCH` with `allowed: false`. Under the SDK's default mode, `OBSERVE_ALL`, it comes back `OBSERVE` with `would_be: KILL_SWITCH`, so run an SDK that must honour kill switches under `RESPECT_POLICY`.
+- `lifecycle_stage: disabled` -- the rule is skipped and other rules evaluate normally
 
-No separate tables, models, or evaluation logic. Toggle the rule's `enabled` field within existing policy infrastructure.
+No separate tables, models, or evaluation logic. Toggle the rule's `lifecycle_stage` within existing policy infrastructure.
 
 ---
 
@@ -28,10 +28,17 @@ No separate tables, models, or evaluation logic. Toggle the rule's `enabled` fie
 Edit the policy file directly:
 
 ```yaml
+name: payments
+version: "v1.0.0"
+description: "Payment kill switches for local mode"
+scope:
+  org_id: "org_devlocal0000000000"
+  environment: "dev"
 rules:
   - name: kill-switch-payments
+    description: Stop all payments during an incident
     priority: 1000
-    enabled: true          # Toggle this
+    lifecycle_stage: active   # Toggle this: active or disabled
     conditions:
       all_of:
         - field: action
@@ -39,9 +46,19 @@ rules:
           value: process_payment
     decision: KILL_SWITCH
     reason_code: KILL_SWITCH_PAYMENTS
+
+  - name: allow-payments
+    description: Allow payments
+    priority: 50
+    conditions:
+      field: action
+      operator: equals
+      value: process_payment
+    decision: ALLOW
+    reason_code: PAYMENT_ALLOWED
 ```
 
-The SDK's mtime-based caching detects the file change on the next `evaluate()` call. No restart needed.
+In local mode (no `api_key`), the SDK's mtime-based caching detects the file change on the next `evaluate()` call. No restart needed.
 
 ---
 
@@ -60,10 +77,7 @@ curl -H "Authorization: Bearer $API_KEY" \
 curl -X POST \
   -H "Authorization: Bearer $ADMIN_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{
-    "reason": "Fraud detected in payment processing",
-    "activated_by": "ops_admin@company.com"
-  }' \
+  -d '{"reason": "Fraud detected in payment processing"}' \
   https://api.hiitl.com/v1/kill-switches/kill-switch-payments/activate
 ```
 
@@ -73,10 +87,7 @@ curl -X POST \
 curl -X POST \
   -H "Authorization: Bearer $ADMIN_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{
-    "reason": "Incident resolved, payments safe to resume",
-    "deactivated_by": "ops_admin@company.com"
-  }' \
+  -d '{"reason": "Incident resolved, payments safe to resume"}' \
   https://api.hiitl.com/v1/kill-switches/kill-switch-payments/deactivate
 ```
 
@@ -87,7 +98,15 @@ curl -H "Authorization: Bearer $READ_API_KEY" \
   https://api.hiitl.com/v1/policies/changes
 ```
 
-Look for `change_type: "KILL_SWITCH_ACTIVATED"` or `"KILL_SWITCH_DEACTIVATED"` in the most recent entries.
+Look for `change_type: "KILL_SWITCH_ACTIVATED"` or `"KILL_SWITCH_DEACTIVATED"` in the most recent entries. Each record's `changed_by`, and the kill switch's `activated_by` or `deactivated_by`, is the API key that made the call (its `key_id`), read from the key the service authenticated. The request does not name it: a body carrying `activated_by` or `deactivated_by` is refused with `422`, naming the field.
+
+### When the change takes effect
+
+Activating or deactivating saves a new version of the active policy for the API key's org and environment.
+
+- **Hosted evaluation** (`POST /v1/evaluate`) reads the active policy on every call, so it applies the change from the next evaluation.
+- **An SDK in hybrid mode** evaluates in-process against the policy version it has synced. Its kill-switch poll, every 30 seconds by default, reads the active version and the switches it makes live, each with its rule; when that version is not the one the SDK has, it pulls it in that poll (a switch edited under its own name is a new version too). Until that pull lands, the SDK reads each call against the poll's switches first: a call a switch stops is `KILL_SWITCH` under the new version; where the policy sets `on_missing: fail_closed`, a call that lacks a field a switch reads is `BLOCK` with `MISSING_FIELD`, naming the field, under the new version; and every other call is decided by the version the SDK has. So a switch binds from the first evaluation after the poll, even while the pull fails; the pull is retried at every poll, and each failure is logged at error. The switch list alone decides nothing: a switch stops what its rule names. Set `kill_switch_poll_interval` in the sync configuration (or `HIITL_SYNC_KS_INTERVAL`) to poll more often; the minimum is 5 seconds.
+- **An SDK in local mode** reads its policy file. Toggle the rule in the file, as above.
 
 ---
 
@@ -103,7 +122,7 @@ Look for `change_type: "KILL_SWITCH_ACTIVATED"` or `"KILL_SWITCH_DEACTIVATED"` i
     `POST /v1/kill-switches/kill-switch-payments/activate`
   </Step>
   <Step title="Verify">
-    All subsequent payment evaluations return `KILL_SWITCH` with `allowed: false`.
+    Hosted payment evaluations return `KILL_SWITCH` with `allowed: false` from the next call. Hybrid SDKs running under `RESPECT_POLICY` do so from the first call after their next kill-switch poll.
   </Step>
   <Step title="Investigate">
     Identify root cause using the audit trail.
@@ -144,11 +163,11 @@ Look for `change_type: "KILL_SWITCH_ACTIVATED"` or `"KILL_SWITCH_DEACTIVATED"` i
 ## Policy design tips
 
 <Warning>
-Always pre-create kill switches with `enabled: false` so they are ready to activate instantly during incidents. Do not try to write new policy rules during an emergency.
+Always pre-create kill switches with `lifecycle_stage: disabled` so they are ready to activate during incidents. Do not try to write new policy rules during an emergency.
 </Warning>
 
 - Name kill switches descriptively: `kill-switch-{scope}` (e.g., `kill-switch-all-payments`, `kill-switch-agent-bot-1`)
-- Set priority to 1000+ to ensure they evaluate before all other rules
+- A matching `KILL_SWITCH` rule wins over every other decision whatever its priority; priority orders kill switches among themselves
 - Use specific conditions to limit blast radius (tool-specific, agent-specific)
 - Document which kill switches exist and what they control
 - Test kill switch activation/deactivation as part of incident response drills

@@ -1,0 +1,254 @@
+{
+  "source": "docs/specs/sync_engine.md#numeric-domain",
+  "source_sha256": "8596d2ef4d80667e3b0f3f34f4f93cdfe7df436194b9cd6cdea56c716c4ce7bc",
+  "bound": 9007199254740992,
+  "predicates": [
+    "finite",
+    "strict-absolute-bound",
+    "python-int-before-float",
+    "integer-no-fraction",
+    "no-bool-text-coercion",
+    "nearest-binary64",
+    "underflow-zero",
+    "zero-admitted",
+    "no-lexical-split",
+    "whole-tree-before-loss",
+    "historical-C-unchanged",
+    "exact-path",
+    "declared-type-and-range",
+    "text-remedy-only-where-admitted"
+  ],
+  "cases": [
+    {
+      "id": "positive-inside",
+      "kind": "json",
+      "input": "9007199254740991",
+      "expected_accept": true,
+      "canonical": "9007199254740991"
+    },
+    {
+      "id": "positive-boundary",
+      "kind": "json",
+      "input": "9007199254740992",
+      "expected_accept": false,
+      "canonical": null
+    },
+    {
+      "id": "positive-outside",
+      "kind": "json",
+      "input": "9007199254740993",
+      "expected_accept": false,
+      "canonical": null
+    },
+    {
+      "id": "positive-exact-island",
+      "kind": "json",
+      "input": "18014398509481984",
+      "expected_accept": false,
+      "canonical": null
+    },
+    {
+      "id": "positive-decimal-boundary",
+      "kind": "json",
+      "input": "9007199254740992.0",
+      "expected_accept": false,
+      "canonical": null
+    },
+    {
+      "id": "positive-exponent-boundary",
+      "kind": "json",
+      "input": "9007199254740992e0",
+      "expected_accept": false,
+      "canonical": null
+    },
+    {
+      "id": "positive-oversized-integer",
+      "kind": "json",
+      "input": "10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "expected_accept": false,
+      "canonical": null
+    },
+    {
+      "id": "positive-overflow",
+      "kind": "json",
+      "input": "1e400",
+      "expected_accept": false,
+      "canonical": null
+    },
+    {
+      "id": "negative-inside",
+      "kind": "json",
+      "input": "-9007199254740991",
+      "expected_accept": true,
+      "canonical": "-9007199254740991"
+    },
+    {
+      "id": "negative-boundary",
+      "kind": "json",
+      "input": "-9007199254740992",
+      "expected_accept": false,
+      "canonical": null
+    },
+    {
+      "id": "negative-outside",
+      "kind": "json",
+      "input": "-9007199254740993",
+      "expected_accept": false,
+      "canonical": null
+    },
+    {
+      "id": "negative-exact-island",
+      "kind": "json",
+      "input": "-18014398509481984",
+      "expected_accept": false,
+      "canonical": null
+    },
+    {
+      "id": "negative-decimal-boundary",
+      "kind": "json",
+      "input": "-9007199254740992.0",
+      "expected_accept": false,
+      "canonical": null
+    },
+    {
+      "id": "negative-exponent-boundary",
+      "kind": "json",
+      "input": "-9007199254740992e0",
+      "expected_accept": false,
+      "canonical": null
+    },
+    {
+      "id": "negative-oversized-integer",
+      "kind": "json",
+      "input": "-10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "expected_accept": false,
+      "canonical": null
+    },
+    {
+      "id": "negative-overflow",
+      "kind": "json",
+      "input": "-1e400",
+      "expected_accept": false,
+      "canonical": null
+    },
+    {
+      "id": "zero",
+      "kind": "json",
+      "input": "0",
+      "expected_accept": true,
+      "canonical": "0"
+    },
+    {
+      "id": "negative-zero",
+      "kind": "json",
+      "input": "-0.0",
+      "expected_accept": true,
+      "canonical": "0"
+    },
+    {
+      "id": "ordinary-fraction",
+      "kind": "json",
+      "input": "0.1",
+      "expected_accept": true,
+      "canonical": "0.1"
+    },
+    {
+      "id": "rounded-fraction",
+      "kind": "json",
+      "input": "0.1000000000000000001",
+      "expected_accept": true,
+      "canonical": "0.1"
+    },
+    {
+      "id": "subnormal",
+      "kind": "json",
+      "input": "5e-324",
+      "expected_accept": true,
+      "canonical": "5e-324"
+    },
+    {
+      "id": "negative-subnormal",
+      "kind": "json",
+      "input": "-5e-324",
+      "expected_accept": true,
+      "canonical": "-5e-324"
+    },
+    {
+      "id": "underflow",
+      "kind": "json",
+      "input": "1e-400",
+      "expected_accept": true,
+      "canonical": "0"
+    },
+    {
+      "id": "negative-underflow",
+      "kind": "json",
+      "input": "-1e-400",
+      "expected_accept": true,
+      "canonical": "0"
+    },
+    {
+      "id": "scientific-small",
+      "kind": "json",
+      "input": "1e-7",
+      "expected_accept": true,
+      "canonical": "1e-7"
+    },
+    {
+      "id": "finite-fraction",
+      "kind": "json",
+      "input": "1424953923781206.25",
+      "expected_accept": true,
+      "canonical": "1424953923781206.2"
+    },
+    {
+      "id": "native-NaN",
+      "kind": "native",
+      "input": "NaN",
+      "expected_accept": false,
+      "canonical": null
+    },
+    {
+      "id": "native-Infinity",
+      "kind": "native",
+      "input": "Infinity",
+      "expected_accept": false,
+      "canonical": null
+    },
+    {
+      "id": "native--Infinity",
+      "kind": "native",
+      "input": "-Infinity",
+      "expected_accept": false,
+      "canonical": null
+    },
+    {
+      "id": "open-true",
+      "kind": "json",
+      "input": "true",
+      "expected_accept": true,
+      "canonical": "true"
+    },
+    {
+      "id": "open-false",
+      "kind": "json",
+      "input": "false",
+      "expected_accept": true,
+      "canonical": "false"
+    },
+    {
+      "id": "open-text",
+      "kind": "json",
+      "input": "\"9007199254740993\"",
+      "expected_accept": true,
+      "canonical": "\"9007199254740993\""
+    },
+    {
+      "id": "open-null",
+      "kind": "json",
+      "input": "null",
+      "expected_accept": true,
+      "canonical": "null"
+    }
+  ]
+}

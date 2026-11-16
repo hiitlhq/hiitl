@@ -3,16 +3,20 @@ title: "Communication Patterns"
 description: "Email, SMS, and messaging integrations"
 ---
 
+Each starter policy below is a complete policy file. Load it with `HIITL(policy_path="policy.yaml", mode="RESPECT_POLICY")` to enforce it. Under `RESPECT_POLICY`, an action no rule matches is blocked with `NO_MATCHING_RULE`, so each policy carries an `ALLOW` rule for the calls that should proceed. Under the default mode, `OBSERVE_ALL`, a decision other than `ALLOW` or `SANDBOX` comes back as `OBSERVE`, with the rule's decision in `would_be`.
+
+The rate limits below apply in either mode. They count the calls that come back `ALLOW`, and the call past the limit comes back `RATE_LIMIT` with `allowed` false. A `user_id` limit counts each `user_id` passed to `evaluate()` separately; calls that pass none share one count.
+
 ## send_email
 
 Send an email to a recipient.
 
 ```python
 decision = hiitl.evaluate(
-    tool="send_email",
+    "send_email",
     operation="execute",
     target={"email": "customer@example.com"},
-    parameters={"subject": "Order shipped", "body": "Your order is on its way."}
+    parameters={"subject": "Order shipped", "body": "Your order is on its way."},
 )
 ```
 
@@ -22,9 +26,10 @@ decision = hiitl.evaluate(
 policy_set:
   name: "email-policy"
   version: "v1.0.0"
+  description: "Controls on send_email"
   scope:
-    org_id: "org_abc123def456ghi7"
-    environment: "prod"
+    org_id: "org_devlocal0000000000"
+    environment: "dev"
 
   metadata:
     rate_limits:
@@ -37,7 +42,7 @@ policy_set:
 
   rules:
     - name: "block-bulk-email"
-      enabled: true
+      description: "Block emails to more than 100 recipients"
       priority: 900
       conditions:
         all_of:
@@ -57,7 +62,7 @@ policy_set:
           max_recipients: 100
 
     - name: "allow-email"
-      enabled: true
+      description: "Allow other emails"
       priority: 1
       conditions:
         all_of:
@@ -80,36 +85,41 @@ Send an SMS message.
 
 ```python
 decision = hiitl.evaluate(
-    tool="send_sms",
+    "send_sms",
     operation="execute",
     target={"phone_number": "+15551234567"},
-    parameters={"message": "Your verification code is 123456"}
+    parameters={"message": "Your verification code is 123456"},
 )
 ```
 
 **Starter policy:**
 
 ```yaml
-- name: "rate-limit-sms-per-user"
-  enabled: true
-  priority: 100
-  conditions:
-    all_of:
-      - field: "action"
-        operator: "equals"
-        value: "send_sms"
-  decision: "ALLOW"
-  reason_code: "SMS_ALLOWED"
-
-# Apply via policy-set metadata:
-# metadata:
-#   rate_limits:
-#     - scope: "user_id"
-#       window: "hour"
-#       limit: 10
-#     - scope: "org"
-#       window: "day"
-#       limit: 5000
+name: "sms-policy"
+version: "v1.0.0"
+description: "Controls on send_sms"
+scope:
+  org_id: "org_devlocal0000000000"
+  environment: "dev"
+metadata:
+  rate_limits:
+    - scope: "user_id"
+      window: "hour"
+      limit: 10
+    - scope: "org"
+      window: "day"
+      limit: 5000
+rules:
+  - name: "allow-sms"
+    description: "Allow SMS sends; the set's rate limits meter them"
+    priority: 100
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "send_sms"
+    decision: "ALLOW"
+    reason_code: "SMS_ALLOWED"
 ```
 
 <Warning>
@@ -124,44 +134,51 @@ Post a message to a Slack channel or DM.
 
 ```python
 decision = hiitl.evaluate(
-    tool="post_to_slack",
+    "post_to_slack",
     operation="execute",
     target={"channel": "#incident-response"},
-    parameters={"message": "Deployment complete for v2.3.1"}
+    parameters={"message": "Deployment complete for v2.3.1"},
 )
 ```
 
 **Starter policy:**
 
 ```yaml
-- name: "block-general-channels"
-  enabled: true
-  priority: 900
-  conditions:
-    all_of:
-      - field: "action"
-        operator: "equals"
-        value: "post_to_slack"
-      - field: "target.channel"
-        operator: "in"
-        value: ["#general", "#all-hands", "#company-wide"]
-  decision: "BLOCK"
-  reason_code: "BROADCAST_CHANNEL_BLOCKED"
-  remediation:
-    message: "Agents cannot post to broadcast channels."
-    suggestion: "Post to a team-specific or bot channel instead."
-    type: "policy"
+name: "slack-policy"
+version: "v1.0.0"
+description: "Controls on post_to_slack"
+scope:
+  org_id: "org_devlocal0000000000"
+  environment: "dev"
+rules:
+  - name: "block-general-channels"
+    description: "Block agent posts to company-wide broadcast channels"
+    priority: 900
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "post_to_slack"
+        - field: "target.channel"
+          operator: "in"
+          value: ["#general", "#all-hands", "#company-wide"]
+    decision: "BLOCK"
+    reason_code: "BROADCAST_CHANNEL_BLOCKED"
+    remediation:
+      message: "Agents cannot post to broadcast channels."
+      suggestion: "Post to a team-specific or bot channel instead."
+      type: "custom"
 
-- name: "allow-bot-channels"
-  enabled: true
-  priority: 1
-  conditions:
-    all_of:
-      - field: "action"
-        operator: "equals"
-        value: "post_to_slack"
-  decision: "ALLOW"
-  reason_code: "SLACK_POST_ALLOWED"
+  - name: "allow-bot-channels"
+    description: "Allow posts to other channels"
+    priority: 1
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "post_to_slack"
+    decision: "ALLOW"
+    reason_code: "SLACK_POST_ALLOWED"
 ```
 
 <Note>

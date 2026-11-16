@@ -10,7 +10,7 @@ tags: ["delete", "data-access", "irreversible", "destructive"]
 
 evaluate_examples:
   python: |
-    result = hiitl.evaluate("delete_records", {
+    result = hiitl.evaluate("delete_records", parameters={
         "table": "customer_sessions",
         "record_count": 15,
         "reason": "expired_session_cleanup",
@@ -18,15 +18,15 @@ evaluate_examples:
     if result.ok:
         delete_records(table="customer_sessions", record_count=15)
   typescript: |
-    const result = hiitl.evaluate({
+    const result = await hiitl.evaluate({
       action: 'delete_records',
-      params: {
+      parameters: {
         table: 'customer_sessions',
         record_count: 15,
         reason: 'expired_session_cleanup',
       },
     });
-    if (result.ok) {
+    if (result.allowed) {
       await deleteRecords({ table: 'customer_sessions', recordCount: 15 });
     }
 
@@ -36,7 +36,7 @@ context_enrichment:
     example: "user_6pR2mK8nQ3"
   - field: "sensitivity"
     why: "Deletions are inherently irreversible — this sensitivity tag triggers the strictest controls"
-    example: "irreversible"
+    example: ["irreversible"]
   - field: "target.table"
     why: "The target table determines data classification and which compliance requirements apply to the deletion"
     example: "customer_sessions"
@@ -51,7 +51,6 @@ starter_policies:
   - name: "sandbox-dev-deletes"
     description: "Route all deletion operations in dev to sandbox to prevent accidental data loss during development"
     priority: 200
-    enabled: true
     conditions:
       all_of:
         - field: "action"
@@ -63,14 +62,13 @@ starter_policies:
     decision: "SANDBOX"
     reason_code: "DEV_DELETE_SANDBOXED"
     remediation:
-      type: "static"
+      type: "custom"
       message: "Deletion operations in the dev environment are sandboxed to prevent accidental data loss"
       suggestion: "Your deletion will execute against the sandbox environment. This protects shared development data from accidental deletion. If you need to test actual deletions, use a dedicated test database."
 
   - name: "approve-prod-deletes"
     description: "Require human approval for all deletion operations in production — no exceptions"
     priority: 150
-    enabled: true
     conditions:
       all_of:
         - field: "action"
@@ -82,14 +80,13 @@ starter_policies:
     decision: "REQUIRE_APPROVAL"
     reason_code: "PROD_DELETE_NEEDS_APPROVAL"
     remediation:
-      type: "static"
+      type: "custom"
       message: "All record deletions in production require explicit human approval"
       suggestion: "Submit a deletion request with the target table, record count, reason, and confirmation that a backup exists. A database administrator must approve before the deletion can proceed."
 
   - name: "block-bulk-deletes"
     description: "Block deletion of more than 100 records — bulk deletions must go through the data lifecycle management process"
     priority: 100
-    enabled: true
     conditions:
       all_of:
         - field: "action"
@@ -101,14 +98,13 @@ starter_policies:
     decision: "BLOCK"
     reason_code: "BULK_DELETE_BLOCKED"
     remediation:
-      type: "static"
+      type: "threshold"
       message: "Automated agents cannot delete more than 100 records at a time"
       suggestion: "Bulk deletions must go through the data lifecycle management process with DBA oversight. For large cleanup jobs, submit a data maintenance request that includes the scope, justification, backup plan, and rollback procedure."
 
   - name: "block-protected-tables"
     description: "Block automated deletion from core business tables that require special handling"
     priority: 110
-    enabled: true
     conditions:
       all_of:
         - field: "action"
@@ -120,14 +116,14 @@ starter_policies:
     decision: "BLOCK"
     reason_code: "PROTECTED_TABLE_DELETE_BLOCKED"
     remediation:
-      type: "static"
+      type: "custom"
       message: "Automated deletion from protected business tables is not permitted"
       suggestion: "The tables 'customers', 'transactions', 'audit_log', 'policies', and 'accounts' are protected from automated deletion. These records must be managed through the data retention workflow with appropriate compliance review."
 
   - name: "delete-kill-switch"
     description: "Emergency kill switch to halt all automated deletion operations immediately"
     priority: 10
-    enabled: false
+    lifecycle_stage: disabled
     conditions:
       field: "action"
       operator: "equals"
@@ -135,7 +131,7 @@ starter_policies:
     decision: "KILL_SWITCH"
     reason_code: "DELETIONS_SUSPENDED"
     remediation:
-      type: "static"
+      type: "custom"
       message: "All automated record deletion has been suspended by an administrator"
       suggestion: "Contact the database operations team to check the status of the deletion kill switch. This is typically activated during incident response when uncontrolled data loss is suspected."
 

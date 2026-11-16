@@ -49,23 +49,24 @@ describe('Config', () => {
 
     it('should accept valid org_id patterns', () => {
       const validOrgIds = [
-        'org_mycompany123456789', // Exactly 18 chars after prefix
+        'org_mycompany123456789',
         'org_abcdefghij0123456789', // 20 chars
         'org_' + 'a'.repeat(50), // Long org_id
         'org_000000000000000000', // All numbers
         'org_aaaaaaaaaaaaaaaaaa', // All letters
+        'org_0123456789abcdef', // the service's mint: 16 hex characters
+        'org_MyCompany12345678', // the envelope takes either case
       ];
 
-      for (const org_id of validOrgIds) {
-        const config = createConfig({
-          environment: 'dev',
-          agent_id: 'test-agent',
-          org_id,
-          policy_path: './policy.json',
-        });
-
-        expect(config.org_id).toBe(org_id);
-      }
+      const refused = validOrgIds.filter((org_id) => {
+        try {
+          return createConfig({ environment: 'dev', agent_id: 'test-agent', org_id, policy_path: './policy.json' })
+            .org_id !== org_id;
+        } catch {
+          return true;
+        }
+      });
+      expect(refused).toEqual([]); // every id the envelope takes is taken
     });
 
     it('should accept api_key for hybrid mode', () => {
@@ -121,8 +122,9 @@ describe('Config', () => {
 
     it('should reject invalid org_id patterns', () => {
       const invalidOrgIds = [
-        'org_short', // Too short (< 18 chars)
-        'org_HAS_UPPERCASE00000', // Has uppercase
+        'org_short', // Too short (< 16 chars)
+        'org_' + 'a'.repeat(15), // One short
+        'org_HAS_UPPERCASE00000', // Has underscores
         'mycompany123456789', // Missing prefix
         'org_has-dashes-00000000', // Has dashes
         'org_has_underscores_0000', // Has extra underscores

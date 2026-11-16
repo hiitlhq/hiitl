@@ -1,0 +1,23 @@
+{
+  "source_commit": "9ac6fdc554f84074e8a95c17f28f07edf98373b1",
+  "source_database_sha256": "ccefad1925cc95208ea8372f6bc64ea8189f107e9864fb67d26423539a80673d",
+  "row": {
+    "event_id": "evt_0e049a7c437d4b22864cfee588013416",
+    "timestamp": "2026-11-15T13:52:50.167590+00:00",
+    "org_id": "org_1234567890abcdef",
+    "environment": "dev",
+    "action_id": "act_00000000000000000035",
+    "envelope": "{\"schema_version\": \"v2.0\", \"org_id\": \"org_1234567890abcdef\", \"environment\": \"dev\", \"agent_id\": \"fixture\", \"action_id\": \"act_00000000000000000035\", \"idempotency_key\": \"scalar\", \"action\": \"read\", \"timestamp\": \"2026-11-14T01:02:03.123456+05:30\", \"signature\": \"0000000000000000000000000000000000000000000000000000000000000000\", \"operation\": \"execute\", \"target\": {}, \"parameters\": {}, \"principal\": {\"sub\": \"review-user\", \"verified_by\": \"sdk_verifier\", \"verified_at\": \"2026-11-14T01:02:03.123456+05:30\"}, \"signature_version\": \"hmac-sha256-v1\"}",
+    "decision": "{\"action_id\": \"act_00000000000000000035\", \"decision\": \"BLOCK\", \"allowed\": false, \"reason_codes\": [\"NO_MATCHING_RULE\"], \"policy_version\": \"v1.0.0\", \"timing\": {\"ingest_ms\": 0.00012479722499847412, \"evaluation_ms\": 0.00800006091594696, \"total_ms\": 0.008249655365943909}, \"matched_rules\": null, \"rate_limit\": null, \"resume_token\": null, \"route_ref\": null, \"escalation_context\": null, \"envelope_hash\": \"8f538663423b5d31e7ef94987b6ef11bf1b7712251643eb6c869f436b18a33b4\", \"error\": null, \"remediation\": null, \"would_be\": null, \"would_be_reason_codes\": null, \"staged_observations\": [], \"rate_limit_rules\": [], \"enrichment\": null, \"routes\": null, \"missing_fields\": null, \"cache_status\": null, \"metadata\": null}",
+    "policy_version": "v1.0.0",
+    "decision_type": "BLOCK",
+    "action": "read",
+    "agent_id": "fixture",
+    "content_hash": "c06e6d9732cd1addf36707c6c2120377392c980331b08a0ca6fa3e00b3e09591",
+    "synced": 0,
+    "refused": null,
+    "execution_result": null,
+    "redaction": null,
+    "review": null
+  }
+}

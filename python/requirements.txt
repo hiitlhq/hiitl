@@ -1,4 +1,4 @@
-# HIITL Python Dependencies
+# hiitl Python dependencies
 
 # Core dependencies
 pydantic>=2.0.0  # Type validation and serialization
@@ -8,7 +8,10 @@ httpx>=0.25.0  # HTTP client for hosted mode
 
 # Development dependencies
 pytest>=7.0.0  # Testing framework
+pytest-asyncio>=0.21.0  # Async test support (mcp_proxy tests)
 pytest-cov>=4.0.0  # Coverage reporting
+pytest-httpx>=0.30.0  # HTTP fixture for hosted-mode SDK tests
+cryptography>=42.0.0  # A self-signed certificate: the gateway cells serve their route over https on loopback (row 140)
 black>=23.0.0  # Code formatting
 mypy>=1.0.0  # Type checking
 ruff>=0.1.0  # Fast Python linter

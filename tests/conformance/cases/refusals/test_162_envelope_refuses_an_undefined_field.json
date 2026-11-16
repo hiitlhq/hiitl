@@ -1,0 +1,33 @@
+{
+  "test_id": "test_162_envelope_refuses_an_undefined_field",
+  "description": "An envelope naming a field envelope_schema.json does not define is refused, naming it; the amount belongs in parameters (R-0872; HTL-20 row 147).",
+  "envelope": {
+    "schema_version": "v2.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_billing_bot",
+    "action_id": "act_test16200000000000000000000",
+    "timestamp": "2026-11-04T10:00:00Z",
+    "operation": "execute",
+    "parameters": {
+      "amount": 120,
+      "currency": "USD"
+    },
+    "idempotency_key": "idem_test_162",
+    "target": {
+      "account_id": "acct_7731"
+    },
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "process_payment",
+    "amount_usd": 120
+  },
+  "expected_refusal": {
+    "artifact": "envelope",
+    "at": [
+      "amount_usd"
+    ],
+    "names": [
+      "amount_usd"
+    ]
+  }
+}

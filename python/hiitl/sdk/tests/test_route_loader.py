@@ -10,7 +10,16 @@ import pytest
 
 from hiitl.core.route_types import Route
 from hiitl.sdk.exceptions import RouteLoadError
-from hiitl.sdk.route_loader import RouteLoader, resolve_escalation_context
+from hiitl.core.route_types import resolve_escalation_context
+from hiitl.sdk.route_loader import RouteLoader
+
+
+@pytest.fixture(autouse=True)
+def _secrets(monkeypatch):
+    """The process that loads a route holds the secret it sends: each fixture's `secret_ref` is set (routes.md
+    Validation Rules, "The party that sends reads the `auth`"; row 140)."""
+    monkeypatch.setenv("HIITL_FINANCE_WEBHOOK_SECRET", "finance-test-secret")
+    monkeypatch.setenv("SECURITY_WEBHOOK_TOKEN", "security-test-token")
 
 
 # ============================================================================
@@ -28,7 +37,7 @@ purpose:
 
 endpoint: "https://hooks.example.com/hiitl/finance-review"
 auth:
-  type: hmac_sha256
+  type: bearer_token
   secret_ref: "env:HIITL_FINANCE_WEBHOOK_SECRET"
 protocol: webhook
 
@@ -466,12 +475,15 @@ class TestClientEscalationIntegration:
         """Create policy + route config for escalation testing."""
         policy_file = tmp_path / "policy.yaml"
         policy_file.write_text("""
-version: "1.0.0"
+version: "v1.0.0"
+description: "Large payments require approval"
+scope:
+  org_id: org_test000000000000000
+  environment: dev
 name: test_policy
 rules:
   - name: approve_large_payments
     priority: 100
-    enabled: true
     conditions:
       field: parameters.amount
       operator: greater_than
@@ -482,7 +494,6 @@ rules:
     description: Large payments require approval
   - name: allow_small_payments
     priority: 50
-    enabled: true
     conditions:
       field: parameters.amount
       operator: less_than_or_equal
@@ -575,12 +586,15 @@ rules:
 
         policy_file = tmp_path / "policy.yaml"
         policy_file.write_text("""
-version: "1.0.0"
+version: "v1.0.0"
+description: "Escalation without routes path"
+scope:
+  org_id: org_test000000000000000
+  environment: dev
 name: test_policy
 rules:
   - name: approve_all
     priority: 100
-    enabled: true
     conditions:
       field: action
       operator: equals
@@ -619,12 +633,15 @@ rules:
 
         policy_file = tmp_path / "policy.yaml"
         policy_file.write_text("""
-version: "1.0.0"
+version: "v1.0.0"
+description: "Escalation missing route config file"
+scope:
+  org_id: org_test000000000000000
+  environment: dev
 name: test_policy
 rules:
   - name: approve_all
     priority: 100
-    enabled: true
     conditions:
       field: action
       operator: equals

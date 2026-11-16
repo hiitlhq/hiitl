@@ -1,0 +1,37 @@
+{
+  "test_id": "test_164_rule_refuses_a_decision_only_the_evaluator_produces",
+  "description": "A rule never writes OBSERVE: the evaluator produces it in observe mode, and a rule that observes is lifecycle_stage staged. The refusal names the rule and the value (policy_format.md 2.10 'Valid Decisions'; HTL-20 row 147).",
+  "policy_set": {
+    "version": "v1.0.0",
+    "name": "refund_policy",
+    "description": "Payment controls",
+    "scope": {
+      "org_id": "org_devlocal0000000000",
+      "environment": "dev"
+    },
+    "rules": [
+      {
+        "name": "observe_refunds",
+        "priority": 100,
+        "conditions": {
+          "field": "action",
+          "operator": "equals",
+          "value": "issue_refund"
+        },
+        "decision": "OBSERVE",
+        "reason_code": "REFUND_OBSERVED",
+        "description": "Watch refunds before enforcing"
+      }
+    ]
+  },
+  "expected_refusal": {
+    "artifact": "policy_set",
+    "at": [
+      "rules.0.decision"
+    ],
+    "names": [
+      "observe_refunds",
+      "OBSERVE"
+    ]
+  }
+}

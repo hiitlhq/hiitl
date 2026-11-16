@@ -1,0 +1,70 @@
+{
+  "test_id": "test_121_multiple_staged_first_match_marks_binding",
+  "description": "Two staged rules both match; only the highest-priority match is flagged would_be_binding=true. Lower-priority staged matches are still recorded as informative observations. No active rule matches, so the safe-default BLOCK with NO_MATCHING_RULE applies. Validates ordering + would_be_binding semantics cross-language (TICKET-109).",
+  "envelope": {
+    "schema_version": "v2.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_finance_bot",
+    "action_id": "act_test1210000000000000",
+    "timestamp": "2026-02-14T10:00:00Z",
+    "operation": "execute",
+    "parameters": {"amount": 500, "currency": "USD"},
+    "idempotency_key": "idem_test_121_multiple_staged",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "transfer_money"
+  },
+  "policy_set": {
+    "version": "v1.0.0",
+    "description": "Two staged rules both match; only the highest-priority match is flagged would_be_binding=true. Lower-priority staged matches are still recorded as informative observations. No active rule matches, so the safe-default BLOCK with NO_MATCHING_RULE applies. Validates ordering + would_be_binding semantics cross-language (TICKET-109).",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "staged_high",
+        "priority": 100,
+        "conditions": {"field": "parameters.amount", "operator": "greater_than", "value": 0},
+        "decision": "BLOCK",
+        "reason_code": "STAGED_HIGH",
+        "description": "Rule: staged_high",
+        "lifecycle_stage": "staged"
+      },
+      {
+        "name": "staged_low",
+        "priority": 50,
+        "conditions": {"field": "parameters.amount", "operator": "greater_than", "value": 0},
+        "decision": "REQUIRE_APPROVAL",
+        "reason_code": "STAGED_LOW",
+        "description": "Rule: staged_low",
+        "lifecycle_stage": "staged"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "BLOCK",
+    "allowed": false,
+    "reason_codes": ["NO_MATCHING_RULE"],
+    "staged_observations": [
+      {
+        "rule_name": "staged_high",
+        "policy_set": "test_policy",
+        "priority": 100,
+        "would_be_decision": "BLOCK",
+        "would_be_reason_codes": ["STAGED_HIGH"],
+        "would_be_binding": true
+      },
+      {
+        "rule_name": "staged_low",
+        "policy_set": "test_policy",
+        "priority": 50,
+        "would_be_decision": "REQUIRE_APPROVAL",
+        "would_be_reason_codes": ["STAGED_LOW"],
+        "would_be_binding": false
+      }
+    ]
+  }
+}

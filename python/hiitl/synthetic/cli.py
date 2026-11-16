@@ -1,4 +1,4 @@
-"""CLI for HIITL synthetic test runner.
+"""CLI for the hiitl synthetic test runner.
 
 Usage:
     python -m hiitl.synthetic run <scenario-name>
@@ -22,14 +22,14 @@ from .envelope_factory import EnvelopeFactory
 from .executor import ScenarioExecutor
 from .grader import PolicyGrader
 from .report import build_run_report, print_console_summary, write_json_report
-from .scenario_loader import ScenarioLoader
+from .scenario_loader import ScenarioLoader, ScenarioLoadError
 
 
 def create_parser() -> argparse.ArgumentParser:
     """Create the argument parser with subcommands."""
     parser = argparse.ArgumentParser(
         prog="hiitl-synthetic",
-        description="HIITL Synthetic Test Runner — validate policies, generate test data, grade coverage",
+        description="hiitl synthetic test runner — validate policies, generate test data, grade coverage",
     )
 
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
@@ -106,9 +106,9 @@ def _load_policy(policy_path: str) -> PolicySet:
         text = path.read_text()
         if path.suffix in (".yaml", ".yml"):
             try:
-                import yaml
+                from hiitl.sdk.policy_loader import load_yaml
 
-                data = yaml.safe_load(text)
+                data = load_yaml(text)
             except ImportError:
                 print(
                     "Error: PyYAML is required for YAML policy files. Install with: pip install pyyaml",
@@ -156,7 +156,11 @@ def cmd_run(args: argparse.Namespace) -> int:
     loader = ScenarioLoader(args.scenarios_dir)
 
     if args.all:
-        scenarios = loader.load_all()
+        try:
+            scenarios = loader.load_all()
+        except ScenarioLoadError as e:
+            print(f"Error: {e}", file=sys.stderr)
+            return 2
         if not scenarios:
             print("No scenarios found.", file=sys.stderr)
             return 2
@@ -171,7 +175,7 @@ def cmd_run(args: argparse.Namespace) -> int:
         return 2
 
     evaluator = PolicyEvaluator()
-    all_results = []
+    scenario_results = []
 
     for scenario in scenarios:
         policy = _resolve_policy(
@@ -188,21 +192,20 @@ def cmd_run(args: argparse.Namespace) -> int:
             environment=args.environment,
         )
         result = executor.run(scenario)
-        all_results.append((result, grader.grade()))
+        # each scenario is graded against its own policy, so the grade is the scenario's
+        result.grading = grader.grade()
+        scenario_results.append(result)
 
-    scenario_results = [r for r, _ in all_results]
-    # Merge grading from all scenarios
-    combined_grading = all_results[0][1] if len(all_results) == 1 else all_results[0][1]
+    report = build_run_report(scenario_results)
 
-    report = build_run_report(scenario_results, grading=combined_grading)
-
-    if args.json:
-        write_json_report(report, sys.stdout)
-    elif args.output:
+    if args.output:
         with open(args.output, "w") as f:
             write_json_report(report, f)
-        print(f"Report written to {args.output}")
-    else:
+        # with --json, stdout carries only the report
+        print(f"Report written to {args.output}", file=sys.stderr if args.json else sys.stdout)
+    if args.json:
+        write_json_report(report, sys.stdout)
+    elif not args.output:
         print_console_summary(report)
 
     # Exit code: 0 if all passed, 1 if any failed
@@ -223,8 +226,8 @@ def cmd_list(args: argparse.Namespace) -> int:
         try:
             scenario = loader.load(name)
             print(f"  {name} — {scenario.description}")
-        except Exception:
-            print(f"  {name} — (failed to load)")
+        except Exception as e:
+            print(f"  {name} — (failed to load: {e})")
 
     return 0
 
@@ -252,7 +255,7 @@ def cmd_generate(args: argparse.Namespace) -> int:
     output = open(args.output, "w") if args.output else sys.stdout
     try:
         for env in envelopes:
-            line = env.model_dump_json()
+            line = env.model_dump_json(exclude_unset=True)
             output.write(line + "\n")
     finally:
         if args.output:
@@ -289,16 +292,16 @@ def cmd_grade(args: argparse.Namespace) -> int:
 
     grading = grader.grade()
 
+    data = grading.model_dump(mode="json")
+    if args.output:
+        with open(args.output, "w") as f:
+            json.dump(data, f, indent=2, default=str)
+        # with --json, stdout carries only the report
+        print(f"Grading report written to {args.output}", file=sys.stderr if args.json else sys.stdout)
     if args.json:
-        data = grading.model_dump(mode="json")
         json.dump(data, sys.stdout, indent=2, default=str)
         sys.stdout.write("\n")
-    elif args.output:
-        with open(args.output, "w") as f:
-            data = grading.model_dump(mode="json")
-            json.dump(data, f, indent=2, default=str)
-        print(f"Grading report written to {args.output}")
-    else:
+    elif not args.output:
         print("")
         print("=== Policy Grading Report ===")
         print(f"  Policy: {policy.name} v{policy.version}")

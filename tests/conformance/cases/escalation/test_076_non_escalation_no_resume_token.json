@@ -2,7 +2,7 @@
   "test_id": "test_076_non_escalation_no_resume_token",
   "description": "Non-escalation decisions (ALLOW, BLOCK) do not include resume_token",
   "envelope": {
-    "schema_version": "v1.0",
+    "schema_version": "v2.0",
     "org_id": "org_1234567890abcdef",
     "environment": "dev",
     "agent_id": "agent_test",
@@ -18,13 +18,17 @@
     "action": "read_data"
   },
   "policy_set": {
-    "version": "1.0.0",
+    "version": "v1.0.0",
+    "description": "Non-escalation decisions (ALLOW, BLOCK) do not include resume_token",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "dev"
+    },
     "name": "test_policy",
     "rules": [
       {
         "name": "allow_reads",
         "priority": 100,
-        "enabled": true,
         "conditions": {
           "field": "operation",
           "operator": "equals",

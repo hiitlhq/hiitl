@@ -1,111 +1,104 @@
 ---
 title: "Tenant Isolation"
-description: "Strict org_id isolation at every layer"
+description: "How hiitl keeps each organization's data separate"
 ---
 
 ## org_id scoping
 
-Every piece of data in hiitl is scoped to an `org_id`. This isolation is enforced at every layer of the system.
+Every API key belongs to one organization (`org_id`). A request made with the key acts for that organization. The organization comes from the key, never from the request body.
 
-| Layer | Isolation mechanism |
-|-------|-------------------|
-| **Database queries** | Every query includes `WHERE org_id = ?` |
-| **Audit logs** | Records are partitioned by org_id |
-| **Policy lookups** | Policies are scoped to org_id + environment |
-| **Rate limit counters** | Counters are keyed by org_id |
-| **API keys** | Keys are bound to a single org_id |
-
-There is no admin bypass that crosses tenant boundaries in the application layer.
+| Data | How it is scoped |
+|------|------------------|
+| **API keys** | Each key is bound to one org_id and one environment when it is created |
+| **Policy lookups** | Evaluation loads the active policy for the key's org_id and environment |
+| **Audit records** | Audit queries return only the records of the key's organization and environment |
+| **Rate limit counters** | Counters are keyed by org_id and environment |
 
 <Warning>
-**Cross-tenant data access is a P0 security bug.** Any code path that allows one org to read, write, or influence another org's data is treated as a critical severity incident. This is tested explicitly in the test suite.
+**Cross-tenant data access is a P0 security bug.** Any code path that allows one org to read, write, or influence another org's data is treated as a critical severity incident. The test suite includes explicit cross-tenant tests.
 </Warning>
 
 ## Environment separation
 
-Within an org, environments (`dev`, `stage`, `prod`) are fully isolated.
+Within an org, each environment (`dev`, `stage`, `prod`) has its own active policy. On the hosted service:
 
-```
-org_abc123
-  |-- dev    (policies, counters, audit log)
-  |-- stage  (policies, counters, audit log)
-  |-- prod   (policies, counters, audit log)
-```
+- `POST /v1/evaluate` evaluates against the active policy for the key's environment
+- A policy version created with a `stage` key replaces only the `stage` policy. `prod` keeps its own
+- Policies and policy changes, audit records, suggestions, review cases and API keys are read and acted on in the key's environment alone, with one exception: a key holding `full` lists the API keys of every environment, as it may create keys in each. A record of another environment returns `404`, the same as one that does not exist, and an `environment` query parameter naming another environment is refused with `403 TENANT_MISMATCH`
+- An audit record uploaded under an `event_id` another environment holds is stored as any record is: it is not counted a duplicate
+- Kill switches are activated and deactivated in the key's environment
 
-Isolation guarantees:
-
-- A `dev` environment action cannot trigger a `prod` policy
-- A `dev` environment action cannot increment a `prod` rate limit counter
-- A `dev` API key cannot query `prod` audit logs
-- Policies deployed to `stage` do not affect `prod`
-
-This prevents accidental cross-environment contamination during development and testing.
+Use a separate key for each environment, so that a development service evaluates against development policies.
 
 ## What this means in practice
 
 ### Policy evaluation
 
-When the decision plane evaluates an envelope, it loads only policies matching the envelope's `org_id` and `environment`:
+When the hosted service evaluates a request, it loads only the active policy for the API key's `org_id` and environment:
 
 ```
-Envelope: { org_id: "org_abc123", environment: "prod", ... }
-    --> Loads: org_abc123 / prod policies only
-    --> Ignores: org_abc123 / dev, org_xyz / prod, etc.
+API key: org_northwindpay0001 / prod
+    --> Loads: the active org_northwindpay0001 / prod policy
+    --> Ignores: org_northwindpay0001 / dev, and every other organization's policies
 ```
 
 ### Rate limiting
 
-Rate limit counters are scoped to `(org_id, environment, scope_key)`:
-
-```
-Counter key: org_abc123:prod:agent_id:payment-agent
-    --> Only incremented by org_abc123 prod actions
-    --> org_abc123 dev has its own separate counter
-```
+Rate limit counters are keyed by `org_id` and environment, so one organization's actions never count toward another organization's limits, and a `dev` call never spends a `prod` counter.
 
 ### Audit trail
 
-Audit queries are always filtered by `org_id`:
+Audit queries are always filtered by the API key's `org_id` and environment:
 
 ```bash
-# This only returns org_abc123 records
-curl -H "Authorization: Bearer $ORG_ABC123_KEY" \
+# This only returns org_northwindpay0001's records
+curl -H "Authorization: Bearer $NORTHWIND_API_KEY" \
   https://api.hiitl.com/v1/audit
 ```
 
-There is no API to query across organizations, even for hiitl administrators.
+An `event_id` or `policy_id` that belongs to another organization, or to another environment, returns `404`, the same as one that does not exist.
 
 ## API key binding
 
-API keys are bound to exactly one `(org_id, environment)` pair at creation time. This binding cannot be changed -- to access a different environment, create a new key.
+API keys are bound to exactly one `(org_id, environment)` pair at creation time. This binding cannot be changed. To work in a different environment, create a new key.
 
 ```json
 {
-  "key_id": "key_abc123",
-  "org_id": "org_abc123",
+  "key_id": "key_60fb377250c94310a4f5",
+  "name": "payment-agent-v2",
+  "scopes": ["evaluate"],
   "environment": "prod",
-  "scope": "evaluate"
+  "is_active": true
 }
 ```
 
-If a request's API key does not match the `org_id` or `environment` in the envelope, the request is rejected:
+This is an entry from `GET /v1/api-keys`, shortened.
+
+A request cannot name another organization:
+
+- The `POST /v1/evaluate` body has no `org_id` field. The service uses the key's.
+- A policy version whose `scope.org_id` or `scope.environment` does not match the key's is refused with `400 POLICY_VALIDATION_ERROR`
+- An audit record uploaded by a hybrid-mode SDK must name the key's `org_id` and environment. Any other record is refused with `TENANT_MISMATCH`
 
 ```json
 {
-  "error": {
-    "code": "TENANT_MISMATCH",
-    "message": "API key is bound to org_abc123/prod but envelope specifies org_xyz789/prod."
+  "detail": {
+    "error": "POLICY_VALIDATION_ERROR",
+    "message": "Policy scope org_id must match authenticated org_id",
+    "details": {
+      "validation_errors": ["Expected org_id=org_brightlanehealth1, got org_northwindpay0001"]
+    }
   }
 }
 ```
 
 ## Testing isolation
 
-The test suite includes explicit cross-tenant access tests:
+The test suite includes explicit cross-tenant access tests, among them:
 
-- Attempt to read org B's audit records with org A's API key
-- Attempt to evaluate against org B's policies with org A's envelope
-- Attempt to increment org B's rate limit counters with org A's actions
-- Attempt to toggle org B's kill switches with org A's admin key
-
-All of these must fail with clear error responses.
+- Listing another organization's audit records with an org's API key
+- Reading another organization's policy by its `policy_id`
+- Listing another organization's policies
+- Listing and revoking another organization's API keys
+- Toggling a kill switch, which leaves another organization's kill switch unchanged
+- Uploading audit records that name another organization

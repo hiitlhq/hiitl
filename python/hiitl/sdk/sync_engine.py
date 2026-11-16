@@ -16,13 +16,15 @@ Lifecycle:
     engine.stop()        # signals stop, flushes audit, joins thread
 """
 
-import hashlib
-import json
 import logging
 import threading
 import time
+from dataclasses import asdict
 from typing import Optional
 
+from hiitl.core.canonical import canonical_hash
+from hiitl.core.redaction import ORG_FIELDS, Redaction
+from hiitl.sdk.audit import settle_upload
 from hiitl.sdk.circuit_breaker import CircuitBreaker
 from hiitl.sdk.config import SyncConfig
 from hiitl.sdk.exceptions import SyncError
@@ -30,6 +32,7 @@ from hiitl.sdk.sync_cache import SyncCache
 from hiitl.sdk.sync_client import SyncClient
 
 logger = logging.getLogger(__name__)
+
 
 
 class SyncEngine:
@@ -87,6 +90,7 @@ class SyncEngine:
             self._breakers["telemetry"] = CircuitBreaker("telemetry", cb_threshold, cb_reset)
 
         # Sync state
+        self._buffer_full = False  # BUFFER_FULL is logged once per crossing, re-armed below the limit
         self._audit_sequence = 0
         self._last_telemetry_sent = 0.0
         self._thread: Optional[threading.Thread] = None
@@ -233,8 +237,9 @@ class SyncEngine:
         while not self._stop_event.is_set():
             now = time.monotonic()
 
-            # Audit upload
+            # Audit upload (the backlog is read first, whatever the audit circuit's state)
             if now - last_audit >= self._config.audit_sync_interval:
+                self._check_audit_buffer()
                 self._safe_sync("audit", self._sync_audit)
                 last_audit = time.monotonic()
 
@@ -279,6 +284,28 @@ class SyncEngine:
             breaker.record_failure()
             logger.error("Sync [%s] unexpected error: %s", channel, e)
 
+    def _check_audit_buffer(self) -> None:
+        """Emit BUFFER_FULL when the unsynced audit backlog reaches its limit (sync_engine.md section 7).
+
+        The limit is max_buffer_records records or max_buffer_size_bytes bytes, whichever comes first.
+        Logged once per crossing and re-armed when the backlog falls below. No record is dropped: the
+        backlog is the local audit store, on disk, and it uploads oldest-first when sync recovers.
+        """
+        try:
+            count, size = self._audit_logger.unsynced_backlog()
+        except Exception as e:
+            logger.warning("BUFFER_FULL check could not read the audit backlog: %s", e)
+            return
+        full = count >= self._config.max_buffer_records or size >= self._config.max_buffer_size_bytes
+        if full and not self._buffer_full:
+            logger.warning(
+                "BUFFER_FULL: %d unsynced audit records (%d bytes) have reached the audit buffer's limit "
+                "(max_buffer_records=%d, max_buffer_size_bytes=%d). No record is dropped: they stay in the "
+                "local audit store and upload, oldest first, when sync recovers.",
+                count, size, self._config.max_buffer_records, self._config.max_buffer_size_bytes,
+            )
+        self._buffer_full = full
+
     # ── Channel implementations ──────────────────────────────────
 
     def _sync_audit(self) -> None:
@@ -292,18 +319,7 @@ class SyncEngine:
 
             self._audit_sequence += 1
             result = self._client.upload_audit(records, self._audit_sequence)
-
-            # Mark successfully accepted records as synced
-            synced_ids = []
-            error_ids = {e.get("event_id") for e in result.errors}
-
-            for record in records:
-                event_id = record["event_id"]
-                if event_id not in error_ids:
-                    synced_ids.append(event_id)
-
-            if synced_ids:
-                self._audit_logger.mark_synced(synced_ids)
+            goes_on = settle_upload(self._audit_logger, records, result.errors, logger)
 
             logger.debug(
                 "Audit sync: accepted=%d, duplicates=%d, errors=%d",
@@ -312,15 +328,8 @@ class SyncEngine:
                 len(result.errors),
             )
 
-            # If there were errors, stop draining and retry next interval
-            if result.errors:
-                for err in result.errors:
-                    logger.warning(
-                        "Audit record %s rejected: [%s] %s",
-                        err.get("event_id", "?"),
-                        err.get("code", "?"),
-                        err.get("message", "?"),
-                    )
+            # A retried refusal stops the drain until the next interval; a final one does not (row 224)
+            if not goes_on:
                 break
 
             # If we got a full batch, drain immediately (no interval wait)
@@ -341,35 +350,49 @@ class SyncEngine:
         result = self._client.download_policies(etag=etag)
 
         if result is None:
-            # 304 Not Modified
+            # 304 Not Modified: the cached version is the server's as of this pull (sync_engine.md 2.4)
+            self._cache.policies_landed()
             logger.debug("Policy sync: not modified (etag=%s)", etag)
             return False
 
-        # Verify content hashes
+        # Verify content hashes in the one form every writer and checker reads (sync_engine.md §2.2: SHA-256 over
+        # RFC 8785), the TypeScript SDK's same bytes. A policy with no hash is refused as one whose hash differs: an
+        # absent hash proves nothing (HTL-29 row 137)
         for policy in result.policies:
             expected_hash = policy.get("content_hash")
-            if expected_hash:
-                content = policy.get("content", {})
-                actual_hash = hashlib.sha256(
-                    json.dumps(content, sort_keys=True, separators=(",", ":")).encode()
-                ).hexdigest()
-                if actual_hash != expected_hash:
-                    logger.error(
-                        "POLICY_INTEGRITY_VIOLATION: policy '%s' content hash "
-                        "mismatch (expected=%s, got=%s). Rejecting download.",
-                        policy.get("name", "?"),
-                        expected_hash,
-                        actual_hash,
-                    )
-                    raise SyncError(
-                        "policy",
-                        f"Policy integrity violation for '{policy.get('name', '?')}': "
-                        f"content hash mismatch",
-                    )
+            actual_hash = canonical_hash(policy.get("content", {}))
+            if actual_hash != expected_hash:
+                cause = (f"content hash mismatch (expected={expected_hash}, got={actual_hash})" if expected_hash
+                         else "no content_hash")
+                logger.error(
+                    "POLICY_INTEGRITY_VIOLATION: policy '%s' %s. Rejecting download.",
+                    policy.get("name", "?"),
+                    cause,
+                )
+                raise SyncError(
+                    "policy",
+                    f"Policy integrity violation for '{policy.get('name', '?')}': {cause}",
+                )
+
+        # The org's redaction policy rides the policy pull, and the local store redacts it with its own declaration
+        # (event_format.md §Redaction, row 163(a)). A response without it is refused, never read as "nothing declared":
+        # the store would write an org-declared field in clear.
+        declared = (result.redaction_policy or {}).get(ORG_FIELDS) if isinstance(result.redaction_policy, dict) else None
+        if not isinstance(declared, list):
+            raise SyncError(
+                "policy",
+                f"The policy response carries no redaction_policy.{ORG_FIELDS} list, so the fields the org redacts "
+                f"are unknown. The cache keeps what it had (event_format.md §Redaction).",
+            )
+        try:
+            Redaction.declared(declared, source=ORG_FIELDS)
+        except ValueError as e:
+            raise SyncError("policy", f"The policy response's redaction_policy is refused: {e}") from e
 
         # Update cache atomically
         self._cache.update_policies(
-            {"policies": result.policies, "version": result.version},
+            {"policies": result.policies, "version": result.version,
+             "redaction_policy": {ORG_FIELDS: list(declared)}},
             etag=result.etag,
         )
 
@@ -399,16 +422,36 @@ class SyncEngine:
         return True
 
     def _sync_kill_switches(self) -> None:
-        """Poll kill switches from server, update cache."""
+        """Poll kill switches from server, update cache. The tick is the change signal and the version decides: a tick
+        naming a version other than the one evaluate reads pulls the version in this tick, and the list itself decides
+        nothing (sync_engine.md 2.4; HTL-29 row 131, condition 2). Until a pull lands, the version the tick names
+        decides in its switches' scope, and the pull is made at every tick past the policy breaker, each miss logged at
+        error (row 240, ruled 2026-11-09)."""
         result = self._client.poll_kill_switches()
 
-        self._cache.update_kill_switches(result.kill_switches)
+        difference = self._cache.update_kill_switches(asdict(result))
 
         logger.debug(
             "Kill switch sync: %d active switches (server_time=%s)",
             len(result.kill_switches),
             result.server_time,
         )
+
+        if difference is None:
+            return
+        (version, named), (cached, held) = difference
+        logger.info("Kill switch tick names version %s (switches %s), the cached version %s (switches %s): pulling the "
+                    "version", version, named, cached, held)
+        breaker = self._breakers["policy"]
+        try:
+            self._sync_policies()
+        except Exception as e:
+            breaker.record_failure()
+            logger.error("Kill switch tick names version %s (switches %s), the cached version %s (switches %s), and "
+                         "its pull failed: %s. Until a pull lands, the tick's version decides in its switches' scope; "
+                         "the pull is made again at the next tick.", version, named, cached, held, e)
+            return
+        breaker.record_success()
 
     def _sync_telemetry(self) -> None:
         """Flush current telemetry window and upload pending records.

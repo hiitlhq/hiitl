@@ -1,0 +1,4421 @@
+{
+  "provenance": "Data-only controls retained from the HTL-43 measurement. Expected answers are regenerated from current canonical sources, never copied from measurement results or runtime models.",
+  "witnesses": [
+    {
+      "id": "policy-000",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample"
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-001",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev",
+          "team_id": "sample"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample"
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-002",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev",
+          "project_id": "sample"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample"
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-003",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev",
+          "agent_id": "sample"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample"
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-004",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample"
+          }
+        ],
+        "on_missing": "skip"
+      }
+    },
+    {
+      "id": "policy-005",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": [
+                {
+                  "all_of": []
+                }
+              ]
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample"
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-006",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": [
+                {
+                  "field": "action",
+                  "operator": "equals",
+                  "value": "sample"
+                }
+              ]
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample"
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-007",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "any_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample"
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-008",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "any_of": [
+                {
+                  "all_of": []
+                }
+              ]
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample"
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-009",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "any_of": [
+                {
+                  "field": "action",
+                  "operator": "equals",
+                  "value": "sample"
+                }
+              ]
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample"
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-010",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "none_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample"
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-011",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "none_of": [
+                {
+                  "all_of": []
+                }
+              ]
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample"
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-012",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "none_of": [
+                {
+                  "field": "action",
+                  "operator": "equals",
+                  "value": "sample"
+                }
+              ]
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample"
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-013",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "field": "action",
+              "operator": "equals",
+              "value": "sample"
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample"
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-014",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "lifecycle_stage": "draft"
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-015",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "scope": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-016",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "scope": {
+              "agents": [
+                "sample"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-017",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "scope": {
+              "users": [
+                "sample"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-018",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "scope": {
+              "environments": [
+                "dev"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-019",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "scope": {
+              "percentage": 1
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-020",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "scope": {
+              "rollout_hash_field": "sample"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-021",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "valid_from": "2026-11-14T12:00:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-022",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "valid_to": "2026-11-14T12:00:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-023",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "observation_window_days": 7
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-024",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "route": "sample"
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-025",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "remediation": {
+              "message": "sample",
+              "suggestion": "sample",
+              "type": "field_restriction"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-026",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "remediation": {
+              "message": "sample",
+              "suggestion": "sample",
+              "type": "field_restriction",
+              "details": {}
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-027",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "metadata": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-028",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "rate_limit": {
+              "limit": 1,
+              "window_seconds": 1
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-029",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "rate_limit": {
+              "limit": {
+                "$uncalibrated": "sample"
+              },
+              "window_seconds": 1
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-030",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "rate_limit": {
+              "limit": 1,
+              "window_seconds": {
+                "$uncalibrated": "sample"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-031",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "rate_limit": {
+              "limit": 1,
+              "window_seconds": 1,
+              "scope": "action"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-032",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "tests": [
+              {
+                "envelope": {},
+                "expect": "ALLOW"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-033",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "suggested_by": {
+              "suggestion_id": "sample",
+              "source": "sample"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-034",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "suggested_by": {
+              "suggestion_id": "sample",
+              "source": "sample",
+              "atom_id": "sample"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-035",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "suggested_by": {
+              "suggestion_id": "sample",
+              "source": "sample",
+              "assessment_id": "sample"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-036",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "suggested_by": {
+              "suggestion_id": "sample",
+              "source": "sample",
+              "action_key": "sample"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-037",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "requirement_citation": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-038",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "requirement_citation": {
+              "atom_id": "sample"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-039",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "requirement_citation": {
+              "standard": "sample"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-040",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "requirement_citation": {
+              "regulatory_trigger": "sample"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-041",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "requirement_citation": {
+              "determination": {
+                "assessment_id": "sample",
+                "grain": "sample"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-042",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "requirement_citation": {
+              "determination": {
+                "assessment_id": "sample",
+                "grain": "sample",
+                "action_id": "act_mmmmmmmmmmmmmmmmmmmm"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-043",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "requirement_citation": {
+              "prompt": {
+                "file": "sample",
+                "line": 1,
+                "quoted": "sample"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-044",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "requirement_citation": [
+              {}
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-045",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "requirement_citation": [
+              {
+                "atom_id": "sample"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-046",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "requirement_citation": [
+              {
+                "standard": "sample"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-047",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "requirement_citation": [
+              {
+                "regulatory_trigger": "sample"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-048",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "requirement_citation": [
+              {
+                "determination": {
+                  "assessment_id": "sample",
+                  "grain": "sample"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-049",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "requirement_citation": [
+              {
+                "determination": {
+                  "assessment_id": "sample",
+                  "grain": "sample",
+                  "action_id": "act_mmmmmmmmmmmmmmmmmmmm"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-050",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "requirement_citation": [
+              {
+                "prompt": {
+                  "file": "sample",
+                  "line": 1,
+                  "quoted": "sample"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-051",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "waits_on": {
+              "kind": "verifier",
+              "target": "sample"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-052",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample"
+          }
+        ],
+        "metadata": {}
+      }
+    },
+    {
+      "id": "policy-053",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "on_missing": "skip",
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "field": "action",
+              "operator": "equals",
+              "value": "sample"
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "lifecycle_stage": "draft",
+            "observation_window_days": 7
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-054",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev",
+          "team_id": "sample"
+        },
+        "on_missing": "skip",
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "field": "action",
+              "operator": "equals",
+              "value": "sample"
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "lifecycle_stage": "draft",
+            "observation_window_days": 7
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-055",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev",
+          "project_id": "sample"
+        },
+        "on_missing": "skip",
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "field": "action",
+              "operator": "equals",
+              "value": "sample"
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "lifecycle_stage": "draft",
+            "observation_window_days": 7
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-056",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev",
+          "agent_id": "sample"
+        },
+        "on_missing": "skip",
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "field": "action",
+              "operator": "equals",
+              "value": "sample"
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "lifecycle_stage": "draft",
+            "observation_window_days": 7
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-057",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "on_missing": "skip",
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "lifecycle_stage": "draft",
+            "observation_window_days": 7
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-058",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "on_missing": "skip",
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": [
+                {
+                  "field": "action",
+                  "operator": "equals",
+                  "value": "sample"
+                }
+              ]
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "lifecycle_stage": "draft",
+            "observation_window_days": 7
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-059",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "on_missing": "skip",
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "any_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "lifecycle_stage": "draft",
+            "observation_window_days": 7
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-060",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "on_missing": "skip",
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "any_of": [
+                {
+                  "field": "action",
+                  "operator": "equals",
+                  "value": "sample"
+                }
+              ]
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "lifecycle_stage": "draft",
+            "observation_window_days": 7
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-061",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "on_missing": "skip",
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "none_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "lifecycle_stage": "draft",
+            "observation_window_days": 7
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-062",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "on_missing": "skip",
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "none_of": [
+                {
+                  "field": "action",
+                  "operator": "equals",
+                  "value": "sample"
+                }
+              ]
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "lifecycle_stage": "draft",
+            "observation_window_days": 7
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-063",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "on_missing": "skip",
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "field": "action",
+              "operator": "equals",
+              "value": "sample"
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "lifecycle_stage": "draft",
+            "observation_window_days": 7,
+            "scope": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-064",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "on_missing": "skip",
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "field": "action",
+              "operator": "equals",
+              "value": "sample"
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "lifecycle_stage": "draft",
+            "observation_window_days": 7,
+            "scope": {
+              "agents": [
+                "sample"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-065",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "on_missing": "skip",
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "field": "action",
+              "operator": "equals",
+              "value": "sample"
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "lifecycle_stage": "draft",
+            "observation_window_days": 7,
+            "scope": {
+              "users": [
+                "sample"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-066",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "on_missing": "skip",
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "field": "action",
+              "operator": "equals",
+              "value": "sample"
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "lifecycle_stage": "draft",
+            "observation_window_days": 7,
+            "scope": {
+              "environments": [
+                "dev"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-067",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "on_missing": "skip",
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "field": "action",
+              "operator": "equals",
+              "value": "sample"
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "lifecycle_stage": "draft",
+            "observation_window_days": 7,
+            "scope": {
+              "percentage": 1
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-068",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "on_missing": "skip",
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "field": "action",
+              "operator": "equals",
+              "value": "sample"
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "lifecycle_stage": "draft",
+            "observation_window_days": 7,
+            "scope": {
+              "rollout_hash_field": "sample"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-069",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "on_missing": "skip",
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "field": "action",
+              "operator": "equals",
+              "value": "sample"
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "lifecycle_stage": "draft",
+            "observation_window_days": 7,
+            "valid_from": "2026-11-14T12:00:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-070",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "on_missing": "skip",
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "field": "action",
+              "operator": "equals",
+              "value": "sample"
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "lifecycle_stage": "draft",
+            "observation_window_days": 7,
+            "valid_to": "2026-11-14T12:00:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-071",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "on_missing": "skip",
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "field": "action",
+              "operator": "equals",
+              "value": "sample"
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "lifecycle_stage": "draft",
+            "observation_window_days": 7,
+            "route": "sample"
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-072",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "on_missing": "skip",
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "field": "action",
+              "operator": "equals",
+              "value": "sample"
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "lifecycle_stage": "draft",
+            "observation_window_days": 7,
+            "remediation": {
+              "message": "sample",
+              "suggestion": "sample",
+              "type": "field_restriction"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-073",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "on_missing": "skip",
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "field": "action",
+              "operator": "equals",
+              "value": "sample"
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "lifecycle_stage": "draft",
+            "observation_window_days": 7,
+            "remediation": {
+              "message": "sample",
+              "suggestion": "sample",
+              "type": "field_restriction",
+              "details": {}
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-074",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "on_missing": "skip",
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "field": "action",
+              "operator": "equals",
+              "value": "sample"
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "lifecycle_stage": "draft",
+            "observation_window_days": 7,
+            "metadata": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-075",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "on_missing": "skip",
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "field": "action",
+              "operator": "equals",
+              "value": "sample"
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "lifecycle_stage": "draft",
+            "observation_window_days": 7,
+            "rate_limit": {
+              "limit": 1,
+              "window_seconds": 1,
+              "scope": "action"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-076",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "on_missing": "skip",
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "field": "action",
+              "operator": "equals",
+              "value": "sample"
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "lifecycle_stage": "draft",
+            "observation_window_days": 7,
+            "rate_limit": {
+              "limit": {
+                "$uncalibrated": "sample"
+              },
+              "window_seconds": 1,
+              "scope": "action"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-077",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "on_missing": "skip",
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "field": "action",
+              "operator": "equals",
+              "value": "sample"
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "lifecycle_stage": "draft",
+            "observation_window_days": 7,
+            "rate_limit": {
+              "limit": 1,
+              "window_seconds": {
+                "$uncalibrated": "sample"
+              },
+              "scope": "action"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-078",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "on_missing": "skip",
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "field": "action",
+              "operator": "equals",
+              "value": "sample"
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "lifecycle_stage": "draft",
+            "observation_window_days": 7,
+            "tests": [
+              {
+                "envelope": {},
+                "expect": "ALLOW"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-079",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "on_missing": "skip",
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "field": "action",
+              "operator": "equals",
+              "value": "sample"
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "lifecycle_stage": "draft",
+            "observation_window_days": 7,
+            "suggested_by": {
+              "suggestion_id": "sample",
+              "source": "sample"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-080",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "on_missing": "skip",
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "field": "action",
+              "operator": "equals",
+              "value": "sample"
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "lifecycle_stage": "draft",
+            "observation_window_days": 7,
+            "suggested_by": {
+              "suggestion_id": "sample",
+              "source": "sample",
+              "atom_id": "sample"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-081",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "on_missing": "skip",
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "field": "action",
+              "operator": "equals",
+              "value": "sample"
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "lifecycle_stage": "draft",
+            "observation_window_days": 7,
+            "suggested_by": {
+              "suggestion_id": "sample",
+              "source": "sample",
+              "assessment_id": "sample"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-082",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "on_missing": "skip",
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "field": "action",
+              "operator": "equals",
+              "value": "sample"
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "lifecycle_stage": "draft",
+            "observation_window_days": 7,
+            "suggested_by": {
+              "suggestion_id": "sample",
+              "source": "sample",
+              "action_key": "sample"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-083",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "on_missing": "skip",
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "field": "action",
+              "operator": "equals",
+              "value": "sample"
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "lifecycle_stage": "draft",
+            "observation_window_days": 7,
+            "requirement_citation": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-084",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "on_missing": "skip",
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "field": "action",
+              "operator": "equals",
+              "value": "sample"
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "lifecycle_stage": "draft",
+            "observation_window_days": 7,
+            "requirement_citation": {
+              "atom_id": "sample"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-085",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "on_missing": "skip",
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "field": "action",
+              "operator": "equals",
+              "value": "sample"
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "lifecycle_stage": "draft",
+            "observation_window_days": 7,
+            "requirement_citation": {
+              "standard": "sample"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-086",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "on_missing": "skip",
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "field": "action",
+              "operator": "equals",
+              "value": "sample"
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "lifecycle_stage": "draft",
+            "observation_window_days": 7,
+            "requirement_citation": {
+              "regulatory_trigger": "sample"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-087",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "on_missing": "skip",
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "field": "action",
+              "operator": "equals",
+              "value": "sample"
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "lifecycle_stage": "draft",
+            "observation_window_days": 7,
+            "requirement_citation": {
+              "determination": {
+                "assessment_id": "sample",
+                "grain": "sample"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-088",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "on_missing": "skip",
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "field": "action",
+              "operator": "equals",
+              "value": "sample"
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "lifecycle_stage": "draft",
+            "observation_window_days": 7,
+            "requirement_citation": {
+              "determination": {
+                "assessment_id": "sample",
+                "grain": "sample",
+                "action_id": "act_mmmmmmmmmmmmmmmmmmmm"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-089",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "on_missing": "skip",
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "field": "action",
+              "operator": "equals",
+              "value": "sample"
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "lifecycle_stage": "draft",
+            "observation_window_days": 7,
+            "requirement_citation": {
+              "prompt": {
+                "file": "sample",
+                "line": 1,
+                "quoted": "sample"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-090",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "on_missing": "skip",
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "field": "action",
+              "operator": "equals",
+              "value": "sample"
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "lifecycle_stage": "draft",
+            "observation_window_days": 7,
+            "requirement_citation": [
+              {}
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-091",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "on_missing": "skip",
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "field": "action",
+              "operator": "equals",
+              "value": "sample"
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "lifecycle_stage": "draft",
+            "observation_window_days": 7,
+            "requirement_citation": [
+              {
+                "atom_id": "sample"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-092",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "on_missing": "skip",
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "field": "action",
+              "operator": "equals",
+              "value": "sample"
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "lifecycle_stage": "draft",
+            "observation_window_days": 7,
+            "requirement_citation": [
+              {
+                "standard": "sample"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-093",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "on_missing": "skip",
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "field": "action",
+              "operator": "equals",
+              "value": "sample"
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "lifecycle_stage": "draft",
+            "observation_window_days": 7,
+            "requirement_citation": [
+              {
+                "regulatory_trigger": "sample"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-094",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "on_missing": "skip",
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "field": "action",
+              "operator": "equals",
+              "value": "sample"
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "lifecycle_stage": "draft",
+            "observation_window_days": 7,
+            "requirement_citation": [
+              {
+                "determination": {
+                  "assessment_id": "sample",
+                  "grain": "sample"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-095",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "on_missing": "skip",
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "field": "action",
+              "operator": "equals",
+              "value": "sample"
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "lifecycle_stage": "draft",
+            "observation_window_days": 7,
+            "requirement_citation": [
+              {
+                "determination": {
+                  "assessment_id": "sample",
+                  "grain": "sample",
+                  "action_id": "act_mmmmmmmmmmmmmmmmmmmm"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-096",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "on_missing": "skip",
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "field": "action",
+              "operator": "equals",
+              "value": "sample"
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "lifecycle_stage": "draft",
+            "observation_window_days": 7,
+            "requirement_citation": [
+              {
+                "prompt": {
+                  "file": "sample",
+                  "line": 1,
+                  "quoted": "sample"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-097",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "on_missing": "skip",
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "field": "action",
+              "operator": "equals",
+              "value": "sample"
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "lifecycle_stage": "draft",
+            "observation_window_days": 7,
+            "waits_on": {
+              "kind": "verifier",
+              "target": "sample"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-098",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "on_missing": "skip",
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "field": "action",
+              "operator": "equals",
+              "value": "sample"
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "lifecycle_stage": "draft",
+            "observation_window_days": 7
+          }
+        ],
+        "metadata": {}
+      }
+    },
+    {
+      "id": "policy-099",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample"
+          }
+        ],
+        "metadata": {
+          "author": "sample"
+        }
+      }
+    },
+    {
+      "id": "policy-100",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample"
+          }
+        ],
+        "metadata": {
+          "created_at": "2026-11-14T12:00:00Z"
+        }
+      }
+    },
+    {
+      "id": "policy-101",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample"
+          }
+        ],
+        "metadata": {
+          "updated_at": "2026-11-14T12:00:00Z"
+        }
+      }
+    },
+    {
+      "id": "policy-102",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample"
+          }
+        ],
+        "metadata": {
+          "tags": [
+            "sample"
+          ]
+        }
+      }
+    },
+    {
+      "id": "policy-103",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample"
+          }
+        ],
+        "metadata": {
+          "intended_use_case": "sample"
+        }
+      }
+    },
+    {
+      "id": "policy-104",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample"
+          }
+        ],
+        "metadata": {
+          "target_agent_types": [
+            "sample"
+          ]
+        }
+      }
+    },
+    {
+      "id": "policy-105",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample"
+          }
+        ],
+        "metadata": {
+          "template": {}
+        }
+      }
+    },
+    {
+      "id": "policy-106",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample"
+          }
+        ],
+        "metadata": {
+          "template": {
+            "source": "sample"
+          }
+        }
+      }
+    },
+    {
+      "id": "policy-107",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample"
+          }
+        ],
+        "metadata": {
+          "template": {
+            "source_version": "sample"
+          }
+        }
+      }
+    },
+    {
+      "id": "policy-108",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample"
+          }
+        ],
+        "metadata": {
+          "template": {
+            "customizations": [
+              "sample"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "policy-109",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample"
+          }
+        ],
+        "metadata": {
+          "display": {}
+        }
+      }
+    },
+    {
+      "id": "policy-110",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample"
+          }
+        ],
+        "metadata": {
+          "display": {
+            "sections": [
+              {}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "policy-111",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample"
+          }
+        ],
+        "metadata": {
+          "compliance_references": [
+            {}
+          ]
+        }
+      }
+    },
+    {
+      "id": "policy-112",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample"
+          }
+        ],
+        "metadata": {
+          "grading": {}
+        }
+      }
+    },
+    {
+      "id": "policy-113",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "remediation": {
+              "message": "Example",
+              "suggestion": "Example",
+              "type": "field_restriction",
+              "details": {
+                "blocked_fields": [
+                  "sample"
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-114",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "remediation": {
+              "message": "Example",
+              "suggestion": "Example",
+              "type": "field_restriction",
+              "details": {
+                "allowed_fields": [
+                  "sample"
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-115",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "remediation": {
+              "message": "Example",
+              "suggestion": "Example",
+              "type": "field_restriction",
+              "details": {
+                "field_ref": "sample"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-116",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "remediation": {
+              "message": "Example",
+              "suggestion": "Example",
+              "type": "threshold",
+              "details": {
+                "threshold": 1
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-117",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "remediation": {
+              "message": "Example",
+              "suggestion": "Example",
+              "type": "threshold",
+              "details": {
+                "current_value": 1
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-118",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "remediation": {
+              "message": "Example",
+              "suggestion": "Example",
+              "type": "threshold",
+              "details": {
+                "max_allowed": 1
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-119",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "remediation": {
+              "message": "Example",
+              "suggestion": "Example",
+              "type": "threshold",
+              "details": {
+                "field": "action"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-120",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "remediation": {
+              "message": "Example",
+              "suggestion": "Example",
+              "type": "scope",
+              "details": {
+                "required_scope": "sample"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-121",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "remediation": {
+              "message": "Example",
+              "suggestion": "Example",
+              "type": "scope",
+              "details": {
+                "current_scope": "sample"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-122",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "remediation": {
+              "message": "Example",
+              "suggestion": "Example",
+              "type": "scope",
+              "details": {
+                "allowed_scopes": [
+                  "sample"
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-123",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "remediation": {
+              "message": "Example",
+              "suggestion": "Example",
+              "type": "scope",
+              "details": {
+                "scope_type": "sample"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-124",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "remediation": {
+              "message": "Example",
+              "suggestion": "Example",
+              "type": "rate_limit",
+              "details": {
+                "limit": 1
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-125",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "remediation": {
+              "message": "Example",
+              "suggestion": "Example",
+              "type": "rate_limit",
+              "details": {
+                "current": 1
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-126",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "remediation": {
+              "message": "Example",
+              "suggestion": "Example",
+              "type": "rate_limit",
+              "details": {
+                "reset_at": "2026-11-14T12:00:00Z"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-127",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "remediation": {
+              "message": "Example",
+              "suggestion": "Example",
+              "type": "rate_limit",
+              "details": {
+                "scope": "sample"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-128",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "remediation": {
+              "message": "Example",
+              "suggestion": "Example",
+              "type": "rate_limit",
+              "details": {
+                "window": "sample"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-129",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "remediation": {
+              "message": "Example",
+              "suggestion": "Example",
+              "type": "temporal",
+              "details": {
+                "allowed_window": {}
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-130",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "remediation": {
+              "message": "Example",
+              "suggestion": "Example",
+              "type": "temporal",
+              "details": {
+                "timezone": "sample"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-131",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "remediation": {
+              "message": "Example",
+              "suggestion": "Example",
+              "type": "temporal",
+              "details": {
+                "next_allowed_at": "2026-11-14T12:00:00Z"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-132",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "remediation": {
+              "message": "Example",
+              "suggestion": "Example",
+              "type": "temporal",
+              "details": {
+                "current_time": "sample"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-133",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "field": "parameters",
+              "operator": "conforms_to",
+              "value": {
+                "type": "object",
+                "properties": {
+                  "sample": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "sample"
+                ],
+                "additionalProperties": true
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample"
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-134",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "field": "action",
+              "operator": "equals",
+              "value": {
+                "$field": "action"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample"
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-135",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "field": "action",
+              "operator": "equals",
+              "value": {
+                "$uncalibrated": "what observation would set it"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample"
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-136",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "field": "action",
+              "operator": "equals",
+              "value": {
+                "$field": {
+                  "$declared": "<what field>"
+                }
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample"
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-137",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "field": "action",
+              "operator": "equals",
+              "value": {
+                "$declared": "<what staff declare>"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample"
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-138",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "remediation": {
+              "message": "Example",
+              "suggestion": "Example",
+              "type": "field_restriction",
+              "details": {
+                "blocked_fields": {
+                  "ref": "parameters.fields",
+                  "filter": [
+                    "sample"
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "policy-139",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample"
+          }
+        ],
+        "metadata": {
+          "rate_limits": [
+            {
+              "scope": "org"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "policy-140",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample"
+          }
+        ],
+        "metadata": {
+          "rate_limits": [
+            {
+              "window_seconds": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "policy-141",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample"
+          }
+        ],
+        "metadata": {
+          "rate_limits": [
+            {
+              "window": "second"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "policy-142",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample"
+          }
+        ],
+        "metadata": {
+          "rate_limits": [
+            {
+              "limit": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "policy-143",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample",
+            "remediation": {
+              "type": "custom",
+              "message": "Custom guidance",
+              "suggestion": "Custom action",
+              "details": {
+                "blocked_fields": false,
+                "allowed_fields": false,
+                "field_ref": false,
+                "threshold": false,
+                "current_value": false,
+                "max_allowed": false,
+                "field": false,
+                "required_scope": false,
+                "current_scope": false,
+                "allowed_scopes": false,
+                "scope_type": false,
+                "limit": false,
+                "current": false,
+                "reset_at": false,
+                "scope": false,
+                "window": false,
+                "allowed_window": false,
+                "timezone": false,
+                "next_allowed_at": false,
+                "current_time": false
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "legacy-placeholder-bounds",
+      "input": {
+        "name": "sample",
+        "version": "v1.0.0",
+        "description": "sample",
+        "scope": {
+          "org_id": "org_mmmmmmmmmmmmmmmm",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "sample",
+            "description": "sample",
+            "priority": 1,
+            "conditions": {
+              "all_of": []
+            },
+            "decision": "ALLOW",
+            "reason_code": "sample"
+          }
+        ],
+        "metadata": {
+          "rate_limits": [
+            {
+              "limit": {
+                "$uncalibrated": "observed limit"
+              },
+              "window_seconds": {
+                "$uncalibrated": "observed duration"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

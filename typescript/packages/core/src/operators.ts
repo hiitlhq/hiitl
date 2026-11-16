@@ -3,6 +3,9 @@
  */
 
 import type { ConditionOperator } from './types.js';
+import { conforms, parameterSchemaValid } from './types.js';
+import { jsonEqual } from './json-values.js';
+import { requireOperandKinds, OperatorKindError } from './operator-kinds.js';
 
 /**
  * Evaluate a comparison operator.
@@ -40,6 +43,7 @@ export function evaluateOperator(
   // Returns true if field exists (not null/undefined) when compareValue is true
   // Returns true if field doesn't exist (null/undefined) when compareValue is false
   if (operator === 'exists') {
+    requireOperandKinds(fieldValue, operator, compareValue);
     return (fieldValue != null) === compareValue;
   }
 
@@ -49,29 +53,18 @@ export function evaluateOperator(
     return false;
   }
 
+  requireOperandKinds(fieldValue, operator, compareValue);
+  if (operator === 'conforms_to' && !parameterSchemaValid(compareValue)) {
+    throw new OperatorKindError(operator, '<value>', undefined, 'parameter-schema form');
+  }
+
   // === Equality operators ===
   if (operator === 'equals') {
-    // Deep equality for arrays and objects
-    if (Array.isArray(fieldValue) && Array.isArray(compareValue)) {
-      return (
-        fieldValue.length === compareValue.length &&
-        fieldValue.every((val, idx) => val === compareValue[idx])
-      );
-    }
-    // Primitive equality
-    return fieldValue === compareValue;
+    return jsonEqual(fieldValue, compareValue);
   }
 
   if (operator === 'not_equals') {
-    // Deep equality for arrays and objects
-    if (Array.isArray(fieldValue) && Array.isArray(compareValue)) {
-      return !(
-        fieldValue.length === compareValue.length &&
-        fieldValue.every((val, idx) => val === compareValue[idx])
-      );
-    }
-    // Primitive inequality
-    return fieldValue !== compareValue;
+    return !jsonEqual(fieldValue, compareValue);
   }
 
   // === Numeric comparison operators ===
@@ -98,7 +91,7 @@ export function evaluateOperator(
       return fieldValue.includes(compareValue);
     }
     if (Array.isArray(fieldValue)) {
-      return fieldValue.includes(compareValue);
+      return fieldValue.some(item => jsonEqual(item, compareValue));
     }
     // If field is neither string nor array, return false
     return false;
@@ -110,7 +103,7 @@ export function evaluateOperator(
       return !fieldValue.includes(compareValue);
     }
     if (Array.isArray(fieldValue)) {
-      return !fieldValue.includes(compareValue);
+      return !fieldValue.some(item => jsonEqual(item, compareValue));
     }
     // If field is neither string nor array, return true (can't contain if not iterable)
     return true;
@@ -149,19 +142,26 @@ export function evaluateOperator(
   // === Set operations ===
   if (operator === 'in') {
     // Field value is IN the compare value array
-    // e.g., field="USD" in ["USD", "EUR", "GBP"]
+    // e.g., field="USD" in ["USD", "EUR", "GBP"]; an array on the left is a subset test (policy_format.md 2.6)
     if (!Array.isArray(compareValue)) {
       return false;
     }
-    return compareValue.includes(fieldValue);
+    if (Array.isArray(fieldValue)) return fieldValue.every(x => compareValue.some((item: unknown) => jsonEqual(x, item)));
+    return compareValue.some((item: unknown) => jsonEqual(fieldValue, item));
   }
 
   if (operator === 'not_in') {
-    // Field value is NOT IN the compare value array
+    // Field value is NOT IN the compare value array; an array on the left: not every element is (2.6)
     if (!Array.isArray(compareValue)) {
       return false;
     }
-    return !compareValue.includes(fieldValue);
+    if (Array.isArray(fieldValue)) return !fieldValue.every(x => compareValue.some((item: unknown) => jsonEqual(x, item)));
+    return !compareValue.some((item: unknown) => jsonEqual(fieldValue, item));
+  }
+
+  if (operator === 'conforms_to') {
+    // Schema conformance (policy_format.md 2.6) — never a regex
+    return conforms(fieldValue, compareValue);
   }
 
   // Unknown operator - throw error (should never happen with type safety)

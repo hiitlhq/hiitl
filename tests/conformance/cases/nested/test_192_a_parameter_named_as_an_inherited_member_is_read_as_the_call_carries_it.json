@@ -1,0 +1,82 @@
+{
+  "test_id": "test_192_a_parameter_named_as_an_inherited_member_is_read_as_the_call_carries_it",
+  "description": "A path part names a member the object holds as data (policy_format.md 2.17): a call that names no constructor (the building firm) does not carry parameters.constructor, though a TypeScript object inherits a member of that name, so the guard that refuses such an award binds in every evaluator (HTL-27, Codex's review condition 2 and its class).",
+  "envelope": {
+    "schema_version": "v2.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_estates",
+    "action_id": "act_test19200000000000000000",
+    "timestamp": "2026-11-09T10:00:00Z",
+    "action": "award_contract",
+    "operation": "execute",
+    "parameters": {
+      "project_id": "prj_riverside_school",
+      "amount": 1250000
+    },
+    "idempotency_key": "idem_test_192",
+    "target": {
+      "tender_id": "tnd_2026_118"
+    },
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "policy_set": {
+    "name": "contract_awards_policy",
+    "version": "v1.0.0",
+    "description": "Construction contract awards for the estates agent",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
+    "rules": [
+      {
+        "name": "block_awards_naming_no_constructor",
+        "description": "An award names the constructor it goes to",
+        "priority": 200,
+        "conditions": {
+          "all_of": [
+            {
+              "field": "action",
+              "operator": "equals",
+              "value": "award_contract"
+            },
+            {
+              "field": "parameters.constructor",
+              "operator": "exists",
+              "value": false
+            }
+          ]
+        },
+        "decision": "BLOCK",
+        "reason_code": "CONSTRUCTOR_NOT_NAMED"
+      },
+      {
+        "name": "allow_awards",
+        "description": "Awards are allowed",
+        "priority": 100,
+        "conditions": {
+          "field": "action",
+          "operator": "equals",
+          "value": "award_contract"
+        },
+        "decision": "ALLOW",
+        "reason_code": "AWARD_ALLOWED"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "BLOCK",
+    "allowed": false,
+    "reason_codes": [
+      "CONSTRUCTOR_NOT_NAMED"
+    ],
+    "matched_rules": [
+      {
+        "rule_name": "block_awards_naming_no_constructor",
+        "policy_set": "contract_awards_policy",
+        "priority": 200
+      }
+    ],
+    "missing_fields": null
+  }
+}

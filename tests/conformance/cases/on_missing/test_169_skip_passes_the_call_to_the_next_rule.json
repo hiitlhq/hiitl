@@ -1,0 +1,118 @@
+{
+  "test_id": "test_169_skip_passes_the_call_to_the_next_rule",
+  "description": "Under on_missing: skip, the rule that cannot be read does not apply and the call continues to the next rule; the decision names the rule and the field it skipped (HTL-22 row 176).",
+  "envelope": {
+    "schema_version": "v2.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_finance_bot",
+    "action_id": "act_test1690000000000000000",
+    "timestamp": "2026-11-05T10:00:00Z",
+    "action": "process_payment",
+    "operation": "execute",
+    "parameters": {
+      "currency": "usd"
+    },
+    "idempotency_key": "idem_test_169",
+    "target": {
+      "account_id": "acct_123"
+    },
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "policy_set": {
+    "name": "payments_policy",
+    "version": "v1.0.0",
+    "description": "Payment controls for the finance agent",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
+    "on_missing": "skip",
+    "rules": [
+      {
+        "name": "approve_large_payments",
+        "description": "Payments of 1000 or more need a finance approval",
+        "priority": 200,
+        "conditions": {
+          "all_of": [
+            {
+              "field": "action",
+              "operator": "equals",
+              "value": "process_payment"
+            },
+            {
+              "field": "parameters.amount",
+              "operator": "greater_than_or_equal",
+              "value": 1000
+            }
+          ]
+        },
+        "decision": "REQUIRE_APPROVAL",
+        "reason_code": "LARGE_PAYMENT_NEEDS_APPROVAL"
+      },
+      {
+        "name": "allow_payments_to_known_accounts",
+        "description": "Payments to a known account are allowed",
+        "priority": 100,
+        "conditions": {
+          "all_of": [
+            {
+              "field": "action",
+              "operator": "equals",
+              "value": "process_payment"
+            },
+            {
+              "field": "target.account_id",
+              "operator": "starts_with",
+              "value": "acct_"
+            }
+          ]
+        },
+        "decision": "ALLOW",
+        "reason_code": "KNOWN_ACCOUNT"
+      },
+      {
+        "name": "allow_treasury_transfers",
+        "description": "Moves between the company's own treasury accounts need no approval",
+        "priority": 300,
+        "conditions": {
+          "all_of": [
+            {
+              "field": "action",
+              "operator": "equals",
+              "value": "process_payment"
+            },
+            {
+              "field": "target.account_id",
+              "operator": "starts_with",
+              "value": "acct_treasury_"
+            }
+          ]
+        },
+        "decision": "ALLOW",
+        "reason_code": "TREASURY_TRANSFER"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "ALLOW",
+    "allowed": true,
+    "reason_codes": [
+      "KNOWN_ACCOUNT"
+    ],
+    "matched_rules": [
+      {
+        "rule_name": "allow_payments_to_known_accounts",
+        "policy_set": "payments_policy",
+        "priority": 100
+      }
+    ],
+    "missing_fields": [
+      {
+        "rule_name": "approve_large_payments",
+        "policy_set": "payments_policy",
+        "field": "parameters.amount"
+      }
+    ]
+  }
+}

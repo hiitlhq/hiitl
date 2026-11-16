@@ -1,0 +1,89 @@
+{
+  "test_id": "test_161_rate_limit_rule_listed_with_its_remediation",
+  "description": "An active windowed RATE_LIMIT rule is listed in rate_limit_rules with its reason_code and its remediation, which the limiter puts on the decision when the window is exceeded (policy_format.md Rate-limit rules; R-0059; HTL-20 row 146).",
+  "envelope": {
+    "schema_version": "v2.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_support_bot",
+    "action_id": "act_test16100000000000000000",
+    "timestamp": "2026-02-14T10:00:00Z",
+    "operation": "execute",
+    "parameters": {
+      "amount": 40,
+      "currency": "USD"
+    },
+    "idempotency_key": "idem_test_161",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "issue_refund"
+  },
+  "policy_set": {
+    "version": "v1.0.0",
+    "description": "An active windowed RATE_LIMIT rule is listed in rate_limit_rules with its reason_code and its remediation, which the limiter puts on the decision when the window is exceeded (policy_format.md Rate-limit rules; R-0059; HTL-20 row 146).",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
+    "name": "refund_policy",
+    "rules": [
+      {
+        "name": "limit_refunds",
+        "priority": 600,
+        "conditions": {
+          "field": "action",
+          "operator": "equals",
+          "value": "issue_refund"
+        },
+        "decision": "RATE_LIMIT",
+        "reason_code": "REFUND_RATE",
+        "description": "At most 20 refunds an hour per agent",
+        "rate_limit": {
+          "limit": 20,
+          "window_seconds": 3600,
+          "scope": "agent"
+        },
+        "remediation": {
+          "message": "This agent has issued its 20 refunds for the hour.",
+          "suggestion": "Wait for the window to reset, or route the refund to a reviewer.",
+          "type": "rate_limit"
+        }
+      },
+      {
+        "name": "allow_refunds",
+        "priority": 100,
+        "conditions": {
+          "field": "action",
+          "operator": "equals",
+          "value": "issue_refund"
+        },
+        "decision": "ALLOW",
+        "reason_code": "REFUND_ALLOWED",
+        "description": "Refunds are allowed"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "ALLOW",
+    "allowed": true,
+    "reason_codes": [
+      "REFUND_ALLOWED"
+    ],
+    "rate_limit_rules": [
+      {
+        "rule_name": "limit_refunds",
+        "policy_set": "refund_policy",
+        "priority": 600,
+        "reason_code": "REFUND_RATE",
+        "limit": 20,
+        "window_seconds": 3600,
+        "scope": "agent",
+        "remediation": {
+          "message": "This agent has issued its 20 refunds for the hour.",
+          "suggestion": "Wait for the window to reset, or route the refund to a reviewer.",
+          "type": "rate_limit"
+        }
+      }
+    ]
+  }
+}

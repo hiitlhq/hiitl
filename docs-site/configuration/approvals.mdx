@@ -1,0 +1,81 @@
+---
+title: "Approvals"
+description: "How an action reaches a person and how its answer decides, in local mode and through the gateway with the hosted service"
+---
+
+hiitl offers an approval two ways. In local mode it is a **route**: a rule with `decision: ROUTE` names a bidirectional sync route, the evaluator sends the action's declared fields to an endpoint of yours and waits for its answer, and the answer re-enters the evaluation. Through the MCP gateway with the hosted service it is a **review case**: a queue the gateway opens a case in and waits on.
+
+## Local mode: approval by route
+
+1. **The policy decides.** A rule with `decision: ROUTE` names a route.
+2. **The evaluator asks the route.** The SDK posts the envelope's fields that the route's `context` names, and the rule's reference, to the route's `endpoint`, with the route's auth, and waits up to the route's `sla.timeout`.
+3. **Your endpoint reaches the person.** It renders the fields wherever the person is (a Microsoft Teams card, a Slack message, a ticket) and holds the request open until the person answers. The endpoint is yours, in your project.
+4. **The person answers.** Your endpoint returns JSON; the route's `response_schema` names the required fields (`decision`, from `decision_options`) and the optional ones.
+5. **The evaluation finishes with the answer.** The answer's fields re-enter as `external.<route>.<field>` and the envelope is evaluated again, so a rule reading `external.finance-review.decision` allows or blocks. No answer within the timeout, a non-2xx response, or a missing required field fall to the route's `sla.timeout_action`: `fail_open` lets the evaluation continue with an empty answer and marks the route `failed_open` in the record; any other value closes, and the decision returns as `ROUTE` with the reason `ROUTE_UNANSWERED` and `allowed: false`, which the gateway returns to the caller as a structured error.
+6. **The record.** One row per evaluation: the final decision, and under `routes` each route asked with its rule, its outcome (`answered`, `failed_open`, `unanswered`), the names of the fields sent, and any error. Who answered is kept by your endpoint.
+
+A `modify` answer is not applied in local mode; the forms are approve and deny with a reason, and the agent retries with arguments that fit.
+
+```yaml
+# routes/finance-review.yaml (see Routes for every field)
+name: finance-review
+version: v1.0.0
+direction: bidirectional
+timing: sync
+purpose: [review]
+endpoint: https://reviews.internal.example/finance
+response_schema:
+  decision_options: [approve, deny]
+  required_fields: [decision]
+sla:
+  timeout: 15m
+  timeout_action: fail_closed
+```
+
+```yaml
+# policies.yaml: the pair of rules
+- name: high-value-asks-finance
+  description: A payment above the standing limit is routed to finance before it runs
+  priority: 100
+  conditions:
+    all_of:
+      - { field: parameters.amount, operator: greater_than, value: 500 }
+      - { field: external.finance-review.decision, operator: exists, value: false }
+  decision: ROUTE
+  reason_code: HIGH_VALUE_PAYMENT
+  route: finance-review
+
+- name: finance-denied
+  description: A payment finance denied does not run
+  priority: 200
+  conditions:
+    all_of:
+      - { field: external.finance-review.decision, operator: in, value: [deny] }
+  decision: BLOCK
+  reason_code: FINANCE_DENIED
+  remediation:
+    message: Finance denied this payment
+    suggestion: Retry with an amount within the standing limit, or a different recipient
+    type: threshold
+```
+
+The gateway runs this path too: with a policy file and a routes directory in its configuration and no API key, a `ROUTE` rule's route is asked before the tool call runs, and the answer decides whether the call is forwarded.
+
+## Through the gateway with the hosted service: review cases
+
+When the gateway is configured with the hosted service's URL and an API key, a `PAUSE`, `REQUIRE_APPROVAL` or `ESCALATE` decision opens a review case:
+
+1. The gateway calls `POST /v1/reviews` with the action id, the decision, the policy version, the wait and what a timeout takes, and a minimal envelope rather than the full one. The wait is the route's `sla.timeout` and the case records the route's `sla.timeout_action`, when that timeout fits within the gateway's own `review_timeout_seconds` (five minutes by default). Otherwise the case waits the gateway's bound and records `fail_closed`: a `timeout_action` belongs to its `timeout`, so a shorter wait never takes a route's `fail_open`.
+2. The case appears in the dashboard's queue and in `GET /v1/reviews/pending`, which lists the cases of the key's environment (an `environment` parameter naming another is refused with `403 TENANT_MISMATCH`).
+3. A person resolves it with `POST /v1/reviews/{case_id}/resolve`: `decision` (`approved`, `rejected`, `modified`), an optional `reason`, and for `modified` the `modified_arguments`. The reviewer on the record is whoever made the call: the API key, or the person signed in to the dashboard. A body that names `reviewer_id` is refused with `422`, naming the field. Opening a case needs the `evaluate` scope; listing and resolving need `admin`. Each change of state is appended to the case's transitions (from, to, who, what, when) and never written over; every read of a case returns them. Sending the same resolution again returns the case and records nothing new; a different resolution, or one after the deadline, is refused with `409`, naming what the record holds.
+4. The gateway holds `GET /v1/reviews/{case_id}/stream`, a server-sent-events stream that ends with `resolved` or `timeout`. Approved: the call is forwarded as declared. Modified: forwarded with the person's arguments. Rejected: not forwarded, and the model receives a structured error it can read. When the deadline passes with no resolution, the service records the timeout on the case and the `timeout` event carries the case's `timeout_action`: `fail_open` forwards the call as declared and logs a warning; any other value refuses it with an error naming the action (`escalate` and `extend` read as `fail_closed` until escalation ladders are built). Only a recorded timeout is a timeout: if the gateway's own wait ends first, or the stream closes with no event, the call is refused as an error.
+
+In the SDK itself, outside the gateway, a `PAUSE`, `REQUIRE_APPROVAL` or `ESCALATE` decision returns with the named route's `escalation_context` attached and `allowed: false`; it opens no case and sends nothing. The integrating system decides what to do with it.
+
+## What a person sees
+
+The route's `context` decides which fields are shown, with labels and formats, and a `risk_framing` (severity, a summary, what happens if approved or denied). In local mode the fields sent are the envelope's own; through the gateway the envelope's `parameters` are the tool call's arguments as the model made the call.
+
+## Budgets and storms
+
+An over-restrictive rule does not crash a run; it fills the queue. Watch the rate of `ROUTE` decisions per responsibility in the record, and set a rule back to `staged` when it is generating more than the team carries. An approvals budget per responsibility is on the roadmap.

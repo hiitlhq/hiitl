@@ -2,7 +2,7 @@
   "test_id": "test_082_kill_switch_overrides_allow",
   "description": "KILL_SWITCH at priority 1000 overrides ALLOW at priority 50",
   "envelope": {
-    "schema_version": "v1.0",
+    "schema_version": "v2.0",
     "org_id": "org_1234567890abcdef",
     "environment": "prod",
     "agent_id": "agent_payment_bot",
@@ -19,13 +19,17 @@
     "action": "process_payment"
   },
   "policy_set": {
-    "version": "1.0.0",
+    "version": "v1.0.0",
+    "description": "KILL_SWITCH at priority 1000 overrides ALLOW at priority 50",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
     "name": "kill_switch_precedence_policy",
     "rules": [
       {
         "name": "kill-switch-all-payments",
         "priority": 1000,
-        "enabled": true,
         "conditions": {
           "field": "action",
           "operator": "equals",
@@ -38,7 +42,6 @@
       {
         "name": "allow-all-payments",
         "priority": 50,
-        "enabled": true,
         "conditions": {
           "field": "action",
           "operator": "equals",

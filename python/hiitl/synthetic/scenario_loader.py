@@ -69,16 +69,12 @@ class ScenarioLoader:
         """Load all scenarios from the directory.
 
         Returns:
-            List of validated Scenario objects (skips invalid files with warning)
+            List of validated Scenario objects
+
+        Raises:
+            ScenarioLoadError: on the first scenario refused, naming it; none is skipped (synthetic/README.md)
         """
-        scenarios = []
-        for name in self.list_available():
-            try:
-                scenarios.append(self.load(name))
-            except ScenarioLoadError:
-                # Skip invalid scenarios in batch mode
-                pass
-        return scenarios
+        return [self.load(name) for name in self.list_available()]
 
     def list_available(self) -> List[str]:
         """List available scenario names (filenames without .json extension).

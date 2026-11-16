@@ -2,7 +2,7 @@
   "test_id": "test_022_any_of_operator",
   "description": "Test any_of (OR) - at least one condition must match",
   "envelope": {
-    "schema_version": "v1.0",
+    "schema_version": "v2.0",
     "org_id": "org_1234567890abcdef",
     "environment": "stage",
     "agent_id": "agent_test_bot",
@@ -18,13 +18,17 @@
     "action": "database_query"
   },
   "policy_set": {
-    "version": "1.0.0",
+    "version": "v1.0.0",
+    "description": "Test any_of (OR) - at least one condition must match",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "stage"
+    },
     "name": "test_policy",
     "rules": [
       {
         "name": "allow_non_prod_environments",
         "priority": 100,
-        "enabled": true,
         "conditions": {
           "any_of": [
             {

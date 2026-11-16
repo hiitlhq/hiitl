@@ -153,7 +153,6 @@ class TestValidOutboundRoute:
     def test_outbound_with_queue_and_filters(self):
         data = _outbound_route(
             auth={"type": "api_key", "secret_ref": "env:DD_API_KEY", "header": "DD-API-KEY"},
-            context={"fields": [{"field_path": "action_id"}, {"field_path": "agent_id"}]},
             filters={"decisions": ["ALLOW", "BLOCK"]},
             queue={"batch_size": 50, "flush_interval": "10s"},
             retry={"max_attempts": 5, "backoff": "linear", "initial_delay_ms": 500},

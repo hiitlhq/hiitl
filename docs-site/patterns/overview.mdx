@@ -1,6 +1,6 @@
 ---
 title: "Pattern Repository"
-description: "25 copy-paste-ready action patterns across 8 categories"
+description: "25 action patterns across 8 categories, with starter policies that load under hiitl 0.2.0"
 ---
 
 ## What are patterns?
@@ -18,16 +18,16 @@ Copy the pattern, customize the thresholds, and deploy.
 | [Communication](/patterns/communication) | 3 | `send_email`, `send_sms`, `post_to_slack` |
 | [IAM](/patterns/iam) | 3 | `create_user`, `modify_permissions`, `reset_password` |
 | [Infrastructure](/patterns/infrastructure) | 3 | `deploy_service`, `modify_config`, `scale_resources` |
-| Documents | 3 | `generate_report`, `sign_document`, `archive_records` |
-| Classification | 3 | `classify_content`, `assign_priority`, `route_ticket` |
-| External | 3 | `call_external_api`, `sync_crm`, `trigger_webhook` |
+| Documents | 3 | `generate_report`, `sign_document`, `publish_content` |
+| Classification | 3 | `classify_ticket`, `approve_claim`, `score_application` |
+| External | 3 | `call_external_api`, `webhook_trigger`, `third_party_integration` |
 
 ## Pattern structure
 
 Every pattern includes:
 
 1. **`evaluate()` call** -- the Python SDK call to wrap the action
-2. **Starter policy** -- a YAML rule with sensible defaults
+2. **Starter policy** -- YAML rules with sensible defaults, including an `ALLOW` rule for the calls that should proceed
 3. **Remediation steps** -- what to do when a decision blocks
 4. **Compliance notes** -- relevant standards (PCI-DSS, SOX, GDPR, etc.)
 
@@ -44,12 +44,12 @@ Every pattern includes:
     Add to your `policy.yaml`. Adjust thresholds, reason codes, and metadata.
   </Step>
   <Step title="Test locally">
-    Run in local mode to verify the policy fires as expected.
+    Run in local mode with `mode="RESPECT_POLICY"` to see the decision the policy enforces. Under the default mode, `OBSERVE_ALL`, a decision other than `ALLOW` or `SANDBOX` comes back as `OBSERVE`, with the rule's decision in `would_be`.
   </Step>
 </Steps>
 
 <Note>
-All patterns use Python examples by default. The `evaluate()` call is identical in TypeScript -- see the [TypeScript SDK reference](/sdk/typescript-evaluate) for syntax.
+The pages use Python examples. In TypeScript, `evaluate()` takes one options object (`action`, `parameters`, `target`, ...) and is awaited -- see the [TypeScript SDK reference](/sdk/typescript-evaluate) for syntax. Each pattern file in the repository carries both.
 </Note>
 
 ## Full repository

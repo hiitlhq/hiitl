@@ -1,0 +1,91 @@
+{
+  "test_id": "test_170_skip_a_negated_condition_decides_as_today",
+  "description": "Under the default (skip), a negated condition on a field the call does not carry decides as it does today: the BLOCK binds, never a pass (Principle 7), and the decision names the field (HTL-22 row 176).",
+  "envelope": {
+    "schema_version": "v2.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_support_bot",
+    "action_id": "act_test1700000000000000000",
+    "timestamp": "2026-11-05T10:00:00Z",
+    "action": "issue_refund",
+    "operation": "execute",
+    "parameters": {
+      "amount": 40
+    },
+    "idempotency_key": "idem_test_170",
+    "target": {
+      "order_id": "ord_881"
+    },
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "policy_set": {
+    "name": "refunds_policy",
+    "version": "v1.0.0",
+    "description": "Refund controls for the support agent",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
+    "rules": [
+      {
+        "name": "block_unapproved_refunds",
+        "description": "A refund needs a manager's approval",
+        "priority": 100,
+        "conditions": {
+          "all_of": [
+            {
+              "field": "action",
+              "operator": "equals",
+              "value": "issue_refund"
+            },
+            {
+              "none_of": [
+                {
+                  "field": "parameters.manager_approved",
+                  "operator": "equals",
+                  "value": true
+                }
+              ]
+            }
+          ]
+        },
+        "decision": "BLOCK",
+        "reason_code": "REFUND_NOT_APPROVED"
+      },
+      {
+        "name": "allow_refunds",
+        "description": "Refunds are allowed otherwise",
+        "priority": 50,
+        "conditions": {
+          "field": "action",
+          "operator": "equals",
+          "value": "issue_refund"
+        },
+        "decision": "ALLOW",
+        "reason_code": "REFUND_ALLOWED"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "BLOCK",
+    "allowed": false,
+    "reason_codes": [
+      "REFUND_NOT_APPROVED"
+    ],
+    "matched_rules": [
+      {
+        "rule_name": "block_unapproved_refunds",
+        "policy_set": "refunds_policy",
+        "priority": 100
+      }
+    ],
+    "missing_fields": [
+      {
+        "rule_name": "block_unapproved_refunds",
+        "policy_set": "refunds_policy",
+        "field": "parameters.manager_approved"
+      }
+    ]
+  }
+}

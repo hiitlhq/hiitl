@@ -1,8 +1,49 @@
-# Integration Examples - HIITL ECP
+# Integration Examples - hiitl ECP
 
-This guide shows how to integrate HIITL with popular agent frameworks and platforms.
+This guide shows how to integrate hiitl with popular agent frameworks and platforms.
 
-**Philosophy**: HIITL is architecturally neutral. It works with any orchestration framework without requiring rewrites.
+**Philosophy**: hiitl is architecturally neutral. It works with any orchestration framework without requiring rewrites.
+
+**Before you start.** Every example builds one client and calls `evaluate()` before the tool's effect. Three things hold for all of them:
+
+- **Mode.** With no `api_key`, evaluation is local, against the file at `policy_path`. With an `api_key`, the client runs in hybrid mode: evaluation stays in-process and policies sync from your hiitl org, and the file at `policy_path` is used while nothing has synced yet. In TypeScript, an `api_key` together with a `server_url` means hosted evaluation instead.
+- **Enforcing.** The default mode, `OBSERVE_ALL`, enforces nothing: a decision that is not ALLOW or SANDBOX comes back as `OBSERVE`, with the rule's decision in `would_be`. The one exception is a windowed `RATE_LIMIT` rule, which still refuses the call past its limit. The examples pass `mode="RESPECT_POLICY"` to enforce. Under it, an action no rule matches is `BLOCK` with `NO_MATCHING_RULE`, so the policy needs an ALLOW rule for each action you mean to let through.
+- **TypeScript.** Options are snake_case (`api_key`, `policy_path`, `agent_id`). `evaluate()` returns `Decision | Promise<Decision>`: a Promise in hybrid and hosted mode, and in local mode when a rule asks a sync route. Await it in every mode. The TypeScript Decision has no `.ok` or `.blocked`; read `decision.allowed` and `decision.decision`.
+
+The examples assume this `policy.yaml`:
+
+```yaml
+policy_set:
+  name: "agent-tool-controls"
+  version: "v1.0.0"
+  description: "Controls on the agent's tools"
+  scope:
+    org_id: "org_devlocal0000000000"
+    environment: "prod"
+  rules:
+    - name: "block-high-value-payments"
+      description: "Payments over $500 are refused"
+      priority: 100
+      conditions:
+        all_of:
+          - field: "action"
+            operator: "equals"
+            value: "process_payment"
+          - field: "parameters.amount"
+            operator: "greater_than"
+            value: 500
+      decision: "BLOCK"
+      reason_code: "PAYMENT_TOO_HIGH"
+    - name: "allow-agent-tools"
+      description: "The agent's other tool calls proceed"
+      priority: 10
+      conditions:
+        field: "action"
+        operator: "in"
+        value: ["process_payment", "send_email", "research_payment_methods"]
+      decision: "ALLOW"
+      reason_code: "TOOL_ALLOWED"
+```
 
 ---
 
@@ -22,17 +63,20 @@ This guide shows how to integrate HIITL with popular agent frameworks and platfo
 
 ## LangChain (Python)
 
-### Wrapping Tools with HIITL
+### Wrapping Tools with hiitl
 
 ```python
+import os
 from langchain.agents import create_openai_functions_agent, AgentExecutor
 from langchain.tools import tool
 from langchain_openai import ChatOpenAI
 from hiitl import HIITL
 
-# Initialize HIITL
+# Initialize hiitl
 hiitl = HIITL(
     api_key=os.getenv("HIITL_API_KEY"),
+    policy_path="./policy.yaml",
+    mode="RESPECT_POLICY",
     environment="prod",
     agent_id="langchain-agent"
 )
@@ -42,9 +86,9 @@ hiitl = HIITL(
 def process_payment(account_id: str, amount: float) -> dict:
     """Process a payment for the given account."""
 
-    # Evaluate with HIITL before executing
+    # Evaluate with hiitl before executing
     decision = hiitl.evaluate(
-        tool="process_payment",
+        "process_payment",
         operation="execute",
         target={"account_id": account_id},
         parameters={"amount": amount, "currency": "usd"}
@@ -66,7 +110,7 @@ def send_email(email: str, subject: str, body: str) -> dict:
     """Send an email to a customer."""
 
     decision = hiitl.evaluate(
-        tool="send_email",
+        "send_email",
         operation="execute",
         target={"email": email},
         parameters={"subject": subject, "body": body}
@@ -98,7 +142,7 @@ from langchain.schema import AgentAction
 from typing import Any
 
 class HIITLCallbackHandler(BaseCallbackHandler):
-    """Callback handler that evaluates tool calls with HIITL."""
+    """Callback handler that evaluates tool calls with hiitl."""
 
     def __init__(self, hiitl: HIITL):
         self.hiitl = hiitl
@@ -110,12 +154,15 @@ class HIITLCallbackHandler(BaseCallbackHandler):
     ) -> Any:
         """Called when agent is about to execute a tool."""
 
-        # Evaluate with HIITL
+        # parameters must be a dict; LangChain passes a str for single-input tools
+        tool_input = action.tool_input if isinstance(action.tool_input, dict) else {"input": action.tool_input}
+
+        # Evaluate with hiitl
         decision = self.hiitl.evaluate(
-            tool=action.tool,
+            action.tool,
             operation="execute",
             target={},
-            parameters=action.tool_input
+            parameters=tool_input
         )
 
         if not decision.allowed:
@@ -142,7 +189,7 @@ agent_executor = AgentExecutor(
 
 ## LangChain.js (TypeScript)
 
-### Wrapping Tools with HIITL
+### Wrapping Tools with hiitl
 
 ```typescript
 import { ChatOpenAI } from "@langchain/openai";
@@ -151,11 +198,13 @@ import { AgentExecutor, createOpenAIFunctionsAgent } from "langchain/agents";
 import { HIITL } from "@hiitl/sdk";
 import { z } from "zod";
 
-// Initialize HIITL
+// Initialize hiitl
 const hiitl = new HIITL({
-  apiKey: process.env.HIITL_API_KEY!,
+  api_key: process.env.HIITL_API_KEY,
+  policy_path: "./policy.yaml",
+  mode: "RESPECT_POLICY",
   environment: "prod",
-  agentId: "langchain-js-agent",
+  agent_id: "langchain-js-agent",
 });
 
 // Define a protected tool
@@ -167,9 +216,9 @@ const processPaymentTool = new DynamicStructuredTool({
     amount: z.number(),
   }),
   func: async ({ accountId, amount }) => {
-    // Evaluate with HIITL before executing
+    // Evaluate with hiitl before executing
     const decision = await hiitl.evaluate({
-      tool: "process_payment",
+      action: "process_payment",
       operation: "execute",
       target: { accountId },
       parameters: { amount, currency: "usd" },
@@ -207,7 +256,7 @@ const sendEmailTool = new DynamicStructuredTool({
   }),
   func: async ({ email, subject, body }) => {
     const decision = await hiitl.evaluate({
-      tool: "send_email",
+      action: "send_email",
       operation: "execute",
       target: { email },
       parameters: { subject, body },
@@ -254,6 +303,7 @@ console.log(result);
 ### Protecting Agent Actions
 
 ```python
+import os
 from openai import OpenAI
 from hiitl import HIITL
 import json
@@ -261,6 +311,8 @@ import json
 client = OpenAI()
 hiitl = HIITL(
     api_key=os.getenv("HIITL_API_KEY"),
+    policy_path="./policy.yaml",
+    mode="RESPECT_POLICY",
     environment="prod",
     agent_id="openai-agent"
 )
@@ -285,9 +337,9 @@ tools = [
 ]
 
 def execute_tool(tool_name: str, arguments: dict) -> str:
-    """Execute a tool call with HIITL evaluation."""
+    """Execute a tool call with hiitl evaluation."""
 
-    # Evaluate with HIITL
+    # Evaluate with hiitl
     decision = hiitl.evaluate(
         action=tool_name,
         operation="execute",
@@ -325,7 +377,7 @@ if message.tool_calls:
         tool_name = tool_call.function.name
         arguments = json.loads(tool_call.function.arguments)
 
-        # Execute with HIITL protection
+        # Execute with hiitl protection
         result = execute_tool(tool_name, arguments)
 
         # Add tool result to messages
@@ -349,9 +401,11 @@ import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 
 const hiitl = new HIITL({
-  apiKey: process.env.HIITL_API_KEY!,
+  api_key: process.env.HIITL_API_KEY,
+  policy_path: "./policy.yaml",
+  mode: "RESPECT_POLICY",
   environment: "prod",
-  agentId: "vercel-ai-agent",
+  agent_id: "vercel-ai-agent",
 });
 
 export async function POST(req: Request) {
@@ -368,9 +422,9 @@ export async function POST(req: Request) {
           amount: z.number(),
         }),
         execute: async ({ accountId, amount }) => {
-          // Evaluate with HIITL before executing
+          // Evaluate with hiitl before executing
           const decision = await hiitl.evaluate({
-            tool: "process_payment",
+            action: "process_payment",
             operation: "execute",
             target: { accountId },
             parameters: { amount, currency: "usd" },
@@ -405,7 +459,7 @@ export async function POST(req: Request) {
         }),
         execute: async ({ email, subject, body }) => {
           const decision = await hiitl.evaluate({
-            tool: "send_email",
+            action: "send_email",
             operation: "execute",
             target: { email },
             parameters: { subject, body },
@@ -435,23 +489,26 @@ export async function POST(req: Request) {
 ### Protecting Crew Tasks
 
 ```python
+import os
 from crewai import Agent, Task, Crew
 from hiitl import HIITL
 
 hiitl = HIITL(
     api_key=os.getenv("HIITL_API_KEY"),
+    policy_path="./policy.yaml",
+    mode="RESPECT_POLICY",
     environment="prod",
     agent_id="crewai-agent"
 )
 
 # Define a protected task executor
 class HIITLTask(Task):
-    """Task wrapper that evaluates with HIITL before execution."""
+    """Task wrapper that evaluates with hiitl before execution."""
 
     def execute(self, context: str = "") -> str:
-        # Evaluate with HIITL
+        # Evaluate with hiitl
         decision = hiitl.evaluate(
-            tool=self.description,
+            self.description,
             operation="execute",
             target={},
             parameters={"context": context}
@@ -501,21 +558,24 @@ result = crew.kickoff()
 ### Protecting Agent Actions
 
 ```python
+import os
 from autogen import AssistantAgent, UserProxyAgent, config_list_from_json
 from hiitl import HIITL
 
 hiitl = HIITL(
     api_key=os.getenv("HIITL_API_KEY"),
+    policy_path="./policy.yaml",
+    mode="RESPECT_POLICY",
     environment="prod",
     agent_id="autogen-agent"
 )
 
 # Create a protected function
 def process_payment(account_id: str, amount: float) -> dict:
-    """Process a payment with HIITL protection."""
+    """Process a payment with hiitl protection."""
 
     decision = hiitl.evaluate(
-        tool="process_payment",
+        "process_payment",
         operation="execute",
         target={"account_id": account_id},
         parameters={"amount": amount, "currency": "usd"}
@@ -555,9 +615,10 @@ user_proxy.initiate_chat(
 
 ## Custom Agent Loop (Python)
 
-### Basic Agent Loop with HIITL
+### Basic Agent Loop with hiitl
 
 ```python
+import os
 from openai import OpenAI
 from hiitl import HIITL
 import json
@@ -565,12 +626,14 @@ import json
 client = OpenAI()
 hiitl = HIITL(
     api_key=os.getenv("HIITL_API_KEY"),
+    policy_path="./policy.yaml",
+    mode="RESPECT_POLICY",
     environment="prod",
     agent_id="custom-agent"
 )
 
 def agent_loop(user_input: str):
-    """Custom agent loop with HIITL protection."""
+    """Custom agent loop with hiitl protection."""
 
     messages = [{"role": "user", "content": user_input}]
 
@@ -590,9 +653,9 @@ def agent_loop(user_input: str):
             action_line = [line for line in message.content.split("\n") if line.startswith("ACTION:")][0]
             action = json.loads(action_line.replace("ACTION:", "").strip())
 
-            # Evaluate with HIITL
+            # Evaluate with hiitl
             decision = hiitl.evaluate(
-                tool=action["tool"],
+                action["tool"],
                 operation="execute",
                 target=action.get("target", {}),
                 parameters=action.get("parameters", {})
@@ -634,7 +697,7 @@ print(result)
 
 ## Custom Agent Loop (TypeScript)
 
-### Basic Agent Loop with HIITL
+### Basic Agent Loop with hiitl
 
 ```typescript
 import { HIITL } from "@hiitl/sdk";
@@ -642,9 +705,11 @@ import OpenAI from "openai";
 
 const client = new OpenAI();
 const hiitl = new HIITL({
-  apiKey: process.env.HIITL_API_KEY!,
+  api_key: process.env.HIITL_API_KEY,
+  policy_path: "./policy.yaml",
+  mode: "RESPECT_POLICY",
   environment: "prod",
-  agentId: "custom-agent",
+  agent_id: "custom-agent",
 });
 
 interface Action {
@@ -678,9 +743,9 @@ async function agentLoop(userInput: string): Promise<string> {
         actionLine.replace("ACTION:", "").trim()
       );
 
-      // Evaluate with HIITL
+      // Evaluate with hiitl
       const decision = await hiitl.evaluate({
-        tool: action.tool,
+        action: action.tool,
         operation: "execute",
         target: action.target || {},
         parameters: action.parameters || {},
@@ -733,6 +798,7 @@ console.log(result);
 
 ```python
 # Python example
+import os
 from flask import Flask, request, jsonify
 from hiitl import HIITL
 from functools import wraps
@@ -740,19 +806,21 @@ from functools import wraps
 app = Flask(__name__)
 hiitl = HIITL(
     api_key=os.getenv("HIITL_API_KEY"),
+    policy_path="./policy.yaml",
+    mode="RESPECT_POLICY",
     environment="prod",
     agent_id="api-server"
 )
 
 def hiitl_protected(tool_name: str):
-    """Decorator to protect API endpoints with HIITL."""
+    """Decorator to protect API endpoints with hiitl."""
     def decorator(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
             # Extract request data
             data = request.get_json()
 
-            # Evaluate with HIITL
+            # Evaluate with hiitl
             decision = hiitl.evaluate(
                 action=tool_name,
                 operation="execute",
@@ -794,7 +862,7 @@ def send_email():
 
 ### 1. Wrap, Don't Rewrite
 
-HIITL integrates at the tool/action boundary. You don't need to restructure your agent architecture.
+hiitl integrates at the tool/action boundary. You don't need to restructure your agent architecture.
 
 ### 2. Fail Gracefully
 
@@ -821,9 +889,8 @@ Review the audit log regularly to understand what actions are being allowed/bloc
 ## Next Steps
 
 - **Policy Examples**: See [Policy Cookbook](policy_cookbook.md) for common policy patterns
-- **Production Deployment**: Configure hosted mode for team collaboration
-- **Webhook Alerts**: Set up alerts for blocked actions, kill switches, rate limits
+- **Production Deployment**: Set `HIITL_API_KEY` to run in hybrid mode. Evaluation stays in-process, policies sync down from your hiitl org, and the audit trail syncs up.
 
 ---
 
-**Need help integrating with a framework not listed here?** Check our [GitHub examples](https://github.com/hiitlhq/hiitl/tree/main/examples) or ask in [Discord](https://discord.gg/hiitl).
+**Need help integrating with a framework not listed here?** See the runnable [examples](../../examples/) in the repository, or open an issue at [github.com/hiitlhq/hiitl](https://github.com/hiitlhq/hiitl/issues).

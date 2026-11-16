@@ -1,0 +1,18 @@
+{
+  "name": "hiitl-mcp-server-ts-example",
+  "private": true,
+  "type": "module",
+  "description": "A real MCP server with hiitl inline (TypeScript)",
+  "scripts": {
+    "prepare": "npm --prefix ../../typescript/packages/core ci && npm --prefix ../../typescript/packages/core run build && npm --prefix ../../typescript/packages/sdk ci && npm --prefix ../../typescript/packages/sdk run build",
+    "start": "tsx server.ts"
+  },
+  "dependencies": {
+    "@hiitl/sdk": "file:../../typescript/packages/sdk",
+    "@modelcontextprotocol/sdk": "^1.31.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0"
+  }
+}

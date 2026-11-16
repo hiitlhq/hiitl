@@ -10,7 +10,7 @@ tags: ["transfer", "financial", "money", "wire"]
 
 evaluate_examples:
   python: |
-    result = hiitl.evaluate("transfer_funds", {
+    result = hiitl.evaluate("transfer_funds", parameters={
         "amount": 5000.00,
         "from_account": "acct_K7mN3pR2qW",
         "to_account": "acct_X9hT4nL8vB",
@@ -24,16 +24,16 @@ evaluate_examples:
             currency="usd",
         )
   typescript: |
-    const result = hiitl.evaluate({
+    const result = await hiitl.evaluate({
       action: 'transfer_funds',
-      params: {
+      parameters: {
         amount: 5000.00,
         from_account: 'acct_K7mN3pR2qW',
         to_account: 'acct_X9hT4nL8vB',
         currency: 'usd',
       },
     });
-    if (result.ok) {
+    if (result.allowed) {
       await transferFunds({
         amount: 5000.00,
         fromAccount: 'acct_K7mN3pR2qW',
@@ -48,7 +48,7 @@ context_enrichment:
     example: "user_2kN7mP3qR8"
   - field: "sensitivity"
     why: "Transfers are both monetary and irreversible — dual sensitivity tags trigger the strictest controls"
-    example: "money,irreversible"
+    example: ["money", "irreversible"]
   - field: "parameters.transfer_type"
     why: "Internal vs. external vs. cross-border transfers have different risk profiles and regulatory requirements"
     example: "wire_domestic"
@@ -63,7 +63,6 @@ starter_policies:
   - name: "allow-internal-small-transfers"
     description: "Auto-approve small internal transfers under $5,000 between accounts within the same organization"
     priority: 200
-    enabled: true
     conditions:
       all_of:
         - field: "action"
@@ -75,14 +74,13 @@ starter_policies:
     decision: "ALLOW"
     reason_code: "TRANSFER_AUTO_APPROVED"
     remediation:
-      type: "static"
+      type: "threshold"
       message: "Transfer auto-approved (under $5,000 internal threshold)"
       suggestion: "No action needed"
 
   - name: "approve-large-transfers"
     description: "Require approval for transfers between $5,000 and $25,000"
     priority: 150
-    enabled: true
     conditions:
       all_of:
         - field: "action"
@@ -97,14 +95,13 @@ starter_policies:
     decision: "REQUIRE_APPROVAL"
     reason_code: "TRANSFER_NEEDS_APPROVAL"
     remediation:
-      type: "static"
+      type: "threshold"
       message: "Transfers between $5,000 and $25,000 require treasury team approval"
       suggestion: "Submit this transfer for treasury review. Include the business justification and any supporting documentation such as vendor invoices or contract references."
 
   - name: "block-large-wire-transfers"
     description: "Block wire transfers over $25,000 — requires manual initiation through banking portal"
     priority: 100
-    enabled: true
     conditions:
       all_of:
         - field: "action"
@@ -116,14 +113,13 @@ starter_policies:
     decision: "BLOCK"
     reason_code: "TRANSFER_EXCEEDS_WIRE_LIMIT"
     remediation:
-      type: "static"
+      type: "threshold"
       message: "Wire transfers over $25,000 cannot be initiated by automated agents"
       suggestion: "Large wire transfers must be initiated manually through the banking portal with dual authorization. Contact the treasury team to process this transfer."
 
   - name: "escalate-cross-border-transfers"
     description: "Escalate all cross-border transfers for compliance review regardless of amount"
-    priority: 120
-    enabled: true
+    priority: 300
     conditions:
       all_of:
         - field: "action"
@@ -135,22 +131,25 @@ starter_policies:
     decision: "ESCALATE"
     reason_code: "CROSS_BORDER_REVIEW_REQUIRED"
     remediation:
-      type: "static"
+      type: "custom"
       message: "Cross-border and foreign currency transfers require compliance team review for sanctions and AML screening"
       suggestion: "This transfer has been escalated to the compliance team. Ensure beneficiary details are complete and accurate. The compliance team will verify against sanctions lists before approving."
 
   - name: "velocity-limit-transfers"
     description: "Limit each agent to 10 transfers per hour to detect and prevent automated exfiltration"
     priority: 50
-    enabled: true
     conditions:
       field: "action"
       operator: "equals"
       value: "transfer_funds"
     decision: "RATE_LIMIT"
     reason_code: "TRANSFER_VELOCITY_EXCEEDED"
+    rate_limit:
+      limit: 10
+      window_seconds: 3600
+      scope: "agent"
     remediation:
-      type: "static"
+      type: "rate_limit"
       message: "This agent has exceeded the maximum of 10 fund transfers per hour"
       suggestion: "Transfer velocity limits exist to prevent automated fund exfiltration. If legitimate batch transfers are needed, use the batch transfer workflow with explicit treasury authorization."
 

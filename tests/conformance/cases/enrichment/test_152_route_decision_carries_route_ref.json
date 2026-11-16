@@ -1,0 +1,64 @@
+{
+  "test_id": "test_152_route_decision_carries_route_ref",
+  "description": "A ROUTE decision carries its rule's route as route_ref and is not allowed (decision_response 1.7).",
+  "envelope": {
+    "schema_version": "v2.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_ops_bot",
+    "action_id": "act_test1520000000000000000",
+    "timestamp": "2026-10-11T10:00:00Z",
+    "operation": "execute",
+    "parameters": {
+      "body": "hello"
+    },
+    "idempotency_key": "idem_test_152",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "publish_post"
+  },
+  "policy_set": {
+    "version": "v1.0.0",
+    "description": "A ROUTE decision carries its rule's route as route_ref and is not allowed (decision_response 1.7).",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "ask_content_check",
+        "priority": 500,
+        "conditions": {
+          "field": "action",
+          "operator": "equals",
+          "value": "publish_post"
+        },
+        "decision": "ROUTE",
+        "reason_code": "CONTENT_CHECK",
+        "description": "Rule: ask_content_check",
+        "route": "content-check"
+      },
+      {
+        "name": "allow_otherwise",
+        "priority": 1,
+        "conditions": {
+          "field": "action",
+          "operator": "exists",
+          "value": true
+        },
+        "decision": "ALLOW",
+        "reason_code": "ALLOWED",
+        "description": "Rule: allow_otherwise"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "ROUTE",
+    "allowed": false,
+    "reason_codes": [
+      "CONTENT_CHECK"
+    ],
+    "route_ref": "content-check"
+  }
+}

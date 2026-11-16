@@ -1,0 +1,46 @@
+{
+  "test_id": "test_120_percentage_hundred_always_fires",
+  "description": "scope.percentage=100 means rule always applies — short-circuits before any hash math. Rule fires normally regardless of envelope content.",
+  "envelope": {
+    "schema_version": "v2.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_finance_bot",
+    "action_id": "act_test1200000000000000",
+    "timestamp": "2026-02-14T10:00:00Z",
+    "operation": "execute",
+    "parameters": {"amount": 500, "currency": "USD"},
+    "idempotency_key": "idem_test_120_pct_hundred",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "transfer_money"
+  },
+  "policy_set": {
+    "version": "v1.0.0",
+    "description": "scope.percentage=100 means rule always applies — short-circuits before any hash math. Rule fires normally regardless of envelope content.",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "full_rollout",
+        "priority": 100,
+        "conditions": {"field": "parameters.amount", "operator": "greater_than", "value": 0},
+        "decision": "BLOCK",
+        "reason_code": "PCT_FULL_ROLLOUT",
+        "description": "Rule: full_rollout",
+        "scope": {"percentage": 100}
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "BLOCK",
+    "allowed": false,
+    "reason_codes": ["PCT_FULL_ROLLOUT"],
+    "matched_rules": [
+      {"rule_name": "full_rollout", "policy_set": "test_policy", "priority": 100}
+    ]
+  }
+}

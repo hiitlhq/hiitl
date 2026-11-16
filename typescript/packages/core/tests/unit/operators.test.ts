@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { evaluateOperator } from '../../src/operators.js';
+import { OperatorKindError } from '../../src/operator-kinds.js';
 
 describe('evaluateOperator', () => {
   // ========================================
@@ -137,9 +138,9 @@ describe('evaluateOperator', () => {
       expect(evaluateOperator(['USD', 'EUR'], 'contains', 'GBP')).toBe(false);
     });
 
-    it('should return false for non-string/non-array values', () => {
-      expect(evaluateOperator(123, 'contains', '2')).toBe(false);
-      expect(evaluateOperator(true, 'contains', 'true')).toBe(false);
+    it('refuses an operand outside the declared kind', () => {
+      expect(() => evaluateOperator(123, 'contains', '2')).toThrow(OperatorKindError);
+      expect(() => evaluateOperator(true, 'contains', 'true')).toThrow(OperatorKindError);
     });
 
     it('should return false when field value is null', () => {
@@ -165,9 +166,9 @@ describe('evaluateOperator', () => {
       expect(evaluateOperator(['USD', 'EUR'], 'not_contains', 'GBP')).toBe(true);
     });
 
-    it('should return true for non-string/non-array values', () => {
-      expect(evaluateOperator(123, 'not_contains', '2')).toBe(true);
-      expect(evaluateOperator(true, 'not_contains', 'true')).toBe(true);
+    it('refuses an operand outside the declared kind', () => {
+      expect(() => evaluateOperator(123, 'not_contains', '2')).toThrow(OperatorKindError);
+      expect(() => evaluateOperator(true, 'not_contains', 'true')).toThrow(OperatorKindError);
     });
 
     it('should return false when field value is null', () => {
@@ -186,9 +187,9 @@ describe('evaluateOperator', () => {
       expect(evaluateOperator('hello world', 'starts_with', 'world')).toBe(false);
     });
 
-    it('should return false for non-string values', () => {
-      expect(evaluateOperator(123, 'starts_with', '1')).toBe(false);
-      expect(evaluateOperator(['hello'], 'starts_with', 'h')).toBe(false);
+    it('refuses an operand outside the declared kind', () => {
+      expect(() => evaluateOperator(123, 'starts_with', '1')).toThrow(OperatorKindError);
+      expect(() => evaluateOperator(['hello'], 'starts_with', 'h')).toThrow(OperatorKindError);
     });
 
     it('should return false when field value is null', () => {
@@ -207,9 +208,9 @@ describe('evaluateOperator', () => {
       expect(evaluateOperator('hello world', 'ends_with', 'hello')).toBe(false);
     });
 
-    it('should return false for non-string values', () => {
-      expect(evaluateOperator(123, 'ends_with', '3')).toBe(false);
-      expect(evaluateOperator(['world'], 'ends_with', 'd')).toBe(false);
+    it('refuses an operand outside the declared kind', () => {
+      expect(() => evaluateOperator(123, 'ends_with', '3')).toThrow(OperatorKindError);
+      expect(() => evaluateOperator(['world'], 'ends_with', 'd')).toThrow(OperatorKindError);
     });
 
     it('should return false when field value is null', () => {
@@ -230,9 +231,9 @@ describe('evaluateOperator', () => {
       expect(evaluateOperator('abc', 'matches', '^\\d+$')).toBe(false);
     });
 
-    it('should return false for non-string values', () => {
-      expect(evaluateOperator(123, 'matches', '^\\d+$')).toBe(false);
-      expect(evaluateOperator(['test'], 'matches', 'test')).toBe(false);
+    it('refuses an operand outside the declared kind', () => {
+      expect(() => evaluateOperator(123, 'matches', '^\\d+$')).toThrow(OperatorKindError);
+      expect(() => evaluateOperator(['test'], 'matches', 'test')).toThrow(OperatorKindError);
     });
 
     it('should return false for invalid regex patterns', () => {
@@ -260,9 +261,9 @@ describe('evaluateOperator', () => {
       expect(evaluateOperator(4, 'in', [1, 2, 3])).toBe(false);
     });
 
-    it('should return false when compare value is not an array', () => {
-      expect(evaluateOperator('USD', 'in', 'USD')).toBe(false);
-      expect(evaluateOperator(1, 'in', 123)).toBe(false);
+    it('refuses an operand outside the declared kind', () => {
+      expect(() => evaluateOperator('USD', 'in', 'USD')).toThrow(OperatorKindError);
+      expect(() => evaluateOperator(1, 'in', 123)).toThrow(OperatorKindError);
     });
 
     it('should return false when field value is null', () => {
@@ -282,9 +283,9 @@ describe('evaluateOperator', () => {
       expect(evaluateOperator(2, 'not_in', [1, 2, 3])).toBe(false);
     });
 
-    it('should return false when compare value is not an array', () => {
-      expect(evaluateOperator('USD', 'not_in', 'USD')).toBe(false);
-      expect(evaluateOperator(1, 'not_in', 123)).toBe(false);
+    it('refuses an operand outside the declared kind', () => {
+      expect(() => evaluateOperator('USD', 'not_in', 'USD')).toThrow(OperatorKindError);
+      expect(() => evaluateOperator(1, 'not_in', 123)).toThrow(OperatorKindError);
     });
 
     it('should return false when field value is null', () => {

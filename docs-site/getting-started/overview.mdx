@@ -1,23 +1,23 @@
 ---
 title: "What is hiitl?"
-description: "The control point for AI agents. Observe, enforce, intervene, record."
+description: "The control point for software that can act. Observe, enforce, intervene, record."
 ---
 
 ## The problem
 
-AI systems are taking real actions — approving claims, issuing payments, granting access, sending emails, modifying data. But there's no standard way to:
+Software is increasingly acting on its own — AI agents approving claims, pipelines deploying to production, workflows issuing payments, automation granting access and modifying data. But there's no standard way to:
 
-- **See** what agents are doing across your system
+- **See** what your automated systems are doing across your infrastructure
 - **Enforce** rules before actions execute
 - **Intervene** when something goes wrong
 - **Record** an audit trail of every attempted action
 
 ## What hiitl does
 
-hiitl is a deterministic control point that sits between AI decision and execution.
+hiitl is a deterministic control point that sits between decision and execution.
 
 ```
-Agent decides → hiitl evaluates → Action executes (or doesn't)
+System decides → hiitl evaluates → Action executes (or doesn't)
 ```
 
 Every action passes through `evaluate()` before execution. hiitl checks it against policy, logs it, and returns a decision — all in single-digit milliseconds.
@@ -43,7 +43,7 @@ import { HIITL } from '@hiitl/sdk';
 
 const hiitl = new HIITL();
 
-const decision = hiitl.evaluate({
+const decision = await hiitl.evaluate({
   action: 'send_email',
   parameters: { to: 'user@example.com', subject: 'Order update' },
 });
@@ -55,6 +55,15 @@ if (decision.allowed) {
 
 </CodeGroup>
 
+## Use cases
+
+hiitl works with any software that takes consequential actions:
+
+- **AI Agents** — Control tool calls across LangChain, OpenAI, Anthropic, MCP servers, CrewAI, and custom loops
+- **Data Pipelines** — Gate production deployments, audit ETL operations, enforce approval flows on data transformations
+- **Automated Workflows** — Govern claims processing, content publishing, account provisioning, and approval chains
+- **Infrastructure Automation** — Require approval for production changes, audit infrastructure modifications, enforce change windows
+
 ## How adoption works
 
 <Steps>
@@ -65,13 +74,13 @@ if (decision.allowed) {
     Write policies when you're ready. hiitl evaluates every action against policy and returns a decision: allow, block, require approval, rate limit, and more.
   </Step>
   <Step title="Scale">
-    Move from local evaluation to hosted mode for team collaboration, shared policies, and managed audit logs. Same `evaluate()` call, different backend.
+    Add an API key for hybrid mode: policies and kill switches sync down from the hosted service and audit records sync up, while evaluation stays in-process. The `evaluate()` call does not change.
   </Step>
 </Steps>
 
 ## What hiitl is not
 
-- **Not an orchestration framework.** hiitl doesn't decide what agents should do — it governs what they attempt.
+- **Not an orchestration framework.** hiitl doesn't decide what your systems should do — it governs what they attempt.
 - **Not a monitoring dashboard.** hiitl is the enforcement layer that monitoring tools can consume events from.
 - **Not LLM-based.** Policy evaluation is deterministic — fixed rules and explicit signals, never model inference at decision time.
 
@@ -82,8 +91,8 @@ if (decision.allowed) {
 | **Latency** | Sub-millisecond locally, low tens of ms hosted |
 | **Deterministic** | Same envelope + same policy = same decision, every time |
 | **Language-native** | Python and TypeScript evaluators, no cross-language deps |
-| **Fail-safe** | Fail-closed by default, configurable per route |
-| **Audit** | Immutable trail for every action, even blocked ones |
+| **Fail-safe** | A sync route that does not answer fails closed unless its SLA says `fail_open`; a failed audit write blocks the action (`BLOCK`, `AUDIT_WRITE_FAILED`) |
+| **Audit** | A record of every action hiitl evaluates, even blocked ones |
 
 ## Next steps
 

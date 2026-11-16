@@ -22,15 +22,26 @@ Every decision includes:
 | `OBSERVE` | `true` | Action observed but not enforced. `would_be` shows what enforcement would do. |
 | `BLOCK` | `false` | Action is denied by policy. Do not execute. |
 | `REQUIRE_APPROVAL` | `false` | Action requires human approval before execution. |
-| `PAUSE` | `false` | Action is held for later processing. |
-| `RATE_LIMIT` | `false` | Action exceeds rate limit. Backoff and retry after `reset_at`. |
+| `PAUSE` | `false` | Hold the action. Do not execute it until it is reviewed. |
+| `RATE_LIMIT` | `false` | Action exceeds rate limit. Backoff and retry after `rate_limit.reset_at`. |
 | `KILL_SWITCH` | `false` | Action blocked by kill switch (hard stop). Do not retry. |
 | `ESCALATE` | `false` | Action escalated to higher authority. |
-| `SANDBOX` | `true` | Route action to sandbox endpoint. Execute, but in sandbox. |
+| `SANDBOX` | `true` | Execute the action, but in your sandbox. |
+| `ROUTE` | `false` | The rule needs an answer from a sync route. The SDK asks a route it has loaded and evaluates again with the answer. `ROUTE` comes back when the route was not asked or gave no answer. Do not execute yet. |
+| `SIGNATURE_INVALID` | `false` | The envelope's signature does not verify. The action was not evaluated. Do not retry the same envelope. |
+| `VALIDATION_ERROR` | `false` | The envelope is not one the control point admits: a field the schema refuses, another organization's or environment's envelope, or a timestamp outside the window. Correct it and send a new one. |
+| `POLICY_ERROR` | `false` | The policy could not be loaded, read or evaluated, so the action was not evaluated. Do not execute; correct or publish the policy. |
+| `CONTROL_PLANE_UNAVAILABLE` | `false` | Hosted mode: the hosted service could not be reached: every attempt timed out (`CONTROL_PLANE_TIMEOUT`), no connection or a transient failure on every attempt (`CONTROL_PLANE_UNREACHABLE`), or the client's circuit breaker is open and the call was not sent (`CIRCUIT_BREAKER_OPEN`). Fail-closed by default; under `fail_mode` `FAIL_OPEN`, which the client opts into, `allowed` is `true` and `error.message` is the warning, recorded. `metadata` carries the fail mode and the breaker's state. |
 
 <Note>
-`ALLOW` and `SANDBOX` set `allowed: true`. All other decisions set `allowed: false`.
+`ALLOW`, `OBSERVE` and `SANDBOX` set `allowed: true`. All other decisions set `allowed: false`, but `CONTROL_PLANE_UNAVAILABLE` under `FAIL_OPEN`.
 </Note>
+
+A request refused before an envelope exists has no decision or audit record. In particular, a body outside the numeric domain receives a located 422 after key and scope checks, even if it carries a string `action_id`.
+
+An error is a decision. When hiitl could not evaluate an envelope, it answers one of the error decisions above with `error.code` equal to the decision and the cause as its one reason code, and records it. A record that cannot be written is the one exception: the action is `BLOCK` with `error.code` `AUDIT_WRITE_FAILED`, because the record is what failed. Any other failure once the envelope exists is `BLOCK` too, fail-closed: `error.code` `AUDIT_READ_FAILED` when the audit store cannot be read for the first decision under the envelope's `idempotency_key`, and `EVALUATION_FAILED` for an unexpected failure, each recorded where the store answers. No decision carrying `error` is the first decision under its key, so the envelope sent again once the fault clears is evaluated. `error.message` says what happened and what to do; the cause itself is logged, never put in the message.
+
+`REQUIRE_APPROVAL`, `PAUSE` and `ESCALATE` are decisions. hiitl returns them; it does not hold or queue the action. Your code acts on them, or opens a review case on the hosted service.
 
 ## Decision fields
 
@@ -38,17 +49,25 @@ Every decision includes:
 |-------|------|----------------|-------------|
 | `action_id` | string | Yes | Echo of the action_id from the envelope, for correlation |
 | `decision` | string | Yes | The decision outcome (see table above) |
-| `allowed` | boolean | Yes | `true` if `ALLOW` or `SANDBOX`, `false` otherwise |
+| `allowed` | boolean | Yes | `true` if `ALLOW`, `OBSERVE` or `SANDBOX`, or `CONTROL_PLANE_UNAVAILABLE` under `FAIL_OPEN`; `false` otherwise |
 | `reason_codes` | array | Yes | Machine-readable reason codes explaining the decision |
 | `policy_version` | string | Yes | Version of the policy set used for evaluation |
 | `timing` | object | Yes | Latency breakdown: `ingest_ms`, `evaluation_ms`, `total_ms` |
 | `matched_rules` | array | No | Rules that matched: `{ rule_name, policy_set, priority }` |
-| `rate_limit` | object | No | Counter state when rate limit applies: `{ scope, window, limit, current, reset_at }` |
-| `resume_token` | string | No | Token to resume a paused/escalated action after review |
-| `route_ref` | string | No | Route artifact name for escalation decisions |
-| `escalation_context` | object | No | Context for approval workflows: SLA, timeout behavior, available responses |
-| `remediation` | object | No | Actionable guidance for BLOCK/RATE_LIMIT decisions |
+| `rate_limit` | object | No | Counter state `{ scope, window, limit, current, reset_at }`: on a `RATE_LIMIT`, the exceeded window; on an `ALLOW` the limiter counted, the window nearest its limit |
+| `resume_token` | string | No | Set on `REQUIRE_APPROVAL`, `PAUSE` and `ESCALATE`. Correlates the decision with a reviewer's response |
+| `route_ref` | string | No | The route the matched rule names. Set on `REQUIRE_APPROVAL`, `PAUSE`, `ESCALATE` and `ROUTE` |
+| `escalation_context` | object | No | Context for approval workflows from the named route: timeout, timeout behavior, available responses. Set when the route is loaded (the SDK's `routes_path`, or the hosted service) |
+| `remediation` | object | No | Actionable guidance the matched rule defines. Returned when the rule's decision is not allowed, for example `BLOCK` |
 | `would_be` | string | No | What enforcement would have decided (present only for OBSERVE) |
+| `would_be_reason_codes` | array | No | The reason codes enforcement would have returned (present only for OBSERVE) |
+| `staged_observations` | array | Yes | What each matching staged rule would have decided: `{ rule_name, policy_set, priority, would_be_decision, would_be_reason_codes, would_be_binding }`. Empty when none matched. See [Lifecycle stages](/concepts/policies#lifecycle-stages-observe-before-you-enforce) |
+| `rate_limit_rules` | array | Yes | Matching rate-limit rules with a window. Each carries the rule's `reason_code` and `remediation`. They do not bind; the SDK counts them when the decision is `ALLOW`, and a call one window refuses is counted in none. See [Rate-limit rules](/concepts/policies#rate-limit-rules) |
+| `enrichment` | object | No | The sync-route answers that re-entered evaluation: `{ route: { field: value } }` |
+| `routes` | array | No | Each sync route asked: `{ rule_name, route, outcome, fields, error }`. `outcome` is `answered`, `unanswered` or `failed_open` |
+| `cache_status` | string | No | Hybrid mode only. The SDK's policy cache: `synced`, `from_disk` or `empty` |
+| `envelope_hash` | string | No | Hosted mode only. SHA-256 of the envelope the service evaluated. Not declared on the TypeScript `Decision` type |
+| `metadata` | object | No | Present on `CONTROL_PLANE_UNAVAILABLE`: `{ fail_mode, circuit_breaker_state }`. `fail_mode` is the hosted client's setting: `FAIL_CLOSED` (the default, not allowed) or `FAIL_OPEN` (opt-in, allowed with the warning recorded); `circuit_breaker_state` is the hosted client's breaker after the call: `closed`, `open` or `half_open` |
 | `error` | object | No | Error details if ECP itself failed: `{ code, message }` |
 
 ## Handling decisions in code
@@ -64,6 +83,13 @@ decision = hiitl.evaluate(
 if decision.ok:
     process_payment(...)
 
+elif decision.decision == "RATE_LIMIT":
+    wait_until(decision.rate_limit.reset_at)
+    retry()
+
+elif decision.decision == "KILL_SWITCH":
+    alert_ops("Kill switch active", decision.reason_codes)
+
 elif decision.blocked:
     if decision.remediation:
         print(decision.remediation.message)
@@ -76,13 +102,6 @@ elif decision.needs_approval:
         resume_token=decision.resume_token,
         route=decision.route_ref,
     )
-
-elif decision.decision == "RATE_LIMIT":
-    wait_until(decision.rate_limit["reset_at"])
-    retry()
-
-elif decision.decision == "KILL_SWITCH":
-    alert_ops("Kill switch active", decision.reason_codes)
 ```
 
 ```typescript TypeScript
@@ -91,44 +110,46 @@ const decision = await hiitl.evaluate({
   parameters: { amount: 500, currency: 'usd' },
 });
 
-if (decision.ok) {
-  await processPayment(...);
+if (decision.allowed) {
+  await processPayment();
 
-} else if (decision.blocked) {
+} else if (decision.decision === 'RATE_LIMIT') {
+  await waitUntil(decision.rate_limit?.reset_at);
+  await retry();
+
+} else if (decision.decision === 'KILL_SWITCH') {
+  await alertOps('Kill switch active', decision.reason_codes);
+
+} else if (decision.decision === 'BLOCK') {
   if (decision.remediation) {
     console.log(decision.remediation.message);
     // "Payment amount exceeds the $10,000 limit."
   } else {
-    console.log(`Blocked: ${decision.reasonCodes}`);
+    console.log(`Blocked: ${decision.reason_codes}`);
   }
 
-} else if (decision.needsApproval) {
+} else if (['REQUIRE_APPROVAL', 'PAUSE', 'ESCALATE'].includes(decision.decision)) {
   await sendToReview({
-    resumeToken: decision.resumeToken,
-    route: decision.routeRef,
+    resume_token: decision.resume_token,
+    route: decision.route_ref,
   });
-
-} else if (decision.decision === 'RATE_LIMIT') {
-  await waitUntil(decision.rateLimit.resetAt);
-  await retry();
-
-} else if (decision.decision === 'KILL_SWITCH') {
-  await alertOps('Kill switch active', decision.reasonCodes);
 }
 ```
 
 </CodeGroup>
 
+Check `RATE_LIMIT` and `KILL_SWITCH` before `.blocked` in Python: `.blocked` is also true for both.
+
 ## Convenience properties
 
-The SDK provides convenience properties on the decision object so you do not need to compare string values for common checks.
+The Python SDK provides convenience properties on the decision object so you do not need to compare string values for common checks. The TypeScript `Decision` has none: read `decision.allowed` and compare `decision.decision`.
 
 | Property | Equivalent check |
 |----------|-----------------|
-| `.ok` | `decision == "ALLOW"` or `decision == "SANDBOX"` |
+| `.ok` | `allowed` is `true`: `decision == "ALLOW"`, `"OBSERVE"` or `"SANDBOX"` |
 | `.allowed` | Same as `.ok` |
-| `.blocked` | `decision == "BLOCK"` or `decision == "KILL_SWITCH"` |
-| `.needs_approval` | `decision == "REQUIRE_APPROVAL"` |
+| `.blocked` | `decision == "BLOCK"`, `"KILL_SWITCH"` or `"RATE_LIMIT"` |
+| `.needs_approval` | `decision == "REQUIRE_APPROVAL"`, `"PAUSE"` or `"ESCALATE"` |
 | `.observed` | `decision == "OBSERVE"` |
 | `.would_be` | Original decision type in observe mode |
 
@@ -148,15 +169,15 @@ Every decision includes timing so you can verify that hiitl is not adding meanin
 
 | Field | Description |
 |-------|-------------|
-| `ingest_ms` | Time to validate the envelope and check the signature |
+| `ingest_ms` | Locally: from the call to `evaluate()`: admitting its input, building the envelope (and checking its signature, when a `signature_key` is set), and the evaluator's read of the envelope and policy. Hosted: time the service spent loading the policy and writing the audit record |
 | `evaluation_ms` | Time spent in policy evaluation |
-| `total_ms` | Full round-trip latency (includes network in hosted mode) |
+| `total_ms` | Locally: the evaluator's time. Hosted: the service's time for the request. Network time is not included |
 
 **Latency targets**: sub-millisecond locally, low tens of milliseconds hosted. If `total_ms` consistently exceeds these, it is a performance bug.
 
 ## Remediation
 
-When a `BLOCK` or `RATE_LIMIT` decision fires, the matched rule can include remediation — structured guidance the caller (or an AI agent) can use to self-correct.
+When a rule with remediation binds and its decision is not allowed (for example `BLOCK`), the decision carries the rule's remediation — structured guidance the caller (or an AI agent) can use to self-correct.
 
 ```json
 {
@@ -164,27 +185,26 @@ When a `BLOCK` or `RATE_LIMIT` decision fires, the matched rule can include reme
   "allowed": false,
   "reason_codes": ["AMOUNT_EXCEEDS_LIMIT"],
   "remediation": {
-    "message": "Payment amount of $15,000 exceeds the $10,000 limit.",
+    "message": "Payment amount exceeds the $10,000 limit.",
     "suggestion": "Reduce amount to $10,000 or below, or request approval.",
     "type": "threshold",
     "details": {
       "threshold": 10000,
-      "current_value": 15000,
       "max_allowed": 10000
     }
   }
 }
 ```
 
-Remediation types: `field_restriction`, `threshold`, `scope`, `rate_limit`, `temporal`, `custom`. Each type has a specific `details` schema.
+Remediation types: `field_restriction`, `threshold`, `scope`, `rate_limit`, `temporal`, `custom`. hiitl returns the remediation as the rule writes it, except the details that state a fact of the call (`blocked_fields` written as `{ref, filter}`, `current_value`, `current_time`), which are computed from the call.
 
 <Warning>
-`error` and `remediation` are mutually exclusive. `error` means hiitl itself failed (bad signature, control plane unavailable). `remediation` means hiitl worked correctly and intentionally blocked the action by policy.
+`error` and `remediation` are mutually exclusive. `error` means hiitl itself failed (for example, the hosted rate limiter was unavailable, so the action was blocked). `remediation` means hiitl worked correctly and intentionally blocked the action by policy.
 </Warning>
 
 ## Observe mode
 
-When a rule is in observe mode, the decision is `OBSERVE` with `allowed: true`. The `would_be` field shows what enforcement would have done:
+Under the SDK's default mode, `OBSERVE_ALL`, a decision that would not be allowed comes back as `OBSERVE` with `allowed: true`. The `would_be` field shows what enforcement would have done:
 
 ```json
 {
@@ -196,4 +216,6 @@ When a rule is in observe mode, the decision is `OBSERVE` with `allowed: true`. 
 }
 ```
 
-This lets you validate policies before enabling enforcement. Your code can check `decision.observed` and inspect `decision.would_be` to see the enforcement decision without any action being blocked.
+A decision that is allowed (`ALLOW`, `SANDBOX`) comes back as itself. With no policy loaded, every call comes back `OBSERVE`, with `would_be: "BLOCK"` and `would_be_reason_codes: ["NO_MATCHING_RULE"]`.
+
+This lets you validate policies before enabling enforcement. Your code can check `decision.observed` (in TypeScript, `decision.decision === 'OBSERVE'`) and inspect `decision.would_be` to see the enforcement decision without the policy blocking the action. A [rate-limit rule](/concepts/policies#rate-limit-rules) still applies. To enforce, construct the client with `mode="RESPECT_POLICY"`. To observe a single rule while the rest enforce, stage it: see [Lifecycle stages](/concepts/policies#lifecycle-stages-observe-before-you-enforce).

@@ -1,0 +1,107 @@
+{
+  "test_id": "test_176_fail_closed_a_windowed_rule_it_cannot_read_blocks",
+  "description": "A windowed RATE_LIMIT rule is a rule: under fail_closed one that cannot be read decides BLOCK (MISSING_FIELD) at its priority, and it is not listed as a matching window (HTL-22 row 176).",
+  "envelope": {
+    "schema_version": "v2.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_finance_bot",
+    "action_id": "act_test1760000000000000000",
+    "timestamp": "2026-11-05T10:00:00Z",
+    "action": "process_payment",
+    "operation": "execute",
+    "parameters": {
+      "currency": "usd"
+    },
+    "idempotency_key": "idem_test_176",
+    "target": {
+      "account_id": "acct_123"
+    },
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "policy_set": {
+    "name": "payments_policy",
+    "version": "v1.0.0",
+    "description": "Payment controls for the finance agent",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
+    "on_missing": "fail_closed",
+    "rules": [
+      {
+        "name": "limit_large_payments",
+        "description": "At most five payments of 1000 or more an hour per agent",
+        "priority": 500,
+        "conditions": {
+          "all_of": [
+            {
+              "field": "action",
+              "operator": "equals",
+              "value": "process_payment"
+            },
+            {
+              "field": "parameters.amount",
+              "operator": "greater_than_or_equal",
+              "value": 1000
+            }
+          ]
+        },
+        "decision": "RATE_LIMIT",
+        "reason_code": "LARGE_PAYMENT_RATE",
+        "rate_limit": {
+          "limit": 5,
+          "window_seconds": 3600,
+          "scope": "agent"
+        }
+      },
+      {
+        "name": "allow_payments_to_known_accounts",
+        "description": "Payments to a known account are allowed",
+        "priority": 100,
+        "conditions": {
+          "all_of": [
+            {
+              "field": "action",
+              "operator": "equals",
+              "value": "process_payment"
+            },
+            {
+              "field": "target.account_id",
+              "operator": "starts_with",
+              "value": "acct_"
+            }
+          ]
+        },
+        "decision": "ALLOW",
+        "reason_code": "KNOWN_ACCOUNT"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "BLOCK",
+    "allowed": false,
+    "reason_codes": [
+      "MISSING_FIELD"
+    ],
+    "matched_rules": [
+      {
+        "rule_name": "limit_large_payments",
+        "policy_set": "payments_policy",
+        "priority": 500
+      }
+    ],
+    "remediation": {
+      "message": "Rule 'limit_large_payments' in policy set 'payments_policy' reads parameters.amount, which the call does not carry, and the set's on_missing is fail_closed.",
+      "suggestion": "Add parameters.amount to the call and evaluate it again.",
+      "type": "custom",
+      "details": {
+        "fields": [
+          "parameters.amount"
+        ]
+      }
+    },
+    "rate_limit_rules": [],
+    "missing_fields": null
+  }
+}

@@ -25,9 +25,43 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import yaml from 'js-yaml';
-import { PolicySetSchema } from '@hiitl/core';
+import { z } from 'zod';
+import { PolicySetSchema, assertNumericDomain, assertSchemaNumbers, parseAdmittedNumbers, NumericDomainError } from '@hiitl/core';
 import type { PolicySet } from '@hiitl/core';
 import { PolicyLoadError } from './exceptions.js';
+
+/**
+ * A policy's or route's YAML, read as the JSON it converts to ("a thin parsing layer that converts to JSON",
+ * policy_format.md). JSON has no timestamp, so YAML's is not resolved: a date-time written in YAML is the string
+ * written, which the core reads as it reads the JSON's (ecp_evaluate_spec.md "A date-time is read by RFC 3339's
+ * grammar"), and an explicit `!!timestamp` is refused. Mirrors python/hiitl/sdk/policy_loader.py's `YAMLForm`.
+ */
+// YAML1.2.2 §10.3.2; unrelated existing safe tags are unchanged.
+const scalar = (kind: string, expression: RegExp, construct: (raw: string) => unknown): yaml.Type =>
+  new yaml.Type('tag:yaml.org,2002:' + kind, {
+    kind: 'scalar', resolve: (raw) => expression.test(raw ?? ''), construct: (raw) => construct(raw ?? ''),
+  });
+const coreNull = scalar('null', /^(?:null|Null|NULL|~|)$/, () => null);
+const coreBool = scalar('bool', /^(?:true|True|TRUE|false|False|FALSE)$/, raw => raw.toLowerCase() === 'true');
+const coreInt = scalar('int', /^(?:[-+]?[0-9]+|0o[0-7]+|0x[0-9a-fA-F]+)$/, raw =>
+  raw.startsWith('0o') ? parseInt(raw.slice(2), 8) : raw.startsWith('0x') ? parseInt(raw.slice(2), 16) : Number(raw));
+const coreFloat = scalar('float', /^(?:[-+]?(?:\.[0-9]+|[0-9]+(?:\.[0-9]*)?)(?:[eE][-+]?[0-9]+)?|[-+]?(?:\.inf|\.Inf|\.INF)|\.nan|\.NaN|\.NAN)$/, raw => {
+  const lower = raw.toLowerCase();
+  if (lower.replace(/^[-+]/, '') === '.inf') return lower.startsWith('-') ? -Infinity : Infinity;
+  if (lower === '.nan') return NaN;
+  return Number(raw);
+});
+export const YAML_FORM = yaml.DEFAULT_SCHEMA.extend({
+  implicit: [coreNull, coreBool, coreInt, coreFloat,
+    new yaml.Type('tag:yaml.org,2002:timestamp', { kind: 'scalar', resolve: () => false })],
+});
+
+/** Read Core scalars, then admit the whole held tree before any projection. */
+export const loadYaml = (content: string, admit = true): unknown => {
+  const value = yaml.load(content, { schema: YAML_FORM });
+  if(admit)assertNumericDomain(value);
+  return value;
+};
 
 /**
  * Cached policy with modification time.
@@ -90,7 +124,8 @@ export class PolicyLoader {
       throw new PolicyLoadError(
         `Policy file not found: ${this.policyPath}\n\n` +
           'Make sure the path is correct and the file exists.\n' +
-          'See docs/specs/policy_format.md for policy file format.'
+          'See docs/specs/policy_format.md for policy file format.',
+        'POLICY_NOT_FOUND'
       );
     }
 
@@ -100,9 +135,7 @@ export class PolicyLoader {
       const stats = fs.statSync(this.policyPath);
       currentMtime = stats.mtimeMs;
     } catch (e: any) {
-      throw new PolicyLoadError(
-        `Cannot access policy file ${this.policyPath}: ${e.message}`
-      );
+      throw new PolicyLoadError(`Cannot access policy file ${this.policyPath}: ${e.message}`, 'POLICY_LOAD_FAILED');
     }
 
     // Return cached policy if file unchanged
@@ -113,6 +146,13 @@ export class PolicyLoader {
 
     // Parse file to JavaScript object
     const policyDict = this._parseFile();
+    try {
+      const wrapped=policyDict!==null && typeof policyDict==='object' && Object.hasOwn(policyDict,'policy_set');
+      assertSchemaNumbers(policyDict,wrapped?z.object({policy_set:PolicySetSchema}):PolicySetSchema);
+    }catch(error){
+      if(!(error instanceof NumericDomainError))throw error;
+      throw new PolicyLoadError(`Invalid policy numeric value in ${this.policyPath}: ${error.message}`);
+    }
 
     // Handle optional "policy_set" wrapper
     // Some policy files wrap the policy in {"policy_set": {...}}
@@ -126,10 +166,10 @@ export class PolicyLoader {
     // Validate with Zod PolicySet schema
     let policy: PolicySet;
     try {
-      policy = PolicySetSchema.parse(unwrapped);
+      policy = parseAdmittedNumbers(PolicySetSchema,unwrapped);
     } catch (e: any) {
       throw new PolicyLoadError(
-        `Invalid policy format in ${this.policyPath}:\n\n${e}\n\n` +
+        `Invalid policy format at <root> in ${this.policyPath}:\n\n${e}\n\n` +
           "The policy file doesn't match the required schema.\n" +
           'Check docs/specs/policy_format.md for the correct format.\n\n' +
           'Note: JSON is the primary format; YAML is a convenience layer.\n' +
@@ -162,9 +202,7 @@ export class PolicyLoader {
     try {
       content = fs.readFileSync(this.policyPath, 'utf-8');
     } catch (e: any) {
-      throw new PolicyLoadError(
-        `Cannot read policy file ${this.policyPath}: ${e.message}`
-      );
+      throw new PolicyLoadError(`Cannot read policy file ${this.policyPath}: ${e.message}`, 'POLICY_LOAD_FAILED');
     }
 
     // JSON format (primary)
@@ -183,11 +221,11 @@ export class PolicyLoader {
     // YAML format (convenience layer)
     if (ext === '.yaml' || ext === '.yml') {
       try {
-        const data = yaml.load(content);
+        const data = loadYaml(content, false);
         if (typeof data !== 'object' || data === null) {
           throw new PolicyLoadError(
             `Invalid YAML in ${this.policyPath}: ` +
-              `YAML file must contain a mapping/dict, but got ${typeof data}`
+              `YAML file at <root> policy root must contain a mapping/dict, but got ${typeof data}`
           );
         }
         return data;
@@ -210,7 +248,7 @@ export class PolicyLoader {
     } catch {
       // JSON parsing failed, try YAML
       try {
-        const data = yaml.load(content);
+        const data = loadYaml(content, false);
         if (typeof data !== 'object' || data === null) {
           throw new PolicyLoadError(
             `Invalid policy file ${this.policyPath}: ` +

@@ -1,0 +1,6 @@
+{
+  "source_commit": "9ac6fdc554f84074e8a95c17f28f07edf98373b1",
+  "source_file": "lexical-original.json",
+  "sha256": "1150bade89dee1834562237ea6ced794e0a87f1c2f26bcf6a6808425878b16e1",
+  "scope": "Original45 lexical plus3 native equivalents; bytes unchanged. Expected decisions now read from ecp_evaluate_spec.md supplied-text sentence."
+}

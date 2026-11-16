@@ -9,7 +9,7 @@ tags: ["classification", "claim", "approval", "financial"]
 
 evaluate_examples:
   python: |
-    result = hiitl.evaluate("approve_claim", {
+    result = hiitl.evaluate("approve_claim", parameters={
         "claim_type": "expense_report",
         "amount": 1250.00,
         "risk_score": 0.15,
@@ -17,15 +17,15 @@ evaluate_examples:
     if result.ok:
         process_claim_approval()
   typescript: |
-    const result = hiitl.evaluate({
+    const result = await hiitl.evaluate({
       action: 'approve_claim',
-      params: {
+      parameters: {
         claim_type: 'expense_report',
         amount: 1250.00,
         risk_score: 0.15,
       },
     });
-    if (result.ok) {
+    if (result.allowed) {
       await processClaimApproval();
     }
 
@@ -38,7 +38,7 @@ context_enrichment:
     example: 0.92
   - field: "sensitivity"
     why: "Claims involve money; set to 'money' to activate financial controls and audit requirements"
-    example: "money"
+    example: ["money"]
   - field: "parameters.risk_score"
     why: "Fraud risk score from the risk model determines escalation thresholds"
     example: 0.15
@@ -50,7 +50,6 @@ starter_policies:
   - name: "allow-small-auto-approve"
     description: "Auto-approve low-value claims with low risk scores to maximize processing efficiency"
     priority: 500
-    enabled: true
     conditions:
       all_of:
         - field: "action"
@@ -65,14 +64,13 @@ starter_policies:
     decision: "ALLOW"
     reason_code: "LOW_VALUE_LOW_RISK_AUTO_APPROVED"
     remediation:
-      type: "static"
+      type: "threshold"
       message: "Claim auto-approved — below value and risk thresholds"
       suggestion: "No action needed"
 
   - name: "require-review-medium-claims"
     description: "Require human review for medium-value claims or claims with moderate risk indicators"
     priority: 300
-    enabled: true
     conditions:
       all_of:
         - field: "action"
@@ -88,14 +86,13 @@ starter_policies:
     decision: "REQUIRE_APPROVAL"
     reason_code: "MEDIUM_CLAIM_REQUIRES_REVIEW"
     remediation:
-      type: "static"
+      type: "threshold"
       message: "This claim exceeds the auto-approval threshold due to value or risk score. Human review is required."
       suggestion: "The claim has been routed to the appropriate reviewer based on the claim type and amount. Claims under $5,000 go to team leads; claims over $5,000 go to department managers. Provide supporting documentation to expedite review."
 
   - name: "block-large-auto-approval"
     description: "Block automated approval of claims above the maximum auto-approval ceiling"
     priority: 100
-    enabled: true
     conditions:
       all_of:
         - field: "action"
@@ -107,14 +104,13 @@ starter_policies:
     decision: "BLOCK"
     reason_code: "LARGE_CLAIM_AUTO_APPROVAL_BLOCKED"
     remediation:
-      type: "static"
+      type: "threshold"
       message: "Claims of $10,000 or more cannot be auto-approved by AI. This is a hard ceiling to prevent unauthorized large disbursements."
       suggestion: "Claims of this size require manual processing through the standard claims workflow. Submit the claim through your claims management system for multi-level human review."
 
   - name: "escalate-high-risk"
     description: "Escalate claims with high fraud risk scores to the fraud investigation team"
-    priority: 150
-    enabled: true
+    priority: 400
     conditions:
       all_of:
         - field: "action"
@@ -126,29 +122,32 @@ starter_policies:
     decision: "ESCALATE"
     reason_code: "HIGH_RISK_CLAIM_ESCALATED"
     remediation:
-      type: "static"
+      type: "threshold"
       message: "This claim has a high fraud risk score and has been escalated to the fraud investigation team. Processing is paused pending investigation."
       suggestion: "Do not approve or deny this claim. The fraud investigation team will review the risk indicators and make a determination. Typical investigation time is 2-5 business days."
 
   - name: "rate-limit-approvals"
     description: "Rate-limit claim approvals per agent to detect compromised automation or model issues"
     priority: 350
-    enabled: true
     conditions:
       field: "action"
       operator: "equals"
       value: "approve_claim"
     decision: "RATE_LIMIT"
     reason_code: "CLAIM_APPROVAL_RATE_LIMITED"
+    rate_limit:
+      limit: {"$uncalibrated": "approve_claim calls per agent per hour, set from your own traffic"}
+      window_seconds: 3600
+      scope: "agent"
     remediation:
-      type: "static"
+      type: "rate_limit"
       message: "Claim approval rate limit exceeded. This control prevents bulk unauthorized approvals from compromised or malfunctioning agents."
       suggestion: "If processing a legitimate batch, space approvals over time. If the rate limit was unexpected, investigate the agent for compromise or malfunction. Contact your administrator for temporary limit increases."
 
 remediation:
   block_message: "Claim approval was blocked by policy. The most common cause is that the claim amount exceeds the automated approval ceiling. Check reason_code for the specific trigger."
   developer_action: "Read the decision reason_codes array. For amount-based blocks, route to manual processing. For risk-based escalations, implement the escalation callback flow and hold the claim until investigation completes. Never retry a blocked claim without addressing the root cause."
-  approval_message: "This claim requires human review before approval. The request has been routed based on claim value and risk level. Provide the claim ID and supporting documentation to the reviewer."
+  approval_message: "This claim requires human review before approval, based on its value and risk level. Provide the claim ID and supporting documentation to the reviewer."
 
 compliance:
   - regulation: "Insurance Regulations (State/Federal)"
@@ -159,4 +158,4 @@ compliance:
     note: "The tiered approval thresholds and fraud escalation policies implement the controls needed to demonstrate fiduciary responsibility. Audit trail records provide evidence of due diligence."
   - regulation: "Internal Audit Requirements"
     relevance: "All claim approval decisions, including auto-approvals, must be auditable for internal and external audit review"
-    note: "Every claim decision is recorded in the immutable audit trail with the full envelope, policy version, risk score, and outcome. Configure retention to meet your audit cycle requirements."
+    note: "Every claim decision is recorded in the audit trail with the full envelope (including the risk score, when the call passes it), the policy version, and the outcome. Configure retention to meet your audit cycle requirements."

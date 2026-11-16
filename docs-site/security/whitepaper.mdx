@@ -1,0 +1,44 @@
+---
+title: "Security whitepaper"
+description: "The threat model, the controls as built, and what a reviewer can verify"
+---
+
+This is the document a security reviewer opens first. It states what hiitl protects, against whom, with which controls, and how each control can be checked. hiitl has two planes: the open-source core, which you run in your own environment (local mode), and the hosted service, which hiitl operates (hybrid and hosted modes). Each control says which plane it belongs to, and each is stated as built today. Planned controls are on [Limits and roadmap](/reference/limits-and-roadmap), not here.
+
+## What is protected
+
+1. **Policy integrity.** The policies in force are the ones the organization intended, and any change to them is visible.
+2. **Evaluation integrity.** The evaluator runs the correct code against the correct policies and returns an honest decision.
+3. **Record integrity.** The decision record is complete, and a change to a stored row is detectable.
+4. **Tenant and environment isolation.** No organization or environment can read, write or influence another's policies, decisions or evaluations in the hosted service.
+5. **Envelope authenticity.** The action evaluated is the one the integrating system declared.
+
+## Who it is protected against
+
+External attackers reaching the API or the data; compromised credentials; insiders acting outside their role; vulnerabilities in hiitl or its dependencies; operational error. One property shapes the design: policy tampering is silent. A policy altered to permit what should be blocked produces a record that reads `ALLOW`, which looks normal. So integrity is enforced proactively (hashes, recorded changes, a staged lifecycle) rather than noticed after the fact.
+
+## Controls, by surface, as built
+
+| Surface | Plane | Control | How to verify it |
+|---|---|---|---|
+| **Policy integrity** | core | policies are files in your repository: review before merge, history as the change record; a rule binds only when `active` and the client runs `RESPECT_POLICY`; a rule carrying the retired `mode` or `enabled` field is refused at load | read the repository's history; load a rule with `mode:` and read the refusal |
+| **Policy integrity** | hosted | every policy version is content-hashed (SHA-256) and each version has a change record; rule promotion needs the `admin` scope and a ready regression report, and records the key that performed it; rollback returns a rule to `staged`; a rule whose observed false-positive signal crosses the service's threshold is demoted to `staged` by the service | attempt a promotion without a report and read the refusal |
+| **Envelope authenticity** | both | HMAC-SHA256 signature over one signing form (RFC 8785) when the client is given a `signature_key`, checked before evaluation in both modes; schema validation of every field; an idempotency key per action; the hosted service refuses an envelope that is unsigned or does not verify under the API key's signing secret (403), names another organization or environment than the key's (403), or is timestamped outside the dedup window (403) | submit a signed request with a modified field |
+| **Decision record** | both | one row per evaluation with a SHA-256 content hash of the row; the SDK never changes a row's content or deletes a row; the hosted service exposes no endpoint that does | recompute a hash; read the API |
+| **Evaluator integrity** | core | deterministic, no model in the decision path; one conformance suite of language-neutral cases run through both evaluators on every change; a mutation harness over the evaluator's rules in which each disabled rule must be caught by a test (63 of 63 at the current build) | run the conformance suite from the repository checkout against the checkout's evaluator |
+| **Routes** | both | a `bearer_token` or `api_key` secret read from the environment at the time of the ask, never stored in the route; the timeout posture declared per route; a route that does not answer closes unless the route says `fail_open` | inspect a route file; stop a route endpoint and read the decision |
+| **Availability** | core | the evaluator runs in your process; there is no service to lose | — |
+| **Availability** | hosted | the SDK keeps deciding from cached policies when the service is unreachable; a circuit breaker on the sync channel; `cold_start_behavior` for a start with no cache | stop the connection; watch the decisions |
+| **Keys and authentication** | hosted | API keys stored as SHA-256 hashes; bound to one organization and one environment, the creating key's unless it holds `full`; scopes `evaluate`, `read`, `admin`, `full`, and a new key holds only scopes its creator holds; a key past its `expires_at` refused (401) | create a key; try it against another environment; create one in another environment from a non-`full` key; create one with a scope your key does not hold |
+| **Tenant isolation** | hosted | Postgres row-level security on the tables that carry `org_id`: a tenant request runs as a database role whose policy requires `org_id` to equal the request's | run a cross-tenant query as the tenant role |
+| **Data minimization** | both | the envelope carries what the integrating system declared; in local mode nothing is sent anywhere; with the service, the Python SDK's telemetry sends aggregate statistics that can be set to `off` | read [Data handling](/security/data-handling); watch egress |
+
+## What is not claimed
+
+- hiitl does not stop an action that does not pass through it. Routing every consequential path through `evaluate()` or the gateway is the integrating system's control; the evaluation volume per responsibility is the monitor.
+- hiitl does not judge the faithfulness of the envelope. The integrating system builds it from the actual call and signs it; the model never composes it. Through the gateway, the envelope's `parameters` are the tool call's arguments as the model made the call.
+- No formal certification (SOC 2, ISO 27001) is held. For a deployment of the core in local mode the controls those certifications attest sit in the customer's environment under the customer's own posture; the documents here, the software bill of materials once published, and a penetration test inside the customer's environment are the evidence offered.
+
+## Testing
+
+Every change to the private repository runs: the backend suite; the Python SDK suite on Linux and macOS; the cross-language conformance suite; the TypeScript suites on Node 22, 24 and 26; `npm audit` and `pip-audit` gates on each package’s whole resolved graph, failing on any known vulnerability with no severity floor, scope filter or ignore list; a build of the website. A penetration test of the deployed system is run inside the customer's environment with the customer's tooling or an approved tester; what the test needs from hiitl is on the [shared-responsibility page](/security/shared-responsibility).

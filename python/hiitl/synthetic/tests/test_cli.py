@@ -7,6 +7,8 @@ from pathlib import Path
 
 import pytest
 
+PYTHON_DIR = Path(__file__).resolve().parents[3]          # the tree these cells belong to
+
 
 def _run_cli(*args: str) -> subprocess.CompletedProcess:
     """Run the CLI and capture output."""
@@ -14,7 +16,7 @@ def _run_cli(*args: str) -> subprocess.CompletedProcess:
         [sys.executable, "-m", "hiitl.synthetic", *args],
         capture_output=True,
         text=True,
-        cwd=str(Path(__file__).parent.parent.parent.parent),
+        cwd=PYTHON_DIR,
     )
 
 
@@ -56,6 +58,27 @@ class TestCLIRun:
         result = _run_cli("run", "nonexistent-scenario")
         assert result.returncode == 2
         assert "not found" in result.stderr.lower()
+
+    def test_run_json_with_output_writes_the_file_and_prints_the_report(self, tmp_path):
+        """Row 129: `--output` writes the report whatever else is asked; with `--json` stdout carries only it."""
+        out = tmp_path / "report.json"
+        result = _run_cli("run", "basic-allow-block", "--json", "--output", str(out))
+        assert result.returncode == 0
+        assert out.exists(), "--output writes the report with --json too"
+        assert str(out) in result.stderr and str(out) not in result.stdout
+        assert json.loads(result.stdout) == json.loads(out.read_text())
+
+    def test_run_all_grades_each_scenario_against_its_own_policy(self):
+        """Row 129: `run --all` grades every scenario as running it alone does, each against its own policy."""
+        from hiitl.synthetic.scenario_loader import ScenarioLoader
+
+        report = json.loads(_run_cli("run", "--all", "--json").stdout)
+        every = {s["scenario_id"]: s["grading"] for s in report["scenarios"]}
+        names = ScenarioLoader().list_available()
+        assert set(every) == set(names)
+        for name in names:
+            alone = json.loads(_run_cli("run", name, "--json").stdout)["scenarios"][0]
+            assert every[alone["scenario_id"]] == alone["grading"], name
 
     def test_run_exit_code_zero_on_pass(self):
         result = _run_cli("run", "basic-allow-block")
@@ -114,3 +137,15 @@ class TestCLIGrade:
         data = json.loads(result.stdout)
         assert "coverage_pct" in data
         assert "rule_effectiveness" in data
+
+    def test_grade_json_with_output_writes_the_file_and_prints_the_report(self, tmp_path):
+        """Row 129: `grade --output` writes the report whatever else is asked; with `--json` stdout carries only it."""
+        out = tmp_path / "grading.json"
+        result = _run_cli(
+            "grade", "../synthetic/policies/payment-policy.json",
+            "--agent", "payment-agent", "-n", "50", "--seed", "42", "--json", "--output", str(out),
+        )
+        assert result.returncode == 0
+        assert out.exists(), "--output writes the report with --json too"
+        assert str(out) in result.stderr and str(out) not in result.stdout
+        assert json.loads(result.stdout) == json.loads(out.read_text())

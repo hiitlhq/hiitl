@@ -19,6 +19,8 @@ Example:
 """
 
 import json
+import logging
+import re
 from pathlib import Path
 from typing import Optional
 
@@ -26,7 +28,68 @@ import yaml
 from pydantic import ValidationError
 
 from hiitl.core.types import PolicySet
+from hiitl.core.numeric_domain import NumericDomainError, validate_numeric_domain, admitted_numbers
+from hiitl.core.input_declarations import policy_shape
+from hiitl.core.types import Envelope
 from hiitl.sdk.exceptions import PolicyLoadError
+
+logger = logging.getLogger(__name__)
+
+_TIMESTAMP = "tag:yaml.org,2002:timestamp"
+
+
+class YAMLForm(yaml.SafeLoader):
+    """A policy's or route's YAML, read as the JSON it converts to ("a thin parsing layer that converts to JSON",
+    policy_format.md). JSON has no timestamp, so YAML's is not resolved: a date-time written in YAML is the string
+    written, which the core reads as it reads the JSON's (ecp_evaluate_spec.md "A date-time is read by RFC 3339's
+    grammar"), and an explicit `!!timestamp` is refused. Mirrors typescript/packages/sdk/src/policy-loader.ts's
+    `YAML_FORM`."""
+
+
+# YAML1.2.2 §10.3.2, in first-match order; preserve unrelated safe tags.
+_CORE = {
+    "null": r"(?:null|Null|NULL|~|)",
+    "bool": r"(?:true|True|TRUE|false|False|FALSE)",
+    "int": r"(?:[-+]?[0-9]+|0o[0-7]+|0x[0-9a-fA-F]+)",
+    "float": r"(?:[-+]?(?:\.[0-9]+|[0-9]+(?:\.[0-9]*)?)(?:[eE][-+]?[0-9]+)?|[-+]?(?:\.inf|\.Inf|\.INF)|\.nan|\.NaN|\.NAN)",
+}
+_REPLACED = {_TIMESTAMP, *("tag:yaml.org,2002:" + kind for kind in _CORE)}
+YAMLForm.yaml_implicit_resolvers = {first: [(tag, form) for tag, form in resolvers if tag not in _REPLACED]
+                                    for first, resolvers in yaml.SafeLoader.yaml_implicit_resolvers.items()}
+YAMLForm.yaml_constructors = {tag: c for tag, c in yaml.SafeLoader.yaml_constructors.items() if tag != _TIMESTAMP}
+
+
+def _core_scalar(kind):
+    expression = re.compile(_CORE[kind])
+    def construct(loader, node):
+        raw = loader.construct_scalar(node)
+        if expression.fullmatch(raw) is None:
+            raise yaml.constructor.ConstructorError(None, None, f"invalid YAML1.2 Core {kind}: {raw!r}", node.start_mark)
+        if kind == "null": return None
+        if kind == "bool": return raw.lower() == "true"
+        if kind == "int":
+            if raw.startswith("0o"): return int(raw[2:], 8)
+            if raw.startswith("0x"): return int(raw[2:], 16)
+            return int(raw, 10)
+        lower = raw.lower()
+        if lower.lstrip("+-") == ".inf": return float("-inf" if lower.startswith("-") else "inf")
+        if lower == ".nan": return float("nan")
+        return float(raw)
+    return construct
+
+
+for _kind, _form in _CORE.items():
+    _tag = "tag:yaml.org,2002:" + _kind
+    YAMLForm.add_implicit_resolver(_tag, re.compile("^(?:" + _form + ")$"), None)
+    YAMLForm.add_constructor(_tag, _core_scalar(_kind))
+
+
+def load_yaml(stream, *, admit=True):
+    """Read the ruled Core scalars, then admit the whole held JSON tree."""
+    value = yaml.load(stream, Loader=YAMLForm)
+    if admit:
+        validate_numeric_domain(value)
+    return value
 
 
 class PolicyLoader:
@@ -80,7 +143,8 @@ class PolicyLoader:
             raise PolicyLoadError(
                 f"Policy file not found: {self.policy_path}\n\n"
                 "Make sure the path is correct and the file exists.\n"
-                "See docs/specs/policy_format.md for policy file format."
+                "See docs/specs/policy_format.md for policy file format.",
+                reason="POLICY_NOT_FOUND",
             )
 
         # Get current file modification time
@@ -88,7 +152,7 @@ class PolicyLoader:
             current_mtime = self.policy_path.stat().st_mtime
         except OSError as e:
             raise PolicyLoadError(
-                f"Cannot access policy file {self.policy_path}: {e}"
+                f"Cannot access policy file {self.policy_path}: {e}", reason="POLICY_LOAD_FAILED"
             ) from e
 
         # Return cached policy if file unchanged
@@ -97,6 +161,13 @@ class PolicyLoader:
 
         # Parse file to Python dict
         policy_dict = self._parse_file()
+        shape = policy_shape(PolicySet, Envelope)
+        if isinstance(policy_dict, dict) and 'policy_set' in policy_dict:
+            shape = {**shape, 'properties': {'policy_set': shape}}
+        try:
+            validate_numeric_domain(policy_dict, shape=shape)
+        except NumericDomainError as error:
+            raise PolicyLoadError(f"Invalid policy numeric value in {self.policy_path}: {error}") from error
 
         # Handle optional "policy_set" wrapper
         # Some policy files wrap the policy in {"policy_set": {...}}
@@ -105,10 +176,11 @@ class PolicyLoader:
 
         # Validate with Pydantic PolicySet schema
         try:
-            policy = PolicySet(**policy_dict)
+            with admitted_numbers():
+                policy = PolicySet.model_validate(policy_dict)
         except ValidationError as e:
             raise PolicyLoadError(
-                f"Invalid policy format in {self.policy_path}:\n\n{e}\n\n"
+                f"Invalid policy format at <root> in {self.policy_path}:\n\n{e}\n\n"
                 "The policy file doesn't match the required schema.\n"
                 "Check docs/specs/policy_format.md for the correct format.\n\n"
                 "Note: JSON is the primary format; YAML is a convenience layer.\n"
@@ -119,6 +191,14 @@ class PolicyLoader:
                 f"Unexpected error parsing policy {self.policy_path}: {e}\n\n"
                 "Check that the file contains valid JSON or YAML."
             ) from e
+
+        # The lint runs on load; its findings are logged, never block a load.
+        if policy.rules:
+            from hiitl.core.lint import lint
+            self.lint_findings = lint(policy)
+            for f in self.lint_findings:
+                if f.severity != "info":
+                    logger.warning("policy lint %s (%s) in %s: %s", f.code, f.severity, self.policy_path, f.message)
 
         # Cache for next call
         self._cached_policy = policy
@@ -158,11 +238,11 @@ class PolicyLoader:
                 # YAML format (convenience layer)
                 elif suffix in ('.yaml', '.yml'):
                     try:
-                        policy_dict = yaml.safe_load(f)
+                        policy_dict = load_yaml(f, admit=False)
                         if not isinstance(policy_dict, dict):
                             raise PolicyLoadError(
                                 f"Invalid YAML in {self.policy_path}: "
-                                "YAML file must contain a mapping/dict, "
+                                "YAML file at <root> policy root must contain a mapping/dict, "
                                 f"but got {type(policy_dict).__name__}"
                             )
                         return policy_dict
@@ -185,11 +265,11 @@ class PolicyLoader:
 
                     # Try YAML as fallback
                     try:
-                        policy_dict = yaml.safe_load(content)
+                        policy_dict = load_yaml(content, admit=False)
                         if not isinstance(policy_dict, dict):
                             raise PolicyLoadError(
                                 f"Invalid policy file {self.policy_path}: "
-                                "File must contain JSON object or YAML mapping, "
+                                "File at <root> must contain JSON object or YAML mapping, "
                                 f"but got {type(policy_dict).__name__}"
                             )
                         return policy_dict
@@ -202,7 +282,7 @@ class PolicyLoader:
 
         except OSError as e:
             raise PolicyLoadError(
-                f"Cannot read policy file {self.policy_path}: {e}"
+                f"Cannot read policy file {self.policy_path}: {e}", reason="POLICY_LOAD_FAILED"
             ) from e
 
     def invalidate_cache(self):

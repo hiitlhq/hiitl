@@ -1,16 +1,16 @@
 # Signal Ingestion Schema Specification
 
-**Version**: 1.0
+**Version**: 1.1
 **Status**: Phase 0 Interface Design (Implementation in Phase 2)
-**Last Updated**: 2026-02-14
+**Last Updated**: 2026-11-03
 
 ---
 
 ## Purpose
 
-This document defines the **signal schema** for external systems to push risk signals, anomaly flags, compliance state changes, and eval metrics into HIITL Execution Control Plane.
+This document defines the **signal schema** for external systems to push risk signals, anomaly flags, compliance state changes, and eval metrics into hiitl Execution Control Plane.
 
-**Signal ingestion is a core integration surface.** It enables ecosystem partners (security platforms, eval tools, monitoring systems) to inform ECP's policy decisions at runtime.
+**Signal ingestion is a core integration surface**. It enables ecosystem partners (security platforms, eval tools, monitoring systems) to inform ECP's policy decisions at runtime.
 
 **Phase 1**: Interface designed, policy format supports signal references
 **Phase 2**: Full implementation of signal ingestion API
@@ -57,8 +57,8 @@ Policies can reference both.
 ```json
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://hiitl.ai/schemas/signal/v1.json",
-  "title": "HIITL Signal",
+  "$id": "https://hiitl.com/schemas/signal/v1.json",
+  "title": "hiitl Signal",
   "description": "External signal pushed into ECP for policy evaluation",
   "type": "object",
   "required": [
@@ -154,12 +154,16 @@ Policies can reference both.
 
 **Policy usage**:
 ```yaml
+name: "escalate-high-risk"
+description: "Escalate when CrowdStrike scores the agent's risk above 0.8"
+priority: 200
 conditions:
   all_of:
     - field: "external.crowdstrike.risk_score"
       operator: "greater_than"
       value: 0.8
 decision: "ESCALATE"
+reason_code: "HIGH_SECURITY_RISK"
 ```
 
 ---
@@ -189,6 +193,9 @@ decision: "ESCALATE"
 
 **Policy usage**:
 ```yaml
+name: "pause-on-model-drift"
+description: "Pause the agent while Braintrust reports model drift"
+priority: 200
 conditions:
   all_of:
     - field: "external.braintrust.model_drift"
@@ -225,16 +232,20 @@ reason_code: "MODEL_DRIFT_DETECTED"
 
 **Policy usage**:
 ```yaml
+name: "throttle-under-load"
+description: "Meter the org's calls while Datadog reports CPU above 80%"
+priority: 200
 conditions:
   all_of:
     - field: "external.datadog.system_load.cpu_percent"
       operator: "greater_than"
       value: 80
 decision: "RATE_LIMIT"
-metadata:
-  rate_limit:
-    window: "minute"
-    limit: 10  # Reduce limit during high load
+reason_code: "SYSTEM_UNDER_LOAD"
+rate_limit:
+  limit: 10  # Reduce limit during high load
+  window_seconds: 60
+  scope: org
 ```
 
 ---
@@ -263,6 +274,9 @@ metadata:
 
 **Policy usage**:
 ```yaml
+name: "block-on-compliance-restriction"
+description: "Block user-data exports while a regulatory restriction is active"
+priority: 300
 conditions:
   all_of:
     - field: "action"
@@ -577,7 +591,7 @@ assert decision.decision == "ESCALATE"
 ### Conformance Tests
 
 Signal-aware policy conformance tests:
-```json
+```jsonc
 {
   "test_name": "escalate_on_high_risk_score",
   "envelope": { /* ... */ },
@@ -622,14 +636,13 @@ Signal-aware policy conformance tests:
 | Version | Date | Changes | Author |
 |---------|------|---------|--------|
 | 1.0 | 2026-02-14 | Initial signal schema specification (interface design) | Phase 0 Setup |
+| 1.1 | 2026-11-03 | Brought current to the ruled changes: Example 3 uses the rule's `rate_limit` (`limit`, `window_seconds`, `scope`) (HTL-17) | CC |
 
 ---
 
 ## Related Documents
 
 - [Policy Format Spec](policy_format.md) - Layer 4: Signal-aware conditions
-- [Ecosystem Integration](../architecture/ecosystem_integration.md) - Ecosystem integration design
-- [Infrastructure Analysis](../technical/ecp_infrastructure_analysis.md) - Integration surfaces
 
 ---
 

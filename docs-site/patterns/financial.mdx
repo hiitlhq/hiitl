@@ -3,48 +3,67 @@ title: "Financial Patterns"
 description: "Payment processing, invoicing, refunds, and fund transfers"
 ---
 
+Each starter policy below is a complete policy file. Load it with `HIITL(policy_path="policy.yaml", mode="RESPECT_POLICY")` to enforce it. Under `RESPECT_POLICY`, an action no rule matches is blocked with `NO_MATCHING_RULE`, so each policy carries an `ALLOW` rule for the calls that should proceed. Under the default mode, `OBSERVE_ALL`, a decision other than `ALLOW` or `SANDBOX` comes back as `OBSERVE`, with the rule's decision in `would_be`.
+
 ## process_payment
 
 Process a payment against a customer account.
 
 ```python
 decision = hiitl.evaluate(
-    tool="process_payment",
+    "process_payment",
     operation="execute",
     target={"account_id": "acct_123"},
-    parameters={"amount": 150.00, "currency": "usd"}
+    parameters={"amount": 150.00, "currency": "usd"},
 )
 ```
 
 **Starter policy:**
 
 ```yaml
-- name: "require-approval-high-value-payment"
-  enabled: true
-  priority: 100
-  conditions:
-    all_of:
-      - field: "action"
-        operator: "equals"
-        value: "process_payment"
-      - field: "parameters.amount"
-        operator: "greater_than"
-        value: 500
-  decision: "REQUIRE_APPROVAL"
-  reason_code: "HIGH_VALUE_PAYMENT"
-  remediation:
-    message: "Payment exceeds $500 threshold."
-    suggestion: "Reduce amount or request approval from finance team."
-    type: "threshold"
-    details:
-      threshold: 500
-  metadata:
-    sla_hours: 4
-    reviewer_role: "finance_approver"
+name: "payments"
+version: "v1.0.0"
+description: "Controls on process_payment"
+scope:
+  org_id: "org_devlocal0000000000"
+  environment: "dev"
+rules:
+  - name: "require-approval-high-value-payment"
+    description: "Require approval for payments over $500"
+    priority: 100
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "process_payment"
+        - field: "parameters.amount"
+          operator: "greater_than"
+          value: 500
+    decision: "REQUIRE_APPROVAL"
+    reason_code: "HIGH_VALUE_PAYMENT"
+    remediation:
+      message: "Payment exceeds $500 threshold."
+      suggestion: "Reduce amount or request approval from finance team."
+      type: "threshold"
+      details:
+        threshold: 500
+    metadata:
+      sla_hours: 4
+      reviewer_role: "finance_approver"
+
+  - name: "allow-payments"
+    description: "Allow payments up to $500"
+    priority: 50
+    conditions:
+      field: "action"
+      operator: "equals"
+      value: "process_payment"
+    decision: "ALLOW"
+    reason_code: "PAYMENT_ALLOWED"
 ```
 
 <Note>
-**Compliance:** PCI-DSS requires audit trails for all payment transactions. hiitl's immutable audit log satisfies this requirement. SOX compliance may require tiered approval thresholds -- see the [Policy Cookbook](/patterns/policy-cookbook) for tiered examples.
+**Compliance:** PCI-DSS requires audit trails for all payment transactions. hiitl writes an audit record for every payment attempt it evaluates, including blocked ones. SOX compliance may require tiered approval thresholds -- see the [Policy Cookbook](/patterns/policy-cookbook) for tiered examples.
 </Note>
 
 ---
@@ -55,35 +74,52 @@ Generate and send an invoice to a customer.
 
 ```python
 decision = hiitl.evaluate(
-    tool="create_invoice",
+    "create_invoice",
     operation="create",
     target={"customer_id": "cust_456"},
-    parameters={"amount": 2500.00, "currency": "usd", "due_days": 30}
+    parameters={"amount": 2500.00, "currency": "usd", "due_days": 30},
 )
 ```
 
 **Starter policy:**
 
 ```yaml
-- name: "block-large-invoices"
-  enabled: true
-  priority: 900
-  conditions:
-    all_of:
-      - field: "action"
-        operator: "equals"
-        value: "create_invoice"
-      - field: "parameters.amount"
-        operator: "greater_than"
-        value: 10000
-  decision: "BLOCK"
-  reason_code: "INVOICE_EXCEEDS_LIMIT"
-  remediation:
-    message: "Invoice amount exceeds $10,000 auto-generation limit."
-    suggestion: "Create invoices over $10,000 manually through the billing portal."
-    type: "threshold"
-    details:
-      threshold: 10000
+name: "invoices"
+version: "v1.0.0"
+description: "Controls on create_invoice"
+scope:
+  org_id: "org_devlocal0000000000"
+  environment: "dev"
+rules:
+  - name: "block-large-invoices"
+    description: "Block automated invoices over $10,000"
+    priority: 900
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "create_invoice"
+        - field: "parameters.amount"
+          operator: "greater_than"
+          value: 10000
+    decision: "BLOCK"
+    reason_code: "INVOICE_EXCEEDS_LIMIT"
+    remediation:
+      message: "Invoice amount exceeds $10,000 auto-generation limit."
+      suggestion: "Create invoices over $10,000 manually through the billing portal."
+      type: "threshold"
+      details:
+        threshold: 10000
+
+  - name: "allow-invoices"
+    description: "Allow invoices up to $10,000"
+    priority: 50
+    conditions:
+      field: "action"
+      operator: "equals"
+      value: "create_invoice"
+    decision: "ALLOW"
+    reason_code: "INVOICE_ALLOWED"
 ```
 
 <Note>
@@ -98,38 +134,55 @@ Refund a previous payment.
 
 ```python
 decision = hiitl.evaluate(
-    tool="issue_refund",
+    "issue_refund",
     operation="execute",
     target={"transaction_id": "txn_789", "account_id": "acct_123"},
-    parameters={"amount": 75.00, "reason": "defective_product"}
+    parameters={"amount": 75.00, "reason": "defective_product"},
 )
 ```
 
 **Starter policy:**
 
 ```yaml
-- name: "require-approval-large-refund"
-  enabled: true
-  priority: 100
-  conditions:
-    all_of:
-      - field: "action"
-        operator: "equals"
-        value: "issue_refund"
-      - field: "parameters.amount"
-        operator: "greater_than"
-        value: 200
-  decision: "REQUIRE_APPROVAL"
-  reason_code: "LARGE_REFUND"
-  remediation:
-    message: "Refund exceeds $200 auto-approval limit."
-    suggestion: "Submit for manager review or reduce refund amount."
-    type: "threshold"
-    details:
-      threshold: 200
-  metadata:
-    sla_hours: 2
-    reviewer_role: "cs_manager"
+name: "refunds"
+version: "v1.0.0"
+description: "Controls on issue_refund"
+scope:
+  org_id: "org_devlocal0000000000"
+  environment: "dev"
+rules:
+  - name: "require-approval-large-refund"
+    description: "Require manager approval for refunds over $200"
+    priority: 100
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "issue_refund"
+        - field: "parameters.amount"
+          operator: "greater_than"
+          value: 200
+    decision: "REQUIRE_APPROVAL"
+    reason_code: "LARGE_REFUND"
+    remediation:
+      message: "Refund exceeds $200 auto-approval limit."
+      suggestion: "Submit for manager review or reduce refund amount."
+      type: "threshold"
+      details:
+        threshold: 200
+    metadata:
+      sla_hours: 2
+      reviewer_role: "cs_manager"
+
+  - name: "allow-refunds"
+    description: "Allow refunds up to $200"
+    priority: 50
+    conditions:
+      field: "action"
+      operator: "equals"
+      value: "issue_refund"
+    decision: "ALLOW"
+    reason_code: "REFUND_ALLOWED"
 ```
 
 <Note>
@@ -144,52 +197,69 @@ Move funds between accounts.
 
 ```python
 decision = hiitl.evaluate(
-    tool="transfer_funds",
+    "transfer_funds",
     operation="execute",
     target={"from_account": "acct_123", "to_account": "acct_456"},
-    parameters={"amount": 5000.00, "currency": "usd"}
+    parameters={"amount": 5000.00, "currency": "usd"},
 )
 ```
 
 **Starter policy:**
 
 ```yaml
-- name: "block-large-transfers"
-  enabled: true
-  priority: 900
-  conditions:
-    all_of:
-      - field: "action"
-        operator: "equals"
-        value: "transfer_funds"
-      - field: "parameters.amount"
-        operator: "greater_than"
-        value: 10000
-  decision: "BLOCK"
-  reason_code: "TRANSFER_EXCEEDS_LIMIT"
-  remediation:
-    message: "Transfer exceeds $10,000 automated limit."
-    suggestion: "Use the wire transfer portal for amounts over $10,000."
-    type: "threshold"
-    details:
-      threshold: 10000
+name: "transfers"
+version: "v1.0.0"
+description: "Controls on transfer_funds"
+scope:
+  org_id: "org_devlocal0000000000"
+  environment: "dev"
+rules:
+  - name: "block-large-transfers"
+    description: "Block automated transfers over $10,000"
+    priority: 900
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "transfer_funds"
+        - field: "parameters.amount"
+          operator: "greater_than"
+          value: 10000
+    decision: "BLOCK"
+    reason_code: "TRANSFER_EXCEEDS_LIMIT"
+    remediation:
+      message: "Transfer exceeds $10,000 automated limit."
+      suggestion: "Use the wire transfer portal for amounts over $10,000."
+      type: "threshold"
+      details:
+        threshold: 10000
 
-- name: "require-approval-medium-transfer"
-  enabled: true
-  priority: 100
-  conditions:
-    all_of:
-      - field: "action"
-        operator: "equals"
-        value: "transfer_funds"
-      - field: "parameters.amount"
-        operator: "greater_than"
-        value: 1000
-  decision: "REQUIRE_APPROVAL"
-  reason_code: "MEDIUM_TRANSFER"
-  metadata:
-    sla_hours: 1
-    reviewer_role: "treasury"
+  - name: "require-approval-medium-transfer"
+    description: "Require treasury approval for transfers over $1,000"
+    priority: 100
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "transfer_funds"
+        - field: "parameters.amount"
+          operator: "greater_than"
+          value: 1000
+    decision: "REQUIRE_APPROVAL"
+    reason_code: "MEDIUM_TRANSFER"
+    metadata:
+      sla_hours: 1
+      reviewer_role: "treasury"
+
+  - name: "allow-transfers"
+    description: "Allow transfers up to $1,000"
+    priority: 50
+    conditions:
+      field: "action"
+      operator: "equals"
+      value: "transfer_funds"
+    decision: "ALLOW"
+    reason_code: "TRANSFER_ALLOWED"
 ```
 
 <Warning>

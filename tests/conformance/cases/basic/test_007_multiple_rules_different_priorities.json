@@ -1,8 +1,8 @@
 {
   "test_id": "test_007_multiple_rules_different_priorities",
-  "description": "Multiple rules with different priorities - highest matches first",
+  "description": "Multiple rules match: ALLOW (100), REQUIRE_APPROVAL (50), BLOCK (10). DENY wins (policy_format.md Rule Precedence; R-0846): the matching BLOCK binds whatever its priority. Corrected 2026-10-08 from first-match-by-priority (expected ALLOW), which the spec never said.",
   "envelope": {
-    "schema_version": "v1.0",
+    "schema_version": "v2.0",
     "org_id": "org_1234567890abcdef",
     "environment": "prod",
     "agent_id": "agent_finance_bot",
@@ -19,13 +19,17 @@
     "action": "transfer_money"
   },
   "policy_set": {
-    "version": "1.0.0",
+    "version": "v1.0.0",
+    "description": "Multiple rules match: ALLOW (100), REQUIRE_APPROVAL (50), BLOCK (10). DENY wins (policy_format.md Rule Precedence; R-0846): the matching BLOCK binds whatever its priority. Corrected 2026-10-08 from first-match-by-priority (expected ALLOW), which the spec never said.",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
     "name": "test_policy",
     "rules": [
       {
         "name": "low_priority_block",
         "priority": 10,
-        "enabled": true,
         "conditions": {
           "field": "action",
           "operator": "equals",
@@ -38,7 +42,6 @@
       {
         "name": "medium_priority_approval",
         "priority": 50,
-        "enabled": true,
         "conditions": {
           "field": "parameters.currency",
           "operator": "equals",
@@ -51,7 +54,6 @@
       {
         "name": "high_priority_allow",
         "priority": 100,
-        "enabled": true,
         "conditions": {
           "field": "parameters.amount",
           "operator": "less_than_or_equal",
@@ -64,10 +66,10 @@
     ]
   },
   "expected_decision": {
-    "decision": "ALLOW",
-    "allowed": true,
+    "decision": "BLOCK",
+    "allowed": false,
     "reason_codes": [
-      "HIGH_PRIORITY"
+      "LOW_PRIORITY"
     ]
   }
 }

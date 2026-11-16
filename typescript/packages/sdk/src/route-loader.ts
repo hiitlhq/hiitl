@@ -27,8 +27,8 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import yaml from 'js-yaml';
-import { RouteSchema } from '@hiitl/core';
+import { loadYaml } from './policy-loader.js';
+import { RouteSchema, routing, assertSchemaNumbers, parseAdmittedNumbers } from '@hiitl/core';
 import type { Route } from '@hiitl/core';
 import { RouteLoadError } from './exceptions.js';
 
@@ -179,11 +179,11 @@ export class RouteLoader {
     } else {
       // YAML (.yaml or .yml)
       try {
-        const data = yaml.load(content);
+        const data = loadYaml(content, false);
         if (typeof data !== 'object' || data === null) {
           throw new RouteLoadError(
             `Invalid YAML in route config ${filePath}: ` +
-              `Expected a mapping/object, got ${typeof data}`
+              `Expected a mapping/object at route root, got ${typeof data}`
           );
         }
         rawConfig = data as Record<string, any>;
@@ -196,6 +196,13 @@ export class RouteLoader {
             'See docs/specs/routes.md for the correct format.'
         );
       }
+    }
+
+    try {assertSchemaNumbers(rawConfig,RouteSchema);} catch(error) {
+      throw new RouteLoadError(`Route numeric data refused in ${filePath}: ${(error as Error).message}`);
+    }
+    if (rawConfig === null || typeof rawConfig !== 'object' || Array.isArray(rawConfig)) {
+      throw new RouteLoadError(`Route config root must be an object in ${filePath}; received ${rawConfig===null?'null':Array.isArray(rawConfig)?'array':typeof rawConfig}.`);
     }
 
     // Verify config name matches filename (before Zod validation for better error)
@@ -211,9 +218,9 @@ export class RouteLoader {
     // Validate with Zod RouteSchema
     let route: Route;
     try {
-      route = RouteSchema.parse(rawConfig);
+      route = parseAdmittedNumbers(RouteSchema,rawConfig);
     } catch (e: any) {
-      const issues = e.errors?.map(
+      const issues = e.issues?.map(
         (err: any) => `${err.path.join('.')}: ${err.message}`
       ) || [e.message];
       throw new RouteLoadError(
@@ -221,6 +228,12 @@ export class RouteLoader {
           issues.map((i: string) => `  - ${i}`).join('\n') + '\n\n' +
           'See docs/specs/routes.md for the full schema.'
       );
+    }
+
+    // routes.md Validation Rules, "The party that sends reads the `auth`" (row 140): an auth it cannot send
+    const refusal = routing.authRefusal(route as routing.RouteConfig);
+    if (refusal) {
+      throw new RouteLoadError(`Route config ${filePath} declares an auth the SDK cannot send: ${refusal}`);
     }
 
     // Cache and return
@@ -277,7 +290,7 @@ export function resolveEscalationContext(route: Route): EscalationContext {
   if (route.context?.fields) {
     context.fields = route.context.fields.map((f) => ({
       field_path: f.field_path,
-      ...(f.label && { label: f.label }),
+      ...(f.label !== undefined && { label: f.label }),
       ...(f.format && { format: f.format }),
     }));
   }
@@ -287,7 +300,7 @@ export function resolveEscalationContext(route: Route): EscalationContext {
     if (route.context.risk_framing.severity) {
       context.severity = route.context.risk_framing.severity;
     }
-    if (route.context.risk_framing.summary) {
+    if (route.context.risk_framing.summary !== undefined) {
       context.summary = route.context.risk_framing.summary;
     }
   }
