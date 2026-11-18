@@ -186,6 +186,8 @@ def policy_shape(model, envelope_model):
                 'if': {'properties': {'type': {'const': name}}, 'required': ['type']},
                 'then': {'properties': {'details': details}},
             })
+    if (logical := node('LogicalCondition')) is not None:
+        logical['x-shape-after'] = logical_sets_refusal
     if (condition := node('Condition')) is not None:
         declared = {'type': 'object', 'properties': {'$declared': {'type': 'string'}},
                     'required': ['$declared'], 'additionalProperties': False}
@@ -214,6 +216,17 @@ def policy_shape(model, envelope_model):
         })
     return shape
 
+
+
+LOGICAL_SETS = ('all_of', 'any_of', 'none_of')
+
+
+def logical_sets_refusal(value):
+    """A logical condition sets exactly one of its three sets (policy_format.md "Exactly one set"). The model reads it
+    after its own members hold, and the input walker reads it the same way (`x-shape-after`)."""
+    if not isinstance(value, dict) or sum(value.get(name) is not None for name in LOGICAL_SETS) == 1:
+        return None
+    return 'Exactly one of all_of, any_of, or none_of must be set'
 
 
 def condition_operand_refusal(value):

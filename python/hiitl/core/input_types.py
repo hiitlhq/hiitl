@@ -84,6 +84,12 @@ def input_errors(value: Any, shape: dict, *, partial=False, path=(), check_null=
     def visit(current, node, at):
         if current is None and (numbers_only or not check_null):
             return []
+        if 'x-shape-after' in node:
+            # An after-validator's rule (pydantic mode='after', zod refine) reads a node whose own members hold
+            remaining = {key: child for key, child in node.items() if key != 'x-shape-after'}
+            found = visit(current, remaining, at)
+            detail = None if found else node['x-shape-after'](current)
+            return found or ([error(at, current, detail)] if detail else [])
         if 'x-shape-refusal' in node:
             detail = node['x-shape-refusal'](current)
             remaining = {key: child for key, child in node.items() if key != 'x-shape-refusal'}

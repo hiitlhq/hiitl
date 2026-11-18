@@ -9,7 +9,7 @@ export class OperatorKindError extends Error {
 /** Right-side kinds declared independently of the left side. */
 export function literalKindOK(operator: string, value: unknown): boolean {
   if (['greater_than', 'greater_than_or_equal', 'less_than', 'less_than_or_equal'].includes(operator)) return typeof value === 'number';
-  if (['starts_with', 'ends_with', 'matches'].includes(operator)) return typeof value === 'string';
+  if (['starts_with', 'ends_with'].includes(operator)) return typeof value === 'string';
   if (['in', 'not_in'].includes(operator)) return Array.isArray(value);
   if (operator === 'exists') return typeof value === 'boolean';
   if (operator === 'conforms_to') return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -19,7 +19,7 @@ export function literalKindOK(operator: string, value: unknown): boolean {
 export function requireOperandKinds(left: unknown, operator: string, right: unknown): void {
   let valid = literalKindOK(operator, right);
   if (['greater_than', 'greater_than_or_equal', 'less_than', 'less_than_or_equal'].includes(operator)) valid = valid && typeof left === 'number';
-  else if (['starts_with', 'ends_with', 'matches'].includes(operator)) valid = valid && typeof left === 'string';
+  else if (['starts_with', 'ends_with'].includes(operator)) valid = valid && typeof left === 'string';
   else if (['contains', 'not_contains'].includes(operator)) valid = Array.isArray(left) || typeof left === 'string' && typeof right === 'string';
   else if (operator === 'conforms_to') valid = valid && left !== null && typeof left === 'object' && !Array.isArray(left);
   if (!valid) throw new OperatorKindError(operator);

@@ -173,51 +173,6 @@ class TestSchemaValidation:
 class TestRuntimeErrorHandling:
     """Test runtime error handling during evaluation."""
 
-    def test_invalid_regex_pattern_handled_gracefully(self):
-        """Invalid regex pattern should return False, not raise exception."""
-        envelope = Envelope(
-            schema_version=ENVELOPE_SCHEMA_VERSION,
-            org_id="org_test000000000000",
-            environment="dev",
-            agent_id="agent_test",
-            action_id="act_test00000000000000000",
-            timestamp="2026-02-15T10:00:00Z",
-            action="test_tool",
-            operation="execute",
-            parameters={"query": "SELECT * FROM users"},
-            idempotency_key="idem_test_regex",
-            target={},
-            signature="0" * 64,
-        )
-
-        policy = PolicySet(
-            version="v1.0.0",
-            description="Invalid regex pattern handled gracefully",
-            scope={"org_id": "org_test000000000000", "environment": "dev"},
-            name="test_policy",
-            rules=[
-                Rule(
-                    name="invalid_regex_rule",
-                    priority=100,
-                    conditions=Condition(
-                        field="parameters.query",
-                        operator=ConditionOperator.MATCHES,
-                        value="[invalid(regex",  # Invalid regex pattern
-                    ),
-                    decision=DecisionType.BLOCK,
-                    reason_code="INVALID_REGEX",
-                    description="Rule with invalid regex",
-                )
-            ],
-        )
-
-        evaluator = PolicyEvaluator()
-        decision = evaluator.evaluate(envelope, policy)
-
-        # Should not raise exception - invalid regex returns False, so no match
-        assert decision.decision == "BLOCK"
-        assert "NO_MATCHING_RULE" in decision.reason_codes
-
     def test_type_mismatch_in_numeric_comparison(self):
         """The declared numeric kind mismatch is a located policy failure (fc00ed9a)."""
         envelope = Envelope(

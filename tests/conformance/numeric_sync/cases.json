@@ -1,7 +1,7 @@
 {
   "sources": {
     "docs/specs/telemetry_schema.md": "2f0eba499f99cf30899bb2d8106cbb2fed38e6c4501d77e147f461720ef8d84b",
-    "docs/specs/sync_engine.md": "337e58daa0f9d65e15635df321c7f00ae21b6bdfbb25cefafa27c0829d608e2f"
+    "docs/specs/sync_engine.md": "8a465d632aaae701cc82f7bdab777ab3a4c22560f80f20f31eb22de9345ae0ff"
   },
   "cases": [
     {

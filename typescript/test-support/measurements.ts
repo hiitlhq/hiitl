@@ -6,6 +6,7 @@ export interface Measurement {
   value: number;
   sample_count?: number;
   statistic?: string;
+  samples?: number[];
 }
 
 export function recordMeasurement(measurement: Measurement): void {

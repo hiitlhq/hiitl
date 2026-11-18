@@ -316,21 +316,21 @@ print(f"  Evaluation: {decision.timing.evaluation_ms}ms")
    ```yaml
    # SLOW - many complex conditions
    policy_set:
-     name: "regex-on-nested-field"
+     name: "substring-on-nested-field"
      version: "v1.0.0"
-     description: "A regex on a nested field, matched on every call"
+     description: "A substring search on a nested field, read on every call"
      scope:
        org_id: "org_devlocal0000000000"
        environment: "dev"
      rules:
-       - name: "match-nested-pattern"
-         description: "A regular expression on a deeply nested parameter"
+       - name: "match-nested-substring"
+         description: "A substring search on a deeply nested parameter"
          priority: 100
          conditions:
            all_of:
              - field: "parameters.deeply.nested.value"
-               operator: "matches"
-               value: "complex_regex_.*"
+               operator: "contains"
+               value: "complex_"
          decision: "BLOCK"
          reason_code: "PATTERN_MATCHED"
    ```

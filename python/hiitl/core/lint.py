@@ -34,7 +34,7 @@ from hiitl.core.types import (  # noqa: F401
     DECLARED_KEY, ENVELOPE_RENAMED, ENVELOPE_SCHEMA_VERSION, PLACEHOLDER_KEY, field_ref, has_placeholder, placeholders)
 
 _DNF_CAP = 64
-_OPAQUE_OPS = {"contains", "not_contains", "starts_with", "ends_with", "matches", "conforms_to"}
+_OPAQUE_OPS = {"contains", "not_contains", "starts_with", "ends_with", "conforms_to"}
 _NEGATE = {"equals": "not_equals", "not_equals": "equals", "in": "not_in", "not_in": "in",
            "greater_than": "less_than_or_equal", "less_than_or_equal": "greater_than",
            "greater_than_or_equal": "less_than", "less_than": "greater_than_or_equal"}

@@ -85,7 +85,13 @@ def _evaluator_raises(h, monkeypatch):
 ], ids=["missing-file", "unparseable-file", "evaluator-raises"])
 def test_local_errors_are_decisions_with_records(tmp_path, policy, arm, reason, monkeypatch):
     """Behavior 5: an envelope exists, so nothing raises; the failure is POLICY_ERROR, recorded."""
-    h = _client(tmp_path, policy=policy)
+    h = _client(tmp_path)
+    # Refusals after an envelope can exist; construction now reads the supplied
+    # file (HTL-45). Preserve this cell's decision and audit assertions.
+    if policy == 'absent':
+        (tmp_path / 'refunds.json').unlink()
+    elif policy is not None:
+        (tmp_path / 'refunds.json').write_text(policy)
     if arm:
         arm(h, monkeypatch)
     d = _answer(lambda: h.evaluate("refund"))
@@ -113,7 +119,9 @@ def _evaluator(tmp_path, monkeypatch):
 
 def _policy_load(tmp_path, monkeypatch):
     # The schema's own error quotes the value it refused, so a decision no rule may write carries the sentinel
-    return _client(tmp_path, rules=[dict(ALLOW_REFUNDS, decision=SENTINEL)])
+    h = _client(tmp_path)
+    (tmp_path / 'refunds.json').write_text(json.dumps({**SET, 'rules': [dict(ALLOW_REFUNDS, decision=SENTINEL)]}))
+    return h
 
 
 def _audit_write(tmp_path, monkeypatch):

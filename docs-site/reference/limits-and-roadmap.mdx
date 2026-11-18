@@ -5,6 +5,17 @@ description: "What hiitl does not do today, said plainly, and what is being buil
 
 A reviewer should be able to find the edges before asking. This page lists them as of the current build. Items under "Being built" are open rows in the private repository's gap list, each with a test that closes it; they are listed here so that the other pages can describe the build as it stands.
 
+## Latency and the audit disk
+
+Each local or hybrid call writes its audit record with a synchronous durable disk
+commit. Its time depends on the disk; it is part of the whole-call latency, even
+though today's local `total_ms` leaves it out. The unchanged latency targets are
+asserted at p95 for every public runtime at release, on the release's named machine.
+For 0.2.0 that environment is the native Apple M5 Max Mac, 128 GiB RAM, macOS 26.6.2,
+with its local APFS SSD. The passing record and raw samples are saved with the
+release evidence before publication. Shared-runner numbers are measured records;
+structural checks run and fail every build. See [timing metadata](/concepts/decisions).
+
 ## Limits of the design
 
 - hiitl judges the action as declared. It reads the envelope's fields; it does not inspect content beyond them, validate reasoning steps, or infer what an unseen system does. Whether the envelope is faithful is the integrating system's responsibility.

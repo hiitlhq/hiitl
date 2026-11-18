@@ -9,7 +9,7 @@
  * Design:
  * - Format detection by file extension (.json, .yaml, .yml)
  * - Fallback: try JSON first (faster), then YAML
- * - mtime-based caching to avoid re-parsing unchanged files
+ * - File identity/change-metadata caching to avoid re-parsing unchanged files
  * - Helpful error messages pointing to policy_format.md
  *
  * @example
@@ -29,6 +29,7 @@ import { z } from 'zod';
 import { PolicySetSchema, assertNumericDomain, assertSchemaNumbers, parseAdmittedNumbers, NumericDomainError } from '@hiitl/core';
 import type { PolicySet } from '@hiitl/core';
 import { PolicyLoadError } from './exceptions.js';
+import { readFileClock } from './file-clock.js';
 
 /**
  * A policy's or route's YAML, read as the JSON it converts to ("a thin parsing layer that converts to JSON",
@@ -64,11 +65,13 @@ export const loadYaml = (content: string, admit = true): unknown => {
 };
 
 /**
- * Cached policy with modification time.
+ * Cached policy with the file identity and change metadata it was read from.
  */
 interface CachedPolicy {
   policy: PolicySet;
-  mtime: number;
+  metadata: string;
+  content: string;
+  timestampsDistinguish: boolean;
 }
 
 /**
@@ -77,7 +80,7 @@ interface CachedPolicy {
  * This loader supports both JSON (primary format) and YAML (convenience layer).
  * Policies are parsed into PolicySet objects and validated with Zod.
  *
- * The loader maintains an mtime-based cache to avoid re-parsing unchanged files.
+ * The loader holds a reading while file identity and change metadata agree.
  * This is critical for performance in high-throughput scenarios.
  *
  * @example
@@ -101,10 +104,10 @@ export class PolicyLoader {
   }
 
   /**
-   * Load policy from JSON or YAML file with mtime-based caching.
+   * Load policy from JSON or YAML file with metadata-based caching.
    *
    * This method:
-   * 1. Checks file modification time
+   * 1. Checks file identity and change metadata
    * 2. Returns cached policy if file unchanged
    * 3. Otherwise, parses file (JSON or YAML)
    * 4. Validates with Zod PolicySet schema
@@ -129,23 +132,34 @@ export class PolicyLoader {
       );
     }
 
-    // Get current file modification time
-    let currentMtime: number;
+    // Read metadata before content, so a concurrent change invalidates on the
+    // next call. BigInt timestamps preserve the filesystem's precision; atime
+    // is a read observation, not a change to the held source.
+    let currentMetadata: string;
+    let current: fs.BigIntStats;
     try {
-      const stats = fs.statSync(this.policyPath);
-      currentMtime = stats.mtimeMs;
+      const stats = current = fs.statSync(this.policyPath, {bigint: true});
+      currentMetadata = [stats.dev, stats.ino, stats.size, stats.mtimeNs, stats.ctimeNs,
+        stats.mode, stats.uid, stats.gid, stats.nlink].join(':');
     } catch (e: any) {
       throw new PolicyLoadError(`Cannot access policy file ${this.policyPath}: ${e.message}`, 'POLICY_LOAD_FAILED');
     }
 
     // Return cached policy if file unchanged
     const cached = this.cache.get(this.policyPath);
-    if (cached && cached.mtime === currentMtime) {
+    if (cached && cached.metadata === currentMetadata && cached.timestampsDistinguish) {
       return cached.policy;
     }
 
-    // Parse file to JavaScript object
-    const policyDict = this._parseFile();
+    const readTime = readFileClock(current);
+    const content = this._readFile();
+    const timestampsDistinguish = readTime !== undefined && current.ctimeNs < readTime;
+    if (cached && cached.metadata === currentMetadata && cached.content === content) {
+      cached.timestampsDistinguish = timestampsDistinguish;
+      return cached.policy;
+    }
+    // Changed content is parsed and admitted at its source, as before.
+    const policyDict = this._parseFile(content);
     try {
       const wrapped=policyDict!==null && typeof policyDict==='object' && Object.hasOwn(policyDict,'policy_set');
       assertSchemaNumbers(policyDict,wrapped?z.object({policy_set:PolicySetSchema}):PolicySetSchema);
@@ -178,7 +192,7 @@ export class PolicyLoader {
     }
 
     // Cache for next call
-    this.cache.set(this.policyPath, { policy, mtime: currentMtime });
+    this.cache.set(this.policyPath, { policy, metadata: currentMetadata, content, timestampsDistinguish });
 
     return policy;
   }
@@ -195,15 +209,16 @@ export class PolicyLoader {
    * @throws {PolicyLoadError} If file cannot be parsed as JSON or YAML
    * @private
    */
-  private _parseFile(): unknown {
-    const ext = path.extname(this.policyPath).toLowerCase();
-
-    let content: string;
+  private _readFile(): string {
     try {
-      content = fs.readFileSync(this.policyPath, 'utf-8');
+      return fs.readFileSync(this.policyPath, 'utf-8');
     } catch (e: any) {
       throw new PolicyLoadError(`Cannot read policy file ${this.policyPath}: ${e.message}`, 'POLICY_LOAD_FAILED');
     }
+  }
+
+  private _parseFile(content = this._readFile()): unknown {
+    const ext = path.extname(this.policyPath).toLowerCase();
 
     // JSON format (primary)
     if (ext === '.json') {

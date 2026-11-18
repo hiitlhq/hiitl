@@ -268,7 +268,7 @@ class TestPolicyLoaderPerformance:
             first = loader.load()
             again = loader.load()
         assert again is first
-        parse.assert_called_once_with()
+        parse.assert_called_once_with((FIXTURES_DIR / "valid_policy.json").read_text())
 
     def test_cache_load_measurements_and_identity(self, tmp_path, record_property):
         """Record cold/cached load durations and assert the cache returns the same object."""

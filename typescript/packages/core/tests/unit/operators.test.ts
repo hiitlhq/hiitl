@@ -219,33 +219,6 @@ describe('evaluateOperator', () => {
     });
   });
 
-  describe('matches operator', () => {
-    it('should return true when string matches regex pattern', () => {
-      expect(evaluateOperator('user@example.com', 'matches', '^[a-z]+@[a-z]+\\.[a-z]+$')).toBe(true);
-      expect(evaluateOperator('12345', 'matches', '^\\d+$')).toBe(true);
-      expect(evaluateOperator('test123', 'matches', 'test\\d+')).toBe(true);
-    });
-
-    it('should return false when string does not match regex pattern', () => {
-      expect(evaluateOperator('invalid-email', 'matches', '^[a-z]+@[a-z]+\\.[a-z]+$')).toBe(false);
-      expect(evaluateOperator('abc', 'matches', '^\\d+$')).toBe(false);
-    });
-
-    it('refuses an operand outside the declared kind', () => {
-      expect(() => evaluateOperator(123, 'matches', '^\\d+$')).toThrow(OperatorKindError);
-      expect(() => evaluateOperator(['test'], 'matches', 'test')).toThrow(OperatorKindError);
-    });
-
-    it('should return false for invalid regex patterns', () => {
-      expect(evaluateOperator('test', 'matches', '[invalid(regex')).toBe(false);
-    });
-
-    it('should return false when field value is null', () => {
-      expect(evaluateOperator(null, 'matches', '^test$')).toBe(false);
-      expect(evaluateOperator(undefined, 'matches', '^test$')).toBe(false);
-    });
-  });
-
   // ========================================
   // Set Operations
   // ========================================

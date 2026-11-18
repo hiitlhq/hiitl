@@ -264,3 +264,5 @@ export { auditHashMatches } from './canonical.js';
 export { OperatorKindError } from './operator-kinds.js';
 
 export { numericInput, assertSchemaNumbers, parseAdmittedNumbers, copySuppliedInput } from "./own-data.js";
+
+export { prepareInputSchemas } from './own-data.js';

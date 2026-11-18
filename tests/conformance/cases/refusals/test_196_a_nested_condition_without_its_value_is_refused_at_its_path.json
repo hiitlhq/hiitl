@@ -1,0 +1,44 @@
+{
+  "test_id": "test_196_a_nested_condition_without_its_value_is_refused_at_its_path",
+  "description": "A condition nested in `any_of` without its value is refused at load at its own value path, naming it (policy_format.md 2.23; gap 322). Its operator is `not_equals`, whose operand kind took any value, so through 2.22 TypeScript loaded it and the condition matched every payment.",
+  "policy_set": {
+    "name": "payments_policy",
+    "version": "v1.0.0",
+    "description": "Payment controls for the finance agent",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
+    "rules": [
+      {
+        "name": "block_refunds_and_foreign_payments",
+        "description": "Refunds and payments outside US dollars are blocked",
+        "priority": 100,
+        "conditions": {
+          "any_of": [
+            {
+              "field": "action",
+              "operator": "equals",
+              "value": "process_refund"
+            },
+            {
+              "field": "parameters.currency",
+              "operator": "not_equals"
+            }
+          ]
+        },
+        "decision": "BLOCK",
+        "reason_code": "PAYMENT_BLOCKED"
+      }
+    ]
+  },
+  "expected_refusal": {
+    "artifact": "policy_set",
+    "at": [
+      "rules.0.conditions.any_of.1.value"
+    ],
+    "names": [
+      "value"
+    ]
+  }
+}

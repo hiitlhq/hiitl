@@ -1,6 +1,6 @@
 {
   "source_sha256": {
-    "docs/specs/policy_format.md": "80267fa81347b64470837c5b4545bd0e2cd78b036f42c637db74dc5a3385b762",
+    "docs/specs/policy_format.md": "91b34ee19b141c4d74eeb7be363a81c449061a298f76681779c742ec0d1c628e",
     "inputs.json": "7951ed4178249978cece1cd4c88754920eab098ebc0396d67d18f942e0a0d336"
   },
   "operators": [

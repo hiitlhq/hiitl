@@ -66,6 +66,7 @@ from hiitl.core.lifecycle import execution_result, recorded_result, result_refus
 from hiitl.core.input_types import supplied
 from hiitl.core.numeric_domain import NumericDomainError, validate_numeric_domain, admitted_numbers, copy_supplied_input
 from hiitl.core.input_types import model_shape
+from hiitl.core.input_declarations import policy_shape
 from hiitl.core.lifecycle import RESULT_NUMBER_SHAPE
 from hiitl.sdk.audit import _admitted_envelope_record
 from hiitl.sdk.admission import call_numeric_shape
@@ -350,6 +351,11 @@ class HIITL:
         except ValueError as e:
             raise ConfigurationError(str(e)) from e
 
+        # Prepare the call's declarations at construction; actual input admission
+        # still runs inside every evaluate and remains in its timing.
+        call_numeric_shape(HIITL.evaluate, Envelope)
+        policy_shape(Decision, Envelope)
+
         if self._mode == "hosted":
             if not settings.server_url:
                 raise ConfigurationError(
@@ -406,6 +412,7 @@ class HIITL:
         try:
             if settings.policy_path is not None:
                 self._policy_loader = PolicyLoader(self.config.policy_path)
+                self._policy_loader.load()
             else:
                 self._policy_loader = None
                 self._empty_policy = _zero_config_policy(settings)
@@ -420,6 +427,8 @@ class HIITL:
                 if self.config.routes_path
                 else None
             )
+        except PolicyLoadError:
+            raise
         except Exception as e:
             raise ConfigurationError(
                 f"Failed to initialize HIITL components: {e}"
@@ -472,6 +481,11 @@ class HIITL:
         )
 
         try:
+            # A supplied file is read where it is supplied, even when the server
+            # cache will take precedence. Its held reading remains the fallback.
+            self._policy_loader = PolicyLoader(policy_path) if policy_path else None
+            if self._policy_loader is not None:
+                self._policy_loader.load()
             # Initialize local evaluator components
             self._evaluator = PolicyEvaluator()
             # Each write redacts the org's declared fields, as last pulled, with the SDK's own (row 163(a))
@@ -513,7 +527,6 @@ class HIITL:
 
             # Policy source resolution:
             # Server cache > disk cache > local policy file > empty (OBSERVE_ALL)
-            self._policy_loader = None
             self._empty_policy = _zero_config_policy(settings)
 
             if not has_cache:
@@ -542,7 +555,6 @@ class HIITL:
                         self._eval_mode,
                         policy_path,
                     )
-                    self._policy_loader = PolicyLoader(policy_path)
                 elif not initial_ok:
                     # TICKET-116: cold-start sync failed and no local
                     # fallback. Behavior depends on cold_start_behavior:
@@ -586,7 +598,7 @@ class HIITL:
             self._sync_engine.start()
             logger.info("Hybrid mode active: local evaluation + background sync")
 
-        except ConfigurationError:
+        except (ConfigurationError, PolicyLoadError):
             raise
         except Exception as e:
             # TICKET-116: ColdStartError is an intentional fail-closed signal,

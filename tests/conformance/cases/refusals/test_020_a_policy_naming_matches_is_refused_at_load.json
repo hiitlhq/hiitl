@@ -1,0 +1,40 @@
+{
+  "test_id": "test_020_a_policy_naming_matches_is_refused_at_load",
+  "description": "A condition naming `matches`, which left the format at 2.22, is refused at load at its operator, naming it and the operators to use in its place (policy_format.md 2.22; HTL-45 8613a7bc; R-0173). Was the operator's decision case.",
+  "policy_set": {
+    "version": "v1.0.0",
+    "description": "Outbound email to company addresses is allowed",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "allow_company_emails",
+        "priority": 100,
+        "conditions": {
+          "field": "parameters.recipient",
+          "operator": "matches",
+          "value": "^[a-zA-Z0-9._%+-]+@company\\.com$"
+        },
+        "decision": "ALLOW",
+        "reason_code": "COMPANY_EMAIL",
+        "description": "Email to a company address is allowed"
+      }
+    ]
+  },
+  "expected_refusal": {
+    "artifact": "policy_set",
+    "at": [
+      "rules.0.conditions.operator"
+    ],
+    "names": [
+      "matches",
+      "starts_with",
+      "ends_with",
+      "contains",
+      "in"
+    ]
+  }
+}

@@ -1,7 +1,7 @@
 {
   "authority": "policy_format.md Reserved value forms; 88579bbd",
   "source_hashes": {
-    "docs/specs/policy_format.md": "80267fa81347b64470837c5b4545bd0e2cd78b036f42c637db74dc5a3385b762",
+    "docs/specs/policy_format.md": "91b34ee19b141c4d74eeb7be363a81c449061a298f76681779c742ec0d1c628e",
     "tests/conformance/input_contract/policy-witnesses.json": "699024279e2de96868ef0207f172e48616320136f074590d13200a6b06a64029"
   },
   "cases": [

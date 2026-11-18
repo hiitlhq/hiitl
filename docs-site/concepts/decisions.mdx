@@ -173,7 +173,9 @@ Every decision includes timing so you can verify that hiitl is not adding meanin
 | `evaluation_ms` | Time spent in policy evaluation |
 | `total_ms` | Locally: the evaluator's time. Hosted: the service's time for the request. Network time is not included |
 
-**Latency targets**: sub-millisecond locally, low tens of milliseconds hosted. If `total_ms` consistently exceeds these, it is a performance bug.
+**Latency targets** apply to the evaluator and the whole call separately: typical core evaluation is under 1 ms; the whole local or hybrid call is under 10 ms; hosted is under 50 ms, region-dependent. First calls count after declared startup. Each release asserts p95 on its named machine and saves the samples with the release evidence; shared runners record samples rather than asserting speed. The 0.2.0 release environment is the native Apple M5 Max Mac (128 GiB, macOS 26.6.2, local APFS SSD), across the public Python and Node runtime matrix. A passing release record is required before publication.
+
+A local or hybrid call also performs a synchronous durable disk write for its audit record. That write's time depends on the disk and is included in the whole-call measurement. It is not included in the current local `total_ms`; see [the timing limit](/reference/limits-and-roadmap).
 
 ## Remediation
 

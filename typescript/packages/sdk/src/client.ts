@@ -61,6 +61,9 @@ import {
   PolicyEvaluator,
   OperatorKindError,
   EnvelopeSchema,
+  DecisionSchema,
+  RouteSchema,
+  prepareInputSchemas,
   ENVELOPE_SCHEMA_VERSION,
   PolicySetSchema,
   DecisionType,
@@ -113,6 +116,7 @@ import { HostedClient } from './http-client.js';
 import type { CircuitBreakerStatus } from './circuit-breaker.js';
 import { SyncCache } from './sync-cache.js';
 import { SyncEngine } from './sync-engine.js';
+import {syncNumberSchema} from './sync-numbers.js';
 import { activeTraceId } from './trace-context.js';
 import {
   ConfigurationError,
@@ -303,6 +307,8 @@ export class HIITL {
       if (e instanceof ConfigurationError) throw e;
       throw new ConfigurationError(`Invalid HIITL configuration: ${e.message}`);
     }
+    prepareInputSchemas(EvaluateNumbers, EnvelopeSchema, DecisionSchema, PolicySetSchema, RouteSchema,
+      ...['policy','routes','kill_switches','audit','telemetry'].map(channel => syncNumberSchema(channel)));
     const sync = options.sync ?? true;
     this._principalVerifier = options.principal_verifier;
     if (options.route_fetch) this._routeFetch = options.route_fetch;
@@ -477,8 +483,7 @@ export class HIITL {
    * Mirrors Python's `_init_hybrid` (TICKET-116) within JS constraints:
    * the constructor cannot block on `initialSync` because JS constructors
    * cannot be async. Instead:
-   *   1. Create the SyncCache and synchronously kick off `loadFromDisk`
-   *      (an async operation; its result feeds the cold-start branch).
+   *   1. Create the SyncCache and read its disk cache during construction.
    *   2. Create the SyncEngine.
    *   3. Fire `initialSync` in the background, store the resulting promise
    *      on `_initialSyncPromise`. Log the outcome per cold_start_behavior.
@@ -491,6 +496,7 @@ export class HIITL {
    */
   private _initHybrid(options: HIITLConfigInput): void {
     const { max_cache_stale_age, ...engineSettings } = options.sync_config ?? {};
+    let hadDiskCache: boolean;
     try {
       this.syncCache = new SyncCache({
         cache_dir: options.cache_dir,
@@ -498,6 +504,7 @@ export class HIITL {
         environment: this.config!.environment,
         max_stale_age: max_cache_stale_age,
       });
+      hadDiskCache = this.syncCache.loadFromDiskSync();
 
       this.syncEngine = new SyncEngine({
         sync_config: {
@@ -516,11 +523,11 @@ export class HIITL {
       );
     }
 
-    // Background cold-start sequence: load from disk → if cold, initial
+    // The disk cache is already held. If cold, initial
     // sync → start background ticks. Captured into `_initialSyncPromise`
     // so evaluate() can await it in fail-closed mode.
     this._initialSyncPromise = this._coldStartSequence(
-      this.syncCache,
+      hadDiskCache,
       this.syncEngine,
       this._syncInitTimeoutSec
     );
@@ -541,12 +548,10 @@ export class HIITL {
    * @private
    */
   private async _coldStartSequence(
-    cache: SyncCache,
+    hadDiskCache: boolean,
     engine: SyncEngine,
     timeoutSec: number
   ): Promise<boolean> {
-    const hadDiskCache = await cache.loadFromDisk();
-
     let initialOk = hadDiskCache;
     if (!hadDiskCache) {
       try {

@@ -1,7 +1,8 @@
 /**
  * Performance benchmarks for PolicyEvaluator.
  *
- * Goal: Enforce the public typical-core evaluation target (matching Python).
+ * Goal: Record the public typical-core target, asserting it at release (matching Python).
+ * Each cell runs its warmup, then the run whose p95 is read; the timing catalogue declares both (HTL-17 19d576ee).
  *
  * Benchmarks:
  * 1. Simple atomic condition
@@ -11,18 +12,12 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { typicalCoreBudgetMs } from '../../../../test-support/declarations.js';
+import { latencyRun, latencyStatistic, recordLatency, timeCalls } from '../../../../test-support/latency.js';
 import { recordMeasurement } from '../../../../test-support/measurements.js';
 import { PolicyEvaluator } from '../../src/evaluator.js';
 import { DecisionType, ENVELOPE_SCHEMA_VERSION } from '../../src/types.js';
 import type { Envelope, PolicySet } from '../../src/types.js';
 
-// These typical-policy fixtures read the same public declaration as the Python cells.
-const TYPICAL_CORE_MS = typicalCoreBudgetMs(
-  readFileSync(join(__dirname, '../../../../../docs/specs/decision_response.md'), 'utf8'),
-);
 const SOURCE = 'typescript/packages/core/tests/unit/performance.test.ts';
 
 describe('Performance Benchmarks', () => {
@@ -71,28 +66,21 @@ describe('Performance Benchmarks', () => {
     };
 
     const evaluator = new PolicyEvaluator();
-    const envelopes = Array.from({ length: 1000 }, () => baseEnvelope);
+    const run = latencyRun('core/simple-atomic');
 
-    // Warmup run (to avoid JIT compilation overhead)
-    for (let i = 0; i < 100; i++) {
-      evaluator.evaluate(baseEnvelope, policy);
-    }
+    // Warmup run (to avoid JIT compilation overhead), timed so the record shows it ran
+    const warmup = timeCalls(run.warmup, () => evaluator.evaluate(baseEnvelope, policy));
 
     // Benchmark run
-    const start = performance.now();
-    for (const envelope of envelopes) {
-      evaluator.evaluate(envelope, policy);
-    }
-    const elapsed = performance.now() - start;
-
-    const avgMs = elapsed / envelopes.length;
+    const samples = timeCalls(run.count, () => evaluator.evaluate(baseEnvelope, policy));
+    const p95 = latencyStatistic(samples);
 
     // Log performance for visibility
-    console.log(`Simple atomic condition: ${avgMs.toFixed(4)}ms average (${envelopes.length} iterations)`);
+    console.log(`Simple atomic condition: ${p95.toFixed(4)}ms p95 (${samples.length} iterations after ${warmup.length} warmup)`);
 
     recordMeasurement({ metric: 'core evaluation duration', unit: 'ms', source: `${SOURCE}#simple-atomic`,
-      value: avgMs, sample_count: envelopes.length, statistic: 'arithmetic mean' });
-    expect(avgMs).toBeLessThan(TYPICAL_CORE_MS);
+      value: p95, samples, sample_count: samples.length, statistic: 'p95' });
+    recordLatency('core/simple-atomic', samples, 'core', warmup);
   });
 
   it('logical operators meet the declared typical-core budget', () => {
@@ -132,27 +120,20 @@ describe('Performance Benchmarks', () => {
     };
 
     const evaluator = new PolicyEvaluator();
-    const envelopes = Array.from({ length: 1000 }, () => baseEnvelope);
+    const run = latencyRun('core/logical-all-of');
 
-    // Warmup
-    for (let i = 0; i < 100; i++) {
-      evaluator.evaluate(baseEnvelope, policy);
-    }
+    // Warmup run (to avoid JIT compilation overhead), timed so the record shows it ran
+    const warmup = timeCalls(run.warmup, () => evaluator.evaluate(baseEnvelope, policy));
 
-    // Benchmark
-    const start = performance.now();
-    for (const envelope of envelopes) {
-      evaluator.evaluate(envelope, policy);
-    }
-    const elapsed = performance.now() - start;
+    // Benchmark run
+    const samples = timeCalls(run.count, () => evaluator.evaluate(baseEnvelope, policy));
+    const p95 = latencyStatistic(samples);
 
-    const avgMs = elapsed / envelopes.length;
-
-    console.log(`Logical operators (all_of): ${avgMs.toFixed(4)}ms average (${envelopes.length} iterations)`);
+    console.log(`Logical operators (all_of): ${p95.toFixed(4)}ms p95 (${samples.length} iterations after ${warmup.length} warmup)`);
 
     recordMeasurement({ metric: 'core evaluation duration', unit: 'ms', source: `${SOURCE}#logical-all-of`,
-      value: avgMs, sample_count: envelopes.length, statistic: 'arithmetic mean' });
-    expect(avgMs).toBeLessThan(TYPICAL_CORE_MS);
+      value: p95, samples, sample_count: samples.length, statistic: 'p95' });
+    recordLatency('core/logical-all-of', samples, 'core', warmup);
   });
 
   it('priority sorting meets the declared typical-core budget', () => {
@@ -202,27 +183,20 @@ describe('Performance Benchmarks', () => {
     };
 
     const evaluator = new PolicyEvaluator();
-    const envelopes = Array.from({ length: 1000 }, () => baseEnvelope);
+    const run = latencyRun('core/priority-sorting');
 
-    // Warmup
-    for (let i = 0; i < 100; i++) {
-      evaluator.evaluate(baseEnvelope, policy);
-    }
+    // Warmup run (to avoid JIT compilation overhead), timed so the record shows it ran
+    const warmup = timeCalls(run.warmup, () => evaluator.evaluate(baseEnvelope, policy));
 
-    // Benchmark
-    const start = performance.now();
-    for (const envelope of envelopes) {
-      evaluator.evaluate(envelope, policy);
-    }
-    const elapsed = performance.now() - start;
+    // Benchmark run
+    const samples = timeCalls(run.count, () => evaluator.evaluate(baseEnvelope, policy));
+    const p95 = latencyStatistic(samples);
 
-    const avgMs = elapsed / envelopes.length;
-
-    console.log(`Multiple rules (priority sorting): ${avgMs.toFixed(4)}ms average (${envelopes.length} iterations)`);
+    console.log(`Multiple rules (priority sorting): ${p95.toFixed(4)}ms p95 (${samples.length} iterations after ${warmup.length} warmup)`);
 
     recordMeasurement({ metric: 'core evaluation duration', unit: 'ms', source: `${SOURCE}#priority-sorting`,
-      value: avgMs, sample_count: envelopes.length, statistic: 'arithmetic mean' });
-    expect(avgMs).toBeLessThan(TYPICAL_CORE_MS);
+      value: p95, samples, sample_count: samples.length, statistic: 'p95' });
+    recordLatency('core/priority-sorting', samples, 'core', warmup);
   });
 
   it('nested conditions meet the declared typical-core budget', () => {
@@ -266,27 +240,20 @@ describe('Performance Benchmarks', () => {
     };
 
     const evaluator = new PolicyEvaluator();
-    const envelopes = Array.from({ length: 1000 }, () => baseEnvelope);
+    const run = latencyRun('core/nested-conditions');
 
-    // Warmup
-    for (let i = 0; i < 100; i++) {
-      evaluator.evaluate(baseEnvelope, policy);
-    }
+    // Warmup run (to avoid JIT compilation overhead), timed so the record shows it ran
+    const warmup = timeCalls(run.warmup, () => evaluator.evaluate(baseEnvelope, policy));
 
-    // Benchmark
-    const start = performance.now();
-    for (const envelope of envelopes) {
-      evaluator.evaluate(envelope, policy);
-    }
-    const elapsed = performance.now() - start;
+    // Benchmark run
+    const samples = timeCalls(run.count, () => evaluator.evaluate(baseEnvelope, policy));
+    const p95 = latencyStatistic(samples);
 
-    const avgMs = elapsed / envelopes.length;
-
-    console.log(`Nested conditions: ${avgMs.toFixed(4)}ms average (${envelopes.length} iterations)`);
+    console.log(`Nested conditions: ${p95.toFixed(4)}ms p95 (${samples.length} iterations after ${warmup.length} warmup)`);
 
     recordMeasurement({ metric: 'core evaluation duration', unit: 'ms', source: `${SOURCE}#nested-conditions`,
-      value: avgMs, sample_count: envelopes.length, statistic: 'arithmetic mean' });
-    expect(avgMs).toBeLessThan(TYPICAL_CORE_MS);
+      value: p95, samples, sample_count: samples.length, statistic: 'p95' });
+    recordLatency('core/nested-conditions', samples, 'core', warmup);
   });
 
   it('should report timing metadata accurately', () => {

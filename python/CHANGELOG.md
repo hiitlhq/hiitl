@@ -7,7 +7,7 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ---
 
-## [0.2.0] — 2026-11-16
+## [0.2.0] — 2026-11-18
 
 <!-- Prepared release date: re-date this entry if publication slips. -->
 
@@ -17,7 +17,32 @@ The first release since 0.1.0. The evaluator moves from policy format 1.3 to
 MCP proxy. Format 2.0 is a schema break: a 0.1.0 policy whose rules set
 `enabled` or `mode` is refused on load until it is migrated (see **Removed**).
 
+### Verification
+
+- Latency targets and durable audit writes are unchanged. Structural checks fail
+  every build; timing cells assert p95 only under `HIITL_RELEASE_LATENCY=1` in the
+  named release environment and record samples otherwise. The release check
+  refuses missing, incomplete, unasserted or over-target evidence for its export
+  commit. Shared-runner samples remain artifacts, not a release certificate.
+
 ### Breaking changes
+
+- **Policy files load when the client is constructed.** A missing, unreadable or
+  unparsable supplied file raises `PolicyLoadError` before an envelope exists,
+  as in the TypeScript SDK. One-time file setup is paid at construction rather
+  than by the first guarded action. A later file-load failure still returns a
+  recorded `POLICY_ERROR` decision.
+- **Held policy files follow identity, change metadata and the platform clock.**
+  A permission change, replacement or edit that preserves mtime causes a reload.
+  A reading made within the same timestamp tick is confirmed by content until
+  the platform timestamps distinguish a later rewrite. An unchanged file then
+  needs no content read during evaluation. A source whose clock cannot be
+  observed remains confirmed by content; its directory need not be writable.
+- **One-time admission declarations are prepared at construction.** This includes
+  the direct core evaluator, decision/audit shapes and every sync channel's shapes before the first
+  background cycle. The call's actual admission remains inside its timing.
+  Earlier fresh-process measurements and the hand-back's costs are
+  retained in tests/conformance/sdk_startup; they are measurements, not limits.
 
 - **Reserved policy markers refuse malformed forms at load.** `$field`, `$declared` and `$uncalibrated` must be the sole key at a position that reads that form. Sibling keys and unsupported positions are refused; nested values gain no new resolution. Envelope-owned keys remain ordinary data.
 - **Numeric remedies follow the member type.** A typed numeric member must be a number in its declared range. Text is a remedy only in open data that admits it.
@@ -62,6 +87,14 @@ MCP proxy. Format 2.0 is a schema break: a 0.1.0 policy whose rules set
   422 validation list, not `EVALUATION_FAILED`/500, naming the field and its
   declared type and range, recommending text only where text is admitted.
   Even with a string `action_id`, this refusal leaves no decision or audit record.
+
+- **The `matches` operator is removed.** A policy naming it is refused at load
+  (`PolicyLoadError`) at the condition's `operator`, and the refusal names the
+  operators to use in its place: `starts_with` or `ends_with` for a prefix or
+  suffix, `contains` for a substring, `in` for a set of values. End an allowlist
+  prefix at a boundary (`"https://hooks.slack.com/"`, with its slash), so a host
+  that only begins with an allowed one is not admitted. The envelope schema's
+  `pattern` checks on hiitl's own identifiers are unchanged.
 
 ### Added
 
@@ -166,6 +199,12 @@ MCP proxy. Format 2.0 is a schema break: a 0.1.0 policy whose rules set
   `ColdStartError` are importable from `hiitl`, like every other SDK error.
 
 ### Changed
+
+- **An object that is neither condition form is refused at its own path.** `{}`,
+  or an object setting two of `all_of`, `any_of` and `none_of`, was already
+  refused; the refusal is now located at the condition itself and names "Exactly
+  one of all_of, any_of, or none_of must be set", as in TypeScript, in place of
+  pydantic's union labels.
 
 - **Explicit null in a route is refused wherever the route schema excludes it.**
   Both loaders name the field, including nested members, array items, typed map
@@ -430,6 +469,13 @@ MCP proxy. Format 2.0 is a schema break: a 0.1.0 policy whose rules set
   observes under `OBSERVE_ALL` and blocks under `RESPECT_POLICY`. The default
   log level is WARNING and `cache_status` reports the cache state. Callers
   who want INFO logging pass `cold_start_behavior='observe-silent'`.
+
+- **Conditions naming `matches`.** Rewrite each one: a pattern anchored at the
+  start becomes `starts_with`, ending the prefix at a boundary such as `/`; one
+  anchored at the end becomes `ends_with`; an unanchored literal becomes
+  `contains`; an alternation of whole values becomes `in`. A pattern none of them
+  expresses is read by the caller and declared in the envelope, for example as a
+  boolean parameter the policy reads with `equals`.
 
 ## [0.1.0] — 2026-03-15 (initial PyPI publish)
 

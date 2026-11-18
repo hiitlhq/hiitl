@@ -41,7 +41,7 @@ def generate():
     text=(ROOT/'docs/specs/policy_format.md').read_text()
     section=text.split('### Comparison Operators',1)[1].split('###',1)[0]
     operators=re.findall(r'^\| `([^`]+)` \|',section,re.M)
-    supported={'equals','not_equals','greater_than','greater_than_or_equal','less_than','less_than_or_equal','contains','not_contains','in','not_in','starts_with','ends_with','matches','exists','conforms_to'}
+    supported={'equals','not_equals','greater_than','greater_than_or_equal','less_than','less_than_or_equal','contains','not_contains','in','not_in','starts_with','ends_with','exists','conforms_to'}
     if set(operators)!=supported:raise ValueError(f'unread operator declaration: {set(operators)^supported}')
     original=json.loads((HERE/'lexical-original.json').read_text());base=copy.deepcopy(original[0]);cases=[]
     for member in date_leaves(schema):
@@ -49,7 +49,7 @@ def generate():
         env=copy.deepcopy(base['envelope']);set_at(env,path,written)
         for op in operators:
             numeric=op in ('greater_than','greater_than_or_equal','less_than','less_than_or_equal')
-            right=1 if numeric else [written] if op in ('in','not_in') else True if op=='exists' else {} if op=='conforms_to' else '^'+re.escape(written)+'$' if op=='matches' else written
+            right=1 if numeric else [written] if op in ('in','not_in') else True if op=='exists' else {} if op=='conforms_to' else written
             expected='error' if numeric or op=='conforms_to' else op not in ('not_equals','not_contains','not_in')
             for reference in ([False] if op=='exists' else [False,True]):
                 e=copy.deepcopy(env);e['parameters']['right']=right
@@ -60,7 +60,6 @@ def generate():
                 e=copy.deepcopy(env);e['parameters']['left']=written
                 error=numeric or op in ('in','not_in','conforms_to')
                 expected='error' if error else op not in ('not_equals','not_contains')
-                if op=='matches':e['parameters']['left']='no match';expected=False
                 cases.append({'id':f'{field}/{op}/date-right','member':member,'envelope':e,'condition':{'field':'parameters.left','operator':op,'value':{'$field':field}},'expected':expected})
         # Negatives: same instant is not the same text, and finer fractions are not truncated.
         for other in ('2026-11-14T01:02:03.123456789+05:30','2026-11-14t01:02:03.123456+05:30'):

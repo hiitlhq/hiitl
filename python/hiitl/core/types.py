@@ -18,7 +18,8 @@ from hiitl.core.date_time import DateTime, DateText
 from hiitl.core.input_types import JsonInteger, JsonNumber, validate_input, number_input
 from hiitl.core.numeric_domain import numbers_are_admitted
 from hiitl.core.policy_values import validate_policy_values
-from hiitl.core.input_declarations import blocked_fields_refusal, policy_shape, retired_rule_refusal
+from hiitl.core.input_declarations import (LOGICAL_SETS, blocked_fields_refusal, logical_sets_refusal, policy_shape,
+                                           retired_rule_refusal)
 
 
 # ============================================================================
@@ -257,7 +258,6 @@ class ConditionOperator(str, Enum):
     NOT_CONTAINS = "not_contains"
     STARTS_WITH = "starts_with"
     ENDS_WITH = "ends_with"
-    MATCHES = "matches"
 
     # Set operations
     IN = "in"
@@ -368,15 +368,9 @@ class LogicalCondition(BaseModel):
     @model_validator(mode='after')
     def validate_exactly_one_logical_op(self):
         """Ensure exactly one logical operator is set."""
-        set_ops = sum([
-            self.all_of is not None,
-            self.any_of is not None,
-            self.none_of is not None,
-        ])
-        if set_ops != 1:
-            raise ValueError(
-                "Exactly one of all_of, any_of, or none_of must be set"
-            )
+        detail = logical_sets_refusal({name: getattr(self, name) for name in LOGICAL_SETS})
+        if detail:
+            raise ValueError(detail)
         return self
 
 

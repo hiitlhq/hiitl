@@ -14,6 +14,11 @@ from pathlib import Path
 import re
 import subprocess
 
+import advisory_gate
+
+# Their advisories are decided by the advisory gate (HTL-17 `4d086f19`), never by their exit codes alone.
+GATED = {"python-audit", "core-audit", "sdk-audit"}
+
 
 def _components(component):
     yield component
@@ -69,6 +74,13 @@ def _run(command, *, evidence_name, **kwargs):
     return subprocess.run(command, **kwargs)
 
 
+def _read(path):
+    try:
+        return path.read_text()
+    except OSError:
+        return None
+
+
 def python_audit_coverage(installed, audit):
     """Compare the auditor's subjects with the measured environment itself."""
     rows = audit["dependencies"]
@@ -118,6 +130,7 @@ def collect(root, output, python, *, run=_run):
         (output / f"{name}.stderr.txt").write_text(result.stderr)
         commands.append({"name": name, "command": command, "cwd": str(cwd.relative_to(root)),
                          "returncode": result.returncode})
+        return result.returncode
 
     invoke("python-sbom", ["cyclonedx-py", "environment", "--of", "JSON", "--output-file",
                           str(output / "python.cdx.json"), str(python)], root)
@@ -127,13 +140,17 @@ def collect(root, output, python, *, run=_run):
            root, "python.installed.json")
     invoke("python-freeze", [str(python), "-m", "pip", "freeze", "--all", "--exclude", "hiitl"],
            root, "python.requirements.txt")
-    invoke("python-audit", ["pip-audit", "--requirement", str(output / "python.requirements.txt"),
+    invoke("python-inspect", [str(python), "-m", "pip", "inspect"], root, "python.inspect.json")
+    audited = invoke("python-audit", ["pip-audit", "--requirement", str(output / "python.requirements.txt"),
                            "--disable-pip", "--no-deps", "--format", "json", "--output", str(output / "python.audit.json")], root)
+    npm_subjects = []
     for package in ("core", "sdk"):
         cwd = root / "typescript/packages" / package
         invoke(f"{package}-sbom", ["npx", "--yes", "@cyclonedx/cyclonedx-npm@6.0.1",
                "--output-format", "JSON", "--output-file", str(output / f"{package}.cdx.json")], cwd)
-        invoke(f"{package}-audit", ["npm", "audit", "--json"], cwd, f"{package}.audit.json")
+        returncode = invoke(f"{package}-audit", ["npm", "audit", "--json"], cwd, f"{package}.audit.json")
+        npm_subjects.append(advisory_gate.npm_subject(cwd, _read(output / f"{package}.audit.json"), returncode,
+                                                      label=f"typescript/packages/{package}"))
 
     try:
         coverage = python_audit_coverage(json.loads((output / "python.installed.json").read_text()),
@@ -144,6 +161,12 @@ def collect(root, output, python, *, run=_run):
     except (OSError, ValueError, TypeError, KeyError) as exc:
         errors.append(str(exc))
 
+    subjects = [advisory_gate.python_subject(_read(output / "python.inspect.json"),
+                                             _read(output / "python.audit.json"), audited,
+                                             package=root / "python", label="python"), *npm_subjects]
+    if not advisory_gate.write_record(output, subjects):
+        errors.append("Dependency advisories fail the gate (advisories.md)")
+
     try:
         inventory = licence_inventory([output / f"{name}.cdx.json" for name in ("python", "core", "sdk")])
         (output / "licenses.json").write_text(json.dumps(inventory, indent=2) + "\n")
@@ -152,7 +175,7 @@ def collect(root, output, python, *, run=_run):
             json.loads((output / name).read_text())
     except (OSError, ValueError, TypeError, KeyError) as exc:
         errors.append(str(exc))
-    failed = any(command["returncode"] != 0 for command in commands) or bool(errors)
+    failed = any(command["returncode"] != 0 for command in commands if command["name"] not in GATED) or bool(errors)
     artifacts = {p.name: hashlib.sha256(p.read_bytes()).hexdigest()
                  for p in sorted(output.iterdir()) if p.is_file() and p.name != "run.json"}
     record = {"source_commit": os.environ.get("GITHUB_SHA"),

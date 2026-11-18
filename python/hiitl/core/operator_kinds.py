@@ -17,7 +17,7 @@ def literal_kind_ok(operator, value):
     """Only kinds declared by the operator alone; contains depends on its left operand."""
     if operator in ("greater_than", "greater_than_or_equal", "less_than", "less_than_or_equal"):
         return isinstance(value, (int, float)) and not isinstance(value, bool)
-    if operator in ("starts_with", "ends_with", "matches"):
+    if operator in ("starts_with", "ends_with"):
         return isinstance(value, str)
     if operator in ("in", "not_in"):
         return isinstance(value, list)
@@ -35,7 +35,7 @@ def require_operand_kinds(left, operator, right):
     valid = True
     if operator in ("greater_than", "greater_than_or_equal", "less_than", "less_than_or_equal"):
         valid = valid and isinstance(left, (int, float)) and not isinstance(left, bool)
-    elif operator in ("starts_with", "ends_with", "matches"):
+    elif operator in ("starts_with", "ends_with"):
         valid = valid and isinstance(left, str)
     elif operator in ("contains", "not_contains"):
         valid = isinstance(left, list) or isinstance(left, str) and isinstance(right, str)

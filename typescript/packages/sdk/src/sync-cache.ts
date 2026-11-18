@@ -38,13 +38,10 @@ import {syncNumberSchema} from './sync-numbers.js';
  */
 
 import { createHash, randomUUID } from 'node:crypto';
-import { existsSync, statSync } from 'node:fs';
+import { existsSync, statSync, readdirSync, readFileSync, unlinkSync } from 'node:fs';
 import {
   mkdir,
-  readdir,
-  readFile,
   rename,
-  stat,
   unlink,
   writeFile,
 } from 'node:fs/promises';
@@ -198,33 +195,38 @@ export class SyncCache {
    * non-fatal — the channel simply stays uninitialized.
    */
   async loadFromDisk(): Promise<boolean> {
-    await this._cleanupOrphans();
+    return this.loadFromDiskSync();
+  }
+
+  /** Construction-time warm start (sync_engine.md §5). Same admission and integrity reader. */
+  loadFromDiskSync(): boolean {
+    this._cleanupOrphans();
     let loadedAny = false;
 
-    const policies = await this._readJson('policies.json');
+    const policies = this._readJson('policies.json');
     if (policies !== null && typeof policies === 'object' && !Array.isArray(policies)) {
       this._policies = policies as Record<string, unknown>;
       this._policySet = cachedPolicySet(policies) ?? null;
-      this._policiesUpdatedAt = await this._fileMtime('policies.json');
-      this._policiesEtag = await this._readText('policies.etag');
+      this._policiesUpdatedAt = this._fileMtime('policies.json');
+      this._policiesEtag = this._readText('policies.etag');
       loadedAny = true;
       this.log.info('Loaded cached policies from disk');
     }
 
-    const routes = await this._readJson('routes.json');
+    const routes = this._readJson('routes.json');
     if (Array.isArray(routes)) {
       this._routes = routes as Array<Record<string, unknown>>;
-      this._routesUpdatedAt = await this._fileMtime('routes.json');
-      this._routesEtag = await this._readText('routes.etag');
+      this._routesUpdatedAt = this._fileMtime('routes.json');
+      this._routesEtag = this._readText('routes.etag');
       loadedAny = true;
       this.log.info('Loaded cached routes from disk');
     }
 
-    const tick = await this._readJson('kill_switches.json');
+    const tick = this._readJson('kill_switches.json');
     if (tick !== null && typeof tick === 'object' && !Array.isArray(tick)) {
       // A tick read at start has had no pull after it, so its part stands until the first one lands (row 240)
       this._holdTick(tick as Record<string, unknown>);
-      this._killSwitchesUpdatedAt = await this._fileMtime('kill_switches.json');
+      this._killSwitchesUpdatedAt = this._fileMtime('kill_switches.json');
       loadedAny = true;
       this.log.info('Loaded cached kill switches from disk');
     } else if (tick !== null) {
@@ -507,21 +509,21 @@ export class SyncCache {
   }
 
   /** Remove orphaned .tmp files older than `maxAgeSeconds` (default 300s). */
-  private async _cleanupOrphans(maxAgeSeconds = 300): Promise<number> {
+  private _cleanupOrphans(maxAgeSeconds = 300): number {
     if (!existsSync(this.baseDir)) return 0;
     let removed = 0;
     const now = Date.now() / 1000;
     try {
-      const entries = await readdir(this.baseDir);
+      const entries = readdirSync(this.baseDir);
       for (const entry of entries) {
         if (!entry.endsWith('.tmp')) continue;
         const fullPath = path.join(this.baseDir, entry);
         try {
-          const st = await stat(fullPath);
+          const st = statSync(fullPath);
           if (!st.isFile()) continue;
           const ageSeconds = now - st.mtimeMs / 1000;
           if (ageSeconds > maxAgeSeconds) {
-            await unlink(fullPath);
+            unlinkSync(fullPath);
             removed++;
           }
         } catch {
@@ -624,13 +626,13 @@ export class SyncCache {
    * nothing, so the safe action is to discard the cached data
    * (sync_engine.md §4 "Integrity"; HTL-29 row 137).
    */
-  private async _readJson(filename: string): Promise<unknown> {
+  private _readJson(filename: string): unknown {
     const filePath = path.join(this.baseDir, filename);
     if (!existsSync(filePath)) return null;
 
     let raw: Buffer;
     try {
-      raw = await readFile(filePath);
+      raw = readFileSync(filePath);
     } catch (err) {
       this.log.warn(
         `Failed to read cache file ${filePath}: ${err instanceof Error ? err.message : String(err)}`
@@ -653,7 +655,7 @@ export class SyncCache {
     const hashPath = `${filePath}.sha256`;
     let expected: string;
     try {
-      expected = (await readFile(hashPath, 'utf-8')).trim();
+      expected = readFileSync(hashPath, 'utf-8').trim();
     } catch (err) {
       this.log.error(
         `CACHE_INTEGRITY_VIOLATION: ${filePath} has no readable content hash ` +
@@ -674,11 +676,11 @@ export class SyncCache {
     return parsed;
   }
 
-  private async _readText(filename: string): Promise<string | null> {
+  private _readText(filename: string): string | null {
     const filePath = path.join(this.baseDir, filename);
     if (!existsSync(filePath)) return null;
     try {
-      const content = await readFile(filePath, 'utf-8');
+      const content = readFileSync(filePath, 'utf-8');
       return content.trim();
     } catch (err) {
       this.log.warn(
@@ -700,7 +702,7 @@ export class SyncCache {
    * (caller checked) and the operation runs only during cold-start
    * warm-up, not on the hot path.
    */
-  private async _fileMtime(filename: string): Promise<number> {
+  private _fileMtime(filename: string): number {
     const filePath = path.join(this.baseDir, filename);
     try {
       const st = statSync(filePath);

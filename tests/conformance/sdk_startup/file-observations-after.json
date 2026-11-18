@@ -1,0 +1,934 @@
+{
+  "python": [
+    {
+      "mode": "local",
+      "format": "json",
+      "when": "construction",
+      "fault": "missing",
+      "error": "PolicyLoadError",
+      "reason": "POLICY_NOT_FOUND"
+    },
+    {
+      "mode": "local",
+      "format": "json",
+      "when": "construction",
+      "fault": "unreadable",
+      "error": "PolicyLoadError",
+      "reason": "POLICY_LOAD_FAILED"
+    },
+    {
+      "mode": "local",
+      "format": "json",
+      "when": "construction",
+      "fault": "unparsable",
+      "error": "PolicyLoadError",
+      "reason": "POLICY_VALIDATION_ERROR"
+    },
+    {
+      "mode": "local",
+      "format": "json",
+      "when": "construction",
+      "fault": "unparsable-same-mtime",
+      "error": "PolicyLoadError",
+      "reason": "POLICY_VALIDATION_ERROR"
+    },
+    {
+      "mode": "local",
+      "format": "json",
+      "when": "after-construction",
+      "fault": "missing",
+      "decision": "POLICY_ERROR",
+      "version": "",
+      "reasons": [
+        "POLICY_NOT_FOUND"
+      ],
+      "record_decisions": [
+        "POLICY_ERROR"
+      ]
+    },
+    {
+      "mode": "local",
+      "format": "json",
+      "when": "after-construction",
+      "fault": "unreadable",
+      "decision": "POLICY_ERROR",
+      "version": "",
+      "reasons": [
+        "POLICY_LOAD_FAILED"
+      ],
+      "record_decisions": [
+        "POLICY_ERROR"
+      ]
+    },
+    {
+      "mode": "local",
+      "format": "json",
+      "when": "after-construction",
+      "fault": "unparsable",
+      "decision": "POLICY_ERROR",
+      "version": "",
+      "reasons": [
+        "POLICY_VALIDATION_ERROR"
+      ],
+      "record_decisions": [
+        "POLICY_ERROR"
+      ]
+    },
+    {
+      "mode": "local",
+      "format": "json",
+      "when": "after-construction",
+      "fault": "unparsable-same-mtime",
+      "decision": "POLICY_ERROR",
+      "version": "",
+      "reasons": [
+        "POLICY_VALIDATION_ERROR"
+      ],
+      "record_decisions": [
+        "POLICY_ERROR"
+      ]
+    },
+    {
+      "mode": "local",
+      "format": "json",
+      "when": "after-construction",
+      "fault": "valid-same-mtime",
+      "decision": "BLOCK",
+      "version": "v2.0.0",
+      "reasons": [
+        "STARTUP_GUARD"
+      ],
+      "record_decisions": [
+        "BLOCK"
+      ]
+    },
+    {
+      "mode": "local",
+      "format": "json",
+      "when": "after-construction",
+      "fault": "replacement-same-mtime",
+      "decision": "BLOCK",
+      "version": "v2.0.0",
+      "reasons": [
+        "STARTUP_GUARD"
+      ],
+      "record_decisions": [
+        "BLOCK"
+      ]
+    },
+    {
+      "mode": "local",
+      "format": "yaml",
+      "when": "construction",
+      "fault": "missing",
+      "error": "PolicyLoadError",
+      "reason": "POLICY_NOT_FOUND"
+    },
+    {
+      "mode": "local",
+      "format": "yaml",
+      "when": "construction",
+      "fault": "unreadable",
+      "error": "PolicyLoadError",
+      "reason": "POLICY_LOAD_FAILED"
+    },
+    {
+      "mode": "local",
+      "format": "yaml",
+      "when": "construction",
+      "fault": "unparsable",
+      "error": "PolicyLoadError",
+      "reason": "POLICY_VALIDATION_ERROR"
+    },
+    {
+      "mode": "local",
+      "format": "yaml",
+      "when": "construction",
+      "fault": "unparsable-same-mtime",
+      "error": "PolicyLoadError",
+      "reason": "POLICY_VALIDATION_ERROR"
+    },
+    {
+      "mode": "local",
+      "format": "yaml",
+      "when": "after-construction",
+      "fault": "missing",
+      "decision": "POLICY_ERROR",
+      "version": "",
+      "reasons": [
+        "POLICY_NOT_FOUND"
+      ],
+      "record_decisions": [
+        "POLICY_ERROR"
+      ]
+    },
+    {
+      "mode": "local",
+      "format": "yaml",
+      "when": "after-construction",
+      "fault": "unreadable",
+      "decision": "POLICY_ERROR",
+      "version": "",
+      "reasons": [
+        "POLICY_LOAD_FAILED"
+      ],
+      "record_decisions": [
+        "POLICY_ERROR"
+      ]
+    },
+    {
+      "mode": "local",
+      "format": "yaml",
+      "when": "after-construction",
+      "fault": "unparsable",
+      "decision": "POLICY_ERROR",
+      "version": "",
+      "reasons": [
+        "POLICY_VALIDATION_ERROR"
+      ],
+      "record_decisions": [
+        "POLICY_ERROR"
+      ]
+    },
+    {
+      "mode": "local",
+      "format": "yaml",
+      "when": "after-construction",
+      "fault": "unparsable-same-mtime",
+      "decision": "POLICY_ERROR",
+      "version": "",
+      "reasons": [
+        "POLICY_VALIDATION_ERROR"
+      ],
+      "record_decisions": [
+        "POLICY_ERROR"
+      ]
+    },
+    {
+      "mode": "local",
+      "format": "yaml",
+      "when": "after-construction",
+      "fault": "valid-same-mtime",
+      "decision": "BLOCK",
+      "version": "v2.0.0",
+      "reasons": [
+        "STARTUP_GUARD"
+      ],
+      "record_decisions": [
+        "BLOCK"
+      ]
+    },
+    {
+      "mode": "local",
+      "format": "yaml",
+      "when": "after-construction",
+      "fault": "replacement-same-mtime",
+      "decision": "BLOCK",
+      "version": "v2.0.0",
+      "reasons": [
+        "STARTUP_GUARD"
+      ],
+      "record_decisions": [
+        "BLOCK"
+      ]
+    },
+    {
+      "mode": "hybrid",
+      "format": "json",
+      "when": "construction",
+      "fault": "missing",
+      "error": "PolicyLoadError",
+      "reason": "POLICY_NOT_FOUND"
+    },
+    {
+      "mode": "hybrid",
+      "format": "json",
+      "when": "construction",
+      "fault": "unreadable",
+      "error": "PolicyLoadError",
+      "reason": "POLICY_LOAD_FAILED"
+    },
+    {
+      "mode": "hybrid",
+      "format": "json",
+      "when": "construction",
+      "fault": "unparsable",
+      "error": "PolicyLoadError",
+      "reason": "POLICY_VALIDATION_ERROR"
+    },
+    {
+      "mode": "hybrid",
+      "format": "json",
+      "when": "construction",
+      "fault": "unparsable-same-mtime",
+      "error": "PolicyLoadError",
+      "reason": "POLICY_VALIDATION_ERROR"
+    },
+    {
+      "mode": "hybrid",
+      "format": "json",
+      "when": "after-construction",
+      "fault": "missing",
+      "decision": "POLICY_ERROR",
+      "version": "",
+      "reasons": [
+        "POLICY_NOT_FOUND"
+      ],
+      "record_decisions": [
+        "POLICY_ERROR"
+      ]
+    },
+    {
+      "mode": "hybrid",
+      "format": "json",
+      "when": "after-construction",
+      "fault": "unreadable",
+      "decision": "POLICY_ERROR",
+      "version": "",
+      "reasons": [
+        "POLICY_LOAD_FAILED"
+      ],
+      "record_decisions": [
+        "POLICY_ERROR"
+      ]
+    },
+    {
+      "mode": "hybrid",
+      "format": "json",
+      "when": "after-construction",
+      "fault": "unparsable",
+      "decision": "POLICY_ERROR",
+      "version": "",
+      "reasons": [
+        "POLICY_VALIDATION_ERROR"
+      ],
+      "record_decisions": [
+        "POLICY_ERROR"
+      ]
+    },
+    {
+      "mode": "hybrid",
+      "format": "json",
+      "when": "after-construction",
+      "fault": "unparsable-same-mtime",
+      "decision": "POLICY_ERROR",
+      "version": "",
+      "reasons": [
+        "POLICY_VALIDATION_ERROR"
+      ],
+      "record_decisions": [
+        "POLICY_ERROR"
+      ]
+    },
+    {
+      "mode": "hybrid",
+      "format": "json",
+      "when": "after-construction",
+      "fault": "valid-same-mtime",
+      "decision": "BLOCK",
+      "version": "v2.0.0",
+      "reasons": [
+        "STARTUP_GUARD"
+      ],
+      "record_decisions": [
+        "BLOCK"
+      ]
+    },
+    {
+      "mode": "hybrid",
+      "format": "json",
+      "when": "after-construction",
+      "fault": "replacement-same-mtime",
+      "decision": "BLOCK",
+      "version": "v2.0.0",
+      "reasons": [
+        "STARTUP_GUARD"
+      ],
+      "record_decisions": [
+        "BLOCK"
+      ]
+    },
+    {
+      "mode": "hybrid",
+      "format": "yaml",
+      "when": "construction",
+      "fault": "missing",
+      "error": "PolicyLoadError",
+      "reason": "POLICY_NOT_FOUND"
+    },
+    {
+      "mode": "hybrid",
+      "format": "yaml",
+      "when": "construction",
+      "fault": "unreadable",
+      "error": "PolicyLoadError",
+      "reason": "POLICY_LOAD_FAILED"
+    },
+    {
+      "mode": "hybrid",
+      "format": "yaml",
+      "when": "construction",
+      "fault": "unparsable",
+      "error": "PolicyLoadError",
+      "reason": "POLICY_VALIDATION_ERROR"
+    },
+    {
+      "mode": "hybrid",
+      "format": "yaml",
+      "when": "construction",
+      "fault": "unparsable-same-mtime",
+      "error": "PolicyLoadError",
+      "reason": "POLICY_VALIDATION_ERROR"
+    },
+    {
+      "mode": "hybrid",
+      "format": "yaml",
+      "when": "after-construction",
+      "fault": "missing",
+      "decision": "POLICY_ERROR",
+      "version": "",
+      "reasons": [
+        "POLICY_NOT_FOUND"
+      ],
+      "record_decisions": [
+        "POLICY_ERROR"
+      ]
+    },
+    {
+      "mode": "hybrid",
+      "format": "yaml",
+      "when": "after-construction",
+      "fault": "unreadable",
+      "decision": "POLICY_ERROR",
+      "version": "",
+      "reasons": [
+        "POLICY_LOAD_FAILED"
+      ],
+      "record_decisions": [
+        "POLICY_ERROR"
+      ]
+    },
+    {
+      "mode": "hybrid",
+      "format": "yaml",
+      "when": "after-construction",
+      "fault": "unparsable",
+      "decision": "POLICY_ERROR",
+      "version": "",
+      "reasons": [
+        "POLICY_VALIDATION_ERROR"
+      ],
+      "record_decisions": [
+        "POLICY_ERROR"
+      ]
+    },
+    {
+      "mode": "hybrid",
+      "format": "yaml",
+      "when": "after-construction",
+      "fault": "unparsable-same-mtime",
+      "decision": "POLICY_ERROR",
+      "version": "",
+      "reasons": [
+        "POLICY_VALIDATION_ERROR"
+      ],
+      "record_decisions": [
+        "POLICY_ERROR"
+      ]
+    },
+    {
+      "mode": "hybrid",
+      "format": "yaml",
+      "when": "after-construction",
+      "fault": "valid-same-mtime",
+      "decision": "BLOCK",
+      "version": "v2.0.0",
+      "reasons": [
+        "STARTUP_GUARD"
+      ],
+      "record_decisions": [
+        "BLOCK"
+      ]
+    },
+    {
+      "mode": "hybrid",
+      "format": "yaml",
+      "when": "after-construction",
+      "fault": "replacement-same-mtime",
+      "decision": "BLOCK",
+      "version": "v2.0.0",
+      "reasons": [
+        "STARTUP_GUARD"
+      ],
+      "record_decisions": [
+        "BLOCK"
+      ]
+    }
+  ],
+  "typescript": [
+    {
+      "mode": "local",
+      "format": "json",
+      "when": "construction",
+      "fault": "missing",
+      "error": "PolicyLoadError",
+      "reason": "POLICY_NOT_FOUND"
+    },
+    {
+      "mode": "local",
+      "format": "json",
+      "when": "construction",
+      "fault": "unreadable",
+      "error": "PolicyLoadError",
+      "reason": "POLICY_LOAD_FAILED"
+    },
+    {
+      "mode": "local",
+      "format": "json",
+      "when": "construction",
+      "fault": "unparsable",
+      "error": "PolicyLoadError",
+      "reason": "POLICY_VALIDATION_ERROR"
+    },
+    {
+      "mode": "local",
+      "format": "json",
+      "when": "construction",
+      "fault": "unparsable-same-mtime",
+      "error": "PolicyLoadError",
+      "reason": "POLICY_VALIDATION_ERROR"
+    },
+    {
+      "mode": "local",
+      "format": "json",
+      "when": "after-construction",
+      "fault": "missing",
+      "decision": "POLICY_ERROR",
+      "version": "",
+      "reasons": [
+        "POLICY_NOT_FOUND"
+      ],
+      "record_decisions": [
+        "POLICY_ERROR"
+      ]
+    },
+    {
+      "mode": "local",
+      "format": "json",
+      "when": "after-construction",
+      "fault": "unreadable",
+      "decision": "POLICY_ERROR",
+      "version": "",
+      "reasons": [
+        "POLICY_LOAD_FAILED"
+      ],
+      "record_decisions": [
+        "POLICY_ERROR"
+      ]
+    },
+    {
+      "mode": "local",
+      "format": "json",
+      "when": "after-construction",
+      "fault": "unparsable",
+      "decision": "POLICY_ERROR",
+      "version": "",
+      "reasons": [
+        "POLICY_VALIDATION_ERROR"
+      ],
+      "record_decisions": [
+        "POLICY_ERROR"
+      ]
+    },
+    {
+      "mode": "local",
+      "format": "json",
+      "when": "after-construction",
+      "fault": "unparsable-same-mtime",
+      "decision": "POLICY_ERROR",
+      "version": "",
+      "reasons": [
+        "POLICY_VALIDATION_ERROR"
+      ],
+      "record_decisions": [
+        "POLICY_ERROR"
+      ]
+    },
+    {
+      "mode": "local",
+      "format": "json",
+      "when": "after-construction",
+      "fault": "valid-same-mtime",
+      "decision": "BLOCK",
+      "version": "v2.0.0",
+      "reasons": [
+        "STARTUP_GUARD"
+      ],
+      "record_decisions": [
+        "BLOCK"
+      ]
+    },
+    {
+      "mode": "local",
+      "format": "json",
+      "when": "after-construction",
+      "fault": "replacement-same-mtime",
+      "decision": "BLOCK",
+      "version": "v2.0.0",
+      "reasons": [
+        "STARTUP_GUARD"
+      ],
+      "record_decisions": [
+        "BLOCK"
+      ]
+    },
+    {
+      "mode": "local",
+      "format": "yaml",
+      "when": "construction",
+      "fault": "missing",
+      "error": "PolicyLoadError",
+      "reason": "POLICY_NOT_FOUND"
+    },
+    {
+      "mode": "local",
+      "format": "yaml",
+      "when": "construction",
+      "fault": "unreadable",
+      "error": "PolicyLoadError",
+      "reason": "POLICY_LOAD_FAILED"
+    },
+    {
+      "mode": "local",
+      "format": "yaml",
+      "when": "construction",
+      "fault": "unparsable",
+      "error": "PolicyLoadError",
+      "reason": "POLICY_VALIDATION_ERROR"
+    },
+    {
+      "mode": "local",
+      "format": "yaml",
+      "when": "construction",
+      "fault": "unparsable-same-mtime",
+      "error": "PolicyLoadError",
+      "reason": "POLICY_VALIDATION_ERROR"
+    },
+    {
+      "mode": "local",
+      "format": "yaml",
+      "when": "after-construction",
+      "fault": "missing",
+      "decision": "POLICY_ERROR",
+      "version": "",
+      "reasons": [
+        "POLICY_NOT_FOUND"
+      ],
+      "record_decisions": [
+        "POLICY_ERROR"
+      ]
+    },
+    {
+      "mode": "local",
+      "format": "yaml",
+      "when": "after-construction",
+      "fault": "unreadable",
+      "decision": "POLICY_ERROR",
+      "version": "",
+      "reasons": [
+        "POLICY_LOAD_FAILED"
+      ],
+      "record_decisions": [
+        "POLICY_ERROR"
+      ]
+    },
+    {
+      "mode": "local",
+      "format": "yaml",
+      "when": "after-construction",
+      "fault": "unparsable",
+      "decision": "POLICY_ERROR",
+      "version": "",
+      "reasons": [
+        "POLICY_VALIDATION_ERROR"
+      ],
+      "record_decisions": [
+        "POLICY_ERROR"
+      ]
+    },
+    {
+      "mode": "local",
+      "format": "yaml",
+      "when": "after-construction",
+      "fault": "unparsable-same-mtime",
+      "decision": "POLICY_ERROR",
+      "version": "",
+      "reasons": [
+        "POLICY_VALIDATION_ERROR"
+      ],
+      "record_decisions": [
+        "POLICY_ERROR"
+      ]
+    },
+    {
+      "mode": "local",
+      "format": "yaml",
+      "when": "after-construction",
+      "fault": "valid-same-mtime",
+      "decision": "BLOCK",
+      "version": "v2.0.0",
+      "reasons": [
+        "STARTUP_GUARD"
+      ],
+      "record_decisions": [
+        "BLOCK"
+      ]
+    },
+    {
+      "mode": "local",
+      "format": "yaml",
+      "when": "after-construction",
+      "fault": "replacement-same-mtime",
+      "decision": "BLOCK",
+      "version": "v2.0.0",
+      "reasons": [
+        "STARTUP_GUARD"
+      ],
+      "record_decisions": [
+        "BLOCK"
+      ]
+    },
+    {
+      "mode": "hybrid",
+      "format": "json",
+      "when": "construction",
+      "fault": "missing",
+      "error": "PolicyLoadError",
+      "reason": "POLICY_NOT_FOUND"
+    },
+    {
+      "mode": "hybrid",
+      "format": "json",
+      "when": "construction",
+      "fault": "unreadable",
+      "error": "PolicyLoadError",
+      "reason": "POLICY_LOAD_FAILED"
+    },
+    {
+      "mode": "hybrid",
+      "format": "json",
+      "when": "construction",
+      "fault": "unparsable",
+      "error": "PolicyLoadError",
+      "reason": "POLICY_VALIDATION_ERROR"
+    },
+    {
+      "mode": "hybrid",
+      "format": "json",
+      "when": "construction",
+      "fault": "unparsable-same-mtime",
+      "error": "PolicyLoadError",
+      "reason": "POLICY_VALIDATION_ERROR"
+    },
+    {
+      "mode": "hybrid",
+      "format": "json",
+      "when": "after-construction",
+      "fault": "missing",
+      "decision": "POLICY_ERROR",
+      "version": "",
+      "reasons": [
+        "POLICY_NOT_FOUND"
+      ],
+      "record_decisions": [
+        "POLICY_ERROR"
+      ]
+    },
+    {
+      "mode": "hybrid",
+      "format": "json",
+      "when": "after-construction",
+      "fault": "unreadable",
+      "decision": "POLICY_ERROR",
+      "version": "",
+      "reasons": [
+        "POLICY_LOAD_FAILED"
+      ],
+      "record_decisions": [
+        "POLICY_ERROR"
+      ]
+    },
+    {
+      "mode": "hybrid",
+      "format": "json",
+      "when": "after-construction",
+      "fault": "unparsable",
+      "decision": "POLICY_ERROR",
+      "version": "",
+      "reasons": [
+        "POLICY_VALIDATION_ERROR"
+      ],
+      "record_decisions": [
+        "POLICY_ERROR"
+      ]
+    },
+    {
+      "mode": "hybrid",
+      "format": "json",
+      "when": "after-construction",
+      "fault": "unparsable-same-mtime",
+      "decision": "POLICY_ERROR",
+      "version": "",
+      "reasons": [
+        "POLICY_VALIDATION_ERROR"
+      ],
+      "record_decisions": [
+        "POLICY_ERROR"
+      ]
+    },
+    {
+      "mode": "hybrid",
+      "format": "json",
+      "when": "after-construction",
+      "fault": "valid-same-mtime",
+      "decision": "BLOCK",
+      "version": "v2.0.0",
+      "reasons": [
+        "STARTUP_GUARD"
+      ],
+      "record_decisions": [
+        "BLOCK"
+      ]
+    },
+    {
+      "mode": "hybrid",
+      "format": "json",
+      "when": "after-construction",
+      "fault": "replacement-same-mtime",
+      "decision": "BLOCK",
+      "version": "v2.0.0",
+      "reasons": [
+        "STARTUP_GUARD"
+      ],
+      "record_decisions": [
+        "BLOCK"
+      ]
+    },
+    {
+      "mode": "hybrid",
+      "format": "yaml",
+      "when": "construction",
+      "fault": "missing",
+      "error": "PolicyLoadError",
+      "reason": "POLICY_NOT_FOUND"
+    },
+    {
+      "mode": "hybrid",
+      "format": "yaml",
+      "when": "construction",
+      "fault": "unreadable",
+      "error": "PolicyLoadError",
+      "reason": "POLICY_LOAD_FAILED"
+    },
+    {
+      "mode": "hybrid",
+      "format": "yaml",
+      "when": "construction",
+      "fault": "unparsable",
+      "error": "PolicyLoadError",
+      "reason": "POLICY_VALIDATION_ERROR"
+    },
+    {
+      "mode": "hybrid",
+      "format": "yaml",
+      "when": "construction",
+      "fault": "unparsable-same-mtime",
+      "error": "PolicyLoadError",
+      "reason": "POLICY_VALIDATION_ERROR"
+    },
+    {
+      "mode": "hybrid",
+      "format": "yaml",
+      "when": "after-construction",
+      "fault": "missing",
+      "decision": "POLICY_ERROR",
+      "version": "",
+      "reasons": [
+        "POLICY_NOT_FOUND"
+      ],
+      "record_decisions": [
+        "POLICY_ERROR"
+      ]
+    },
+    {
+      "mode": "hybrid",
+      "format": "yaml",
+      "when": "after-construction",
+      "fault": "unreadable",
+      "decision": "POLICY_ERROR",
+      "version": "",
+      "reasons": [
+        "POLICY_LOAD_FAILED"
+      ],
+      "record_decisions": [
+        "POLICY_ERROR"
+      ]
+    },
+    {
+      "mode": "hybrid",
+      "format": "yaml",
+      "when": "after-construction",
+      "fault": "unparsable",
+      "decision": "POLICY_ERROR",
+      "version": "",
+      "reasons": [
+        "POLICY_VALIDATION_ERROR"
+      ],
+      "record_decisions": [
+        "POLICY_ERROR"
+      ]
+    },
+    {
+      "mode": "hybrid",
+      "format": "yaml",
+      "when": "after-construction",
+      "fault": "unparsable-same-mtime",
+      "decision": "POLICY_ERROR",
+      "version": "",
+      "reasons": [
+        "POLICY_VALIDATION_ERROR"
+      ],
+      "record_decisions": [
+        "POLICY_ERROR"
+      ]
+    },
+    {
+      "mode": "hybrid",
+      "format": "yaml",
+      "when": "after-construction",
+      "fault": "valid-same-mtime",
+      "decision": "BLOCK",
+      "version": "v2.0.0",
+      "reasons": [
+        "STARTUP_GUARD"
+      ],
+      "record_decisions": [
+        "BLOCK"
+      ]
+    },
+    {
+      "mode": "hybrid",
+      "format": "yaml",
+      "when": "after-construction",
+      "fault": "replacement-same-mtime",
+      "decision": "BLOCK",
+      "version": "v2.0.0",
+      "reasons": [
+        "STARTUP_GUARD"
+      ],
+      "record_decisions": [
+        "BLOCK"
+      ]
+    }
+  ]
+}

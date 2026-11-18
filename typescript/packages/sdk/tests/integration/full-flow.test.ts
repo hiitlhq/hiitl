@@ -14,17 +14,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { HIITL } from '../../src/client.js';
 import type { Decision } from '@hiitl/core';
-import { declaredNumber } from '../../../../test-support/declarations.js';
 import { recordMeasurement } from '../../../../test-support/measurements.js';
+import { latencyRun, recordLatency, timeCalls } from '../../../../test-support/latency.js';
 
 const FIXTURES_DIR = path.join(__dirname, '../fixtures');
 const TEST_POLICY = path.join(FIXTURES_DIR, 'valid_policy.json');
 const TEST_DB = path.join(FIXTURES_DIR, 'integration_test.db');
-const PURE_LOCAL_MS = declaredNumber(
-  fs.readFileSync(path.join(__dirname, '../../../../../docs/specs/decision_response.md'), 'utf8'),
-  /^- \*\*Pure local mode\*\*: Single-digit milliseconds \(< ([\d.]+)ms\)$/m,
-  'decision_response.md pure-local latency target',
-);
 const SOURCE = 'typescript/packages/sdk/tests/integration/full-flow.test.ts';
 
 describe('Integration: Full Flow', () => {
@@ -110,7 +105,7 @@ describe('Integration: Full Flow', () => {
   });
 
   describe('Performance Requirements', () => {
-    it('local evaluation meets its declared budget and records its observed tail', () => {
+    it('records the local call population the release gate reads', () => {
       hiitl = new HIITL({
         environment: 'dev',
         agent_id: 'perf-test',
@@ -120,35 +115,17 @@ describe('Integration: Full Flow', () => {
         mode: 'RESPECT_POLICY',
       });
 
-      const durations: number[] = [];
-
-      // Warm up (first call loads policy)
-      hiitl.evaluate({
+      // d001d308: the declared p95 of these samples, asserted only under the release switch.
+      // HTL-17 19d576ee: the warmup and run it had before HTL-45, as the timing catalogue declares.
+      const run = latencyRun('sdk/local-call');
+      const call = () => hiitl.evaluate({
         action: 'test_tool',
         parameters: { amount: 100 },
       });
-
-      // Measure 100 evaluations
-      for (let i = 0; i < 100; i++) {
-        const start = performance.now();
-        hiitl.evaluate({
-          action: 'test_tool',
-          parameters: { amount: 100 },
-        });
-        durations.push(performance.now() - start);
-      }
-
-      const avg = durations.reduce((a, b) => a + b) / durations.length;
-      const p95 = durations.sort((a, b) => a - b)[Math.floor(durations.length * 0.95)];
-
-      console.log(`Performance: avg=${avg.toFixed(2)}ms, p95=${p95.toFixed(2)}ms`);
-
-      recordMeasurement({ metric: 'local evaluation duration', unit: 'ms', source: `${SOURCE}#local-latency`,
-        value: avg, sample_count: durations.length, statistic: 'arithmetic mean' });
-      recordMeasurement({ metric: 'local evaluation observed tail', unit: 'ms', source: `${SOURCE}#local-latency`,
-        value: p95, sample_count: durations.length, statistic: 'sorted[floor(n * 0.95)]' });
-      // The pure-local declaration belongs here. The hosted p95 target does not.
-      expect(avg).toBeLessThan(PURE_LOCAL_MS);
+      // Warm up (first call loads policy)
+      const warmup = timeCalls(run.warmup, call);
+      const samples = timeCalls(run.count, call);
+      recordLatency('sdk/local-call', samples, 'local', warmup);
     });
 
     it('records first and cached whole-evaluation durations', () => {

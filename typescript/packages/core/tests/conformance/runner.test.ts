@@ -254,7 +254,8 @@ describe('Conformance Tests', () => {
   // + HTL-22 row 165 (a set's scope, description and semver version: seven refusals): 180–186 = 152
   // + HTL-27 row 225 (the tool_name alias leaves: test_107 is the refusal test_187, and test_188): 152 - 1 + 2 = 153
   // + HTL-27, Codex's review (an absent tool_name, 189-191; a name an object inherits, 192-194): 189–194 = 159
-  it('should have loaded all 159 conformance tests', () => {
-    expect(tests.length).toBe(159);
+  // + HTL-45 d0640d7a, gap 322 (a condition carries its value, 195-196; a condition is one of its two forms, 197-198): 195–198 = 163
+  it('should have loaded all 163 conformance tests', () => {
+    expect(tests.length).toBe(163);
   });
 });

@@ -1,0 +1,1502 @@
+[
+  {
+    "language": "python",
+    "case": {
+      "mode": "local",
+      "source": "none",
+      "evaluation": "OBSERVE_ALL",
+      "startup": "immediate",
+      "cold_start": "warn-and-observe"
+    },
+    "construction_ms": {
+      "min": 9.728957898914814,
+      "median": 10.637874715030193,
+      "max": 11.88225019723177
+    },
+    "startup_wait_ms": {
+      "min": 0.0,
+      "median": 0.0,
+      "max": 0.0
+    },
+    "first_ms": {
+      "min": 3.1205834820866585,
+      "median": 3.3510420471429825,
+      "max": 3.8434574380517006
+    },
+    "repeated_ms": {
+      "min": 0.5966667085886002,
+      "median": 0.6628544069826603,
+      "max": 0.7194168865680695
+    }
+  },
+  {
+    "language": "python",
+    "case": {
+      "mode": "local",
+      "source": "json",
+      "evaluation": "OBSERVE_ALL",
+      "startup": "immediate",
+      "cold_start": "warn-and-observe"
+    },
+    "construction_ms": {
+      "min": 14.435874298214912,
+      "median": 15.053187031298876,
+      "max": 15.887999907135963
+    },
+    "startup_wait_ms": {
+      "min": 0.0,
+      "median": 0.0,
+      "max": 0.0
+    },
+    "first_ms": {
+      "min": 3.1815003603696823,
+      "median": 3.2340618781745434,
+      "max": 3.5713333636522293
+    },
+    "repeated_ms": {
+      "min": 0.6088325753808022,
+      "median": 0.6813961081206799,
+      "max": 0.7238341495394707
+    }
+  },
+  {
+    "language": "python",
+    "case": {
+      "mode": "local",
+      "source": "json",
+      "evaluation": "RESPECT_POLICY",
+      "startup": "immediate",
+      "cold_start": "warn-and-observe"
+    },
+    "construction_ms": {
+      "min": 14.749249443411827,
+      "median": 15.089770313352346,
+      "max": 15.903791412711143
+    },
+    "startup_wait_ms": {
+      "min": 0.0,
+      "median": 0.0,
+      "max": 0.0
+    },
+    "first_ms": {
+      "min": 3.170667216181755,
+      "median": 3.228750079870224,
+      "max": 3.4851673990488052
+    },
+    "repeated_ms": {
+      "min": 0.5677081644535065,
+      "median": 0.6662290543317795,
+      "max": 0.7411250844597816
+    }
+  },
+  {
+    "language": "python",
+    "case": {
+      "mode": "local",
+      "source": "yaml",
+      "evaluation": "OBSERVE_ALL",
+      "startup": "immediate",
+      "cold_start": "warn-and-observe"
+    },
+    "construction_ms": {
+      "min": 15.11854212731123,
+      "median": 15.617291908711195,
+      "max": 16.05858374387026
+    },
+    "startup_wait_ms": {
+      "min": 0.0,
+      "median": 0.0,
+      "max": 0.0
+    },
+    "first_ms": {
+      "min": 3.2104160636663437,
+      "median": 3.2800626941025257,
+      "max": 3.554750233888626
+    },
+    "repeated_ms": {
+      "min": 0.5784155800938606,
+      "median": 0.666396226733923,
+      "max": 0.788416713476181
+    }
+  },
+  {
+    "language": "python",
+    "case": {
+      "mode": "local",
+      "source": "yaml",
+      "evaluation": "RESPECT_POLICY",
+      "startup": "immediate",
+      "cold_start": "warn-and-observe"
+    },
+    "construction_ms": {
+      "min": 15.14312531799078,
+      "median": 15.509938355535269,
+      "max": 16.70204196125269
+    },
+    "startup_wait_ms": {
+      "min": 0.0,
+      "median": 0.0,
+      "max": 0.0
+    },
+    "first_ms": {
+      "min": 3.1628748401999474,
+      "median": 3.269603941589594,
+      "max": 3.494417294859886
+    },
+    "repeated_ms": {
+      "min": 0.5940413102507591,
+      "median": 0.6895414553582668,
+      "max": 0.7260842248797417
+    }
+  },
+  {
+    "language": "python",
+    "case": {
+      "mode": "hybrid",
+      "source": "none",
+      "evaluation": "OBSERVE_ALL",
+      "startup": "immediate",
+      "cold_start": "warn-and-observe"
+    },
+    "construction_ms": {
+      "min": 17.517833039164543,
+      "median": 17.694500274956226,
+      "max": 25.027708150446415
+    },
+    "startup_wait_ms": {
+      "min": 4.509291611611843,
+      "median": 4.542791750282049,
+      "max": 6.4924173057079315
+    },
+    "first_ms": {
+      "min": 3.5191671922802925,
+      "median": 3.62966675311327,
+      "max": 5.196999758481979
+    },
+    "repeated_ms": {
+      "min": 0.5747079849243164,
+      "median": 0.6301249377429485,
+      "max": 0.88545773178339
+    }
+  },
+  {
+    "language": "python",
+    "case": {
+      "mode": "hybrid",
+      "source": "none",
+      "evaluation": "RESPECT_POLICY",
+      "startup": "immediate",
+      "cold_start": "warn-and-observe"
+    },
+    "construction_ms": {
+      "min": 17.318124882876873,
+      "median": 17.98556186258793,
+      "max": 19.657667726278305
+    },
+    "startup_wait_ms": {
+      "min": 4.461958073079586,
+      "median": 4.589603748172522,
+      "max": 4.948291927576065
+    },
+    "first_ms": {
+      "min": 3.535250201821327,
+      "median": 3.7298956885933876,
+      "max": 4.125416278839111
+    },
+    "repeated_ms": {
+      "min": 0.5585001781582832,
+      "median": 0.6219586357474327,
+      "max": 0.7392494007945061
+    }
+  },
+  {
+    "language": "python",
+    "case": {
+      "mode": "hybrid",
+      "source": "json",
+      "evaluation": "OBSERVE_ALL",
+      "startup": "immediate",
+      "cold_start": "warn-and-observe"
+    },
+    "construction_ms": {
+      "min": 22.20483310520649,
+      "median": 22.59147958829999,
+      "max": 23.548124358057976
+    },
+    "startup_wait_ms": {
+      "min": 4.423375241458416,
+      "median": 4.502604715526104,
+      "max": 4.7359587624669075
+    },
+    "first_ms": {
+      "min": 3.6556655541062355,
+      "median": 3.7147081457078457,
+      "max": 3.7808334454894066
+    },
+    "repeated_ms": {
+      "min": 0.5987491458654404,
+      "median": 0.6553744897246361,
+      "max": 0.6873747333884239
+    }
+  },
+  {
+    "language": "python",
+    "case": {
+      "mode": "hybrid",
+      "source": "json",
+      "evaluation": "RESPECT_POLICY",
+      "startup": "immediate",
+      "cold_start": "warn-and-observe"
+    },
+    "construction_ms": {
+      "min": 22.19458296895027,
+      "median": 22.457104176282883,
+      "max": 23.58387503772974
+    },
+    "startup_wait_ms": {
+      "min": 4.415582865476608,
+      "median": 4.477624781429768,
+      "max": 4.518457688391209
+    },
+    "first_ms": {
+      "min": 3.5751666873693466,
+      "median": 3.670874983072281,
+      "max": 3.740999847650528
+    },
+    "repeated_ms": {
+      "min": 0.6085000932216644,
+      "median": 0.6579374894499779,
+      "max": 0.6818752735853195
+    }
+  },
+  {
+    "language": "python",
+    "case": {
+      "mode": "hybrid",
+      "source": "yaml",
+      "evaluation": "OBSERVE_ALL",
+      "startup": "immediate",
+      "cold_start": "warn-and-observe"
+    },
+    "construction_ms": {
+      "min": 22.62137457728386,
+      "median": 23.03777076303959,
+      "max": 24.684124626219273
+    },
+    "startup_wait_ms": {
+      "min": 4.485666751861572,
+      "median": 4.574187565594912,
+      "max": 4.8227086663246155
+    },
+    "first_ms": {
+      "min": 3.585750237107277,
+      "median": 3.7241876125335693,
+      "max": 3.991459496319294
+    },
+    "repeated_ms": {
+      "min": 0.5907919257879257,
+      "median": 0.6371866911649704,
+      "max": 0.7240427657961845
+    }
+  },
+  {
+    "language": "python",
+    "case": {
+      "mode": "hybrid",
+      "source": "yaml",
+      "evaluation": "RESPECT_POLICY",
+      "startup": "immediate",
+      "cold_start": "warn-and-observe"
+    },
+    "construction_ms": {
+      "min": 22.560750134289265,
+      "median": 22.844270803034306,
+      "max": 24.098209105432034
+    },
+    "startup_wait_ms": {
+      "min": 4.463624209165573,
+      "median": 4.502520430833101,
+      "max": 4.887999966740608
+    },
+    "first_ms": {
+      "min": 3.560708835721016,
+      "median": 3.6470829509198666,
+      "max": 3.9553334936499596
+    },
+    "repeated_ms": {
+      "min": 0.5937088280916214,
+      "median": 0.6413753144443035,
+      "max": 0.7213335484266281
+    }
+  },
+  {
+    "language": "python",
+    "case": {
+      "mode": "hybrid",
+      "source": "disk",
+      "evaluation": "OBSERVE_ALL",
+      "startup": "immediate",
+      "cold_start": "warn-and-observe"
+    },
+    "construction_ms": {
+      "min": 16.87195897102356,
+      "median": 17.367833759635687,
+      "max": 18.61491519957781
+    },
+    "startup_wait_ms": {
+      "min": 0.0,
+      "median": 0.0,
+      "max": 0.0
+    },
+    "first_ms": {
+      "min": 3.4232912585139275,
+      "median": 3.535228781402111,
+      "max": 3.731917589902878
+    },
+    "repeated_ms": {
+      "min": 4.85637504607439,
+      "median": 5.018437746912241,
+      "max": 5.189708434045315
+    }
+  },
+  {
+    "language": "python",
+    "case": {
+      "mode": "hybrid",
+      "source": "disk",
+      "evaluation": "OBSERVE_ALL",
+      "startup": "settled",
+      "cold_start": "warn-and-observe"
+    },
+    "construction_ms": {
+      "min": 16.940957866609097,
+      "median": 17.559979110956192,
+      "max": 19.106208346784115
+    },
+    "startup_wait_ms": {
+      "min": 0.0,
+      "median": 0.0,
+      "max": 0.0
+    },
+    "first_ms": {
+      "min": 3.4264158457517624,
+      "median": 3.5594585351645947,
+      "max": 4.066082648932934
+    },
+    "repeated_ms": {
+      "min": 4.906916990876198,
+      "median": 5.067541729658842,
+      "max": 5.734667181968689
+    }
+  },
+  {
+    "language": "python",
+    "case": {
+      "mode": "hybrid",
+      "source": "disk",
+      "evaluation": "OBSERVE_ALL",
+      "startup": "immediate",
+      "cold_start": "fail-closed"
+    },
+    "construction_ms": {
+      "min": 17.11475010961294,
+      "median": 17.574021127074957,
+      "max": 24.885082617402077
+    },
+    "startup_wait_ms": {
+      "min": 0.0,
+      "median": 0.0,
+      "max": 0.0
+    },
+    "first_ms": {
+      "min": 3.490791656076908,
+      "median": 3.5320832394063473,
+      "max": 3.788166679441929
+    },
+    "repeated_ms": {
+      "min": 4.9226246774196625,
+      "median": 5.026062484830618,
+      "max": 5.513791926205158
+    }
+  },
+  {
+    "language": "python",
+    "case": {
+      "mode": "hybrid",
+      "source": "disk",
+      "evaluation": "RESPECT_POLICY",
+      "startup": "immediate",
+      "cold_start": "warn-and-observe"
+    },
+    "construction_ms": {
+      "min": 17.141000367701054,
+      "median": 17.55091594532132,
+      "max": 17.927790991961956
+    },
+    "startup_wait_ms": {
+      "min": 0.0,
+      "median": 0.0,
+      "max": 0.0
+    },
+    "first_ms": {
+      "min": 3.4453747794032097,
+      "median": 3.539229277521372,
+      "max": 3.7593329325318336
+    },
+    "repeated_ms": {
+      "min": 4.898792132735252,
+      "median": 5.034124478697777,
+      "max": 5.461624823510647
+    }
+  },
+  {
+    "language": "python",
+    "case": {
+      "mode": "hybrid",
+      "source": "disk",
+      "evaluation": "RESPECT_POLICY",
+      "startup": "settled",
+      "cold_start": "warn-and-observe"
+    },
+    "construction_ms": {
+      "min": 16.951250843703747,
+      "median": 17.569333780556917,
+      "max": 17.770749516785145
+    },
+    "startup_wait_ms": {
+      "min": 0.0,
+      "median": 0.0,
+      "max": 0.0
+    },
+    "first_ms": {
+      "min": 3.4810826182365417,
+      "median": 3.5134581848978996,
+      "max": 5.734499543905258
+    },
+    "repeated_ms": {
+      "min": 4.972958005964756,
+      "median": 5.019021220505238,
+      "max": 6.93025067448616
+    }
+  },
+  {
+    "language": "python",
+    "case": {
+      "mode": "hybrid",
+      "source": "disk",
+      "evaluation": "RESPECT_POLICY",
+      "startup": "immediate",
+      "cold_start": "fail-closed"
+    },
+    "construction_ms": {
+      "min": 16.768124885857105,
+      "median": 17.398563213646412,
+      "max": 18.865250051021576
+    },
+    "startup_wait_ms": {
+      "min": 0.0,
+      "median": 0.0,
+      "max": 0.0
+    },
+    "first_ms": {
+      "min": 3.455500118434429,
+      "median": 3.530708607286215,
+      "max": 3.8134166970849037
+    },
+    "repeated_ms": {
+      "min": 4.919791594147682,
+      "median": 5.024458281695843,
+      "max": 5.22108469158411
+    }
+  },
+  {
+    "language": "python",
+    "case": {
+      "mode": "hybrid",
+      "source": "pull",
+      "evaluation": "OBSERVE_ALL",
+      "startup": "immediate",
+      "cold_start": "warn-and-observe"
+    },
+    "construction_ms": {
+      "min": 23.364249616861343,
+      "median": 23.819771129637957,
+      "max": 24.19300004839897
+    },
+    "startup_wait_ms": {
+      "min": 10.337959043681622,
+      "median": 10.457499418407679,
+      "max": 10.601707734167576
+    },
+    "first_ms": {
+      "min": 3.253708593547344,
+      "median": 3.369208425283432,
+      "max": 3.4301243722438812
+    },
+    "repeated_ms": {
+      "min": 0.8058743551373482,
+      "median": 0.8902493864297867,
+      "max": 1.2019174173474312
+    }
+  },
+  {
+    "language": "python",
+    "case": {
+      "mode": "hybrid",
+      "source": "pull",
+      "evaluation": "OBSERVE_ALL",
+      "startup": "settled",
+      "cold_start": "warn-and-observe"
+    },
+    "construction_ms": {
+      "min": 23.480666801333427,
+      "median": 24.458395782858133,
+      "max": 26.260082609951496
+    },
+    "startup_wait_ms": {
+      "min": 10.473541915416718,
+      "median": 10.837312787771225,
+      "max": 11.426958255469799
+    },
+    "first_ms": {
+      "min": 3.283333033323288,
+      "median": 3.4908540546894073,
+      "max": 4.86091710627079
+    },
+    "repeated_ms": {
+      "min": 0.7483744993805885,
+      "median": 0.8847075514495373,
+      "max": 1.1520003899931908
+    }
+  },
+  {
+    "language": "python",
+    "case": {
+      "mode": "hybrid",
+      "source": "pull",
+      "evaluation": "OBSERVE_ALL",
+      "startup": "immediate",
+      "cold_start": "fail-closed"
+    },
+    "construction_ms": {
+      "min": 23.34087435156107,
+      "median": 23.862124886363745,
+      "max": 26.163834147155285
+    },
+    "startup_wait_ms": {
+      "min": 10.286042466759682,
+      "median": 10.48556249588728,
+      "max": 11.683040298521519
+    },
+    "first_ms": {
+      "min": 3.1545832753181458,
+      "median": 3.432770259678364,
+      "max": 3.8991663604974747
+    },
+    "repeated_ms": {
+      "min": 0.6699170917272568,
+      "median": 0.8840006776154041,
+      "max": 1.0512080043554306
+    }
+  },
+  {
+    "language": "python",
+    "case": {
+      "mode": "hybrid",
+      "source": "pull",
+      "evaluation": "RESPECT_POLICY",
+      "startup": "immediate",
+      "cold_start": "warn-and-observe"
+    },
+    "construction_ms": {
+      "min": 23.259708657860756,
+      "median": 23.775479290634394,
+      "max": 24.900542572140694
+    },
+    "startup_wait_ms": {
+      "min": 10.354375466704369,
+      "median": 10.442250408232212,
+      "max": 11.27629168331623
+    },
+    "first_ms": {
+      "min": 3.1289998441934586,
+      "median": 3.3467295579612255,
+      "max": 3.534749150276184
+    },
+    "repeated_ms": {
+      "min": 0.80091692507267,
+      "median": 0.8539375849068165,
+      "max": 1.0215826332569122
+    }
+  },
+  {
+    "language": "python",
+    "case": {
+      "mode": "hybrid",
+      "source": "pull",
+      "evaluation": "RESPECT_POLICY",
+      "startup": "settled",
+      "cold_start": "warn-and-observe"
+    },
+    "construction_ms": {
+      "min": 23.359958082437515,
+      "median": 23.754687514156103,
+      "max": 28.084457851946354
+    },
+    "startup_wait_ms": {
+      "min": 10.275292210280895,
+      "median": 10.422499384731054,
+      "max": 10.578582994639874
+    },
+    "first_ms": {
+      "min": 3.271792083978653,
+      "median": 3.3731041476130486,
+      "max": 3.4755831584334373
+    },
+    "repeated_ms": {
+      "min": 0.7934998720884323,
+      "median": 0.8649174124002457,
+      "max": 0.9414162486791611
+    }
+  },
+  {
+    "language": "python",
+    "case": {
+      "mode": "hybrid",
+      "source": "pull",
+      "evaluation": "RESPECT_POLICY",
+      "startup": "immediate",
+      "cold_start": "fail-closed"
+    },
+    "construction_ms": {
+      "min": 23.619750514626503,
+      "median": 23.898291401565075,
+      "max": 24.647874757647514
+    },
+    "startup_wait_ms": {
+      "min": 10.324958711862564,
+      "median": 10.478708427399397,
+      "max": 11.15449983626604
+    },
+    "first_ms": {
+      "min": 3.299667499959469,
+      "median": 3.391583450138569,
+      "max": 3.573833964765072
+    },
+    "repeated_ms": {
+      "min": 0.8199587464332581,
+      "median": 0.863248948007822,
+      "max": 1.0636672377586365
+    }
+  },
+  {
+    "language": "python",
+    "case": {
+      "mode": "hosted",
+      "source": "service",
+      "evaluation": "OBSERVE_ALL",
+      "startup": "immediate",
+      "cold_start": "warn-and-observe"
+    },
+    "construction_ms": {
+      "min": 2.822582609951496,
+      "median": 2.949187532067299,
+      "max": 3.270457498729229
+    },
+    "startup_wait_ms": {
+      "min": 0.0,
+      "median": 0.0,
+      "max": 0.0
+    },
+    "first_ms": {
+      "min": 2.885250374674797,
+      "median": 3.0268332920968533,
+      "max": 3.1560827046632767
+    },
+    "repeated_ms": {
+      "min": 0.23558363318443298,
+      "median": 0.2525830641388893,
+      "max": 0.2776654437184334
+    }
+  },
+  {
+    "language": "python",
+    "case": {
+      "mode": "hosted",
+      "source": "service",
+      "evaluation": "RESPECT_POLICY",
+      "startup": "immediate",
+      "cold_start": "warn-and-observe"
+    },
+    "construction_ms": {
+      "min": 2.763833850622177,
+      "median": 2.902125008404255,
+      "max": 3.1479578465223312
+    },
+    "startup_wait_ms": {
+      "min": 0.0,
+      "median": 0.0,
+      "max": 0.0
+    },
+    "first_ms": {
+      "min": 2.885124646127224,
+      "median": 3.0093961395323277,
+      "max": 3.181625157594681
+    },
+    "repeated_ms": {
+      "min": 0.2339174970984459,
+      "median": 0.24116691201925278,
+      "max": 0.2803746610879898
+    }
+  },
+  {
+    "language": "typescript",
+    "case": {
+      "mode": "local",
+      "source": "none",
+      "evaluation": "OBSERVE_ALL",
+      "startup": "immediate",
+      "cold_start": "warn-and-observe"
+    },
+    "construction_ms": {
+      "min": 4.357875000000007,
+      "median": 4.568312500000005,
+      "max": 5.729332999999997
+    },
+    "startup_wait_ms": {
+      "min": 0,
+      "median": 0.0,
+      "max": 0
+    },
+    "first_ms": {
+      "min": 3.2450839999999914,
+      "median": 3.4586459999999946,
+      "max": 3.606500000000011
+    },
+    "repeated_ms": {
+      "min": 0.5827499999999901,
+      "median": 0.6510210000000001,
+      "max": 0.7942090000000093
+    }
+  },
+  {
+    "language": "typescript",
+    "case": {
+      "mode": "local",
+      "source": "json",
+      "evaluation": "OBSERVE_ALL",
+      "startup": "immediate",
+      "cold_start": "warn-and-observe"
+    },
+    "construction_ms": {
+      "min": 5.950958,
+      "median": 6.2238749999999925,
+      "max": 6.808042
+    },
+    "startup_wait_ms": {
+      "min": 0,
+      "median": 0.0,
+      "max": 0
+    },
+    "first_ms": {
+      "min": 2.6234579999999994,
+      "median": 2.7873334999999955,
+      "max": 2.8965419999999966
+    },
+    "repeated_ms": {
+      "min": 0.6110829999999936,
+      "median": 0.7755415000000099,
+      "max": 0.9361669999999975
+    }
+  },
+  {
+    "language": "typescript",
+    "case": {
+      "mode": "local",
+      "source": "json",
+      "evaluation": "RESPECT_POLICY",
+      "startup": "immediate",
+      "cold_start": "warn-and-observe"
+    },
+    "construction_ms": {
+      "min": 5.915125000000003,
+      "median": 6.3942499999999995,
+      "max": 7.282207999999997
+    },
+    "startup_wait_ms": {
+      "min": 0,
+      "median": 0.0,
+      "max": 0
+    },
+    "first_ms": {
+      "min": 2.546207999999993,
+      "median": 2.6911460000000034,
+      "max": 2.941791000000009
+    },
+    "repeated_ms": {
+      "min": 0.6259170000000012,
+      "median": 0.7046250000000001,
+      "max": 1.0005829999999918
+    }
+  },
+  {
+    "language": "typescript",
+    "case": {
+      "mode": "local",
+      "source": "yaml",
+      "evaluation": "OBSERVE_ALL",
+      "startup": "immediate",
+      "cold_start": "warn-and-observe"
+    },
+    "construction_ms": {
+      "min": 6.794415999999998,
+      "median": 7.342999999999996,
+      "max": 8.071540999999996
+    },
+    "startup_wait_ms": {
+      "min": 0,
+      "median": 0.0,
+      "max": 0
+    },
+    "first_ms": {
+      "min": 2.6060000000000088,
+      "median": 2.94202099999999,
+      "max": 3.250165999999993
+    },
+    "repeated_ms": {
+      "min": 0.6375409999999988,
+      "median": 0.7641880000000043,
+      "max": 0.9891250000000014
+    }
+  },
+  {
+    "language": "typescript",
+    "case": {
+      "mode": "local",
+      "source": "yaml",
+      "evaluation": "RESPECT_POLICY",
+      "startup": "immediate",
+      "cold_start": "warn-and-observe"
+    },
+    "construction_ms": {
+      "min": 6.80366699999999,
+      "median": 7.236937500000003,
+      "max": 7.548417000000001
+    },
+    "startup_wait_ms": {
+      "min": 0,
+      "median": 0.0,
+      "max": 0
+    },
+    "first_ms": {
+      "min": 2.607958999999994,
+      "median": 2.901270999999994,
+      "max": 3.062916999999999
+    },
+    "repeated_ms": {
+      "min": 0.6260000000000048,
+      "median": 0.7705624999999969,
+      "max": 0.9144170000000003
+    }
+  },
+  {
+    "language": "typescript",
+    "case": {
+      "mode": "hybrid",
+      "source": "none",
+      "evaluation": "OBSERVE_ALL",
+      "startup": "immediate",
+      "cold_start": "warn-and-observe"
+    },
+    "construction_ms": {
+      "min": 12.489208999999988,
+      "median": 13.372729,
+      "max": 15.197333
+    },
+    "startup_wait_ms": {
+      "min": 1.0051250000000067,
+      "median": 1.051270499999994,
+      "max": 1.2069589999999977
+    },
+    "first_ms": {
+      "min": 3.3873339999999956,
+      "median": 3.492145999999998,
+      "max": 3.817999999999998
+    },
+    "repeated_ms": {
+      "min": 0.619166000000007,
+      "median": 0.6659579999999963,
+      "max": 0.7546669999999978
+    }
+  },
+  {
+    "language": "typescript",
+    "case": {
+      "mode": "hybrid",
+      "source": "none",
+      "evaluation": "RESPECT_POLICY",
+      "startup": "immediate",
+      "cold_start": "warn-and-observe"
+    },
+    "construction_ms": {
+      "min": 12.682999999999993,
+      "median": 13.388124999999995,
+      "max": 14.276333999999991
+    },
+    "startup_wait_ms": {
+      "min": 1.0089169999999967,
+      "median": 1.0889785000000032,
+      "max": 1.1458339999999936
+    },
+    "first_ms": {
+      "min": 3.3416250000000076,
+      "median": 3.5631245000000007,
+      "max": 4.436999999999998
+    },
+    "repeated_ms": {
+      "min": 0.6142909999999944,
+      "median": 0.6594580000000008,
+      "max": 0.8527079999999927
+    }
+  },
+  {
+    "language": "typescript",
+    "case": {
+      "mode": "hybrid",
+      "source": "json",
+      "evaluation": "OBSERVE_ALL",
+      "startup": "immediate",
+      "cold_start": "warn-and-observe"
+    },
+    "construction_ms": {
+      "min": 14.073583999999997,
+      "median": 15.429875000000003,
+      "max": 16.421334
+    },
+    "startup_wait_ms": {
+      "min": 0,
+      "median": 0.0,
+      "max": 0
+    },
+    "first_ms": {
+      "min": 3.1416249999999906,
+      "median": 3.433416500000007,
+      "max": 3.935666000000012
+    },
+    "repeated_ms": {
+      "min": 0.7379169999999959,
+      "median": 0.8641664999999961,
+      "max": 1.086749999999995
+    }
+  },
+  {
+    "language": "typescript",
+    "case": {
+      "mode": "hybrid",
+      "source": "json",
+      "evaluation": "RESPECT_POLICY",
+      "startup": "immediate",
+      "cold_start": "warn-and-observe"
+    },
+    "construction_ms": {
+      "min": 13.9165,
+      "median": 14.487583999999991,
+      "max": 16.127542000000005
+    },
+    "startup_wait_ms": {
+      "min": 0,
+      "median": 0.0,
+      "max": 0
+    },
+    "first_ms": {
+      "min": 3.089291000000003,
+      "median": 3.293146,
+      "max": 3.6939999999999884
+    },
+    "repeated_ms": {
+      "min": 0.785499999999999,
+      "median": 0.8266874999999985,
+      "max": 1.0046669999999978
+    }
+  },
+  {
+    "language": "typescript",
+    "case": {
+      "mode": "hybrid",
+      "source": "yaml",
+      "evaluation": "OBSERVE_ALL",
+      "startup": "immediate",
+      "cold_start": "warn-and-observe"
+    },
+    "construction_ms": {
+      "min": 14.69187500000001,
+      "median": 15.290458499999993,
+      "max": 15.741249999999994
+    },
+    "startup_wait_ms": {
+      "min": 0,
+      "median": 0.0,
+      "max": 0
+    },
+    "first_ms": {
+      "min": 3.0931659999999965,
+      "median": 3.2814380000000014,
+      "max": 3.4044170000000094
+    },
+    "repeated_ms": {
+      "min": 0.7506659999999954,
+      "median": 0.8600415000000012,
+      "max": 0.9522090000000105
+    }
+  },
+  {
+    "language": "typescript",
+    "case": {
+      "mode": "hybrid",
+      "source": "yaml",
+      "evaluation": "RESPECT_POLICY",
+      "startup": "immediate",
+      "cold_start": "warn-and-observe"
+    },
+    "construction_ms": {
+      "min": 14.759250000000009,
+      "median": 15.320208499999993,
+      "max": 16.171832999999992
+    },
+    "startup_wait_ms": {
+      "min": 0,
+      "median": 0.0,
+      "max": 0
+    },
+    "first_ms": {
+      "min": 3.0866669999999914,
+      "median": 3.2399164999999996,
+      "max": 3.6460409999999968
+    },
+    "repeated_ms": {
+      "min": 0.7430829999999986,
+      "median": 0.8392499999999998,
+      "max": 8.370082999999994
+    }
+  },
+  {
+    "language": "typescript",
+    "case": {
+      "mode": "hybrid",
+      "source": "disk",
+      "evaluation": "OBSERVE_ALL",
+      "startup": "immediate",
+      "cold_start": "warn-and-observe"
+    },
+    "construction_ms": {
+      "min": 6.883541999999991,
+      "median": 7.273875000000004,
+      "max": 7.877583999999999
+    },
+    "startup_wait_ms": {
+      "min": 0,
+      "median": 0.0,
+      "max": 0
+    },
+    "first_ms": {
+      "min": 2.4774170000000026,
+      "median": 2.8153124999999974,
+      "max": 3.0960000000000036
+    },
+    "repeated_ms": {
+      "min": 0.6543329999999941,
+      "median": 0.810041499999997,
+      "max": 0.9550420000000059
+    }
+  },
+  {
+    "language": "typescript",
+    "case": {
+      "mode": "hybrid",
+      "source": "disk",
+      "evaluation": "OBSERVE_ALL",
+      "startup": "settled",
+      "cold_start": "warn-and-observe"
+    },
+    "construction_ms": {
+      "min": 6.882458,
+      "median": 7.688208500000002,
+      "max": 8.977500000000006
+    },
+    "startup_wait_ms": {
+      "min": 0.0034999999999882903,
+      "median": 0.003728999999992766,
+      "max": 0.004250000000013188
+    },
+    "first_ms": {
+      "min": 2.5090000000000003,
+      "median": 2.7736249999999956,
+      "max": 2.8826660000000004
+    },
+    "repeated_ms": {
+      "min": 0.6641670000000062,
+      "median": 0.815374999999996,
+      "max": 0.9006250000000051
+    }
+  },
+  {
+    "language": "typescript",
+    "case": {
+      "mode": "hybrid",
+      "source": "disk",
+      "evaluation": "OBSERVE_ALL",
+      "startup": "immediate",
+      "cold_start": "fail-closed"
+    },
+    "construction_ms": {
+      "min": 7.1435419999999965,
+      "median": 7.397604000000001,
+      "max": 8.194290999999993
+    },
+    "startup_wait_ms": {
+      "min": 0,
+      "median": 0.0,
+      "max": 0
+    },
+    "first_ms": {
+      "min": 2.522500000000008,
+      "median": 2.757103999999991,
+      "max": 2.9549999999999983
+    },
+    "repeated_ms": {
+      "min": 0.6628749999999997,
+      "median": 0.8234164999999933,
+      "max": 0.9960420000000028
+    }
+  },
+  {
+    "language": "typescript",
+    "case": {
+      "mode": "hybrid",
+      "source": "disk",
+      "evaluation": "RESPECT_POLICY",
+      "startup": "immediate",
+      "cold_start": "warn-and-observe"
+    },
+    "construction_ms": {
+      "min": 6.674875,
+      "median": 7.390021000000004,
+      "max": 8.420000000000002
+    },
+    "startup_wait_ms": {
+      "min": 0,
+      "median": 0.0,
+      "max": 0
+    },
+    "first_ms": {
+      "min": 2.4520839999999993,
+      "median": 2.802250000000001,
+      "max": 2.8990829999999903
+    },
+    "repeated_ms": {
+      "min": 0.607208,
+      "median": 0.7944375000000008,
+      "max": 0.9024579999999958
+    }
+  },
+  {
+    "language": "typescript",
+    "case": {
+      "mode": "hybrid",
+      "source": "disk",
+      "evaluation": "RESPECT_POLICY",
+      "startup": "settled",
+      "cold_start": "warn-and-observe"
+    },
+    "construction_ms": {
+      "min": 7.071375000000003,
+      "median": 7.4110625,
+      "max": 8.33274999999999
+    },
+    "startup_wait_ms": {
+      "min": 0.003500000000002501,
+      "median": 0.003875000000000739,
+      "max": 0.004416999999989457
+    },
+    "first_ms": {
+      "min": 2.497125000000011,
+      "median": 2.719875000000002,
+      "max": 4.676124999999999
+    },
+    "repeated_ms": {
+      "min": 0.6558340000000129,
+      "median": 0.7763959999999983,
+      "max": 1.0897500000000093
+    }
+  },
+  {
+    "language": "typescript",
+    "case": {
+      "mode": "hybrid",
+      "source": "disk",
+      "evaluation": "RESPECT_POLICY",
+      "startup": "immediate",
+      "cold_start": "fail-closed"
+    },
+    "construction_ms": {
+      "min": 6.789584000000005,
+      "median": 7.584499499999993,
+      "max": 8.813790999999995
+    },
+    "startup_wait_ms": {
+      "min": 0,
+      "median": 0.0,
+      "max": 0
+    },
+    "first_ms": {
+      "min": 2.544792000000001,
+      "median": 2.837312499999996,
+      "max": 3.0344160000000073
+    },
+    "repeated_ms": {
+      "min": 0.682666999999995,
+      "median": 0.7956874999999997,
+      "max": 0.9226249999999965
+    }
+  },
+  {
+    "language": "typescript",
+    "case": {
+      "mode": "hybrid",
+      "source": "pull",
+      "evaluation": "OBSERVE_ALL",
+      "startup": "immediate",
+      "cold_start": "warn-and-observe"
+    },
+    "construction_ms": {
+      "min": 12.919000000000011,
+      "median": 13.596187500000006,
+      "max": 19.110917
+    },
+    "startup_wait_ms": {
+      "min": 6.410916999999998,
+      "median": 6.583770999999999,
+      "max": 7.0966669999999965
+    },
+    "first_ms": {
+      "min": 2.4313749999999885,
+      "median": 2.5281460000000067,
+      "max": 2.8374999999999915
+    },
+    "repeated_ms": {
+      "min": 0.5841669999999937,
+      "median": 0.6503540000000072,
+      "max": 0.7674580000000049
+    }
+  },
+  {
+    "language": "typescript",
+    "case": {
+      "mode": "hybrid",
+      "source": "pull",
+      "evaluation": "OBSERVE_ALL",
+      "startup": "settled",
+      "cold_start": "warn-and-observe"
+    },
+    "construction_ms": {
+      "min": 12.436583999999996,
+      "median": 13.120750000000001,
+      "max": 13.831041999999997
+    },
+    "startup_wait_ms": {
+      "min": 6.214375000000004,
+      "median": 6.3924375,
+      "max": 6.915959000000001
+    },
+    "first_ms": {
+      "min": 2.433208999999991,
+      "median": 2.588145500000003,
+      "max": 2.8210829999999874
+    },
+    "repeated_ms": {
+      "min": 0.5866250000000122,
+      "median": 0.6605619999999917,
+      "max": 0.8228749999999962
+    }
+  },
+  {
+    "language": "typescript",
+    "case": {
+      "mode": "hybrid",
+      "source": "pull",
+      "evaluation": "OBSERVE_ALL",
+      "startup": "immediate",
+      "cold_start": "fail-closed"
+    },
+    "construction_ms": {
+      "min": 12.828541999999999,
+      "median": 13.685958499999998,
+      "max": 14.065416999999997
+    },
+    "startup_wait_ms": {
+      "min": 6.413667000000004,
+      "median": 6.830584000000002,
+      "max": 7.063708000000005
+    },
+    "first_ms": {
+      "min": 2.4306250000000063,
+      "median": 2.511958000000007,
+      "max": 2.65625
+    },
+    "repeated_ms": {
+      "min": 0.5792909999999978,
+      "median": 0.6641670000000062,
+      "max": 0.8445420000000041
+    }
+  },
+  {
+    "language": "typescript",
+    "case": {
+      "mode": "hybrid",
+      "source": "pull",
+      "evaluation": "RESPECT_POLICY",
+      "startup": "immediate",
+      "cold_start": "warn-and-observe"
+    },
+    "construction_ms": {
+      "min": 12.604250000000008,
+      "median": 13.324937500000004,
+      "max": 14.155332999999999
+    },
+    "startup_wait_ms": {
+      "min": 6.330457999999993,
+      "median": 6.556708500000006,
+      "max": 6.855333000000002
+    },
+    "first_ms": {
+      "min": 2.4303329999999903,
+      "median": 2.515895499999999,
+      "max": 2.7260830000000027
+    },
+    "repeated_ms": {
+      "min": 0.5900000000000034,
+      "median": 0.6473334999999949,
+      "max": 0.7413329999999974
+    }
+  },
+  {
+    "language": "typescript",
+    "case": {
+      "mode": "hybrid",
+      "source": "pull",
+      "evaluation": "RESPECT_POLICY",
+      "startup": "settled",
+      "cold_start": "warn-and-observe"
+    },
+    "construction_ms": {
+      "min": 12.500792000000004,
+      "median": 13.500999500000006,
+      "max": 14.012875000000008
+    },
+    "startup_wait_ms": {
+      "min": 6.330749999999995,
+      "median": 6.615833500000001,
+      "max": 37.967208
+    },
+    "first_ms": {
+      "min": 2.418790999999999,
+      "median": 2.584791999999993,
+      "max": 3.6963329999999956
+    },
+    "repeated_ms": {
+      "min": 0.5974999999999966,
+      "median": 0.6546664999999905,
+      "max": 0.7848749999999995
+    }
+  },
+  {
+    "language": "typescript",
+    "case": {
+      "mode": "hybrid",
+      "source": "pull",
+      "evaluation": "RESPECT_POLICY",
+      "startup": "immediate",
+      "cold_start": "fail-closed"
+    },
+    "construction_ms": {
+      "min": 12.881208999999998,
+      "median": 13.431417000000003,
+      "max": 13.886666999999989
+    },
+    "startup_wait_ms": {
+      "min": 6.387332999999998,
+      "median": 6.663437500000008,
+      "max": 7.26641699999999
+    },
+    "first_ms": {
+      "min": 2.408208000000002,
+      "median": 2.522458499999999,
+      "max": 2.7365839999999935
+    },
+    "repeated_ms": {
+      "min": 0.5972500000000025,
+      "median": 0.6852914999999982,
+      "max": 0.7841669999999965
+    }
+  },
+  {
+    "language": "typescript",
+    "case": {
+      "mode": "hosted",
+      "source": "service",
+      "evaluation": "OBSERVE_ALL",
+      "startup": "immediate",
+      "cold_start": "warn-and-observe"
+    },
+    "construction_ms": {
+      "min": 1.746959000000004,
+      "median": 1.8294585000000083,
+      "max": 2.578458999999995
+    },
+    "startup_wait_ms": {
+      "min": 0,
+      "median": 0.0,
+      "max": 0
+    },
+    "first_ms": {
+      "min": 9.20929199999999,
+      "median": 9.685520499999996,
+      "max": 10.652500000000003
+    },
+    "repeated_ms": {
+      "min": 0.37462500000000887,
+      "median": 0.40462550000000874,
+      "max": 0.45812500000000966
+    }
+  },
+  {
+    "language": "typescript",
+    "case": {
+      "mode": "hosted",
+      "source": "service",
+      "evaluation": "RESPECT_POLICY",
+      "startup": "immediate",
+      "cold_start": "warn-and-observe"
+    },
+    "construction_ms": {
+      "min": 1.7943750000000023,
+      "median": 1.857438000000002,
+      "max": 2.5531249999999943
+    },
+    "startup_wait_ms": {
+      "min": 0,
+      "median": 0.0,
+      "max": 0
+    },
+    "first_ms": {
+      "min": 9.551957999999999,
+      "median": 9.894520999999997,
+      "max": 10.608875000000012
+    },
+    "repeated_ms": {
+      "min": 0.39449999999999363,
+      "median": 0.425021000000001,
+      "max": 0.5044170000000037
+    }
+  }
+]

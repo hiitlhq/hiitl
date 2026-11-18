@@ -63,6 +63,36 @@ export function copySuppliedInput<T>(value:T):T {
   return value;
 }
 
+type ArmResult=z.core.ParsePayload;
+const refusesKind=(result:ArmResult)=>result.issues.some(issue=>issue.code==='invalid_type'&&!issue.path?.length);
+const undefinedMembers=(result:ArmResult)=>result.issues.reduce((n,issue)=>n+(issue.code==='unrecognized_keys'?issue.keys.length:0),0);
+function closest(results:ArmResult[],payload:ArmResult):ArmResult {
+  const passed=results.find(result=>!result.issues.length);
+  if(passed){payload.value=passed.value;return payload;}
+  const ofKind=results.filter(result=>!refusesKind(result));
+  const nearest=(ofKind.length?ofKind:results).reduce((best,result)=>{
+    const [members,errors]=[undefinedMembers(result),result.issues.length],[bestMembers,bestErrors]=[undefinedMembers(best),best.issues.length];
+    return members<bestMembers||members===bestMembers&&errors<bestErrors?result:best;
+  });
+  payload.issues.push(...nearest.issues);
+  return payload;
+}
+// Zod's union reports the one arm that did not abort, so an enum's refusal of the data's own arm was lost to another
+// arm's undefined keys. This union reads Python's rule (input_types.py): an arm of the input's JSON kind, then the
+// fewest undefined members, then the fewest errors (tests/conformance/TEST_DESIGN.md, `matches`).
+const ClosestUnion=z.core.$constructor<z.ZodUnion,z.core.$ZodUnionDef>('ClosestUnion',(instance,def)=>{
+  z.ZodUnion.init(instance,def);
+  instance._zod.parse=(payload,ctx)=>{
+    const results=def.options.map(option=>option._zod.run({value:payload.value,issues:[]},ctx));
+    if(results.some(result=>result instanceof Promise))return Promise.all(results).then(settled=>closest(settled,payload));
+    return closest(results as ArmResult[],payload);
+  };
+});
+/** A union refused by the arm closest to the data; its type and JSON Schema are the union's. */
+export function closestArm<const Options extends readonly z.core.SomeType[]>(options:Options):z.ZodUnion<Options> {
+  return new ClosestUnion({type:'union',options:options as unknown as z.core.$ZodUnionDef['options']}) as unknown as z.ZodUnion<Options>;
+}
+
 /** Zod's record parser skips __proto__; this reader validates values and creates own data properties. */
 export function dataRecord<Value extends z.ZodType>(schema: Value) {
   return z.custom<Record<string,z.input<Value>>>(isRecord,{message:'Expected a JSON object'})
@@ -97,3 +127,39 @@ export function declaredMemberShape(members:Readonly<Record<string,z.ZodType>>,c
   return {...shape,additionalProperties:!closed};
 }
 export const dataObject=(members:Readonly<Record<string,z.ZodType>>)=>dataRecord(z.any()).superRefine((value,ctx)=>checkMembers(value,members,ctx)).meta(declaredMemberShape(members));
+
+const preparedSchemas = new WeakSet<z.ZodType>();
+/** Build owned schema readers where their input owner is constructed.
+ *
+ * The Zod object parser compiles on its first object, even if it is invalid.
+ * Prepare every declared child, not a chosen valid envelope: no evaluation,
+ * decision, admission exemption, or public schema surface changes here.
+ */
+export function prepareInputSchemas(...schemas: z.ZodType[]): void {
+  const visited = new Set<object>();
+  function visit(value: unknown): void {
+    if (value === null || typeof value !== 'object' || visited.has(value)) return;
+    visited.add(value);
+    if ('_zod' in value && 'safeParse' in value) {
+      const schema = value as z.ZodType;
+      if (preparedSchemas.has(schema)) return;
+      preparedSchemas.add(schema);
+      const definition = schema._zod.def as any;
+      if (definition.type === 'lazy') visit(definition.getter());
+      for (const [key, child] of Object.entries(definition)) {
+        if (key !== 'defaultValue' && key !== 'checks') visit(child);
+      }
+      if (definition.type === 'object') {
+        // parse bypasses the root refinement; child declarations retain their
+        // parsers. An empty object compiles the reader without a guarded action.
+        schema._zod.parse({value: {}, issues: []}, {async: false});
+      }
+      if (!numberShapes.has(schema)) {
+        numberShapes.set(schema, z.toJSONSchema(schema, {io:'input', unrepresentable:'any'}));
+      }
+      return;
+    }
+    for (const child of Object.values(value)) visit(child);
+  }
+  for (const schema of schemas) visit(schema);
+}

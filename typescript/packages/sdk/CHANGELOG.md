@@ -5,7 +5,7 @@ All notable changes to `@hiitl/sdk` will be documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.2.0] — 2026-11-16
+## [0.2.0] — 2026-11-18
 
 <!-- Prepared release date: re-date this entry if publication slips. -->
 
@@ -13,7 +13,28 @@ Requires `@hiitl/core ^0.2.0`: the evaluator moves from policy format 2.0 to
 2.21 (see `@hiitl/core`'s changelog), decision for decision with `hiitl` 0.2.0
 on PyPI.
 
+### Verification
+
+- Latency targets and durable audit writes are unchanged. Structural checks fail
+  every build; timing cells assert p95 only under `HIITL_RELEASE_LATENCY=1` in the
+  named release environment and record samples otherwise. The release check
+  refuses missing, incomplete, unasserted or over-target evidence for its export
+  commit. Shared-runner samples remain artifacts, not a release certificate.
+
 ### Breaking changes
+
+- **Warm hybrid startup reads the disk cache during construction.** The first
+  call uses that policy, with the existing integrity and admission checks. A
+  fail-closed cold start still waits for its initial sync in `evaluate()`.
+- **Held policy files follow identity, change metadata and the platform clock.**
+  Permission changes, replacements and edits that preserve mtime reload. Within
+  a timestamp tick the reading is confirmed by content; after the timestamps
+  distinguish a later rewrite, unchanged files incur no content read. A source
+  whose clock cannot be observed remains confirmed by content without requiring
+  a writable policy directory. Invalid later files retain `POLICY_ERROR`.
+- **Schema readers are prepared at construction.** The SDK prepares the declared
+  child parsers and numeric diagnostic shapes before its first evaluation or
+  background sync cycle. Actual admission still runs inside the call's timing.
 
 - **Reserved policy markers refuse malformed forms at load.** `$field`, `$declared` and `$uncalibrated` must be the sole key at a position that reads that form. Sibling keys and unsupported positions are refused; nested values gain no new resolution. Envelope-owned keys remain ordinary data.
 - **Numeric remedies follow the member type.** A typed numeric member must be a number in its declared range. Text is a remedy only in open data that admits it.
@@ -78,6 +99,22 @@ on PyPI.
 - **Node.js 22 or later is required.** Node 18 and 20 leave the supported
   range. Upgrade Node before installing 0.2.0; the TypeScript packages share
   this requirement. CI covers the maintained Node 22, 24 and 26 lines.
+
+- **The `matches` operator is removed.** A policy naming it is refused at load
+  (`PolicyLoadError`) at the condition's `operator`, and the refusal names the
+  operators to use in its place: `starts_with` or `ends_with` for a prefix or
+  suffix, `contains` for a substring, `in` for a set of values. End an allowlist
+  prefix at a boundary (`"https://hooks.slack.com/"`, with its slash), so a host
+  that only begins with an allowed one is not admitted. The envelope schema's
+  `pattern` checks on hiitl's own identifiers are unchanged.
+- **A condition carries its `value`.** A policy whose condition has no `value`
+  is refused at load (`PolicyLoadError`) at that `value` path, as Python already
+  did.
+  A `value` set to `undefined` is refused the same way, since JSON has no
+  `undefined`. Before 0.2.0 TypeScript loaded such a condition wherever the
+  operator's operand kind took any value (`equals`, `not_equals`, `contains`,
+  `not_contains`): an `equals` with no value never matched, and a `not_equals`
+  always did.
 
 ### Security
 

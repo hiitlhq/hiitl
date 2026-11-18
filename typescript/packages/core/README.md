@@ -135,7 +135,7 @@ const decision = evaluate(envelope, policy);
 
 ## Condition Operators
 
-The evaluator supports 15 condition operators:
+The evaluator supports these condition operators:
 
 ### Equality
 - `equals` - Field equals value
@@ -152,7 +152,6 @@ The evaluator supports 15 condition operators:
 - `not_contains` - Inverse of contains
 - `starts_with` - String starts with prefix
 - `ends_with` - String ends with suffix
-- `matches` - Regex pattern matching
 
 ### Set Operations
 - `in` - Field value is in array

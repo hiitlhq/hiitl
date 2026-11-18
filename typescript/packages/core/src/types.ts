@@ -15,7 +15,7 @@ import { enumRefusal } from './enum-refusal.js';
 import { integer } from './integer.js';
 import { compileSetLimits } from './rate-limits.js';
 import { DateTimeSchema } from './date-time.js';
-import { dataRecord, dataObject, checkMembers, numericInput, declaredMemberShape } from './own-data.js';
+import { dataRecord, dataObject, checkMembers, numericInput, declaredMemberShape, closestArm } from './own-data.js';
 
 // ============================================================================
 // Enums
@@ -100,7 +100,6 @@ export const ConditionOperator = {
   NOT_CONTAINS: 'not_contains',
   STARTS_WITH: 'starts_with',
   ENDS_WITH: 'ends_with',
-  MATCHES: 'matches',
   // Set operations
   IN: 'in',
   NOT_IN: 'not_in',
@@ -230,7 +229,6 @@ const ConditionOperatorSchema = z.enum([
   'not_contains',
   'starts_with',
   'ends_with',
-  'matches',
   'in',
   'not_in',
   'exists',
@@ -367,7 +365,7 @@ export const ConditionSchema = z
   .object({
     field: z.string(),
     operator: ConditionOperatorSchema,
-    value: z.any().meta(operandDeclaration).optional(),
+    value: z.any().nonoptional().meta(operandDeclaration),
   })
   .strict() // no field is dropped (policy_format.md; S2)
   .superRefine((c, ctx) => {
@@ -474,9 +472,9 @@ export interface LogicalCondition {
  */
 export const LogicalConditionSchema: z.ZodType<LogicalCondition> = z
   .object({
-    all_of: z.lazy(() => z.array(z.union([ConditionSchema, LogicalConditionSchema]))).optional(),
-    any_of: z.lazy(() => z.array(z.union([ConditionSchema, LogicalConditionSchema]))).optional(),
-    none_of: z.lazy(() => z.array(z.union([ConditionSchema, LogicalConditionSchema]))).optional(),
+    all_of: z.lazy(() => z.array(closestArm([ConditionSchema, LogicalConditionSchema]))).optional(),
+    any_of: z.lazy(() => z.array(closestArm([ConditionSchema, LogicalConditionSchema]))).optional(),
+    none_of: z.lazy(() => z.array(closestArm([ConditionSchema, LogicalConditionSchema]))).optional(),
   })
   .strict()
   .refine(
@@ -488,9 +486,9 @@ export const LogicalConditionSchema: z.ZodType<LogicalCondition> = z
   );
 
 /**
- * Union of Condition and LogicalCondition.
+ * Union of Condition and LogicalCondition, refused by the arm closest to the data (as Python reads it).
  */
-export const ConditionUnionSchema = z.union([ConditionSchema, LogicalConditionSchema]);
+export const ConditionUnionSchema = closestArm([ConditionSchema, LogicalConditionSchema]);
 
 export type ConditionUnion = Condition | LogicalCondition;
 

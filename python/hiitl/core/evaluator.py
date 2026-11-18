@@ -17,7 +17,6 @@ Design principles:
 
 import hashlib
 import logging
-import re
 import time
 import uuid
 from contextvars import ContextVar
@@ -120,7 +119,11 @@ class PolicyEvaluator:
 
     def __init__(self):
         """Initialize the policy evaluator."""
-        pass
+        # Prepare declarations before the first call; supplied input is still
+        # admitted by evaluate, within its own clock.
+        model_shape(Envelope)
+        policy_shape(PolicySet, Envelope)
+        policy_shape(Rule, Envelope)
 
     def evaluate(
         self,
@@ -751,15 +754,6 @@ class PolicyEvaluator:
             return isinstance(field_value, str) and field_value.endswith(
                 compare_value
             )
-        elif operator == ConditionOperator.MATCHES:
-            # Regex match (use sparingly - can be slow)
-            if not isinstance(field_value, str):
-                return False
-            try:
-                pattern = re.compile(compare_value)
-                return pattern.search(field_value) is not None
-            except re.error:
-                return False
 
         # Set operators — an array on the left is a subset test (policy_format.md 2.6)
         elif operator == ConditionOperator.IN:

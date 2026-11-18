@@ -1,8 +1,8 @@
 # Policy Format Specification
 
-**Version**: 2.21
+**Version**: 2.23
 **Status**: Wave 9 Block 1A Specification
-**Last Updated**: 2026-11-15
+**Last Updated**: 2026-11-17
 
 ---
 
@@ -474,7 +474,7 @@ Conditions are expressed as nested JSON/YAML trees. They support:
 - Comparison operators
 - Logical operators (AND, OR, NOT)
 - Set membership
-- Pattern matching
+- String prefix, suffix and substring tests
 
 ### Condition Operators
 
@@ -513,6 +513,8 @@ conditions:
       value: "dev"
 ```
 
+**Exactly one set (HTL-45 `d0640d7a`, gap 322).** A logical condition sets exactly one of `all_of`, `any_of` and `none_of`. An object that sets none of them, such as `{}`, or more than one is neither form of condition. Both loaders refuse it at load at the condition's own path, naming "Exactly one of all_of, any_of, or none_of must be set". Each reads that rule once the object's own members hold, as its model's after-validator does (pydantic's `mode='after'`, zod's `refine`), so an object with a malformed member is refused at that member. Proposed system architecture §2: SDK/ingest (both loaders).
+
 #### Comparison Operators
 
 **JSON-value comparison (Trevor, 2026-11-15 UTC, HTL-43).** Equality compares the
@@ -540,11 +542,14 @@ system architecture §2: SDK decision plane.
 | `not_contains` | string, array | Inverse of contains, using the same JSON-value comparison above |
 | `starts_with` | string | String prefix match |
 | `ends_with` | string | String suffix match |
-| `matches` | string | Regex match (use sparingly, can be slow) |
 | `in` | all | Value is in set (right-hand side is array), using JSON-value comparison above |
 | `not_in` | all | Inverse of in, using the same JSON-value comparison above |
 | `exists` | all | Field exists in envelope (value is true/false) |
 | `conforms_to` | object | The field's value conforms to a parameter schema (2.6; see **Parameter schema**) — never a regex |
+
+**`matches` is removed (Trevor, 2026-11-17, HTL-45 `8613a7bc`; R-0173).** A policy naming `matches` is refused at load by the refusal for an operator this table does not have, which names every operator above, among them the operators to use in its place: `starts_with`, `ends_with`, `contains` and `in`.
+
+**A condition carries its `value` (HTL-45 `d0640d7a`, gap 322).** Every operator in the table reads a right-hand side, so an atomic condition's `field`, `operator` and `value` are all required; `exists` takes `true` or `false`. Both loaders refuse a condition without `value` at load at its `value` path, by the refusal for a missing required member that a set without `scope` also gets. A policy is JSON, which has no `undefined`, so in TypeScript a condition whose `value` is set to `undefined` is the same condition as one without it, and is refused the same way. Through 2.22 TypeScript admitted one: its `equals` then never matched and its `not_equals` always did, so a rule with no `value` loaded and never fired, or fired on every call, while Python refused the same policy. A rule that silently never fires is refused at load (gap 287), by Principle 7, "If a failure mode is ambiguous, default to blocking," and by the project's rule, "Both evaluators must produce identical decisions for identical inputs." Proposed system architecture §2: SDK/ingest (both loaders).
 
 **An operand of the wrong kind (Trevor, 2026-11-15, HTL-43 `fc00ed9a`).**
 Both operands must fit the kinds the operator declares above, whether read from a
@@ -1374,6 +1379,8 @@ Every evaluator implementation runs the full suite. All must produce identical d
 | 2.19 | 2026-11-14 | HTL-43, Trevor's ruling `13d5d855`: optional fields are omitted; explicit null follows the declared type. The three lineage/dependency child tables state the shared non-null types and requiredness of both SDKs, including the citation object/array forms. Open JSON data remains open. Numeric representation and the public Python keyword boundary are separate pending rulings; this entry chooses neither. | Codex |
 | 2.20 | 2026-11-14 | HTL-43 rulings `04ee6245`, `1c1611da`, `d82fe0f5`: every number follows the single admission domain beside C; scope percentage is an integer 0–100, and rate-window limit/duration are positive integers or the declared placeholder. Both loaders use YAML 1.2 Core scalar resolution. No new grammar for the three separately open conditions. | Codex |
 | 2.21 | 2026-11-15 | HTL-43 `93d827ef` and `fc00ed9a`: structural JSON equality and membership; wrong-kind operands stop an unsettled reached rule with the existing policy error, independent of condition order, and fixed wrong-kind literals are refused at load where the operator declares the right-side kind. Absent/null and placeholders retain their declared reading. | Codex |
+| 2.22 | 2026-11-17 | HTL-45, Trevor's ruling `8613a7bc` (R-0173): **`matches` is removed** from the operator table. A policy naming it is refused at load in both languages by the refusal for an operator the format does not have, which names `starts_with`, `ends_with`, `contains` and `in`; the regex errors each evaluator swallowed leave with it. Breaking for policies written against 0.1.0. The envelope schema's `pattern` checks on hiitl's own identifier formats are unchanged. | CC |
+| 2.23 | 2026-11-17 | HTL-45 `d0640d7a`, gap 322, decided by the record: **a condition's `value` is required** in both languages, as Python already read it, and TypeScript now refuses its absence (or an `undefined` value, since JSON has none) at load at the same path. An object that is neither condition form (`{}`, or two logical sets) is refused at the condition's own path in both. Breaking for TypeScript policies written against 0.1.0 that omit `value`. | CC |
 
 ---
 

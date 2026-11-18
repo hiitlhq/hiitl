@@ -8,7 +8,7 @@ Per docs/specs/policy_format.md:
 Design:
 - Format detection by file extension (.json, .yaml, .yml)
 - Fallback: try JSON first (faster), then YAML
-- mtime-based caching to avoid re-parsing unchanged files
+- File identity/change-metadata caching to avoid re-parsing unchanged files
 - Helpful error messages pointing to policy_format.md
 
 Example:
@@ -32,6 +32,7 @@ from hiitl.core.numeric_domain import NumericDomainError, validate_numeric_domai
 from hiitl.core.input_declarations import policy_shape
 from hiitl.core.types import Envelope
 from hiitl.sdk.exceptions import PolicyLoadError
+from hiitl.sdk.file_clock import read_file_clock
 
 logger = logging.getLogger(__name__)
 
@@ -98,7 +99,7 @@ class PolicyLoader:
     This loader supports both JSON (primary format) and YAML (convenience layer).
     Policies are parsed into PolicySet objects and validated with Pydantic.
 
-    The loader maintains an mtime-based cache to avoid re-parsing unchanged files.
+    The loader holds a reading while file identity and change metadata agree.
     This is critical for performance in high-throughput scenarios.
 
     Attributes:
@@ -116,12 +117,15 @@ class PolicyLoader:
         self.policy_path = Path(policy_path)
         self._cached_policy: Optional[PolicySet] = None
         self._cached_mtime: Optional[float] = None
+        self._cached_metadata: Optional[tuple] = None
+        self._cached_content: Optional[str] = None
+        self._timestamps_distinguish = False
 
     def load(self) -> PolicySet:
-        """Load policy from JSON or YAML file with mtime-based caching.
+        """Load policy from JSON or YAML file with metadata-based caching.
 
         This method:
-        1. Checks file modification time
+        1. Checks file identity and change metadata
         2. Returns cached policy if file unchanged
         3. Otherwise, parses file (JSON or YAML)
         4. Validates with Pydantic PolicySet schema
@@ -147,20 +151,35 @@ class PolicyLoader:
                 reason="POLICY_NOT_FOUND",
             )
 
-        # Get current file modification time
+        # Record the metadata before reading: a change during parsing must not
+        # bless that reading as the next file's. atime is not change metadata.
         try:
-            current_mtime = self.policy_path.stat().st_mtime
+            current = self.policy_path.stat()
+            current_mtime = current.st_mtime
+            current_metadata = (current.st_dev, current.st_ino, current.st_size,
+                                current.st_mtime_ns, current.st_ctime_ns, current.st_mode,
+                                current.st_uid, current.st_gid, current.st_nlink,
+                                getattr(current, 'st_flags', None))
         except OSError as e:
             raise PolicyLoadError(
                 f"Cannot access policy file {self.policy_path}: {e}", reason="POLICY_LOAD_FAILED"
             ) from e
 
         # Return cached policy if file unchanged
-        if self._cached_policy and self._cached_mtime == current_mtime:
+        if self._cached_policy and self._cached_metadata == current_metadata and self._timestamps_distinguish:
             return self._cached_policy
 
-        # Parse file to Python dict
-        policy_dict = self._parse_file()
+        # Timestamp before the content read: a write during/after it must not be
+        # blessed by a later timestamp. A tied clock requires confirmation again.
+        read_time = read_file_clock(current)
+        content = self._read_file()
+        distinguish = read_time is not None and current.st_ctime_ns < read_time
+        if self._cached_policy and self._cached_metadata == current_metadata and self._cached_content == content:
+            self._timestamps_distinguish = distinguish
+            return self._cached_policy
+
+        # Parse and admit only changed content, at its source.
+        policy_dict = self._parse_file(content)
         shape = policy_shape(PolicySet, Envelope)
         if isinstance(policy_dict, dict) and 'policy_set' in policy_dict:
             shape = {**shape, 'properties': {'policy_set': shape}}
@@ -203,10 +222,22 @@ class PolicyLoader:
         # Cache for next call
         self._cached_policy = policy
         self._cached_mtime = current_mtime
+        self._cached_metadata = current_metadata
+        self._cached_content = content
+        self._timestamps_distinguish = distinguish
 
         return policy
 
-    def _parse_file(self) -> dict:
+    def _read_file(self) -> str:
+        try:
+            with open(self.policy_path, 'r', encoding='utf-8') as stream:
+                return stream.read()
+        except OSError as error:
+            raise PolicyLoadError(
+                f"Cannot read policy file {self.policy_path}: {error}", reason="POLICY_LOAD_FAILED"
+            ) from error
+
+    def _parse_file(self, content=None) -> dict:
         """Parse policy file to Python dict (JSON or YAML).
 
         Format detection:
@@ -223,7 +254,8 @@ class PolicyLoader:
         suffix = self.policy_path.suffix.lower()
 
         try:
-            with open(self.policy_path, 'r', encoding='utf-8') as f:
+            from io import StringIO
+            with StringIO(self._read_file() if content is None else content) as f:
                 # JSON format (primary)
                 if suffix == '.json':
                     try:
@@ -293,3 +325,4 @@ class PolicyLoader:
         """
         self._cached_policy = None
         self._cached_mtime = None
+        self._cached_metadata = None

@@ -1016,11 +1016,11 @@ policy_set:
       decision: "BLOCK"
       reason_code: "AMOUNT_TOO_HIGH"
 
-    # Avoid expensive operations (regex, deep nesting)
+    # Avoid expensive operations (substring search, deep nesting)
     # This rule would be SLOW:
     # - field: "parameters.deeply.nested.field"
-    #   operator: "matches"  # Slow: regex matching
-    #   value: "complex_.*_regex"
+    #   operator: "contains"  # Slower: substring search
+    #   value: "complex_"
 ```
 
 ### Rate Limiting Caveats in Local Mode

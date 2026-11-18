@@ -20,7 +20,7 @@ Single rules, the default for an action no rule matches, and the envelope's top-
 - `test_009_environment_field.json` - A condition on `environment`
 - `test_010_operation_field.json` - A condition on `operation`
 
-### Condition Operators (`conditions/`, 14 tests)
+### Condition Operators (`conditions/`, 13 tests)
 Each atomic condition operator.
 
 - `test_011_equals_operator.json` - `equals`
@@ -32,7 +32,6 @@ Each atomic condition operator.
 - `test_017_starts_with_operator.json` - `starts_with`
 - `test_018_ends_with_operator.json` - `ends_with`
 - `test_019_exists_operator.json` - `exists`
-- `test_020_matches_operator.json` - `matches` (regex)
 - `test_024_greater_than_or_equal.json` - `greater_than_or_equal`
 - `test_025_less_than_or_equal.json` - `less_than_or_equal`
 - `test_026_not_in_operator.json` - `not_in` (value not in list)
@@ -234,7 +233,7 @@ A rule the call cannot read, because an envelope path its conditions name is abs
 - `test_190_a_none_of_over_tool_name_blocks_every_call.json` - `skip`: a `none_of` allowlist over `tool_name` blocks a call it names, flagged with the rule and `tool_name`
 - `test_191_fail_closed_a_rule_open_on_tool_name_blocks.json` - `fail_closed`: a rule open on `tool_name` decides `BLOCK` / `MISSING_FIELD` naming it
 
-### Refusals (`refusals/`, 15 tests)
+### Refusals (`refusals/`, 20 tests)
 An artifact naming a field its spec does not define, or missing one it requires, is refused, located at the field and naming it (R-0872: no field is ever silently dropped). A refusal case carries one artifact and `expected_refusal`; nothing is evaluated.
 
 - `test_162_envelope_refuses_an_undefined_field.json` - An envelope with a top-level field the schema does not define (`amount_usd`)
@@ -242,6 +241,7 @@ An artifact naming a field its spec does not define, or missing one it requires,
 - `test_164_rule_refuses_a_decision_only_the_evaluator_produces.json` - A rule writing `OBSERVE`: refused at `rules.0.decision`, naming the rule and the value
 - `test_165_scope_refuses_an_environment_no_envelope_carries.json` - A `scope.environments` entry no envelope carries (`staging`), at its index
 - `test_166_route_refuses_an_undefined_field_at_depth.json` - A route with an `sla` key `routes.md` does not define (`escalate_after`)
+- `test_020_a_policy_naming_matches_is_refused_at_load.json` - A condition naming `matches`, which left the format at 2.22: at `rules.0.conditions.operator`, naming it and `starts_with`, `ends_with`, `contains`, `in` (was the operator's decision case)
 - `test_177_policy_set_refuses_an_on_missing_outside_its_two.json` - An `on_missing` other than `skip` and `fail_closed` (`fail_open`), at `on_missing`
 - `test_180_policy_set_refuses_a_set_with_no_scope.json` - A set without its `scope`, at `scope`
 - `test_181_policy_set_refuses_a_set_with_no_description.json` - A set without its `description`, at `description`
@@ -252,17 +252,20 @@ An artifact naming a field its spec does not define, or missing one it requires,
 - `test_186_policy_set_scope_refuses_an_org_in_another_form.json` - A `scope.org_id` not in the envelope's form (`acme-finance`), at `scope.org_id`
 - `test_187_envelope_refuses_tool_name_naming_action.json` - A 1.x envelope naming its action `tool_name`, at `action` and `tool_name`, naming `action` (was test_107; the alias leaves at 2.0)
 - `test_188_envelope_refuses_tool_name_beside_action.json` - `tool_name` beside `action`, at `tool_name` alone, naming `action`
+- `test_195_a_condition_without_its_value_is_refused_at_load.json` - A condition without its `value` (2.23; gap 322), at `rules.0.conditions.value`, naming `value`
+- `test_196_a_nested_condition_without_its_value_is_refused_at_its_path.json` - The same nested in `any_of`, at `rules.0.conditions.any_of.1.value`
+- `test_197_an_empty_condition_is_refused_at_its_own_path.json` - `{}` as a condition, at `rules.0.conditions`, naming the exactly-one rule
+- `test_198_a_condition_setting_two_logical_sets_is_refused_at_its_own_path.json` - A condition setting `all_of` and `any_of`, at `rules.0.conditions`, naming the exactly-one rule
 
 ## Coverage Summary
 
-**Condition operators (15):**
+**Condition operators (14):**
 - ✅ equals, not_equals
 - ✅ greater_than, greater_than_or_equal
 - ✅ less_than, less_than_or_equal
 - ✅ in, not_in (including an array on the left)
 - ✅ contains, not_contains
 - ✅ starts_with, ends_with
-- ✅ matches (regex)
 - ✅ exists
 - ✅ conforms_to (parameter schema)
 
@@ -284,7 +287,7 @@ An artifact naming a field its spec does not define, or missing one it requires,
 - ✅ PAUSE (1)
 - ✅ RATE_LIMIT (1)
 
-No case expects `SIGNATURE_INVALID` or `CONTROL_PLANE_UNAVAILABLE`. Fifteen cases expect a refusal in place of a decision (`refusals/`).
+No case expects `SIGNATURE_INVALID` or `CONTROL_PLANE_UNAVAILABLE`. Twenty cases expect a refusal in place of a decision (`refusals/`).
 
 **Features:**
 - ✅ DENY wins: `KILL_SWITCH`, then `BLOCK`, then every other decision; within a class, priority, then definition order

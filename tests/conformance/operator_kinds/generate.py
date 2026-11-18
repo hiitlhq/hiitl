@@ -49,7 +49,7 @@ def answer(declaration,left,right,reference):
     if cat=='equality':matched=equal(left,right);matched=not matched if op=='not_equals' else matched
     elif cat=='exists':matched=(left is not None)==right
     elif cat=='number':matched={'greater_than':left>right,'greater_than_or_equal':left>=right,'less_than':left<right,'less_than_or_equal':left<=right}[op]
-    elif cat=='string':matched=left.startswith(right) if op=='starts_with' else left.endswith(right) if op=='ends_with' else re.search(right,left) is not None
+    elif cat=='string':matched={'starts_with':left.startswith,'ends_with':left.endswith}[op](right)
     elif cat=='container':
         matched=right in left if isinstance(left,str) else any(equal(x,right) for x in left)
         if op=='not_contains':matched=not matched

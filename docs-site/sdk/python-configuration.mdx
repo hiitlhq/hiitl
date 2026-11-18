@@ -262,9 +262,10 @@ This is equivalent to calling `hiitl.close()` manually, which releases HTTP conn
 | Exception | When |
 |-----------|------|
 | `ConfigurationError` | Invalid constructor arguments or missing required fields |
+| `PolicyLoadError` | Policy file cannot be found, read, or parsed when the client is constructed. Once constructed, a file that goes missing or stops parsing is the decision `POLICY_ERROR`, not a throw |
 | `AuditLogError` | Audit database cannot be created or initialized |
 
-A policy file that cannot be found, read or parsed is not raised: `evaluate()`, which reads the file, returns `POLICY_ERROR` with the cause as its reason code and logs the loader's message.
+After construction, a policy load failure returns `POLICY_ERROR` with the cause as its reason code and logs the loader's message.
 
 ```python
 from hiitl.sdk.exceptions import ConfigurationError

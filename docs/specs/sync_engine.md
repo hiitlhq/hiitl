@@ -262,7 +262,12 @@ value (Trevor, 2026-11-15 UTC, HTL-43). A stored record read back for upload, ve
 supplied tree and is not admitted again. The SDK's held policy is supplied where it is loaded (its policy file
 or the disk cache) or received (a policy pull or a kill-switch tick), and is admitted there; each evaluate reads
 the held reading, and neither admits it nor rebuilds it from the stored record again (HTL-43 gap 295, 88579bbd
-item 4). Old records upload as written, with their content, hash and integrity
+item 4). A held file reading is replaced when its file's identity or change metadata changes, including a
+permission change or a rewrite that keeps mtime; the replacement uses the existing parser and error mapping.
+While the platform's timestamps cannot distinguish a later rewrite from the held reading, the next evaluate
+confirms that reading by content. This window is read from the file's change time against the time of the read
+on the same platform clock, never from a fixed duration. Once the timestamps distinguish a later rewrite,
+an unchanged file costs no content read per evaluation (HTL-45, 6d410ffd and 70254bbc). Old records upload as written, with their content, hash and integrity
 unchanged, and the records behind them upload in the same drain. The service's upload check is verification
 under `C` too. Admission and `C` are separate calls: admission where a value is supplied, `C` wherever a hash is
 computed or verified. A new record is signed and hashed after its input was admitted, so nothing new enters
@@ -736,7 +741,7 @@ When the SDK starts in hybrid mode with no existing disk cache:
 
 When the SDK starts and valid disk cache is present:
 
-1. **Load disk cache immediately** — policies, routes, kill switches from `{cache_dir}/{org_id}/{environment}/`.
+1. **Load disk cache immediately** — policies, routes, kill switches from `{cache_dir}/{org_id}/{environment}/`, during construction in both SDKs, so the first evaluation reads that cache (HTL-45, 6d410ffd).
 2. **Check cache age** — if within TTL, use directly. If stale but within max stale age, use with info log. If beyond max stale age, use with warning.
 3. **Start background sync** — first sync fires immediately (not waiting for the interval).
 4. **Initialization completes immediately** — does not block on server connectivity.

@@ -13,9 +13,10 @@ import { requireOperandKinds, OperatorKindError } from './operator-kinds.js';
  * Implements all 14 condition operators matching Python evaluator behavior:
  * - Equality: equals, not_equals
  * - Numeric: greater_than, greater_than_or_equal, less_than, less_than_or_equal
- * - String/Array: contains, not_contains, starts_with, ends_with, matches
+ * - String/Array: contains, not_contains, starts_with, ends_with
  * - Set: in, not_in
  * - Existence: exists
+ * - Schema: conforms_to
  *
  * **Null handling:**
  * - `exists` operator: Returns `(fieldValue != null) === compareValue`
@@ -123,20 +124,6 @@ export function evaluateOperator(
       return fieldValue.endsWith(compareValue);
     }
     return false;
-  }
-
-  if (operator === 'matches') {
-    // Regex pattern matching (use sparingly - can be slow)
-    if (typeof fieldValue !== 'string') {
-      return false;
-    }
-    try {
-      const pattern = new RegExp(compareValue);
-      return pattern.test(fieldValue);
-    } catch {
-      // Invalid regex pattern - return false
-      return false;
-    }
   }
 
   // === Set operations ===

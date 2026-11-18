@@ -187,13 +187,12 @@ hiitl.evaluate(
 2. `greater_than`, `less_than` (numeric comparison)
 3. `in` (membership in the listed values)
 4. `contains` (substring search)
-5. `matches` (regex - avoid if possible)
 
 ```yaml
-# SLOW - regex matching
+# SLOWER - substring search
 - field: "action"
-  operator: "matches"
-  value: "payment_.*"
+  operator: "contains"
+  value: "payment_"
 
 # FAST - exact match or `in` operator
 - field: "action"
@@ -590,7 +589,6 @@ Consider hosted mode if you need:
 |--------------|--------|--------|
 | Use < 50 rules | ⚡⚡⚡ High | Low |
 | Flatten envelope structure | ⚡⚡ Medium | Medium |
-| Avoid regex operators | ⚡⚡ Medium | Low |
 | Use SSD storage | ⚡⚡ Medium | Low (infrastructure) |
 | Order conditions by selectivity | ⚡ Low | Low |
 | Minimize envelope size | ⚡ Low | Medium |

@@ -1,0 +1,35 @@
+{
+  "source": "HTL-45 8613a7bc item 3; tests/conformance/shipped_templates/TEST_DESIGN.md",
+  "template": "patterns/external/webhook_trigger.yaml",
+  "rule": "allow-whitelisted-destinations",
+  "policy_set": {
+    "name": "webhook_trigger_starter",
+    "version": "v1.0.0",
+    "description": "The webhook template's starter policies, as a customer copies them",
+    "scope": {"org_id": "org_1234567890abcdef", "environment": "prod"}
+  },
+  "envelope": {
+    "schema_version": "v2.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_notifications",
+    "action_id": "act_webhooktemplate00000000",
+    "timestamp": "2026-11-17T10:00:00Z",
+    "operation": "execute",
+    "action": "webhook_trigger",
+    "parameters": {"event_type": "order_completed", "payload_size": 2048},
+    "idempotency_key": "idem_webhook_template",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "field": "destination_url",
+  "allowed": [
+    "https://hooks.slack.com/services/T00/B00/xxx",
+    "https://api.pagerduty.com/incidents",
+    "https://events.datadog.com/api/v1/events"
+  ],
+  "not_allowed": [
+    "https://hooks.slack.com.attacker.com/",
+    "https://hooks.slack.com@attacker.com/"
+  ]
+}

@@ -1,9 +1,9 @@
 {
   "authority": "88579bbd; sync_engine.md Numeric domain",
   "source_hashes": {
-    "docs/specs/sync_engine.md": "337e58daa0f9d65e15635df321c7f00ae21b6bdfbb25cefafa27c0829d608e2f",
-    "docs/specs/decision_response.md": "f4bedd4139324910c31cf8612d2ebae23f52d3b37dbf6ff09e99e6b8fc27a633",
-    "docs/specs/policy_format.md": "80267fa81347b64470837c5b4545bd0e2cd78b036f42c637db74dc5a3385b762",
+    "docs/specs/sync_engine.md": "8a465d632aaae701cc82f7bdab777ab3a4c22560f80f20f31eb22de9345ae0ff",
+    "docs/specs/decision_response.md": "f0b77587852c83893aaf99d82c3bd70b0880d058643e68a07da9026c9cad3894",
+    "docs/specs/policy_format.md": "91b34ee19b141c4d74eeb7be363a81c449061a298f76681779c742ec0d1c628e",
     "docs/specs/envelope_schema.json": "4b6d164f63c480f76ddbeba31ab2080f278d3ea80f99408241b8cca871a49c0a",
     "docs/specs/routes.md": "88441a1a0df284ad77a9538d181c399193d65b8501cc482db1fb82b3092ee298"
   },

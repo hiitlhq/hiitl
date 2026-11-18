@@ -196,7 +196,7 @@
     {
       "language": "python",
       "path": "python/hiitl/sdk/client.py",
-      "line": 461,
+      "line": 470,
       "owner": "HIITL._init_hybrid",
       "guard": "validate_numeric_domain",
       "arguments": [
@@ -213,7 +213,7 @@
     {
       "language": "python",
       "path": "python/hiitl/sdk/client.py",
-      "line": 607,
+      "line": 619,
       "owner": "HIITL._init_hosted",
       "guard": "admitted_numbers",
       "arguments": [],
@@ -227,7 +227,7 @@
     {
       "language": "python",
       "path": "python/hiitl/sdk/client.py",
-      "line": 729,
+      "line": 741,
       "owner": "HIITL.evaluate",
       "guard": "validate_numeric_domain",
       "arguments": [
@@ -245,7 +245,7 @@
     {
       "language": "python",
       "path": "python/hiitl/sdk/client.py",
-      "line": 755,
+      "line": 767,
       "owner": "HIITL._verified_principal",
       "guard": "validate_numeric_domain",
       "arguments": [
@@ -261,7 +261,7 @@
     {
       "language": "python",
       "path": "python/hiitl/sdk/client.py",
-      "line": 1079,
+      "line": 1091,
       "owner": "HIITL._built_envelope",
       "guard": "admitted_numbers",
       "arguments": [],
@@ -275,7 +275,7 @@
     {
       "language": "python",
       "path": "python/hiitl/sdk/client.py",
-      "line": 1184,
+      "line": 1196,
       "owner": "HIITL.record_result",
       "guard": "validate_numeric_domain",
       "arguments": [
@@ -533,7 +533,7 @@
     {
       "language": "python",
       "path": "python/hiitl/sdk/policy_loader.py",
-      "line": 91,
+      "line": 92,
       "owner": "load_yaml",
       "guard": "validate_numeric_domain",
       "arguments": [
@@ -549,7 +549,7 @@
     {
       "language": "python",
       "path": "python/hiitl/sdk/policy_loader.py",
-      "line": 168,
+      "line": 187,
       "owner": "PolicyLoader.load",
       "guard": "validate_numeric_domain",
       "arguments": [
@@ -566,7 +566,7 @@
     {
       "language": "python",
       "path": "python/hiitl/sdk/policy_loader.py",
-      "line": 179,
+      "line": 198,
       "owner": "PolicyLoader.load",
       "guard": "admitted_numbers",
       "arguments": [],
@@ -700,7 +700,7 @@
     {
       "language": "python",
       "path": "python/hiitl/sdk/sync_client.py",
-      "line": 152,
+      "line": 153,
       "owner": "SyncClient.upload_audit",
       "guard": "admit_sync",
       "arguments": [
@@ -720,7 +720,7 @@
     {
       "language": "python",
       "path": "python/hiitl/sdk/sync_client.py",
-      "line": 171,
+      "line": 172,
       "owner": "SyncClient.upload_audit",
       "guard": "admit_sync",
       "arguments": [
@@ -738,7 +738,7 @@
     {
       "language": "python",
       "path": "python/hiitl/sdk/sync_client.py",
-      "line": 214,
+      "line": 215,
       "owner": "SyncClient.download_policies",
       "guard": "admit_sync",
       "arguments": [
@@ -756,7 +756,7 @@
     {
       "language": "python",
       "path": "python/hiitl/sdk/sync_client.py",
-      "line": 258,
+      "line": 259,
       "owner": "SyncClient.download_routes",
       "guard": "admit_sync",
       "arguments": [
@@ -774,7 +774,7 @@
     {
       "language": "python",
       "path": "python/hiitl/sdk/sync_client.py",
-      "line": 283,
+      "line": 284,
       "owner": "SyncClient.poll_kill_switches",
       "guard": "admit_sync",
       "arguments": [
@@ -792,7 +792,7 @@
     {
       "language": "python",
       "path": "python/hiitl/sdk/sync_client.py",
-      "line": 316,
+      "line": 317,
       "owner": "SyncClient.upload_telemetry",
       "guard": "admit_sync",
       "arguments": [
@@ -811,7 +811,7 @@
     {
       "language": "python",
       "path": "python/hiitl/sdk/sync_client.py",
-      "line": 335,
+      "line": 336,
       "owner": "SyncClient.upload_telemetry",
       "guard": "admit_sync",
       "arguments": [
@@ -829,7 +829,7 @@
     {
       "language": "python",
       "path": "python/hiitl/sdk/sync_client.py",
-      "line": 376,
+      "line": 377,
       "owner": "SyncClient._send_with_retry",
       "guard": "admit_sync",
       "arguments": [
@@ -1097,7 +1097,7 @@
     {
       "language": "typescript",
       "path": "typescript/packages/sdk/src/client.ts",
-      "line": 695,
+      "line": 700,
       "owner": "HIITL.evaluate",
       "guard": "assertSchemaNumbers",
       "arguments": [
@@ -1115,7 +1115,7 @@
     {
       "language": "typescript",
       "path": "typescript/packages/sdk/src/client.ts",
-      "line": 1048,
+      "line": 1053,
       "owner": "HIITL._verifiedPrincipal",
       "guard": "assertNumericDomain",
       "arguments": [
@@ -1131,7 +1131,7 @@
     {
       "language": "typescript",
       "path": "typescript/packages/sdk/src/client.ts",
-      "line": 1127,
+      "line": 1132,
       "owner": "HIITL._buildEnvelope.envelope",
       "guard": "parseAdmittedNumbers",
       "arguments": [
@@ -1148,7 +1148,7 @@
     {
       "language": "typescript",
       "path": "typescript/packages/sdk/src/client.ts",
-      "line": 1190,
+      "line": 1195,
       "owner": "HIITL.recordResult",
       "guard": "assertSchemaNumbers",
       "arguments": [
@@ -1408,7 +1408,7 @@
     {
       "language": "typescript",
       "path": "typescript/packages/sdk/src/policy-loader.ts",
-      "line": 62,
+      "line": 63,
       "owner": "loadYaml",
       "guard": "assertNumericDomain",
       "arguments": [
@@ -1424,7 +1424,7 @@
     {
       "language": "typescript",
       "path": "typescript/packages/sdk/src/policy-loader.ts",
-      "line": 151,
+      "line": 165,
       "owner": "PolicyLoader.load",
       "guard": "assertSchemaNumbers",
       "arguments": [
@@ -1441,7 +1441,7 @@
     {
       "language": "typescript",
       "path": "typescript/packages/sdk/src/policy-loader.ts",
-      "line": 169,
+      "line": 183,
       "owner": "PolicyLoader.load",
       "guard": "parseAdmittedNumbers",
       "arguments": [
@@ -1492,7 +1492,7 @@
     {
       "language": "typescript",
       "path": "typescript/packages/sdk/src/sync-cache.ts",
-      "line": 183,
+      "line": 180,
       "owner": "SyncCache.constructor",
       "guard": "admitConfiguration",
       "arguments": [
@@ -1509,7 +1509,7 @@
     {
       "language": "typescript",
       "path": "typescript/packages/sdk/src/sync-cache.ts",
-      "line": 297,
+      "line": 299,
       "owner": "SyncCache.updatePolicies",
       "guard": "admitSync",
       "arguments": [
@@ -1527,7 +1527,7 @@
     {
       "language": "typescript",
       "path": "typescript/packages/sdk/src/sync-cache.ts",
-      "line": 360,
+      "line": 362,
       "owner": "SyncCache.updateRoutes",
       "guard": "admitSync",
       "arguments": [
@@ -1547,7 +1547,7 @@
     {
       "language": "typescript",
       "path": "typescript/packages/sdk/src/sync-cache.ts",
-      "line": 410,
+      "line": 412,
       "owner": "SyncCache.updateKillSwitches",
       "guard": "admitSync",
       "arguments": [
@@ -1565,7 +1565,7 @@
     {
       "language": "typescript",
       "path": "typescript/packages/sdk/src/sync-cache.ts",
-      "line": 651,
+      "line": 653,
       "owner": "SyncCache._readJson",
       "guard": "admitSync",
       "arguments": [
@@ -1859,22 +1859,22 @@
   "source_sha256": {
     "python/hiitl/sdk/admission.py": "a0f7784b4beebc2e476ae516b45ae8dd65f1d36b210c6f4923e2c27cabce8d3c",
     "python/hiitl/sdk/audit.py": "93b1586bd413f6980136e576abb4c880329dfede21c5a0c21aac56075c8820aa",
-    "python/hiitl/sdk/client.py": "a8b360861a65977e5b424661e5149804b0eddfc9c3a3ff15ba36e8bfad34d655",
+    "python/hiitl/sdk/client.py": "ac9f2dcb1adada124cb8e98e8fcd7dd3086f0af53c2496476829790d3239fe3d",
     "python/hiitl/sdk/config.py": "a834dcfb2dc126c01e6ef06a2c48588d6b0badcb322778b1df8137b5ea1b96d3",
     "python/hiitl/sdk/http_client.py": "529f603273b62ba32ca50a1989f349b57116d105ec4d3ec1adb72edde2501448",
-    "python/hiitl/sdk/policy_loader.py": "cc6f696c3271f84a6caad1ff629dc6256162bab54dfa6f7efde3cce27633d854",
+    "python/hiitl/sdk/policy_loader.py": "09edd865fb7f14c32a138f8a277155259c9ba9f4d5144628b3673941aca53399",
     "python/hiitl/sdk/route_loader.py": "94f21a0a62fbe4f9373b32bc6a113447dd085831aed8fbea721f78427423c000",
     "python/hiitl/sdk/sync_cache.py": "8e1191db121b7d9a54c06c18dbbef2b927902d9a1dde5c110b541784ad91e6de",
-    "python/hiitl/sdk/sync_client.py": "cb23fe7ee383cf718edeb905624482bb3140b4bfdeb681204892c6c6a5107ce0",
+    "python/hiitl/sdk/sync_client.py": "cd660dde0d2ae23a641bd26eebf76dacec1e6f69be099b2f5539fac4e412ff75",
     "python/hiitl/sdk/telemetry.py": "078f551b40c70e338bbeedc692d6b970639378a992de64aea4032128065af205",
     "typescript/packages/sdk/src/admission.ts": "7520b8ec59927af815e6c709727ca90c307c887179cfe8cfa05f08f63345ff8f",
     "typescript/packages/sdk/src/audit.ts": "d6e76e7ecc538506b0b86510a476896908076b3ae2ed4bd89df16f7a600e95c8",
-    "typescript/packages/sdk/src/client.ts": "b5d7f6acefab84ddac8e8cdf12cb6d2d81576e800feb00a01c102460d0f6a45b",
+    "typescript/packages/sdk/src/client.ts": "e1fe4c2cbffbc35720a1a05f5ae9aa441c1db8ca00cc873d5d576d51e3f14d0b",
     "typescript/packages/sdk/src/config.ts": "c1274eaa9439bb74251d20f80e0cb835aa05c7542cd83f8622a0c4b016bfd400",
     "typescript/packages/sdk/src/http-client.ts": "740dd4bbe96aa9273f52255597726de54d103d0eb594ca67ea0fdfa4c18733fd",
-    "typescript/packages/sdk/src/policy-loader.ts": "4c8f2a1d54e664e9e8070036188e48e63b86c0cd49f72523ec19c2a99127f3b1",
+    "typescript/packages/sdk/src/policy-loader.ts": "4f75ca4b0c7f64e08caa621f3ce0ed548889c09d06812a8c081ed66eaec06fd0",
     "typescript/packages/sdk/src/route-loader.ts": "00a6744e9bbf2ebad27ead9568b8cde1579fb01804b21147dbec91a778921979",
-    "typescript/packages/sdk/src/sync-cache.ts": "d679f3df2b0cfc707c1c1c95386385250edbe387c5defd547dd4d5f561d6202c",
+    "typescript/packages/sdk/src/sync-cache.ts": "04da19fedf85becda426df32302e51dc0c3e6ed675761263f446abea25ea4bf4",
     "typescript/packages/sdk/src/sync-client.ts": "8d144df690e6919e30533d1f9f8fc06ee20b6e1700e13a1cce3537aa42cfea47"
   }
 }

@@ -2,7 +2,7 @@
  * Policy evaluation engine - deterministic rule evaluation.
  */
 
-import {assertSchemaNumbers,parseAdmittedNumbers} from './own-data.js';
+import {assertSchemaNumbers,parseAdmittedNumbers,prepareInputSchemas} from './own-data.js';
 import { createHash, randomUUID } from 'node:crypto';
 import {
   EnvelopeSchema,
@@ -133,6 +133,12 @@ export class PolicyEvaluator {
   // build and signature check, and the evaluation's timing counts from there (decision_response.md Timing Metadata;
   // HTL-43 gap 303). Mirrors evaluator.py `_STARTED`.
   private sdkStarted: number | null = null;
+
+  constructor() {
+    // Declaration/parser setup belongs to construction even without an SDK.
+    // The actual call's input admission stays within evaluate's own clock.
+    prepareInputSchemas(EnvelopeSchema, PolicySetSchema);
+  }
 
   /**
    * Evaluate a policy against an execution envelope.

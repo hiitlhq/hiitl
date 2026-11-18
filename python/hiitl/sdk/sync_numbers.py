@@ -3,7 +3,7 @@
 These shapes name a refused number; they never parse, project or admit content.
 """
 from functools import lru_cache
-from hiitl.core.types import PolicySet, Envelope
+from hiitl.core.types import PolicySet, Rule, Envelope
 from hiitl.core.input_declarations import policy_shape
 from hiitl.core.route_types import Route, _route_input_shape
 from hiitl.sdk.numeric_declarations import SHAPES
@@ -15,18 +15,24 @@ def _wrapped(shape, properties):
 
 
 @lru_cache
+def _sync_numeric_shapes():
+    """Build the channel declarations together before any background cycle."""
+    policy = policy_shape(PolicySet, Envelope)
+    # A received set also reaches each Rule's own before-validator.
+    policy_shape(Rule, Envelope)
+    route = _route_input_shape(Route)
+    rows = {'type': 'array', 'items': {'type': 'object', 'properties': {'config': route}}}
+    return {
+        'policy': _wrapped(policy, {'policies': {'type': 'array', 'items': {'type': 'object', 'properties': {'content': policy}}}}),
+        'kill_switches': _wrapped(policy, {'policy_set': policy}),
+        'routes': _wrapped(route, {'routes': rows}),
+        'cached_routes': {**_wrapped(route, {'routes': rows}), **rows},
+    }
+
+
 def sync_numeric_shape(channel, *, cache=False):
-    if channel in ('policy','kill_switches'):
-        policy=policy_shape(PolicySet,Envelope)
-        properties=({'policies':{'type':'array','items':{'type':'object','properties':{'content':policy}}}}
-                    if channel=='policy' else {'policy_set':policy})
-        return _wrapped(policy,properties)
-    if channel=='routes':
-        route=_route_input_shape(Route)
-        rows={'type':'array','items':{'type':'object','properties':{'config':route}}}
-        shape=_wrapped(route,{'routes':rows})
-        return {**shape,**rows} if cache else shape
-    return SHAPES['audit_ack']
+    shapes = _sync_numeric_shapes()
+    return shapes.get('cached_routes' if channel == 'routes' and cache else channel, SHAPES['audit_ack'])
 
 
 TELEMETRY_UPLOAD_SHAPE=_wrapped(SHAPES['telemetry'],{'records':{'type':'array','items':SHAPES['telemetry']}})

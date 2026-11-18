@@ -1,7 +1,7 @@
 {
   "source_hashes": {
     "docs/specs/envelope_schema.json": "4b6d164f63c480f76ddbeba31ab2080f278d3ea80f99408241b8cca871a49c0a",
-    "docs/specs/policy_format.md": "80267fa81347b64470837c5b4545bd0e2cd78b036f42c637db74dc5a3385b762",
+    "docs/specs/policy_format.md": "91b34ee19b141c4d74eeb7be363a81c449061a298f76681779c742ec0d1c628e",
     "docs/specs/ecp_evaluate_spec.md": "c718037f0dbc1069d2197364c0a1f668f5fa9af194875a3654a90e68de5ea2b3"
   },
   "date_members": [
@@ -30,7 +30,6 @@
     "not_contains",
     "starts_with",
     "ends_with",
-    "matches",
     "in",
     "not_in",
     "exists",
@@ -1758,178 +1757,6 @@
       }
     },
     {
-      "id": "principal.verified_at/matches/False",
-      "member": {
-        "path": [
-          "principal",
-          "verified_at"
-        ],
-        "address": "#/properties/principal/properties/verified_at"
-      },
-      "envelope": {
-        "schema_version": "v2.0",
-        "org_id": "org_1234567890abcdef",
-        "environment": "dev",
-        "agent_id": "fixture",
-        "action_id": "act_00000000000000000030",
-        "idempotency_key": "scalar",
-        "action": "read",
-        "operation": "execute",
-        "target": {},
-        "parameters": {
-          "right": "^2026\\-11\\-14t01:02:03\\.123456789\\+05:30$"
-        },
-        "timestamp": "2026-11-14T01:02:03Z",
-        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
-        "principal": {
-          "sub": "review-user",
-          "verified_by": "sdk_verifier",
-          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
-        }
-      },
-      "expected": true,
-      "policy": {
-        "name": "scalar-policy",
-        "version": "v1.0.0",
-        "description": "equal supplied JSON objects",
-        "scope": {
-          "org_id": "org_1234567890abcdef",
-          "environment": "dev"
-        },
-        "rules": [
-          {
-            "name": "scalar-equality",
-            "description": "read declared equality",
-            "priority": 1,
-            "lifecycle_stage": "active",
-            "conditions": {
-              "field": "principal.verified_at",
-              "operator": "matches",
-              "value": "^2026\\-11\\-14t01:02:03\\.123456789\\+05:30$"
-            },
-            "decision": "ALLOW",
-            "reason_code": "SCALAR_EQUAL"
-          }
-        ]
-      }
-    },
-    {
-      "id": "principal.verified_at/matches/True",
-      "member": {
-        "path": [
-          "principal",
-          "verified_at"
-        ],
-        "address": "#/properties/principal/properties/verified_at"
-      },
-      "envelope": {
-        "schema_version": "v2.0",
-        "org_id": "org_1234567890abcdef",
-        "environment": "dev",
-        "agent_id": "fixture",
-        "action_id": "act_00000000000000000031",
-        "idempotency_key": "scalar",
-        "action": "read",
-        "operation": "execute",
-        "target": {},
-        "parameters": {
-          "right": "^2026\\-11\\-14t01:02:03\\.123456789\\+05:30$"
-        },
-        "timestamp": "2026-11-14T01:02:03Z",
-        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
-        "principal": {
-          "sub": "review-user",
-          "verified_by": "sdk_verifier",
-          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
-        }
-      },
-      "expected": true,
-      "policy": {
-        "name": "scalar-policy",
-        "version": "v1.0.0",
-        "description": "equal supplied JSON objects",
-        "scope": {
-          "org_id": "org_1234567890abcdef",
-          "environment": "dev"
-        },
-        "rules": [
-          {
-            "name": "scalar-equality",
-            "description": "read declared equality",
-            "priority": 1,
-            "lifecycle_stage": "active",
-            "conditions": {
-              "field": "principal.verified_at",
-              "operator": "matches",
-              "value": {
-                "$field": "parameters.right"
-              }
-            },
-            "decision": "ALLOW",
-            "reason_code": "SCALAR_EQUAL"
-          }
-        ]
-      }
-    },
-    {
-      "id": "principal.verified_at/matches/date-right",
-      "member": {
-        "path": [
-          "principal",
-          "verified_at"
-        ],
-        "address": "#/properties/principal/properties/verified_at"
-      },
-      "envelope": {
-        "schema_version": "v2.0",
-        "org_id": "org_1234567890abcdef",
-        "environment": "dev",
-        "agent_id": "fixture",
-        "action_id": "act_00000000000000000032",
-        "idempotency_key": "scalar",
-        "action": "read",
-        "operation": "execute",
-        "target": {},
-        "parameters": {
-          "left": "no match"
-        },
-        "timestamp": "2026-11-14T01:02:03Z",
-        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
-        "principal": {
-          "sub": "review-user",
-          "verified_by": "sdk_verifier",
-          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
-        }
-      },
-      "expected": false,
-      "policy": {
-        "name": "scalar-policy",
-        "version": "v1.0.0",
-        "description": "equal supplied JSON objects",
-        "scope": {
-          "org_id": "org_1234567890abcdef",
-          "environment": "dev"
-        },
-        "rules": [
-          {
-            "name": "scalar-equality",
-            "description": "read declared equality",
-            "priority": 1,
-            "lifecycle_stage": "active",
-            "conditions": {
-              "field": "parameters.left",
-              "operator": "matches",
-              "value": {
-                "$field": "principal.verified_at"
-              }
-            },
-            "decision": "ALLOW",
-            "reason_code": "SCALAR_EQUAL"
-          }
-        ]
-      }
-    },
-    {
       "id": "principal.verified_at/in/False",
       "member": {
         "path": [
@@ -1943,7 +1770,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000033",
+        "action_id": "act_00000000000000000030",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -2003,7 +1830,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000034",
+        "action_id": "act_00000000000000000031",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -2063,7 +1890,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000035",
+        "action_id": "act_00000000000000000032",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -2121,7 +1948,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000036",
+        "action_id": "act_00000000000000000033",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -2181,7 +2008,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000037",
+        "action_id": "act_00000000000000000034",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -2241,7 +2068,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000038",
+        "action_id": "act_00000000000000000035",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -2299,7 +2126,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000039",
+        "action_id": "act_00000000000000000036",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -2355,7 +2182,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000040",
+        "action_id": "act_00000000000000000037",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -2411,7 +2238,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000041",
+        "action_id": "act_00000000000000000038",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -2469,7 +2296,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000042",
+        "action_id": "act_00000000000000000039",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -2527,7 +2354,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000043",
+        "action_id": "act_00000000000000000040",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -2581,7 +2408,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000044",
+        "action_id": "act_00000000000000000041",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -2635,7 +2462,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000045",
+        "action_id": "act_00000000000000000042",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -2698,7 +2525,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000046",
+        "action_id": "act_00000000000000000043",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -2761,7 +2588,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000047",
+        "action_id": "act_00000000000000000044",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -2824,7 +2651,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000048",
+        "action_id": "act_00000000000000000045",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -2887,7 +2714,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000049",
+        "action_id": "act_00000000000000000046",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -2950,7 +2777,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000050",
+        "action_id": "act_00000000000000000047",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -3013,7 +2840,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000051",
+        "action_id": "act_00000000000000000048",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -3076,7 +2903,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000052",
+        "action_id": "act_00000000000000000049",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -3138,7 +2965,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000053",
+        "action_id": "act_00000000000000000050",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -3193,7 +3020,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000054",
+        "action_id": "act_00000000000000000051",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -3250,7 +3077,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000055",
+        "action_id": "act_00000000000000000052",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -3307,7 +3134,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000056",
+        "action_id": "act_00000000000000000053",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -3362,7 +3189,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000057",
+        "action_id": "act_00000000000000000054",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -3419,7 +3246,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000058",
+        "action_id": "act_00000000000000000055",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -3476,7 +3303,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000059",
+        "action_id": "act_00000000000000000056",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -3531,7 +3358,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000060",
+        "action_id": "act_00000000000000000057",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -3588,7 +3415,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000061",
+        "action_id": "act_00000000000000000058",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -3645,7 +3472,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000062",
+        "action_id": "act_00000000000000000059",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -3700,7 +3527,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000063",
+        "action_id": "act_00000000000000000060",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -3757,7 +3584,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000064",
+        "action_id": "act_00000000000000000061",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -3814,7 +3641,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000065",
+        "action_id": "act_00000000000000000062",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -3869,7 +3696,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000066",
+        "action_id": "act_00000000000000000063",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -3926,7 +3753,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000067",
+        "action_id": "act_00000000000000000064",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -3983,7 +3810,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000068",
+        "action_id": "act_00000000000000000065",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -4038,7 +3865,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000069",
+        "action_id": "act_00000000000000000066",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -4095,7 +3922,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000070",
+        "action_id": "act_00000000000000000067",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -4152,7 +3979,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000071",
+        "action_id": "act_00000000000000000068",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -4207,7 +4034,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000072",
+        "action_id": "act_00000000000000000069",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -4264,7 +4091,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000073",
+        "action_id": "act_00000000000000000070",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -4321,7 +4148,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000074",
+        "action_id": "act_00000000000000000071",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -4376,7 +4203,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000075",
+        "action_id": "act_00000000000000000072",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -4433,7 +4260,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000076",
+        "action_id": "act_00000000000000000073",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -4490,7 +4317,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000077",
+        "action_id": "act_00000000000000000074",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -4545,7 +4372,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000078",
+        "action_id": "act_00000000000000000075",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -4602,7 +4429,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000079",
+        "action_id": "act_00000000000000000076",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -4659,7 +4486,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000080",
+        "action_id": "act_00000000000000000077",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -4714,7 +4541,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000081",
+        "action_id": "act_00000000000000000078",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -4771,7 +4598,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000082",
+        "action_id": "act_00000000000000000079",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -4816,175 +4643,6 @@
       }
     },
     {
-      "id": "timestamp/matches/False",
-      "member": {
-        "path": [
-          "timestamp"
-        ],
-        "address": "#/properties/timestamp"
-      },
-      "envelope": {
-        "schema_version": "v2.0",
-        "org_id": "org_1234567890abcdef",
-        "environment": "dev",
-        "agent_id": "fixture",
-        "action_id": "act_00000000000000000083",
-        "idempotency_key": "scalar",
-        "action": "read",
-        "operation": "execute",
-        "target": {},
-        "parameters": {
-          "right": "^2026\\-11\\-14t01:02:03\\.123456789\\+05:30$"
-        },
-        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
-        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
-        "principal": {
-          "sub": "review-user",
-          "verified_by": "sdk_verifier",
-          "verified_at": "2026-11-14T01:02:03Z"
-        }
-      },
-      "expected": true,
-      "policy": {
-        "name": "scalar-policy",
-        "version": "v1.0.0",
-        "description": "equal supplied JSON objects",
-        "scope": {
-          "org_id": "org_1234567890abcdef",
-          "environment": "dev"
-        },
-        "rules": [
-          {
-            "name": "scalar-equality",
-            "description": "read declared equality",
-            "priority": 1,
-            "lifecycle_stage": "active",
-            "conditions": {
-              "field": "timestamp",
-              "operator": "matches",
-              "value": "^2026\\-11\\-14t01:02:03\\.123456789\\+05:30$"
-            },
-            "decision": "ALLOW",
-            "reason_code": "SCALAR_EQUAL"
-          }
-        ]
-      }
-    },
-    {
-      "id": "timestamp/matches/True",
-      "member": {
-        "path": [
-          "timestamp"
-        ],
-        "address": "#/properties/timestamp"
-      },
-      "envelope": {
-        "schema_version": "v2.0",
-        "org_id": "org_1234567890abcdef",
-        "environment": "dev",
-        "agent_id": "fixture",
-        "action_id": "act_00000000000000000084",
-        "idempotency_key": "scalar",
-        "action": "read",
-        "operation": "execute",
-        "target": {},
-        "parameters": {
-          "right": "^2026\\-11\\-14t01:02:03\\.123456789\\+05:30$"
-        },
-        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
-        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
-        "principal": {
-          "sub": "review-user",
-          "verified_by": "sdk_verifier",
-          "verified_at": "2026-11-14T01:02:03Z"
-        }
-      },
-      "expected": true,
-      "policy": {
-        "name": "scalar-policy",
-        "version": "v1.0.0",
-        "description": "equal supplied JSON objects",
-        "scope": {
-          "org_id": "org_1234567890abcdef",
-          "environment": "dev"
-        },
-        "rules": [
-          {
-            "name": "scalar-equality",
-            "description": "read declared equality",
-            "priority": 1,
-            "lifecycle_stage": "active",
-            "conditions": {
-              "field": "timestamp",
-              "operator": "matches",
-              "value": {
-                "$field": "parameters.right"
-              }
-            },
-            "decision": "ALLOW",
-            "reason_code": "SCALAR_EQUAL"
-          }
-        ]
-      }
-    },
-    {
-      "id": "timestamp/matches/date-right",
-      "member": {
-        "path": [
-          "timestamp"
-        ],
-        "address": "#/properties/timestamp"
-      },
-      "envelope": {
-        "schema_version": "v2.0",
-        "org_id": "org_1234567890abcdef",
-        "environment": "dev",
-        "agent_id": "fixture",
-        "action_id": "act_00000000000000000085",
-        "idempotency_key": "scalar",
-        "action": "read",
-        "operation": "execute",
-        "target": {},
-        "parameters": {
-          "left": "no match"
-        },
-        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
-        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
-        "principal": {
-          "sub": "review-user",
-          "verified_by": "sdk_verifier",
-          "verified_at": "2026-11-14T01:02:03Z"
-        }
-      },
-      "expected": false,
-      "policy": {
-        "name": "scalar-policy",
-        "version": "v1.0.0",
-        "description": "equal supplied JSON objects",
-        "scope": {
-          "org_id": "org_1234567890abcdef",
-          "environment": "dev"
-        },
-        "rules": [
-          {
-            "name": "scalar-equality",
-            "description": "read declared equality",
-            "priority": 1,
-            "lifecycle_stage": "active",
-            "conditions": {
-              "field": "parameters.left",
-              "operator": "matches",
-              "value": {
-                "$field": "timestamp"
-              }
-            },
-            "decision": "ALLOW",
-            "reason_code": "SCALAR_EQUAL"
-          }
-        ]
-      }
-    },
-    {
       "id": "timestamp/in/False",
       "member": {
         "path": [
@@ -4997,7 +4655,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000086",
+        "action_id": "act_00000000000000000080",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -5056,7 +4714,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000087",
+        "action_id": "act_00000000000000000081",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -5115,7 +4773,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000088",
+        "action_id": "act_00000000000000000082",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -5172,7 +4830,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000089",
+        "action_id": "act_00000000000000000083",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -5231,7 +4889,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000090",
+        "action_id": "act_00000000000000000084",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -5290,7 +4948,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000091",
+        "action_id": "act_00000000000000000085",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -5347,7 +5005,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000092",
+        "action_id": "act_00000000000000000086",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -5402,7 +5060,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000093",
+        "action_id": "act_00000000000000000087",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -5457,7 +5115,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000094",
+        "action_id": "act_00000000000000000088",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -5514,7 +5172,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000095",
+        "action_id": "act_00000000000000000089",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -5571,7 +5229,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000096",
+        "action_id": "act_00000000000000000090",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -5624,7 +5282,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000097",
+        "action_id": "act_00000000000000000091",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -5677,7 +5335,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000098",
+        "action_id": "act_00000000000000000092",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -5739,7 +5397,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000099",
+        "action_id": "act_00000000000000000093",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -5801,7 +5459,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000100",
+        "action_id": "act_00000000000000000094",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -5863,7 +5521,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000101",
+        "action_id": "act_00000000000000000095",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -5925,7 +5583,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000102",
+        "action_id": "act_00000000000000000096",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -5987,7 +5645,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000103",
+        "action_id": "act_00000000000000000097",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -6049,7 +5707,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000104",
+        "action_id": "act_00000000000000000098",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -6111,7 +5769,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000105",
+        "action_id": "act_00000000000000000099",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -6168,7 +5826,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000106",
+        "action_id": "act_00000000000000000100",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -6220,7 +5878,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000107",
+        "action_id": "act_00000000000000000101",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -6272,7 +5930,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000108",
+        "action_id": "act_00000000000000000102",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -6326,7 +5984,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000109",
+        "action_id": "act_00000000000000000103",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -6380,7 +6038,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000110",
+        "action_id": "act_00000000000000000104",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -6438,7 +6096,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000111",
+        "action_id": "act_00000000000000000105",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",
@@ -6496,7 +6154,7 @@
         "org_id": "org_1234567890abcdef",
         "environment": "dev",
         "agent_id": "fixture",
-        "action_id": "act_00000000000000000112",
+        "action_id": "act_00000000000000000106",
         "idempotency_key": "scalar",
         "action": "read",
         "operation": "execute",

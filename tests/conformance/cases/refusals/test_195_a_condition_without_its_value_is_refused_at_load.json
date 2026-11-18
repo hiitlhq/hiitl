@@ -1,0 +1,35 @@
+{
+  "test_id": "test_195_a_condition_without_its_value_is_refused_at_load",
+  "description": "A condition carries its value: a rule whose condition has none is refused at load at its value path, naming it (policy_format.md 2.23; HTL-45 d0640d7a; gap 322). Through 2.22 TypeScript loaded a condition with no value wherever the operator's operand kind took any value (`equals`, `not_equals`, `contains`, `not_contains`); this `equals` never matched.",
+  "policy_set": {
+    "name": "payments_policy",
+    "version": "v1.0.0",
+    "description": "Payment controls for the finance agent",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
+    "rules": [
+      {
+        "name": "block_refunds",
+        "description": "Refunds are blocked",
+        "priority": 100,
+        "conditions": {
+          "field": "action",
+          "operator": "equals"
+        },
+        "decision": "BLOCK",
+        "reason_code": "REFUNDS_BLOCKED"
+      }
+    ]
+  },
+  "expected_refusal": {
+    "artifact": "policy_set",
+    "at": [
+      "rules.0.conditions.value"
+    ],
+    "names": [
+      "value"
+    ]
+  }
+}

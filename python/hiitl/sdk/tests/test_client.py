@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from hiitl.core.types import DecisionType
-from hiitl.core.tests.declared_values import pure_local_budget_ms
+from hiitl.core.tests.declared_values import pure_local_budget_ms, latency_run, latency_sample_count, latency_statistic, record_latency, record_latencies
 from hiitl.core.tests.measurements import record_measurement
 from hiitl.sdk.client import HIITL
 from hiitl.sdk.exceptions import (
@@ -88,8 +88,10 @@ class TestHIITLInitialization:
             )
 
     def test_missing_policy_file_is_a_policy_error_on_evaluate(self, tmp_path):
-        """A nonexistent policy file is the decision POLICY_ERROR, recorded (decision_response.md "Error Handling":
-        an error is a decision; HTL-22 row 159)."""
+        """A policy removed after construction is POLICY_ERROR, recorded (HTL-45 6d410ffd)."""
+        policy_file = tmp_path / "nonexistent.yaml"
+        policy_file.write_text('version: v1.0.0\nname: test\ndescription: test\n'
+                               'scope: {org_id: org_test000000000000000, environment: dev}\nrules: []\n')
         hiitl = HIITL(
             environment="dev",
             agent_id="test-agent",
@@ -99,6 +101,7 @@ class TestHIITLInitialization:
             mode="RESPECT_POLICY",
         )
 
+        policy_file.unlink()
         d = hiitl.evaluate("test_tool")
         assert (d.decision, d.allowed, d.reason_codes) == ("POLICY_ERROR", False, ["POLICY_NOT_FOUND"])
         assert d.error.code == "POLICY_ERROR"
@@ -229,21 +232,26 @@ rules:
 
     def test_evaluate_uses_cached_policy(self, hiitl_client, record_property):
         """Record first/repeated evaluation latency; enforce the declared local target."""
-        # First evaluate
-        start = time.perf_counter()
-        hiitl_client.evaluate("test_tool", parameters={"amount": 100})
-        first_time = time.perf_counter() - start
-
-        # Second evaluate (should use cached policy)
-        start = time.perf_counter()
-        hiitl_client.evaluate("test_tool", parameters={"amount": 100})
-        second_time = time.perf_counter() - start
-
-        record_measurement(record_property, metric="sdk_first_and_repeated_evaluation", unit="seconds",
-                           source="hiitl.sdk.client.HIITL.evaluate",
-                           value={"first": first_time, "repeated": second_time})
-        assert first_time < timedelta(milliseconds=pure_local_budget_ms()).total_seconds()
-        assert second_time < timedelta(milliseconds=pure_local_budget_ms()).total_seconds()
+        first_times, repeated_times = [], []
+        for sample in range(latency_sample_count()):
+            client = hiitl_client if sample == 0 else HIITL(
+                policy_path=hiitl_client.config.policy_path, org_id=hiitl_client.config.org_id,
+                environment=hiitl_client.config.environment, agent_id=hiitl_client.config.agent_id,
+                mode='RESPECT_POLICY', audit_db_path=str(Path(hiitl_client.config.audit_db_path).with_name(f'audit-{sample}.db')))
+            try:
+                for samples in (first_times, repeated_times):
+                    start = time.perf_counter()
+                    client.evaluate('test_tool', parameters={'amount': 100})
+                    samples.append((time.perf_counter() - start) * 1000)
+            finally:
+                client.close()
+        record_measurement(record_property, metric='sdk_first_and_repeated_evaluation', unit='ms',
+                           source='hiitl.sdk.client.HIITL.evaluate',
+                           value={'first': first_times, 'repeated': repeated_times,
+                                  'first_p95': latency_statistic(first_times),
+                                  'repeated_p95': latency_statistic(repeated_times)})
+        record_latencies([('cached-policy/first', first_times, 'local'),
+                          ('cached-policy/repeated', repeated_times, 'local')])
 
 
 class TestHIITLZeroConfig:
@@ -484,13 +492,14 @@ class TestHIITLPerformance:
             mode="RESPECT_POLICY",
         )
 
-        # Warm up (first call loads policy)
-        hiitl.evaluate("test_tool")
-
-        # Measure performance (cached policy)
-        start = time.perf_counter()
-        hiitl.evaluate("test_tool")
-        elapsed_seconds = time.perf_counter() - start
-
-        assert elapsed_seconds < timedelta(milliseconds=pure_local_budget_ms()).total_seconds(), \
-            f"Too slow: {elapsed_seconds:.6f}s"
+        # HTL-17 680f8ccf: warm up (first call loads policy), then the run the timing catalogue declares.
+        warmup, count = latency_run('sdk/local-call')
+        times = []
+        try:
+            for _ in range(warmup + count):
+                start = time.perf_counter()
+                hiitl.evaluate('test_tool')
+                times.append((time.perf_counter() - start) * 1000)
+            record_latency('sdk/local-call', times[warmup:], 'local', times[:warmup])
+        finally:
+            hiitl.close()

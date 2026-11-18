@@ -76,7 +76,7 @@ class TelemetryUploadResult:
 from hiitl.sdk.admission import admit_configuration
 from hiitl.core.numeric_domain import validate_numeric_domain, NumericDomainError
 from hiitl.sdk.admission import admit_sync, sync_channel
-from hiitl.sdk.sync_numbers import TELEMETRY_UPLOAD_SHAPE
+from hiitl.sdk.sync_numbers import TELEMETRY_UPLOAD_SHAPE, _sync_numeric_shapes
 
 
 
@@ -102,6 +102,7 @@ class SyncClient:
         max_retries: int = 3,
     ):
         admit_configuration(type(self).__init__, {"timeout": timeout, "max_retries": max_retries})
+        _sync_numeric_shapes()
         refusal = https_refusal(server_url, "server_url")      # the API key goes there (sync_engine.md section 8)
         if refusal:
             raise ConfigurationError(refusal)

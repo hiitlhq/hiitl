@@ -48,7 +48,15 @@ describe('HTL-37: dependency migration preserves the declared contract', () => {
   });
 
   it.each(fixture.cases.filter((c) => c.kind === 'condition-value'))('the arbitrary condition value keeps its recorded presence for $input', (row) => {
-    const parsed = types.ConditionSchema.safeParse(unwritten(row.input));
+    const supplied = unwritten(row.input) as Record<string, unknown>;
+    const parsed = types.ConditionSchema.safeParse(supplied);
+    // HTL-45 d0640d7a (policy_format.md 2.23) supersedes only the old admission of a condition with no value: a
+    // condition that carries none is refused at `value`. Fixture bytes remain historical.
+    if (supplied.value === undefined) {
+      expect(parsed.success).toBe(false);
+      if (!parsed.success) expect(parsed.error.issues.map((issue) => issue.path.join('.'))).toEqual(['value']);
+      return;
+    }
     expect(parsed.success).toBe(true);
     if (parsed.success) expect(parsed.data).toStrictEqual(unwritten(row.output));
   });

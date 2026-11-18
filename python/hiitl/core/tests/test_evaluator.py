@@ -10,7 +10,7 @@ Tests cover:
 """
 
 import pytest
-from hiitl.core.tests.declared_values import pure_local_budget_ms, typical_core_budget_ms
+from hiitl.core.tests.declared_values import pure_local_budget_ms, typical_core_budget_ms, latency_run, latency_statistic, record_latencies
 from hiitl.core.tests.measurements import record_measurement
 from datetime import datetime, timezone
 from types import SimpleNamespace
@@ -78,8 +78,14 @@ class TestPolicyEvaluator:
         record_measurement(record_property, metric="typical_core_evaluation", unit="ms",
                            source="hiitl.core.evaluator.PolicyEvaluator.evaluate",
                            value=decision.timing.model_dump())
-        assert decision.timing.evaluation_ms < typical_core_budget_ms()
-        assert decision.timing.total_ms < pure_local_budget_ms()
+        # HTL-17 680f8ccf: the warmup and run the timing catalogue declares; this call is the first warmup call.
+        warmup, count = latency_run('core/allow/evaluation')
+        timings = [decision.timing] + [evaluator.evaluate(envelope, policy).timing
+                                      for _ in range(warmup + count - 1)]
+        record_latencies([('core/allow/evaluation', [t.evaluation_ms for t in timings[warmup:]], 'core',
+                           [t.evaluation_ms for t in timings[:warmup]]),
+                          ('core/allow/total', [t.total_ms for t in timings[warmup:]], 'local',
+                           [t.total_ms for t in timings[:warmup]])])
 
     def test_block_rule(self):
         """Test a BLOCK rule."""
@@ -755,8 +761,14 @@ class TestPolicyEvaluator:
         record_measurement(record_property, metric="evaluator_timing", unit="ms",
                            source="hiitl.core.evaluator.PolicyEvaluator.evaluate",
                            value=decision.timing.model_dump())
-        assert decision.timing.evaluation_ms < typical_core_budget_ms()
-        assert decision.timing.total_ms < pure_local_budget_ms()
+        # HTL-17 680f8ccf: the warmup and run the timing catalogue declares; this call is the first warmup call.
+        warmup, count = latency_run('core/timing/evaluation')
+        timings = [decision.timing] + [evaluator.evaluate(envelope, policy).timing
+                                      for _ in range(warmup + count - 1)]
+        record_latencies([('core/timing/evaluation', [t.evaluation_ms for t in timings[warmup:]], 'core',
+                           [t.evaluation_ms for t in timings[:warmup]]),
+                          ('core/timing/total', [t.total_ms for t in timings[warmup:]], 'local',
+                           [t.total_ms for t in timings[:warmup]])])
 
 
     def test_resume_token_generated_for_require_approval(self):

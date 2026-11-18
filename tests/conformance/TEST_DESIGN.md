@@ -175,10 +175,28 @@ language's own.
 | A route refuses an undefined field at depth | test_166 | `sla.escalate_after` |
 | A fractional token estimate is read as written | test_167 | 1250.5 is over a 1250-token budget: `BLOCK` |
 | A policy set's `on_missing` is one of two | test_177 | `fail_open`, refused at `on_missing`, naming it |
+| A policy naming `matches` is refused at load (policy_format.md 2.22; R-1380) | test_020 | refused at `rules.0.conditions.operator`, naming `matches` and the operators to use in its place: `starts_with`, `ends_with`, `contains`, `in` |
+| A condition carries its `value` (policy_format.md 2.23; gap 322) | test_195, test_196 | a condition with no `value`, bare and nested in `any_of`, refused at its `value` path, naming `value` |
+| A condition is one of its two forms (2.23; gap 322) | test_197, test_198 | `{}`, and an object setting both `all_of` and `any_of`, refused at `rules.0.conditions`, naming "Exactly one of all_of, any_of, or none_of must be set" |
 
 **Validation Status:** ✅ PROVEN in both languages (133 / 133). **Gaps:** an undefined field on each nested route
 object, a rule's undefined key (R-0881) and the other produced decisions are unit-tested per language
 (`hiitl/core/tests/test_row147.py`, `core/tests/unit/row147.test.ts`), not conformance cases.
+
+**`matches` (HTL-45 `8613a7bc`, CC, 2026-11-17).** test_020 was the operator's decision case; it is now its load
+refusal, moved to `refusals/` under its number. Each SDK's file loader refuses the same policy in both file forms
+with its authored message (`python/hiitl/sdk/tests/test_matches_removal.py`,
+`typescript/packages/sdk/tests/unit/matches-removal.test.ts`); those cells read the policy from test_020 and the
+operators to name from policy_format.md's sentence, so neither list is retyped. A condition is a union of an atomic
+arm and a logical arm. Zod's union reports the one arm that did not abort: the enum's refusal of an operator aborts
+and the logical arm's undefined keys do not, so TypeScript returned the logical arm's refusal at `rules.0.conditions`
+and lost the authored operator message. Python's declared-input reader already reads the arm closest to the data
+(`input_types.py`: an arm of the input's JSON kind, then the fewest undefined members, then the fewest errors).
+TypeScript's condition unions read the same rule (`closestArm`, `own-data.ts`), so the same input is located at the
+same path in both languages, which is test_020's claim; the TypeScript refusals that rule moves are listed at the
+hand-off. Its mutation restores `z.union` and test_020 must fail in TypeScript alone.
+
+**Gap 322 (HTL-45 `d0640d7a`, CC, 2026-11-17).** CC generated 138 malformed conditions (the condition schema's members × the JSON kinds × the logical forms). After `closestArm`, 130 were located alike in both languages. The 8 left were two classes: four conditions with no `value`, which TypeScript admitted, and four objects that are neither form, which Python located at pydantic's union labels. test_195–198 are those classes. Each SDK's file loader refuses a policy with no `value` in both file forms at the same path (`python/hiitl/sdk/tests/test_condition_value.py`, `typescript/packages/sdk/tests/unit/condition-value.test.ts`). Python's declared-input reader reads the exactly-one rule once the logical object's own members hold, as the model's after-validator and zod's `refine` do, and the reader and the model share one statement of the rule. TypeScript reads a `value` set to `undefined` as absent, since JSON has no `undefined` (`.nonoptional()`). The HTL-37 dependency migration's condition-value cell recorded TypeScript admitting both, so `d0640d7a` supersedes those two rows, and the fixture bytes stay historical. Its mutations: TypeScript's `value` made optional again (test_195 and test_196 fail in TypeScript alone); TypeScript without `.nonoptional()` (an absent value is still refused, and the migration cell's `undefined` row fails); Python's `value` given a default (test_195 and test_196 fail in Python alone); and Python's reader without the rule (test_197 and test_198 fail in Python alone). Beyond the cases, a 1,536-input multi-fault probe found no input loaded in one language and refused in the other, and 890 located differently in four pre-existing classes. That is gap 324, an open condition, and no case here asserts those inputs.
 
 ### On missing — a field the call does not carry (HTL-22 row 176)
 
@@ -236,11 +254,11 @@ test design, row 165.
 - ✅ less_than, less_than_or_equal (test_014, test_025)
 - ✅ in, not_in (test_015, test_026)
 
-**String Operators (5/5):**
+**String Operators (4/4):**
 - ✅ contains, not_contains (test_016, test_027)
 - ✅ starts_with (test_017)
 - ✅ ends_with (test_018)
-- ✅ matches (regex) (test_020)
+- `matches` left the format at 2.22 (R-1380); test_020 is its load refusal
 
 **Field Operators (1/1):**
 - ✅ exists (test_019)
@@ -359,8 +377,7 @@ test design, row 165.
   - Invalid operators in conditions
   - Invalid decision types
   - Missing required rule fields
-- ✅ Runtime error handling (4 tests):
-  - Invalid regex patterns (handled gracefully)
+- ✅ Runtime error handling (3 tests):
   - Type mismatches in numeric comparisons (raises TypeError)
   - Nonexistent field comparisons (returns False)
   - Deeply nested logical conditions (no stack overflow)
