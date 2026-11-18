@@ -1,0 +1,4171 @@
+{
+  "components": [
+    {
+      "source": "core.cdx.json",
+      "name": "core",
+      "version": "0.2.0",
+      "bom-ref": "@hiitl/core@0.2.0",
+      "purl": "pkg:npm/%40hiitl/core@0.2.0?vcs_url=git%2Bhttps%3A%2F%2Fgithub.com%2Fhiitlhq%2Fhiitl.git%23typescript%2Fpackages%2Fcore",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "core.cdx.json",
+      "name": "resolve-uri",
+      "version": "3.1.2",
+      "bom-ref": "@hiitl/core@0.2.0|@jridgewell/resolve-uri@3.1.2",
+      "purl": "pkg:npm/%40jridgewell/resolve-uri@3.1.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "core.cdx.json",
+      "name": "sourcemap-codec",
+      "version": "1.6.0",
+      "bom-ref": "@hiitl/core@0.2.0|@jridgewell/sourcemap-codec@1.6.0",
+      "purl": "pkg:npm/%40jridgewell/sourcemap-codec@1.6.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "core.cdx.json",
+      "name": "trace-mapping",
+      "version": "0.3.31",
+      "bom-ref": "@hiitl/core@0.2.0|@jridgewell/trace-mapping@0.3.31",
+      "purl": "pkg:npm/%40jridgewell/trace-mapping@0.3.31",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "core.cdx.json",
+      "name": "types",
+      "version": "0.156.0",
+      "bom-ref": "@hiitl/core@0.2.0|@oxc-project/types@0.156.0",
+      "purl": "pkg:npm/%40oxc-project/types@0.156.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "core.cdx.json",
+      "name": "binding-linux-x64-gnu",
+      "version": "1.2.19",
+      "bom-ref": "@hiitl/core@0.2.0|@rolldown/binding-linux-x64-gnu@1.2.19",
+      "purl": "pkg:npm/%40rolldown/binding-linux-x64-gnu@1.2.19",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "core.cdx.json",
+      "name": "binding-linux-x64-musl",
+      "version": "1.2.19",
+      "bom-ref": "@hiitl/core@0.2.0|@rolldown/binding-linux-x64-musl@1.2.19",
+      "purl": "pkg:npm/%40rolldown/binding-linux-x64-musl@1.2.19",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "core.cdx.json",
+      "name": "pluginutils",
+      "version": "1.1.0",
+      "bom-ref": "@hiitl/core@0.2.0|@rolldown/pluginutils@1.1.0",
+      "purl": "pkg:npm/%40rolldown/pluginutils@1.1.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "core.cdx.json",
+      "name": "chai",
+      "version": "5.2.3",
+      "bom-ref": "@hiitl/core@0.2.0|@types/chai@5.2.3",
+      "purl": "pkg:npm/%40types/chai@5.2.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "core.cdx.json",
+      "name": "deep-eql",
+      "version": "4.0.2",
+      "bom-ref": "@hiitl/core@0.2.0|@types/deep-eql@4.0.2",
+      "purl": "pkg:npm/%40types/deep-eql@4.0.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "core.cdx.json",
+      "name": "estree",
+      "version": "1.0.10",
+      "bom-ref": "@hiitl/core@0.2.0|@types/estree@1.0.10",
+      "purl": "pkg:npm/%40types/estree@1.0.10",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "core.cdx.json",
+      "name": "node",
+      "version": "22.20.5",
+      "bom-ref": "@hiitl/core@0.2.0|@types/node@22.20.5",
+      "purl": "pkg:npm/%40types/node@22.20.5",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "core.cdx.json",
+      "name": "mocker",
+      "version": "5.1.0",
+      "bom-ref": "@hiitl/core@0.2.0|@vitest/mocker@5.1.0",
+      "purl": "pkg:npm/%40vitest/mocker@5.1.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "core.cdx.json",
+      "name": "spy",
+      "version": "5.1.0",
+      "bom-ref": "@hiitl/core@0.2.0|@vitest/spy@5.1.0",
+      "purl": "pkg:npm/%40vitest/spy@5.1.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "core.cdx.json",
+      "name": "assertion-error",
+      "version": "2.0.1",
+      "bom-ref": "@hiitl/core@0.2.0|assertion-error@2.0.1",
+      "purl": "pkg:npm/assertion-error@2.0.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "core.cdx.json",
+      "name": "chai",
+      "version": "6.3.0",
+      "bom-ref": "@hiitl/core@0.2.0|chai@6.3.0",
+      "purl": "pkg:npm/chai@6.3.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "core.cdx.json",
+      "name": "detect-libc",
+      "version": "2.1.2",
+      "bom-ref": "@hiitl/core@0.2.0|detect-libc@2.1.2",
+      "purl": "pkg:npm/detect-libc@2.1.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "core.cdx.json",
+      "name": "es-module-lexer",
+      "version": "2.3.2",
+      "bom-ref": "@hiitl/core@0.2.0|es-module-lexer@2.3.2",
+      "purl": "pkg:npm/es-module-lexer@2.3.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "core.cdx.json",
+      "name": "estree-walker",
+      "version": "3.0.3",
+      "bom-ref": "@hiitl/core@0.2.0|estree-walker@3.0.3",
+      "purl": "pkg:npm/estree-walker@3.0.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "core.cdx.json",
+      "name": "expect-type",
+      "version": "1.4.0",
+      "bom-ref": "@hiitl/core@0.2.0|expect-type@1.4.0",
+      "purl": "pkg:npm/expect-type@1.4.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "core.cdx.json",
+      "name": "fdir",
+      "version": "6.5.0",
+      "bom-ref": "@hiitl/core@0.2.0|fdir@6.5.0",
+      "purl": "pkg:npm/fdir@6.5.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "core.cdx.json",
+      "name": "lightningcss-linux-x64-gnu",
+      "version": "1.33.0",
+      "bom-ref": "@hiitl/core@0.2.0|lightningcss-linux-x64-gnu@1.33.0",
+      "purl": "pkg:npm/lightningcss-linux-x64-gnu@1.33.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MPL-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "core.cdx.json",
+      "name": "lightningcss-linux-x64-musl",
+      "version": "1.33.0",
+      "bom-ref": "@hiitl/core@0.2.0|lightningcss-linux-x64-musl@1.33.0",
+      "purl": "pkg:npm/lightningcss-linux-x64-musl@1.33.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MPL-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "core.cdx.json",
+      "name": "lightningcss",
+      "version": "1.33.0",
+      "bom-ref": "@hiitl/core@0.2.0|lightningcss@1.33.0",
+      "purl": "pkg:npm/lightningcss@1.33.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MPL-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "core.cdx.json",
+      "name": "magic-string",
+      "version": "1.4.5",
+      "bom-ref": "@hiitl/core@0.2.0|magic-string@1.4.5",
+      "purl": "pkg:npm/magic-string@1.4.5",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "core.cdx.json",
+      "name": "nanoid",
+      "version": "3.3.20",
+      "bom-ref": "@hiitl/core@0.2.0|nanoid@3.3.20",
+      "purl": "pkg:npm/nanoid@3.3.20",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "core.cdx.json",
+      "name": "obug",
+      "version": "3.0.0",
+      "bom-ref": "@hiitl/core@0.2.0|obug@3.0.0",
+      "purl": "pkg:npm/obug@3.0.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "core.cdx.json",
+      "name": "picocolors",
+      "version": "1.1.1",
+      "bom-ref": "@hiitl/core@0.2.0|picocolors@1.1.1",
+      "purl": "pkg:npm/picocolors@1.1.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "ISC",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "core.cdx.json",
+      "name": "picomatch",
+      "version": "4.0.7",
+      "bom-ref": "@hiitl/core@0.2.0|picomatch@4.0.7",
+      "purl": "pkg:npm/picomatch@4.0.7",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "core.cdx.json",
+      "name": "postcss",
+      "version": "8.5.32",
+      "bom-ref": "@hiitl/core@0.2.0|postcss@8.5.32",
+      "purl": "pkg:npm/postcss@8.5.32",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "core.cdx.json",
+      "name": "rolldown",
+      "version": "1.2.19",
+      "bom-ref": "@hiitl/core@0.2.0|rolldown@1.2.19",
+      "purl": "pkg:npm/rolldown@1.2.19",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "core.cdx.json",
+      "name": "source-map-js",
+      "version": "1.2.2",
+      "bom-ref": "@hiitl/core@0.2.0|source-map-js@1.2.2",
+      "purl": "pkg:npm/source-map-js@1.2.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "core.cdx.json",
+      "name": "std-env",
+      "version": "4.3.0",
+      "bom-ref": "@hiitl/core@0.2.0|std-env@4.3.0",
+      "purl": "pkg:npm/std-env@4.3.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "core.cdx.json",
+      "name": "tinybench",
+      "version": "6.2.3",
+      "bom-ref": "@hiitl/core@0.2.0|tinybench@6.2.3",
+      "purl": "pkg:npm/tinybench@6.2.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "core.cdx.json",
+      "name": "tinyexec",
+      "version": "1.3.1",
+      "bom-ref": "@hiitl/core@0.2.0|tinyexec@1.3.1",
+      "purl": "pkg:npm/tinyexec@1.3.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "core.cdx.json",
+      "name": "tinyglobby",
+      "version": "0.2.17",
+      "bom-ref": "@hiitl/core@0.2.0|tinyglobby@0.2.17",
+      "purl": "pkg:npm/tinyglobby@0.2.17",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "core.cdx.json",
+      "name": "typescript",
+      "version": "5.9.3",
+      "bom-ref": "@hiitl/core@0.2.0|typescript@5.9.3",
+      "purl": "pkg:npm/typescript@5.9.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "core.cdx.json",
+      "name": "undici-types",
+      "version": "6.21.0",
+      "bom-ref": "@hiitl/core@0.2.0|undici-types@6.21.0",
+      "purl": "pkg:npm/undici-types@6.21.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "core.cdx.json",
+      "name": "vite",
+      "version": "8.3.8",
+      "bom-ref": "@hiitl/core@0.2.0|vite@8.3.8",
+      "purl": "pkg:npm/vite@8.3.8",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "core.cdx.json",
+      "name": "vitest",
+      "version": "5.1.0",
+      "bom-ref": "@hiitl/core@0.2.0|vitest@5.1.0",
+      "purl": "pkg:npm/vitest@5.1.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "core.cdx.json",
+      "name": "why-is-node-running",
+      "version": "3.2.1",
+      "bom-ref": "@hiitl/core@0.2.0|why-is-node-running@3.2.1",
+      "purl": "pkg:npm/why-is-node-running@3.2.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "core.cdx.json",
+      "name": "zod",
+      "version": "4.6.7",
+      "bom-ref": "@hiitl/core@0.2.0|zod@4.6.7",
+      "purl": "pkg:npm/zod@4.6.7",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "sdk",
+      "version": "0.2.0",
+      "bom-ref": "@hiitl/sdk@0.2.0",
+      "purl": "pkg:npm/%40hiitl/sdk@0.2.0?vcs_url=git%2Bhttps%3A%2F%2Fgithub.com%2Fhiitlhq%2Fhiitl.git%23typescript%2Fpackages%2Fsdk",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "core",
+      "version": "0.2.0",
+      "bom-ref": "@hiitl/sdk@0.2.0|@hiitl/core@0.2.0",
+      "purl": "pkg:npm/%40hiitl/core@0.2.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "resolve-uri",
+      "version": "3.1.2",
+      "bom-ref": "@hiitl/sdk@0.2.0|@jridgewell/resolve-uri@3.1.2",
+      "purl": "pkg:npm/%40jridgewell/resolve-uri@3.1.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "sourcemap-codec",
+      "version": "1.6.0",
+      "bom-ref": "@hiitl/sdk@0.2.0|@jridgewell/sourcemap-codec@1.6.0",
+      "purl": "pkg:npm/%40jridgewell/sourcemap-codec@1.6.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "trace-mapping",
+      "version": "0.3.31",
+      "bom-ref": "@hiitl/sdk@0.2.0|@jridgewell/trace-mapping@0.3.31",
+      "purl": "pkg:npm/%40jridgewell/trace-mapping@0.3.31",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "types",
+      "version": "0.156.0",
+      "bom-ref": "@hiitl/sdk@0.2.0|@oxc-project/types@0.156.0",
+      "purl": "pkg:npm/%40oxc-project/types@0.156.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "binding-linux-x64-gnu",
+      "version": "1.2.19",
+      "bom-ref": "@hiitl/sdk@0.2.0|@rolldown/binding-linux-x64-gnu@1.2.19",
+      "purl": "pkg:npm/%40rolldown/binding-linux-x64-gnu@1.2.19",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "binding-linux-x64-musl",
+      "version": "1.2.19",
+      "bom-ref": "@hiitl/sdk@0.2.0|@rolldown/binding-linux-x64-musl@1.2.19",
+      "purl": "pkg:npm/%40rolldown/binding-linux-x64-musl@1.2.19",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "pluginutils",
+      "version": "1.1.0",
+      "bom-ref": "@hiitl/sdk@0.2.0|@rolldown/pluginutils@1.1.0",
+      "purl": "pkg:npm/%40rolldown/pluginutils@1.1.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "better-sqlite3",
+      "version": "7.6.13",
+      "bom-ref": "@hiitl/sdk@0.2.0|@types/better-sqlite3@7.6.13",
+      "purl": "pkg:npm/%40types/better-sqlite3@7.6.13",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "chai",
+      "version": "5.2.3",
+      "bom-ref": "@hiitl/sdk@0.2.0|@types/chai@5.2.3",
+      "purl": "pkg:npm/%40types/chai@5.2.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "deep-eql",
+      "version": "4.0.2",
+      "bom-ref": "@hiitl/sdk@0.2.0|@types/deep-eql@4.0.2",
+      "purl": "pkg:npm/%40types/deep-eql@4.0.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "estree",
+      "version": "1.0.10",
+      "bom-ref": "@hiitl/sdk@0.2.0|@types/estree@1.0.10",
+      "purl": "pkg:npm/%40types/estree@1.0.10",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "js-yaml",
+      "version": "4.0.9",
+      "bom-ref": "@hiitl/sdk@0.2.0|@types/js-yaml@4.0.9",
+      "purl": "pkg:npm/%40types/js-yaml@4.0.9",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "node",
+      "version": "22.20.5",
+      "bom-ref": "@hiitl/sdk@0.2.0|@types/node@22.20.5",
+      "purl": "pkg:npm/%40types/node@22.20.5",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "mocker",
+      "version": "5.1.0",
+      "bom-ref": "@hiitl/sdk@0.2.0|@vitest/mocker@5.1.0",
+      "purl": "pkg:npm/%40vitest/mocker@5.1.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "spy",
+      "version": "5.1.0",
+      "bom-ref": "@hiitl/sdk@0.2.0|@vitest/spy@5.1.0",
+      "purl": "pkg:npm/%40vitest/spy@5.1.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "argparse",
+      "version": "2.0.1",
+      "bom-ref": "@hiitl/sdk@0.2.0|argparse@2.0.1",
+      "purl": "pkg:npm/argparse@2.0.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "Python-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "assertion-error",
+      "version": "2.0.1",
+      "bom-ref": "@hiitl/sdk@0.2.0|assertion-error@2.0.1",
+      "purl": "pkg:npm/assertion-error@2.0.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "better-sqlite3",
+      "version": "13.1.1",
+      "bom-ref": "@hiitl/sdk@0.2.0|better-sqlite3@13.1.1",
+      "purl": "pkg:npm/better-sqlite3@13.1.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "chai",
+      "version": "6.3.0",
+      "bom-ref": "@hiitl/sdk@0.2.0|chai@6.3.0",
+      "purl": "pkg:npm/chai@6.3.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "detect-libc",
+      "version": "2.1.2",
+      "bom-ref": "@hiitl/sdk@0.2.0|detect-libc@2.1.2",
+      "purl": "pkg:npm/detect-libc@2.1.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "es-module-lexer",
+      "version": "2.3.2",
+      "bom-ref": "@hiitl/sdk@0.2.0|es-module-lexer@2.3.2",
+      "purl": "pkg:npm/es-module-lexer@2.3.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "estree-walker",
+      "version": "3.0.3",
+      "bom-ref": "@hiitl/sdk@0.2.0|estree-walker@3.0.3",
+      "purl": "pkg:npm/estree-walker@3.0.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "expect-type",
+      "version": "1.4.0",
+      "bom-ref": "@hiitl/sdk@0.2.0|expect-type@1.4.0",
+      "purl": "pkg:npm/expect-type@1.4.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "fdir",
+      "version": "6.5.0",
+      "bom-ref": "@hiitl/sdk@0.2.0|fdir@6.5.0",
+      "purl": "pkg:npm/fdir@6.5.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "js-yaml",
+      "version": "4.3.2",
+      "bom-ref": "@hiitl/sdk@0.2.0|js-yaml@4.3.2",
+      "purl": "pkg:npm/js-yaml@4.3.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "lightningcss-linux-x64-gnu",
+      "version": "1.33.0",
+      "bom-ref": "@hiitl/sdk@0.2.0|lightningcss-linux-x64-gnu@1.33.0",
+      "purl": "pkg:npm/lightningcss-linux-x64-gnu@1.33.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MPL-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "lightningcss-linux-x64-musl",
+      "version": "1.33.0",
+      "bom-ref": "@hiitl/sdk@0.2.0|lightningcss-linux-x64-musl@1.33.0",
+      "purl": "pkg:npm/lightningcss-linux-x64-musl@1.33.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MPL-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "lightningcss",
+      "version": "1.33.0",
+      "bom-ref": "@hiitl/sdk@0.2.0|lightningcss@1.33.0",
+      "purl": "pkg:npm/lightningcss@1.33.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MPL-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "magic-string",
+      "version": "1.4.5",
+      "bom-ref": "@hiitl/sdk@0.2.0|magic-string@1.4.5",
+      "purl": "pkg:npm/magic-string@1.4.5",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "nanoid",
+      "version": "3.3.20",
+      "bom-ref": "@hiitl/sdk@0.2.0|nanoid@3.3.20",
+      "purl": "pkg:npm/nanoid@3.3.20",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "node-addon-api",
+      "version": "8.9.2",
+      "bom-ref": "@hiitl/sdk@0.2.0|node-addon-api@8.9.2",
+      "purl": "pkg:npm/node-addon-api@8.9.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "obug",
+      "version": "3.0.0",
+      "bom-ref": "@hiitl/sdk@0.2.0|obug@3.0.0",
+      "purl": "pkg:npm/obug@3.0.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "picocolors",
+      "version": "1.1.1",
+      "bom-ref": "@hiitl/sdk@0.2.0|picocolors@1.1.1",
+      "purl": "pkg:npm/picocolors@1.1.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "ISC",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "picomatch",
+      "version": "4.0.7",
+      "bom-ref": "@hiitl/sdk@0.2.0|picomatch@4.0.7",
+      "purl": "pkg:npm/picomatch@4.0.7",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "postcss",
+      "version": "8.5.32",
+      "bom-ref": "@hiitl/sdk@0.2.0|postcss@8.5.32",
+      "purl": "pkg:npm/postcss@8.5.32",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "rolldown",
+      "version": "1.2.19",
+      "bom-ref": "@hiitl/sdk@0.2.0|rolldown@1.2.19",
+      "purl": "pkg:npm/rolldown@1.2.19",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "source-map-js",
+      "version": "1.2.2",
+      "bom-ref": "@hiitl/sdk@0.2.0|source-map-js@1.2.2",
+      "purl": "pkg:npm/source-map-js@1.2.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "std-env",
+      "version": "4.3.0",
+      "bom-ref": "@hiitl/sdk@0.2.0|std-env@4.3.0",
+      "purl": "pkg:npm/std-env@4.3.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "tinybench",
+      "version": "6.2.3",
+      "bom-ref": "@hiitl/sdk@0.2.0|tinybench@6.2.3",
+      "purl": "pkg:npm/tinybench@6.2.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "tinyexec",
+      "version": "1.3.1",
+      "bom-ref": "@hiitl/sdk@0.2.0|tinyexec@1.3.1",
+      "purl": "pkg:npm/tinyexec@1.3.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "tinyglobby",
+      "version": "0.2.17",
+      "bom-ref": "@hiitl/sdk@0.2.0|tinyglobby@0.2.17",
+      "purl": "pkg:npm/tinyglobby@0.2.17",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "typescript",
+      "version": "5.9.3",
+      "bom-ref": "@hiitl/sdk@0.2.0|typescript@5.9.3",
+      "purl": "pkg:npm/typescript@5.9.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "undici-types",
+      "version": "6.21.0",
+      "bom-ref": "@hiitl/sdk@0.2.0|undici-types@6.21.0",
+      "purl": "pkg:npm/undici-types@6.21.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "vite",
+      "version": "8.3.8",
+      "bom-ref": "@hiitl/sdk@0.2.0|vite@8.3.8",
+      "purl": "pkg:npm/vite@8.3.8",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "vitest",
+      "version": "5.1.0",
+      "bom-ref": "@hiitl/sdk@0.2.0|vitest@5.1.0",
+      "purl": "pkg:npm/vitest@5.1.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "why-is-node-running",
+      "version": "3.2.1",
+      "bom-ref": "@hiitl/sdk@0.2.0|why-is-node-running@3.2.1",
+      "purl": "pkg:npm/why-is-node-running@3.2.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "zod",
+      "version": "4.6.7",
+      "bom-ref": "@hiitl/sdk@0.2.0|zod@4.6.7",
+      "purl": "pkg:npm/zod@4.6.7",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "resolve-uri",
+      "version": "3.1.2",
+      "bom-ref": "@jridgewell/resolve-uri@3.1.2",
+      "purl": "pkg:npm/%40jridgewell/resolve-uri@3.1.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "sourcemap-codec",
+      "version": "1.6.0",
+      "bom-ref": "@jridgewell/sourcemap-codec@1.6.0",
+      "purl": "pkg:npm/%40jridgewell/sourcemap-codec@1.6.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "trace-mapping",
+      "version": "0.3.31",
+      "bom-ref": "@jridgewell/trace-mapping@0.3.31",
+      "purl": "pkg:npm/%40jridgewell/trace-mapping@0.3.31",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "types",
+      "version": "0.156.0",
+      "bom-ref": "@oxc-project/types@0.156.0",
+      "purl": "pkg:npm/%40oxc-project/types@0.156.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "binding-linux-x64-gnu",
+      "version": "1.2.19",
+      "bom-ref": "@rolldown/binding-linux-x64-gnu@1.2.19",
+      "purl": "pkg:npm/%40rolldown/binding-linux-x64-gnu@1.2.19",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "binding-linux-x64-musl",
+      "version": "1.2.19",
+      "bom-ref": "@rolldown/binding-linux-x64-musl@1.2.19",
+      "purl": "pkg:npm/%40rolldown/binding-linux-x64-musl@1.2.19",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "pluginutils",
+      "version": "1.1.0",
+      "bom-ref": "@rolldown/pluginutils@1.1.0",
+      "purl": "pkg:npm/%40rolldown/pluginutils@1.1.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "chai",
+      "version": "5.2.3",
+      "bom-ref": "@types/chai@5.2.3",
+      "purl": "pkg:npm/%40types/chai@5.2.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "deep-eql",
+      "version": "4.0.2",
+      "bom-ref": "@types/deep-eql@4.0.2",
+      "purl": "pkg:npm/%40types/deep-eql@4.0.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "estree",
+      "version": "1.0.10",
+      "bom-ref": "@types/estree@1.0.10",
+      "purl": "pkg:npm/%40types/estree@1.0.10",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "node",
+      "version": "22.20.5",
+      "bom-ref": "@types/node@22.20.5",
+      "purl": "pkg:npm/%40types/node@22.20.5",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "mocker",
+      "version": "5.1.0",
+      "bom-ref": "@vitest/mocker@5.1.0",
+      "purl": "pkg:npm/%40vitest/mocker@5.1.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "spy",
+      "version": "5.1.0",
+      "bom-ref": "@vitest/spy@5.1.0",
+      "purl": "pkg:npm/%40vitest/spy@5.1.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "PyJWT",
+      "version": "2.15.1",
+      "bom-ref": "PyJWT==2.15.1",
+      "purl": "pkg:pypi/pyjwt@2.15.1",
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "PyYAML",
+      "version": "6.0.3",
+      "bom-ref": "PyYAML==6.0.3",
+      "purl": "pkg:pypi/pyyaml@6.0.3",
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "Pygments",
+      "version": "2.21.0",
+      "bom-ref": "Pygments==2.21.0",
+      "purl": "pkg:pypi/pygments@2.21.0",
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "id": "BSD-2-Clause"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "annotated-types",
+      "version": "0.8.0",
+      "bom-ref": "annotated-types==0.8.0",
+      "purl": "pkg:pypi/annotated-types@0.8.0",
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "anyio",
+      "version": "4.16.0",
+      "bom-ref": "anyio==4.16.0",
+      "purl": "pkg:pypi/anyio@4.16.0",
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "assertion-error",
+      "version": "2.0.1",
+      "bom-ref": "assertion-error@2.0.1",
+      "purl": "pkg:npm/assertion-error@2.0.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "ast_serialize",
+      "version": "0.13.1",
+      "bom-ref": "ast_serialize==0.13.1",
+      "purl": "pkg:pypi/ast-serialize@0.13.1",
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "attrs",
+      "version": "26.1.0",
+      "bom-ref": "attrs==26.1.0",
+      "purl": "pkg:pypi/attrs@26.1.0",
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "black",
+      "version": "26.10.1",
+      "bom-ref": "black==26.10.1",
+      "purl": "pkg:pypi/black@26.10.1",
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "certifi",
+      "version": "2026.10.23",
+      "bom-ref": "certifi==2026.10.23",
+      "purl": "pkg:pypi/certifi@2026.10.23",
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "id": "MPL-2.0"
+          }
+        },
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "name": "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "cffi",
+      "version": "2.1.1",
+      "bom-ref": "cffi==2.1.1",
+      "purl": "pkg:pypi/cffi@2.1.1",
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "id": "MIT-0"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "chai",
+      "version": "6.3.0",
+      "bom-ref": "chai@6.3.0",
+      "purl": "pkg:npm/chai@6.3.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "click",
+      "version": "8.5.1",
+      "bom-ref": "click==8.5.1",
+      "purl": "pkg:pypi/click@8.5.1",
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "id": "BSD-3-Clause"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "coverage",
+      "version": "7.17.3",
+      "bom-ref": "coverage==7.17.3",
+      "purl": "pkg:pypi/coverage@7.17.3",
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "id": "Apache-2.0"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "cryptography",
+      "version": "50.0.2",
+      "bom-ref": "cryptography==50.0.2",
+      "purl": "pkg:pypi/cryptography@50.0.2",
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "Apache-2.0 OR BSD-3-Clause"
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "detect-libc",
+      "version": "2.1.2",
+      "bom-ref": "detect-libc@2.1.2",
+      "purl": "pkg:npm/detect-libc@2.1.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "es-module-lexer",
+      "version": "2.3.2",
+      "bom-ref": "es-module-lexer@2.3.2",
+      "purl": "pkg:npm/es-module-lexer@2.3.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "estree-walker",
+      "version": "3.0.3",
+      "bom-ref": "estree-walker@3.0.3",
+      "purl": "pkg:npm/estree-walker@3.0.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "expect-type",
+      "version": "1.4.0",
+      "bom-ref": "expect-type@1.4.0",
+      "purl": "pkg:npm/expect-type@1.4.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "fdir",
+      "version": "6.5.0",
+      "bom-ref": "fdir@6.5.0",
+      "purl": "pkg:npm/fdir@6.5.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "h11",
+      "version": "0.16.0",
+      "bom-ref": "h11==0.16.0",
+      "purl": "pkg:pypi/h11@0.16.0",
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "hiitl",
+      "version": "0.2.0",
+      "bom-ref": "hiitl==0.2.0",
+      "purl": null,
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "id": "Apache-2.0"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "httpcore",
+      "version": "1.0.9",
+      "bom-ref": "httpcore==1.0.9",
+      "purl": "pkg:pypi/httpcore@1.0.9",
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "id": "BSD-3-Clause"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "httpx-sse",
+      "version": "0.4.3",
+      "bom-ref": "httpx-sse==0.4.3",
+      "purl": "pkg:pypi/httpx-sse@0.4.3",
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "httpx",
+      "version": "0.28.1",
+      "bom-ref": "httpx==0.28.1",
+      "purl": "pkg:pypi/httpx@0.28.1",
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "id": "BSD-3-Clause"
+          }
+        },
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "name": "License :: OSI Approved :: BSD License"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "idna",
+      "version": "3.20",
+      "bom-ref": "idna==3.20",
+      "purl": "pkg:pypi/idna@3.20",
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "id": "BSD-3-Clause"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "iniconfig",
+      "version": "2.3.1",
+      "bom-ref": "iniconfig==2.3.1",
+      "purl": "pkg:pypi/iniconfig@2.3.1",
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "jsonschema-specifications",
+      "version": "2025.9.1",
+      "bom-ref": "jsonschema-specifications==2025.9.1",
+      "purl": "pkg:pypi/jsonschema-specifications@2025.9.1",
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "jsonschema",
+      "version": "4.26.0",
+      "bom-ref": "jsonschema==4.26.0",
+      "purl": "pkg:pypi/jsonschema@4.26.0",
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "librt",
+      "version": "0.16.0",
+      "bom-ref": "librt==0.16.0",
+      "purl": "pkg:pypi/librt@0.16.0",
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "lightningcss-linux-x64-gnu",
+      "version": "1.33.0",
+      "bom-ref": "lightningcss-linux-x64-gnu@1.33.0",
+      "purl": "pkg:npm/lightningcss-linux-x64-gnu@1.33.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MPL-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "lightningcss-linux-x64-musl",
+      "version": "1.33.0",
+      "bom-ref": "lightningcss-linux-x64-musl@1.33.0",
+      "purl": "pkg:npm/lightningcss-linux-x64-musl@1.33.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MPL-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "lightningcss",
+      "version": "1.33.0",
+      "bom-ref": "lightningcss@1.33.0",
+      "purl": "pkg:npm/lightningcss@1.33.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MPL-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "magic-string",
+      "version": "1.4.5",
+      "bom-ref": "magic-string@1.4.5",
+      "purl": "pkg:npm/magic-string@1.4.5",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "mcp",
+      "version": "1.30.0",
+      "bom-ref": "mcp==1.30.0",
+      "purl": "pkg:pypi/mcp@1.30.0",
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "mypy",
+      "version": "2.4.1",
+      "bom-ref": "mypy==2.4.1",
+      "purl": "pkg:pypi/mypy@2.4.1",
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "mypy_extensions",
+      "version": "1.2.0",
+      "bom-ref": "mypy_extensions==1.2.0",
+      "purl": "pkg:pypi/mypy-extensions@1.2.0",
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "nanoid",
+      "version": "3.3.20",
+      "bom-ref": "nanoid@3.3.20",
+      "purl": "pkg:npm/nanoid@3.3.20",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "obug",
+      "version": "3.0.0",
+      "bom-ref": "obug@3.0.0",
+      "purl": "pkg:npm/obug@3.0.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "packaging",
+      "version": "26.3",
+      "bom-ref": "packaging==26.3",
+      "purl": "pkg:pypi/packaging@26.3",
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "Apache-2.0 OR BSD-2-Clause"
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "pathspec",
+      "version": "1.1.1",
+      "bom-ref": "pathspec==1.1.1",
+      "purl": "pkg:pypi/pathspec@1.1.1",
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "name": "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "picocolors",
+      "version": "1.1.1",
+      "bom-ref": "picocolors@1.1.1",
+      "purl": "pkg:npm/picocolors@1.1.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "ISC",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "picomatch",
+      "version": "4.0.7",
+      "bom-ref": "picomatch@4.0.7",
+      "purl": "pkg:npm/picomatch@4.0.7",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "pip",
+      "version": "26.3",
+      "bom-ref": "pip==26.3",
+      "purl": "pkg:pypi/pip@26.3",
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "platformdirs",
+      "version": "4.14.7",
+      "bom-ref": "platformdirs==4.14.7",
+      "purl": "pkg:pypi/platformdirs@4.14.7",
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "pluggy",
+      "version": "1.7.0",
+      "bom-ref": "pluggy==1.7.0",
+      "purl": "pkg:pypi/pluggy@1.7.0",
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "postcss",
+      "version": "8.5.32",
+      "bom-ref": "postcss@8.5.32",
+      "purl": "pkg:npm/postcss@8.5.32",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "pycparser",
+      "version": "3.12",
+      "bom-ref": "pycparser==3.12",
+      "purl": "pkg:pypi/pycparser@3.12",
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "id": "BSD-3-Clause"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "pydantic-settings",
+      "version": "2.16.3",
+      "bom-ref": "pydantic-settings==2.16.3",
+      "purl": "pkg:pypi/pydantic-settings@2.16.3",
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "pydantic",
+      "version": "2.14.3",
+      "bom-ref": "pydantic==2.14.3",
+      "purl": "pkg:pypi/pydantic@2.14.3",
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "pydantic_core",
+      "version": "2.50.4",
+      "bom-ref": "pydantic_core==2.50.4",
+      "purl": "pkg:pypi/pydantic-core@2.50.4",
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "pytest-asyncio",
+      "version": "1.5.0",
+      "bom-ref": "pytest-asyncio==1.5.0",
+      "purl": "pkg:pypi/pytest-asyncio@1.5.0",
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "id": "Apache-2.0"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "pytest-cov",
+      "version": "7.1.0",
+      "bom-ref": "pytest-cov==7.1.0",
+      "purl": "pkg:pypi/pytest-cov@7.1.0",
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "pytest-httpx",
+      "version": "0.36.2",
+      "bom-ref": "pytest-httpx==0.36.2",
+      "purl": "pkg:pypi/pytest-httpx@0.36.2",
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "pytest",
+      "version": "9.2.0",
+      "bom-ref": "pytest==9.2.0",
+      "purl": "pkg:pypi/pytest@9.2.0",
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "python-dotenv",
+      "version": "1.2.4",
+      "bom-ref": "python-dotenv==1.2.4",
+      "purl": "pkg:pypi/python-dotenv@1.2.4",
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "id": "BSD-3-Clause"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "python-multipart",
+      "version": "0.0.34",
+      "bom-ref": "python-multipart==0.0.34",
+      "purl": "pkg:pypi/python-multipart@0.0.34",
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "id": "Apache-2.0"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "pytokens",
+      "version": "0.4.1",
+      "bom-ref": "pytokens==0.4.1",
+      "purl": "pkg:pypi/pytokens@0.4.1",
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "referencing",
+      "version": "0.37.0",
+      "bom-ref": "referencing==0.37.0",
+      "purl": "pkg:pypi/referencing@0.37.0",
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "rolldown",
+      "version": "1.2.19",
+      "bom-ref": "rolldown@1.2.19",
+      "purl": "pkg:npm/rolldown@1.2.19",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "rpds-py",
+      "version": "2026.9.1",
+      "bom-ref": "rpds-py==2026.9.1",
+      "purl": "pkg:pypi/rpds-py@2026.9.1",
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "ruff",
+      "version": "0.17.5",
+      "bom-ref": "ruff==0.17.5",
+      "purl": "pkg:pypi/ruff@0.17.5",
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "source-map-js",
+      "version": "1.2.2",
+      "bom-ref": "source-map-js@1.2.2",
+      "purl": "pkg:npm/source-map-js@1.2.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "sse-starlette",
+      "version": "3.7.0",
+      "bom-ref": "sse-starlette==3.7.0",
+      "purl": "pkg:pypi/sse-starlette@3.7.0",
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "id": "BSD-3-Clause"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "starlette",
+      "version": "1.10.0",
+      "bom-ref": "starlette==1.10.0",
+      "purl": "pkg:pypi/starlette@1.10.0",
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "id": "BSD-3-Clause"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "std-env",
+      "version": "4.3.0",
+      "bom-ref": "std-env@4.3.0",
+      "purl": "pkg:npm/std-env@4.3.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "tinybench",
+      "version": "6.2.3",
+      "bom-ref": "tinybench@6.2.3",
+      "purl": "pkg:npm/tinybench@6.2.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "tinyexec",
+      "version": "1.3.1",
+      "bom-ref": "tinyexec@1.3.1",
+      "purl": "pkg:npm/tinyexec@1.3.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "tinyglobby",
+      "version": "0.2.17",
+      "bom-ref": "tinyglobby@0.2.17",
+      "purl": "pkg:npm/tinyglobby@0.2.17",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "typescript",
+      "version": "5.9.3",
+      "bom-ref": "typescript@5.9.3",
+      "purl": "pkg:npm/typescript@5.9.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "typing-inspection",
+      "version": "0.4.5",
+      "bom-ref": "typing-inspection==0.4.5",
+      "purl": "pkg:pypi/typing-inspection@0.4.5",
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "typing_extensions",
+      "version": "4.16.0",
+      "bom-ref": "typing_extensions==4.16.0",
+      "purl": "pkg:pypi/typing-extensions@4.16.0",
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "id": "PSF-2.0"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "undici-types",
+      "version": "6.21.0",
+      "bom-ref": "undici-types@6.21.0",
+      "purl": "pkg:npm/undici-types@6.21.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "python.cdx.json",
+      "name": "uvicorn",
+      "version": "0.54.0",
+      "bom-ref": "uvicorn==0.54.0",
+      "purl": "pkg:pypi/uvicorn@0.54.0",
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "id": "BSD-3-Clause"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "vite",
+      "version": "8.3.8",
+      "bom-ref": "vite@8.3.8",
+      "purl": "pkg:npm/vite@8.3.8",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "vitest",
+      "version": "5.1.0",
+      "bom-ref": "vitest@5.1.0",
+      "purl": "pkg:npm/vitest@5.1.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "why-is-node-running",
+      "version": "3.2.1",
+      "bom-ref": "why-is-node-running@3.2.1",
+      "purl": "pkg:npm/why-is-node-running@3.2.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    },
+    {
+      "source": "sdk.cdx.json",
+      "name": "zod",
+      "version": "4.6.7",
+      "bom-ref": "zod@4.6.7",
+      "purl": "pkg:npm/zod@4.6.7",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ]
+    }
+  ],
+  "distinct_licenses": [
+    {
+      "declaration": {
+        "acknowledgement": "declared",
+        "expression": "Apache-2.0 OR BSD-2-Clause"
+      },
+      "review_status": "requires_review",
+      "components": [
+        {
+          "source": "python.cdx.json",
+          "name": "packaging",
+          "version": "26.3",
+          "bom-ref": "packaging==26.3",
+          "purl": "pkg:pypi/packaging@26.3"
+        }
+      ]
+    },
+    {
+      "declaration": {
+        "acknowledgement": "declared",
+        "expression": "Apache-2.0 OR BSD-3-Clause"
+      },
+      "review_status": "requires_review",
+      "components": [
+        {
+          "source": "python.cdx.json",
+          "name": "cryptography",
+          "version": "50.0.2",
+          "bom-ref": "cryptography==50.0.2",
+          "purl": "pkg:pypi/cryptography@50.0.2"
+        }
+      ]
+    },
+    {
+      "declaration": {
+        "license": {
+          "id": "Apache-2.0",
+          "acknowledgement": "declared"
+        }
+      },
+      "review_status": "requires_review",
+      "components": [
+        {
+          "source": "core.cdx.json",
+          "name": "core",
+          "version": "0.2.0",
+          "bom-ref": "@hiitl/core@0.2.0",
+          "purl": "pkg:npm/%40hiitl/core@0.2.0?vcs_url=git%2Bhttps%3A%2F%2Fgithub.com%2Fhiitlhq%2Fhiitl.git%23typescript%2Fpackages%2Fcore"
+        },
+        {
+          "source": "core.cdx.json",
+          "name": "detect-libc",
+          "version": "2.1.2",
+          "bom-ref": "@hiitl/core@0.2.0|detect-libc@2.1.2",
+          "purl": "pkg:npm/detect-libc@2.1.2"
+        },
+        {
+          "source": "core.cdx.json",
+          "name": "expect-type",
+          "version": "1.4.0",
+          "bom-ref": "@hiitl/core@0.2.0|expect-type@1.4.0",
+          "purl": "pkg:npm/expect-type@1.4.0"
+        },
+        {
+          "source": "core.cdx.json",
+          "name": "typescript",
+          "version": "5.9.3",
+          "bom-ref": "@hiitl/core@0.2.0|typescript@5.9.3",
+          "purl": "pkg:npm/typescript@5.9.3"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "sdk",
+          "version": "0.2.0",
+          "bom-ref": "@hiitl/sdk@0.2.0",
+          "purl": "pkg:npm/%40hiitl/sdk@0.2.0?vcs_url=git%2Bhttps%3A%2F%2Fgithub.com%2Fhiitlhq%2Fhiitl.git%23typescript%2Fpackages%2Fsdk"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "core",
+          "version": "0.2.0",
+          "bom-ref": "@hiitl/sdk@0.2.0|@hiitl/core@0.2.0",
+          "purl": "pkg:npm/%40hiitl/core@0.2.0"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "detect-libc",
+          "version": "2.1.2",
+          "bom-ref": "@hiitl/sdk@0.2.0|detect-libc@2.1.2",
+          "purl": "pkg:npm/detect-libc@2.1.2"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "expect-type",
+          "version": "1.4.0",
+          "bom-ref": "@hiitl/sdk@0.2.0|expect-type@1.4.0",
+          "purl": "pkg:npm/expect-type@1.4.0"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "typescript",
+          "version": "5.9.3",
+          "bom-ref": "@hiitl/sdk@0.2.0|typescript@5.9.3",
+          "purl": "pkg:npm/typescript@5.9.3"
+        },
+        {
+          "source": "python.cdx.json",
+          "name": "coverage",
+          "version": "7.17.3",
+          "bom-ref": "coverage==7.17.3",
+          "purl": "pkg:pypi/coverage@7.17.3"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "detect-libc",
+          "version": "2.1.2",
+          "bom-ref": "detect-libc@2.1.2",
+          "purl": "pkg:npm/detect-libc@2.1.2"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "expect-type",
+          "version": "1.4.0",
+          "bom-ref": "expect-type@1.4.0",
+          "purl": "pkg:npm/expect-type@1.4.0"
+        },
+        {
+          "source": "python.cdx.json",
+          "name": "hiitl",
+          "version": "0.2.0",
+          "bom-ref": "hiitl==0.2.0",
+          "purl": null
+        },
+        {
+          "source": "python.cdx.json",
+          "name": "pytest-asyncio",
+          "version": "1.5.0",
+          "bom-ref": "pytest-asyncio==1.5.0",
+          "purl": "pkg:pypi/pytest-asyncio@1.5.0"
+        },
+        {
+          "source": "python.cdx.json",
+          "name": "python-multipart",
+          "version": "0.0.34",
+          "bom-ref": "python-multipart==0.0.34",
+          "purl": "pkg:pypi/python-multipart@0.0.34"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "typescript",
+          "version": "5.9.3",
+          "bom-ref": "typescript@5.9.3",
+          "purl": "pkg:npm/typescript@5.9.3"
+        }
+      ]
+    },
+    {
+      "declaration": {
+        "license": {
+          "acknowledgement": "declared",
+          "id": "BSD-2-Clause"
+        }
+      },
+      "review_status": "requires_review",
+      "components": [
+        {
+          "source": "python.cdx.json",
+          "name": "Pygments",
+          "version": "2.21.0",
+          "bom-ref": "Pygments==2.21.0",
+          "purl": "pkg:pypi/pygments@2.21.0"
+        }
+      ]
+    },
+    {
+      "declaration": {
+        "license": {
+          "id": "BSD-3-Clause",
+          "acknowledgement": "declared"
+        }
+      },
+      "review_status": "requires_review",
+      "components": [
+        {
+          "source": "core.cdx.json",
+          "name": "source-map-js",
+          "version": "1.2.2",
+          "bom-ref": "@hiitl/core@0.2.0|source-map-js@1.2.2",
+          "purl": "pkg:npm/source-map-js@1.2.2"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "source-map-js",
+          "version": "1.2.2",
+          "bom-ref": "@hiitl/sdk@0.2.0|source-map-js@1.2.2",
+          "purl": "pkg:npm/source-map-js@1.2.2"
+        },
+        {
+          "source": "python.cdx.json",
+          "name": "click",
+          "version": "8.5.1",
+          "bom-ref": "click==8.5.1",
+          "purl": "pkg:pypi/click@8.5.1"
+        },
+        {
+          "source": "python.cdx.json",
+          "name": "httpcore",
+          "version": "1.0.9",
+          "bom-ref": "httpcore==1.0.9",
+          "purl": "pkg:pypi/httpcore@1.0.9"
+        },
+        {
+          "source": "python.cdx.json",
+          "name": "httpx",
+          "version": "0.28.1",
+          "bom-ref": "httpx==0.28.1",
+          "purl": "pkg:pypi/httpx@0.28.1"
+        },
+        {
+          "source": "python.cdx.json",
+          "name": "idna",
+          "version": "3.20",
+          "bom-ref": "idna==3.20",
+          "purl": "pkg:pypi/idna@3.20"
+        },
+        {
+          "source": "python.cdx.json",
+          "name": "pycparser",
+          "version": "3.12",
+          "bom-ref": "pycparser==3.12",
+          "purl": "pkg:pypi/pycparser@3.12"
+        },
+        {
+          "source": "python.cdx.json",
+          "name": "python-dotenv",
+          "version": "1.2.4",
+          "bom-ref": "python-dotenv==1.2.4",
+          "purl": "pkg:pypi/python-dotenv@1.2.4"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "source-map-js",
+          "version": "1.2.2",
+          "bom-ref": "source-map-js@1.2.2",
+          "purl": "pkg:npm/source-map-js@1.2.2"
+        },
+        {
+          "source": "python.cdx.json",
+          "name": "sse-starlette",
+          "version": "3.7.0",
+          "bom-ref": "sse-starlette==3.7.0",
+          "purl": "pkg:pypi/sse-starlette@3.7.0"
+        },
+        {
+          "source": "python.cdx.json",
+          "name": "starlette",
+          "version": "1.10.0",
+          "bom-ref": "starlette==1.10.0",
+          "purl": "pkg:pypi/starlette@1.10.0"
+        },
+        {
+          "source": "python.cdx.json",
+          "name": "uvicorn",
+          "version": "0.54.0",
+          "bom-ref": "uvicorn==0.54.0",
+          "purl": "pkg:pypi/uvicorn@0.54.0"
+        }
+      ]
+    },
+    {
+      "declaration": {
+        "license": {
+          "id": "ISC",
+          "acknowledgement": "declared"
+        }
+      },
+      "review_status": "requires_review",
+      "components": [
+        {
+          "source": "core.cdx.json",
+          "name": "picocolors",
+          "version": "1.1.1",
+          "bom-ref": "@hiitl/core@0.2.0|picocolors@1.1.1",
+          "purl": "pkg:npm/picocolors@1.1.1"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "picocolors",
+          "version": "1.1.1",
+          "bom-ref": "@hiitl/sdk@0.2.0|picocolors@1.1.1",
+          "purl": "pkg:npm/picocolors@1.1.1"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "picocolors",
+          "version": "1.1.1",
+          "bom-ref": "picocolors@1.1.1",
+          "purl": "pkg:npm/picocolors@1.1.1"
+        }
+      ]
+    },
+    {
+      "declaration": {
+        "license": {
+          "id": "MIT",
+          "acknowledgement": "declared"
+        }
+      },
+      "review_status": "requires_review",
+      "components": [
+        {
+          "source": "core.cdx.json",
+          "name": "resolve-uri",
+          "version": "3.1.2",
+          "bom-ref": "@hiitl/core@0.2.0|@jridgewell/resolve-uri@3.1.2",
+          "purl": "pkg:npm/%40jridgewell/resolve-uri@3.1.2"
+        },
+        {
+          "source": "core.cdx.json",
+          "name": "sourcemap-codec",
+          "version": "1.6.0",
+          "bom-ref": "@hiitl/core@0.2.0|@jridgewell/sourcemap-codec@1.6.0",
+          "purl": "pkg:npm/%40jridgewell/sourcemap-codec@1.6.0"
+        },
+        {
+          "source": "core.cdx.json",
+          "name": "trace-mapping",
+          "version": "0.3.31",
+          "bom-ref": "@hiitl/core@0.2.0|@jridgewell/trace-mapping@0.3.31",
+          "purl": "pkg:npm/%40jridgewell/trace-mapping@0.3.31"
+        },
+        {
+          "source": "core.cdx.json",
+          "name": "types",
+          "version": "0.156.0",
+          "bom-ref": "@hiitl/core@0.2.0|@oxc-project/types@0.156.0",
+          "purl": "pkg:npm/%40oxc-project/types@0.156.0"
+        },
+        {
+          "source": "core.cdx.json",
+          "name": "binding-linux-x64-gnu",
+          "version": "1.2.19",
+          "bom-ref": "@hiitl/core@0.2.0|@rolldown/binding-linux-x64-gnu@1.2.19",
+          "purl": "pkg:npm/%40rolldown/binding-linux-x64-gnu@1.2.19"
+        },
+        {
+          "source": "core.cdx.json",
+          "name": "binding-linux-x64-musl",
+          "version": "1.2.19",
+          "bom-ref": "@hiitl/core@0.2.0|@rolldown/binding-linux-x64-musl@1.2.19",
+          "purl": "pkg:npm/%40rolldown/binding-linux-x64-musl@1.2.19"
+        },
+        {
+          "source": "core.cdx.json",
+          "name": "pluginutils",
+          "version": "1.1.0",
+          "bom-ref": "@hiitl/core@0.2.0|@rolldown/pluginutils@1.1.0",
+          "purl": "pkg:npm/%40rolldown/pluginutils@1.1.0"
+        },
+        {
+          "source": "core.cdx.json",
+          "name": "chai",
+          "version": "5.2.3",
+          "bom-ref": "@hiitl/core@0.2.0|@types/chai@5.2.3",
+          "purl": "pkg:npm/%40types/chai@5.2.3"
+        },
+        {
+          "source": "core.cdx.json",
+          "name": "deep-eql",
+          "version": "4.0.2",
+          "bom-ref": "@hiitl/core@0.2.0|@types/deep-eql@4.0.2",
+          "purl": "pkg:npm/%40types/deep-eql@4.0.2"
+        },
+        {
+          "source": "core.cdx.json",
+          "name": "estree",
+          "version": "1.0.10",
+          "bom-ref": "@hiitl/core@0.2.0|@types/estree@1.0.10",
+          "purl": "pkg:npm/%40types/estree@1.0.10"
+        },
+        {
+          "source": "core.cdx.json",
+          "name": "node",
+          "version": "22.20.5",
+          "bom-ref": "@hiitl/core@0.2.0|@types/node@22.20.5",
+          "purl": "pkg:npm/%40types/node@22.20.5"
+        },
+        {
+          "source": "core.cdx.json",
+          "name": "mocker",
+          "version": "5.1.0",
+          "bom-ref": "@hiitl/core@0.2.0|@vitest/mocker@5.1.0",
+          "purl": "pkg:npm/%40vitest/mocker@5.1.0"
+        },
+        {
+          "source": "core.cdx.json",
+          "name": "spy",
+          "version": "5.1.0",
+          "bom-ref": "@hiitl/core@0.2.0|@vitest/spy@5.1.0",
+          "purl": "pkg:npm/%40vitest/spy@5.1.0"
+        },
+        {
+          "source": "core.cdx.json",
+          "name": "assertion-error",
+          "version": "2.0.1",
+          "bom-ref": "@hiitl/core@0.2.0|assertion-error@2.0.1",
+          "purl": "pkg:npm/assertion-error@2.0.1"
+        },
+        {
+          "source": "core.cdx.json",
+          "name": "chai",
+          "version": "6.3.0",
+          "bom-ref": "@hiitl/core@0.2.0|chai@6.3.0",
+          "purl": "pkg:npm/chai@6.3.0"
+        },
+        {
+          "source": "core.cdx.json",
+          "name": "es-module-lexer",
+          "version": "2.3.2",
+          "bom-ref": "@hiitl/core@0.2.0|es-module-lexer@2.3.2",
+          "purl": "pkg:npm/es-module-lexer@2.3.2"
+        },
+        {
+          "source": "core.cdx.json",
+          "name": "estree-walker",
+          "version": "3.0.3",
+          "bom-ref": "@hiitl/core@0.2.0|estree-walker@3.0.3",
+          "purl": "pkg:npm/estree-walker@3.0.3"
+        },
+        {
+          "source": "core.cdx.json",
+          "name": "fdir",
+          "version": "6.5.0",
+          "bom-ref": "@hiitl/core@0.2.0|fdir@6.5.0",
+          "purl": "pkg:npm/fdir@6.5.0"
+        },
+        {
+          "source": "core.cdx.json",
+          "name": "magic-string",
+          "version": "1.4.5",
+          "bom-ref": "@hiitl/core@0.2.0|magic-string@1.4.5",
+          "purl": "pkg:npm/magic-string@1.4.5"
+        },
+        {
+          "source": "core.cdx.json",
+          "name": "nanoid",
+          "version": "3.3.20",
+          "bom-ref": "@hiitl/core@0.2.0|nanoid@3.3.20",
+          "purl": "pkg:npm/nanoid@3.3.20"
+        },
+        {
+          "source": "core.cdx.json",
+          "name": "obug",
+          "version": "3.0.0",
+          "bom-ref": "@hiitl/core@0.2.0|obug@3.0.0",
+          "purl": "pkg:npm/obug@3.0.0"
+        },
+        {
+          "source": "core.cdx.json",
+          "name": "picomatch",
+          "version": "4.0.7",
+          "bom-ref": "@hiitl/core@0.2.0|picomatch@4.0.7",
+          "purl": "pkg:npm/picomatch@4.0.7"
+        },
+        {
+          "source": "core.cdx.json",
+          "name": "postcss",
+          "version": "8.5.32",
+          "bom-ref": "@hiitl/core@0.2.0|postcss@8.5.32",
+          "purl": "pkg:npm/postcss@8.5.32"
+        },
+        {
+          "source": "core.cdx.json",
+          "name": "rolldown",
+          "version": "1.2.19",
+          "bom-ref": "@hiitl/core@0.2.0|rolldown@1.2.19",
+          "purl": "pkg:npm/rolldown@1.2.19"
+        },
+        {
+          "source": "core.cdx.json",
+          "name": "std-env",
+          "version": "4.3.0",
+          "bom-ref": "@hiitl/core@0.2.0|std-env@4.3.0",
+          "purl": "pkg:npm/std-env@4.3.0"
+        },
+        {
+          "source": "core.cdx.json",
+          "name": "tinybench",
+          "version": "6.2.3",
+          "bom-ref": "@hiitl/core@0.2.0|tinybench@6.2.3",
+          "purl": "pkg:npm/tinybench@6.2.3"
+        },
+        {
+          "source": "core.cdx.json",
+          "name": "tinyexec",
+          "version": "1.3.1",
+          "bom-ref": "@hiitl/core@0.2.0|tinyexec@1.3.1",
+          "purl": "pkg:npm/tinyexec@1.3.1"
+        },
+        {
+          "source": "core.cdx.json",
+          "name": "tinyglobby",
+          "version": "0.2.17",
+          "bom-ref": "@hiitl/core@0.2.0|tinyglobby@0.2.17",
+          "purl": "pkg:npm/tinyglobby@0.2.17"
+        },
+        {
+          "source": "core.cdx.json",
+          "name": "undici-types",
+          "version": "6.21.0",
+          "bom-ref": "@hiitl/core@0.2.0|undici-types@6.21.0",
+          "purl": "pkg:npm/undici-types@6.21.0"
+        },
+        {
+          "source": "core.cdx.json",
+          "name": "vite",
+          "version": "8.3.8",
+          "bom-ref": "@hiitl/core@0.2.0|vite@8.3.8",
+          "purl": "pkg:npm/vite@8.3.8"
+        },
+        {
+          "source": "core.cdx.json",
+          "name": "vitest",
+          "version": "5.1.0",
+          "bom-ref": "@hiitl/core@0.2.0|vitest@5.1.0",
+          "purl": "pkg:npm/vitest@5.1.0"
+        },
+        {
+          "source": "core.cdx.json",
+          "name": "why-is-node-running",
+          "version": "3.2.1",
+          "bom-ref": "@hiitl/core@0.2.0|why-is-node-running@3.2.1",
+          "purl": "pkg:npm/why-is-node-running@3.2.1"
+        },
+        {
+          "source": "core.cdx.json",
+          "name": "zod",
+          "version": "4.6.7",
+          "bom-ref": "@hiitl/core@0.2.0|zod@4.6.7",
+          "purl": "pkg:npm/zod@4.6.7"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "resolve-uri",
+          "version": "3.1.2",
+          "bom-ref": "@hiitl/sdk@0.2.0|@jridgewell/resolve-uri@3.1.2",
+          "purl": "pkg:npm/%40jridgewell/resolve-uri@3.1.2"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "sourcemap-codec",
+          "version": "1.6.0",
+          "bom-ref": "@hiitl/sdk@0.2.0|@jridgewell/sourcemap-codec@1.6.0",
+          "purl": "pkg:npm/%40jridgewell/sourcemap-codec@1.6.0"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "trace-mapping",
+          "version": "0.3.31",
+          "bom-ref": "@hiitl/sdk@0.2.0|@jridgewell/trace-mapping@0.3.31",
+          "purl": "pkg:npm/%40jridgewell/trace-mapping@0.3.31"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "types",
+          "version": "0.156.0",
+          "bom-ref": "@hiitl/sdk@0.2.0|@oxc-project/types@0.156.0",
+          "purl": "pkg:npm/%40oxc-project/types@0.156.0"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "binding-linux-x64-gnu",
+          "version": "1.2.19",
+          "bom-ref": "@hiitl/sdk@0.2.0|@rolldown/binding-linux-x64-gnu@1.2.19",
+          "purl": "pkg:npm/%40rolldown/binding-linux-x64-gnu@1.2.19"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "binding-linux-x64-musl",
+          "version": "1.2.19",
+          "bom-ref": "@hiitl/sdk@0.2.0|@rolldown/binding-linux-x64-musl@1.2.19",
+          "purl": "pkg:npm/%40rolldown/binding-linux-x64-musl@1.2.19"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "pluginutils",
+          "version": "1.1.0",
+          "bom-ref": "@hiitl/sdk@0.2.0|@rolldown/pluginutils@1.1.0",
+          "purl": "pkg:npm/%40rolldown/pluginutils@1.1.0"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "better-sqlite3",
+          "version": "7.6.13",
+          "bom-ref": "@hiitl/sdk@0.2.0|@types/better-sqlite3@7.6.13",
+          "purl": "pkg:npm/%40types/better-sqlite3@7.6.13"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "chai",
+          "version": "5.2.3",
+          "bom-ref": "@hiitl/sdk@0.2.0|@types/chai@5.2.3",
+          "purl": "pkg:npm/%40types/chai@5.2.3"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "deep-eql",
+          "version": "4.0.2",
+          "bom-ref": "@hiitl/sdk@0.2.0|@types/deep-eql@4.0.2",
+          "purl": "pkg:npm/%40types/deep-eql@4.0.2"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "estree",
+          "version": "1.0.10",
+          "bom-ref": "@hiitl/sdk@0.2.0|@types/estree@1.0.10",
+          "purl": "pkg:npm/%40types/estree@1.0.10"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "js-yaml",
+          "version": "4.0.9",
+          "bom-ref": "@hiitl/sdk@0.2.0|@types/js-yaml@4.0.9",
+          "purl": "pkg:npm/%40types/js-yaml@4.0.9"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "node",
+          "version": "22.20.5",
+          "bom-ref": "@hiitl/sdk@0.2.0|@types/node@22.20.5",
+          "purl": "pkg:npm/%40types/node@22.20.5"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "mocker",
+          "version": "5.1.0",
+          "bom-ref": "@hiitl/sdk@0.2.0|@vitest/mocker@5.1.0",
+          "purl": "pkg:npm/%40vitest/mocker@5.1.0"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "spy",
+          "version": "5.1.0",
+          "bom-ref": "@hiitl/sdk@0.2.0|@vitest/spy@5.1.0",
+          "purl": "pkg:npm/%40vitest/spy@5.1.0"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "assertion-error",
+          "version": "2.0.1",
+          "bom-ref": "@hiitl/sdk@0.2.0|assertion-error@2.0.1",
+          "purl": "pkg:npm/assertion-error@2.0.1"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "better-sqlite3",
+          "version": "13.1.1",
+          "bom-ref": "@hiitl/sdk@0.2.0|better-sqlite3@13.1.1",
+          "purl": "pkg:npm/better-sqlite3@13.1.1"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "chai",
+          "version": "6.3.0",
+          "bom-ref": "@hiitl/sdk@0.2.0|chai@6.3.0",
+          "purl": "pkg:npm/chai@6.3.0"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "es-module-lexer",
+          "version": "2.3.2",
+          "bom-ref": "@hiitl/sdk@0.2.0|es-module-lexer@2.3.2",
+          "purl": "pkg:npm/es-module-lexer@2.3.2"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "estree-walker",
+          "version": "3.0.3",
+          "bom-ref": "@hiitl/sdk@0.2.0|estree-walker@3.0.3",
+          "purl": "pkg:npm/estree-walker@3.0.3"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "fdir",
+          "version": "6.5.0",
+          "bom-ref": "@hiitl/sdk@0.2.0|fdir@6.5.0",
+          "purl": "pkg:npm/fdir@6.5.0"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "js-yaml",
+          "version": "4.3.2",
+          "bom-ref": "@hiitl/sdk@0.2.0|js-yaml@4.3.2",
+          "purl": "pkg:npm/js-yaml@4.3.2"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "magic-string",
+          "version": "1.4.5",
+          "bom-ref": "@hiitl/sdk@0.2.0|magic-string@1.4.5",
+          "purl": "pkg:npm/magic-string@1.4.5"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "nanoid",
+          "version": "3.3.20",
+          "bom-ref": "@hiitl/sdk@0.2.0|nanoid@3.3.20",
+          "purl": "pkg:npm/nanoid@3.3.20"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "node-addon-api",
+          "version": "8.9.2",
+          "bom-ref": "@hiitl/sdk@0.2.0|node-addon-api@8.9.2",
+          "purl": "pkg:npm/node-addon-api@8.9.2"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "obug",
+          "version": "3.0.0",
+          "bom-ref": "@hiitl/sdk@0.2.0|obug@3.0.0",
+          "purl": "pkg:npm/obug@3.0.0"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "picomatch",
+          "version": "4.0.7",
+          "bom-ref": "@hiitl/sdk@0.2.0|picomatch@4.0.7",
+          "purl": "pkg:npm/picomatch@4.0.7"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "postcss",
+          "version": "8.5.32",
+          "bom-ref": "@hiitl/sdk@0.2.0|postcss@8.5.32",
+          "purl": "pkg:npm/postcss@8.5.32"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "rolldown",
+          "version": "1.2.19",
+          "bom-ref": "@hiitl/sdk@0.2.0|rolldown@1.2.19",
+          "purl": "pkg:npm/rolldown@1.2.19"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "std-env",
+          "version": "4.3.0",
+          "bom-ref": "@hiitl/sdk@0.2.0|std-env@4.3.0",
+          "purl": "pkg:npm/std-env@4.3.0"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "tinybench",
+          "version": "6.2.3",
+          "bom-ref": "@hiitl/sdk@0.2.0|tinybench@6.2.3",
+          "purl": "pkg:npm/tinybench@6.2.3"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "tinyexec",
+          "version": "1.3.1",
+          "bom-ref": "@hiitl/sdk@0.2.0|tinyexec@1.3.1",
+          "purl": "pkg:npm/tinyexec@1.3.1"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "tinyglobby",
+          "version": "0.2.17",
+          "bom-ref": "@hiitl/sdk@0.2.0|tinyglobby@0.2.17",
+          "purl": "pkg:npm/tinyglobby@0.2.17"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "undici-types",
+          "version": "6.21.0",
+          "bom-ref": "@hiitl/sdk@0.2.0|undici-types@6.21.0",
+          "purl": "pkg:npm/undici-types@6.21.0"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "vite",
+          "version": "8.3.8",
+          "bom-ref": "@hiitl/sdk@0.2.0|vite@8.3.8",
+          "purl": "pkg:npm/vite@8.3.8"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "vitest",
+          "version": "5.1.0",
+          "bom-ref": "@hiitl/sdk@0.2.0|vitest@5.1.0",
+          "purl": "pkg:npm/vitest@5.1.0"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "why-is-node-running",
+          "version": "3.2.1",
+          "bom-ref": "@hiitl/sdk@0.2.0|why-is-node-running@3.2.1",
+          "purl": "pkg:npm/why-is-node-running@3.2.1"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "zod",
+          "version": "4.6.7",
+          "bom-ref": "@hiitl/sdk@0.2.0|zod@4.6.7",
+          "purl": "pkg:npm/zod@4.6.7"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "resolve-uri",
+          "version": "3.1.2",
+          "bom-ref": "@jridgewell/resolve-uri@3.1.2",
+          "purl": "pkg:npm/%40jridgewell/resolve-uri@3.1.2"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "sourcemap-codec",
+          "version": "1.6.0",
+          "bom-ref": "@jridgewell/sourcemap-codec@1.6.0",
+          "purl": "pkg:npm/%40jridgewell/sourcemap-codec@1.6.0"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "trace-mapping",
+          "version": "0.3.31",
+          "bom-ref": "@jridgewell/trace-mapping@0.3.31",
+          "purl": "pkg:npm/%40jridgewell/trace-mapping@0.3.31"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "types",
+          "version": "0.156.0",
+          "bom-ref": "@oxc-project/types@0.156.0",
+          "purl": "pkg:npm/%40oxc-project/types@0.156.0"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "binding-linux-x64-gnu",
+          "version": "1.2.19",
+          "bom-ref": "@rolldown/binding-linux-x64-gnu@1.2.19",
+          "purl": "pkg:npm/%40rolldown/binding-linux-x64-gnu@1.2.19"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "binding-linux-x64-musl",
+          "version": "1.2.19",
+          "bom-ref": "@rolldown/binding-linux-x64-musl@1.2.19",
+          "purl": "pkg:npm/%40rolldown/binding-linux-x64-musl@1.2.19"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "pluginutils",
+          "version": "1.1.0",
+          "bom-ref": "@rolldown/pluginutils@1.1.0",
+          "purl": "pkg:npm/%40rolldown/pluginutils@1.1.0"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "chai",
+          "version": "5.2.3",
+          "bom-ref": "@types/chai@5.2.3",
+          "purl": "pkg:npm/%40types/chai@5.2.3"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "deep-eql",
+          "version": "4.0.2",
+          "bom-ref": "@types/deep-eql@4.0.2",
+          "purl": "pkg:npm/%40types/deep-eql@4.0.2"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "estree",
+          "version": "1.0.10",
+          "bom-ref": "@types/estree@1.0.10",
+          "purl": "pkg:npm/%40types/estree@1.0.10"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "node",
+          "version": "22.20.5",
+          "bom-ref": "@types/node@22.20.5",
+          "purl": "pkg:npm/%40types/node@22.20.5"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "mocker",
+          "version": "5.1.0",
+          "bom-ref": "@vitest/mocker@5.1.0",
+          "purl": "pkg:npm/%40vitest/mocker@5.1.0"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "spy",
+          "version": "5.1.0",
+          "bom-ref": "@vitest/spy@5.1.0",
+          "purl": "pkg:npm/%40vitest/spy@5.1.0"
+        },
+        {
+          "source": "python.cdx.json",
+          "name": "PyJWT",
+          "version": "2.15.1",
+          "bom-ref": "PyJWT==2.15.1",
+          "purl": "pkg:pypi/pyjwt@2.15.1"
+        },
+        {
+          "source": "python.cdx.json",
+          "name": "PyYAML",
+          "version": "6.0.3",
+          "bom-ref": "PyYAML==6.0.3",
+          "purl": "pkg:pypi/pyyaml@6.0.3"
+        },
+        {
+          "source": "python.cdx.json",
+          "name": "annotated-types",
+          "version": "0.8.0",
+          "bom-ref": "annotated-types==0.8.0",
+          "purl": "pkg:pypi/annotated-types@0.8.0"
+        },
+        {
+          "source": "python.cdx.json",
+          "name": "anyio",
+          "version": "4.16.0",
+          "bom-ref": "anyio==4.16.0",
+          "purl": "pkg:pypi/anyio@4.16.0"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "assertion-error",
+          "version": "2.0.1",
+          "bom-ref": "assertion-error@2.0.1",
+          "purl": "pkg:npm/assertion-error@2.0.1"
+        },
+        {
+          "source": "python.cdx.json",
+          "name": "ast_serialize",
+          "version": "0.13.1",
+          "bom-ref": "ast_serialize==0.13.1",
+          "purl": "pkg:pypi/ast-serialize@0.13.1"
+        },
+        {
+          "source": "python.cdx.json",
+          "name": "attrs",
+          "version": "26.1.0",
+          "bom-ref": "attrs==26.1.0",
+          "purl": "pkg:pypi/attrs@26.1.0"
+        },
+        {
+          "source": "python.cdx.json",
+          "name": "black",
+          "version": "26.10.1",
+          "bom-ref": "black==26.10.1",
+          "purl": "pkg:pypi/black@26.10.1"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "chai",
+          "version": "6.3.0",
+          "bom-ref": "chai@6.3.0",
+          "purl": "pkg:npm/chai@6.3.0"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "es-module-lexer",
+          "version": "2.3.2",
+          "bom-ref": "es-module-lexer@2.3.2",
+          "purl": "pkg:npm/es-module-lexer@2.3.2"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "estree-walker",
+          "version": "3.0.3",
+          "bom-ref": "estree-walker@3.0.3",
+          "purl": "pkg:npm/estree-walker@3.0.3"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "fdir",
+          "version": "6.5.0",
+          "bom-ref": "fdir@6.5.0",
+          "purl": "pkg:npm/fdir@6.5.0"
+        },
+        {
+          "source": "python.cdx.json",
+          "name": "h11",
+          "version": "0.16.0",
+          "bom-ref": "h11==0.16.0",
+          "purl": "pkg:pypi/h11@0.16.0"
+        },
+        {
+          "source": "python.cdx.json",
+          "name": "httpx-sse",
+          "version": "0.4.3",
+          "bom-ref": "httpx-sse==0.4.3",
+          "purl": "pkg:pypi/httpx-sse@0.4.3"
+        },
+        {
+          "source": "python.cdx.json",
+          "name": "iniconfig",
+          "version": "2.3.1",
+          "bom-ref": "iniconfig==2.3.1",
+          "purl": "pkg:pypi/iniconfig@2.3.1"
+        },
+        {
+          "source": "python.cdx.json",
+          "name": "jsonschema-specifications",
+          "version": "2025.9.1",
+          "bom-ref": "jsonschema-specifications==2025.9.1",
+          "purl": "pkg:pypi/jsonschema-specifications@2025.9.1"
+        },
+        {
+          "source": "python.cdx.json",
+          "name": "jsonschema",
+          "version": "4.26.0",
+          "bom-ref": "jsonschema==4.26.0",
+          "purl": "pkg:pypi/jsonschema@4.26.0"
+        },
+        {
+          "source": "python.cdx.json",
+          "name": "librt",
+          "version": "0.16.0",
+          "bom-ref": "librt==0.16.0",
+          "purl": "pkg:pypi/librt@0.16.0"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "magic-string",
+          "version": "1.4.5",
+          "bom-ref": "magic-string@1.4.5",
+          "purl": "pkg:npm/magic-string@1.4.5"
+        },
+        {
+          "source": "python.cdx.json",
+          "name": "mcp",
+          "version": "1.30.0",
+          "bom-ref": "mcp==1.30.0",
+          "purl": "pkg:pypi/mcp@1.30.0"
+        },
+        {
+          "source": "python.cdx.json",
+          "name": "mypy",
+          "version": "2.4.1",
+          "bom-ref": "mypy==2.4.1",
+          "purl": "pkg:pypi/mypy@2.4.1"
+        },
+        {
+          "source": "python.cdx.json",
+          "name": "mypy_extensions",
+          "version": "1.2.0",
+          "bom-ref": "mypy_extensions==1.2.0",
+          "purl": "pkg:pypi/mypy-extensions@1.2.0"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "nanoid",
+          "version": "3.3.20",
+          "bom-ref": "nanoid@3.3.20",
+          "purl": "pkg:npm/nanoid@3.3.20"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "obug",
+          "version": "3.0.0",
+          "bom-ref": "obug@3.0.0",
+          "purl": "pkg:npm/obug@3.0.0"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "picomatch",
+          "version": "4.0.7",
+          "bom-ref": "picomatch@4.0.7",
+          "purl": "pkg:npm/picomatch@4.0.7"
+        },
+        {
+          "source": "python.cdx.json",
+          "name": "pip",
+          "version": "26.3",
+          "bom-ref": "pip==26.3",
+          "purl": "pkg:pypi/pip@26.3"
+        },
+        {
+          "source": "python.cdx.json",
+          "name": "platformdirs",
+          "version": "4.14.7",
+          "bom-ref": "platformdirs==4.14.7",
+          "purl": "pkg:pypi/platformdirs@4.14.7"
+        },
+        {
+          "source": "python.cdx.json",
+          "name": "pluggy",
+          "version": "1.7.0",
+          "bom-ref": "pluggy==1.7.0",
+          "purl": "pkg:pypi/pluggy@1.7.0"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "postcss",
+          "version": "8.5.32",
+          "bom-ref": "postcss@8.5.32",
+          "purl": "pkg:npm/postcss@8.5.32"
+        },
+        {
+          "source": "python.cdx.json",
+          "name": "pydantic-settings",
+          "version": "2.16.3",
+          "bom-ref": "pydantic-settings==2.16.3",
+          "purl": "pkg:pypi/pydantic-settings@2.16.3"
+        },
+        {
+          "source": "python.cdx.json",
+          "name": "pydantic",
+          "version": "2.14.3",
+          "bom-ref": "pydantic==2.14.3",
+          "purl": "pkg:pypi/pydantic@2.14.3"
+        },
+        {
+          "source": "python.cdx.json",
+          "name": "pydantic_core",
+          "version": "2.50.4",
+          "bom-ref": "pydantic_core==2.50.4",
+          "purl": "pkg:pypi/pydantic-core@2.50.4"
+        },
+        {
+          "source": "python.cdx.json",
+          "name": "pytest-cov",
+          "version": "7.1.0",
+          "bom-ref": "pytest-cov==7.1.0",
+          "purl": "pkg:pypi/pytest-cov@7.1.0"
+        },
+        {
+          "source": "python.cdx.json",
+          "name": "pytest-httpx",
+          "version": "0.36.2",
+          "bom-ref": "pytest-httpx==0.36.2",
+          "purl": "pkg:pypi/pytest-httpx@0.36.2"
+        },
+        {
+          "source": "python.cdx.json",
+          "name": "pytest",
+          "version": "9.2.0",
+          "bom-ref": "pytest==9.2.0",
+          "purl": "pkg:pypi/pytest@9.2.0"
+        },
+        {
+          "source": "python.cdx.json",
+          "name": "pytokens",
+          "version": "0.4.1",
+          "bom-ref": "pytokens==0.4.1",
+          "purl": "pkg:pypi/pytokens@0.4.1"
+        },
+        {
+          "source": "python.cdx.json",
+          "name": "referencing",
+          "version": "0.37.0",
+          "bom-ref": "referencing==0.37.0",
+          "purl": "pkg:pypi/referencing@0.37.0"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "rolldown",
+          "version": "1.2.19",
+          "bom-ref": "rolldown@1.2.19",
+          "purl": "pkg:npm/rolldown@1.2.19"
+        },
+        {
+          "source": "python.cdx.json",
+          "name": "rpds-py",
+          "version": "2026.9.1",
+          "bom-ref": "rpds-py==2026.9.1",
+          "purl": "pkg:pypi/rpds-py@2026.9.1"
+        },
+        {
+          "source": "python.cdx.json",
+          "name": "ruff",
+          "version": "0.17.5",
+          "bom-ref": "ruff==0.17.5",
+          "purl": "pkg:pypi/ruff@0.17.5"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "std-env",
+          "version": "4.3.0",
+          "bom-ref": "std-env@4.3.0",
+          "purl": "pkg:npm/std-env@4.3.0"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "tinybench",
+          "version": "6.2.3",
+          "bom-ref": "tinybench@6.2.3",
+          "purl": "pkg:npm/tinybench@6.2.3"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "tinyexec",
+          "version": "1.3.1",
+          "bom-ref": "tinyexec@1.3.1",
+          "purl": "pkg:npm/tinyexec@1.3.1"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "tinyglobby",
+          "version": "0.2.17",
+          "bom-ref": "tinyglobby@0.2.17",
+          "purl": "pkg:npm/tinyglobby@0.2.17"
+        },
+        {
+          "source": "python.cdx.json",
+          "name": "typing-inspection",
+          "version": "0.4.5",
+          "bom-ref": "typing-inspection==0.4.5",
+          "purl": "pkg:pypi/typing-inspection@0.4.5"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "undici-types",
+          "version": "6.21.0",
+          "bom-ref": "undici-types@6.21.0",
+          "purl": "pkg:npm/undici-types@6.21.0"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "vite",
+          "version": "8.3.8",
+          "bom-ref": "vite@8.3.8",
+          "purl": "pkg:npm/vite@8.3.8"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "vitest",
+          "version": "5.1.0",
+          "bom-ref": "vitest@5.1.0",
+          "purl": "pkg:npm/vitest@5.1.0"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "why-is-node-running",
+          "version": "3.2.1",
+          "bom-ref": "why-is-node-running@3.2.1",
+          "purl": "pkg:npm/why-is-node-running@3.2.1"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "zod",
+          "version": "4.6.7",
+          "bom-ref": "zod@4.6.7",
+          "purl": "pkg:npm/zod@4.6.7"
+        }
+      ]
+    },
+    {
+      "declaration": {
+        "license": {
+          "acknowledgement": "declared",
+          "id": "MIT-0"
+        }
+      },
+      "review_status": "requires_review",
+      "components": [
+        {
+          "source": "python.cdx.json",
+          "name": "cffi",
+          "version": "2.1.1",
+          "bom-ref": "cffi==2.1.1",
+          "purl": "pkg:pypi/cffi@2.1.1"
+        }
+      ]
+    },
+    {
+      "declaration": {
+        "license": {
+          "id": "MPL-2.0",
+          "acknowledgement": "declared"
+        }
+      },
+      "review_status": "requires_review",
+      "components": [
+        {
+          "source": "core.cdx.json",
+          "name": "lightningcss-linux-x64-gnu",
+          "version": "1.33.0",
+          "bom-ref": "@hiitl/core@0.2.0|lightningcss-linux-x64-gnu@1.33.0",
+          "purl": "pkg:npm/lightningcss-linux-x64-gnu@1.33.0"
+        },
+        {
+          "source": "core.cdx.json",
+          "name": "lightningcss-linux-x64-musl",
+          "version": "1.33.0",
+          "bom-ref": "@hiitl/core@0.2.0|lightningcss-linux-x64-musl@1.33.0",
+          "purl": "pkg:npm/lightningcss-linux-x64-musl@1.33.0"
+        },
+        {
+          "source": "core.cdx.json",
+          "name": "lightningcss",
+          "version": "1.33.0",
+          "bom-ref": "@hiitl/core@0.2.0|lightningcss@1.33.0",
+          "purl": "pkg:npm/lightningcss@1.33.0"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "lightningcss-linux-x64-gnu",
+          "version": "1.33.0",
+          "bom-ref": "@hiitl/sdk@0.2.0|lightningcss-linux-x64-gnu@1.33.0",
+          "purl": "pkg:npm/lightningcss-linux-x64-gnu@1.33.0"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "lightningcss-linux-x64-musl",
+          "version": "1.33.0",
+          "bom-ref": "@hiitl/sdk@0.2.0|lightningcss-linux-x64-musl@1.33.0",
+          "purl": "pkg:npm/lightningcss-linux-x64-musl@1.33.0"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "lightningcss",
+          "version": "1.33.0",
+          "bom-ref": "@hiitl/sdk@0.2.0|lightningcss@1.33.0",
+          "purl": "pkg:npm/lightningcss@1.33.0"
+        },
+        {
+          "source": "python.cdx.json",
+          "name": "certifi",
+          "version": "2026.10.23",
+          "bom-ref": "certifi==2026.10.23",
+          "purl": "pkg:pypi/certifi@2026.10.23"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "lightningcss-linux-x64-gnu",
+          "version": "1.33.0",
+          "bom-ref": "lightningcss-linux-x64-gnu@1.33.0",
+          "purl": "pkg:npm/lightningcss-linux-x64-gnu@1.33.0"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "lightningcss-linux-x64-musl",
+          "version": "1.33.0",
+          "bom-ref": "lightningcss-linux-x64-musl@1.33.0",
+          "purl": "pkg:npm/lightningcss-linux-x64-musl@1.33.0"
+        },
+        {
+          "source": "sdk.cdx.json",
+          "name": "lightningcss",
+          "version": "1.33.0",
+          "bom-ref": "lightningcss@1.33.0",
+          "purl": "pkg:npm/lightningcss@1.33.0"
+        }
+      ]
+    },
+    {
+      "declaration": {
+        "license": {
+          "acknowledgement": "declared",
+          "id": "PSF-2.0"
+        }
+      },
+      "review_status": "requires_review",
+      "components": [
+        {
+          "source": "python.cdx.json",
+          "name": "typing_extensions",
+          "version": "4.16.0",
+          "bom-ref": "typing_extensions==4.16.0",
+          "purl": "pkg:pypi/typing-extensions@4.16.0"
+        }
+      ]
+    },
+    {
+      "declaration": {
+        "license": {
+          "id": "Python-2.0",
+          "acknowledgement": "declared"
+        }
+      },
+      "review_status": "requires_review",
+      "components": [
+        {
+          "source": "sdk.cdx.json",
+          "name": "argparse",
+          "version": "2.0.1",
+          "bom-ref": "@hiitl/sdk@0.2.0|argparse@2.0.1",
+          "purl": "pkg:npm/argparse@2.0.1"
+        }
+      ]
+    },
+    {
+      "declaration": {
+        "license": {
+          "acknowledgement": "declared",
+          "name": "License :: OSI Approved :: BSD License"
+        }
+      },
+      "review_status": "requires_review",
+      "components": [
+        {
+          "source": "python.cdx.json",
+          "name": "httpx",
+          "version": "0.28.1",
+          "bom-ref": "httpx==0.28.1",
+          "purl": "pkg:pypi/httpx@0.28.1"
+        }
+      ]
+    },
+    {
+      "declaration": {
+        "license": {
+          "acknowledgement": "declared",
+          "name": "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)"
+        }
+      },
+      "review_status": "requires_review",
+      "components": [
+        {
+          "source": "python.cdx.json",
+          "name": "certifi",
+          "version": "2026.10.23",
+          "bom-ref": "certifi==2026.10.23",
+          "purl": "pkg:pypi/certifi@2026.10.23"
+        },
+        {
+          "source": "python.cdx.json",
+          "name": "pathspec",
+          "version": "1.1.1",
+          "bom-ref": "pathspec==1.1.1",
+          "purl": "pkg:pypi/pathspec@1.1.1"
+        }
+      ]
+    }
+  ]
+}

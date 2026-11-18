@@ -1,0 +1,75 @@
+{
+  "test_id": "test_160_temporal_current_time_computed",
+  "description": "A temporal remediation returns current_time as the call's timestamp, in UTC to the millisecond (policy_format.md Remediation on Rules; R-0059; HTL-20 row 146).",
+  "envelope": {
+    "schema_version": "v2.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_data_bot",
+    "action_id": "act_test16000000000000000000",
+    "timestamp": "2026-02-14T15:30:00.25Z",
+    "operation": "read",
+    "parameters": {
+      "rows": 50000
+    },
+    "idempotency_key": "idem_test_160",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "bulk_export"
+  },
+  "policy_set": {
+    "version": "v1.0.0",
+    "description": "A temporal remediation returns current_time as the call's timestamp, in UTC to the millisecond (policy_format.md Remediation on Rules; R-0059; HTL-20 row 146).",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
+    "name": "export_policy",
+    "rules": [
+      {
+        "name": "exports_in_the_window",
+        "priority": 100,
+        "conditions": {
+          "field": "action",
+          "operator": "equals",
+          "value": "bulk_export"
+        },
+        "decision": "BLOCK",
+        "reason_code": "OUTSIDE_EXPORT_WINDOW",
+        "description": "Bulk exports only in the overnight window",
+        "remediation": {
+          "message": "Bulk exports run only between 02:00 and 06:00 UTC.",
+          "suggestion": "Retry after 02:00 UTC, or request an exception for an off-hours export.",
+          "type": "temporal",
+          "details": {
+            "allowed_window": {
+              "start": "02:00",
+              "end": "06:00"
+            },
+            "timezone": "UTC"
+          }
+        }
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "BLOCK",
+    "allowed": false,
+    "reason_codes": [
+      "OUTSIDE_EXPORT_WINDOW"
+    ],
+    "remediation": {
+      "message": "Bulk exports run only between 02:00 and 06:00 UTC.",
+      "suggestion": "Retry after 02:00 UTC, or request an exception for an off-hours export.",
+      "type": "temporal",
+      "details": {
+        "allowed_window": {
+          "start": "02:00",
+          "end": "06:00"
+        },
+        "timezone": "UTC",
+        "current_time": "2026-02-14T15:30:00.250Z"
+      }
+    }
+  }
+}

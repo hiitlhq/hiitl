@@ -1,0 +1,65 @@
+{
+  "test_id": "test_143_field_reference_equals_compares_two_fields",
+  "description": "equals against a field reference: a transfer whose source and destination are the same account matches.",
+  "envelope": {
+    "schema_version": "v2.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_ops_bot",
+    "action_id": "act_test1430000000000000000",
+    "timestamp": "2026-10-09T10:00:00Z",
+    "operation": "execute",
+    "parameters": {
+      "from_account": "acct_1",
+      "to_account": "acct_1"
+    },
+    "idempotency_key": "idem_test_143_d",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "grant_access"
+  },
+  "policy_set": {
+    "version": "v1.0.0",
+    "description": "equals against a field reference: a transfer whose source and destination are the same account matches.",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "same_account",
+        "priority": 900,
+        "conditions": {
+          "field": "parameters.from_account",
+          "operator": "equals",
+          "value": {
+            "$field": "parameters.to_account"
+          }
+        },
+        "decision": "BLOCK",
+        "reason_code": "SAME_ACCOUNT",
+        "description": "Rule: same_account"
+      },
+      {
+        "name": "allow_otherwise",
+        "priority": 1,
+        "conditions": {
+          "field": "action",
+          "operator": "exists",
+          "value": true
+        },
+        "decision": "ALLOW",
+        "reason_code": "ALLOWED",
+        "description": "Rule: allow_otherwise"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "BLOCK",
+    "allowed": false,
+    "reason_codes": [
+      "SAME_ACCOUNT"
+    ]
+  }
+}

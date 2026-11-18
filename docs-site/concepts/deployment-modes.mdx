@@ -5,17 +5,17 @@ description: "Local, hosted, and hybrid evaluation"
 
 ## Overview
 
-hiitl supports three deployment modes. The mode is auto-detected from the arguments you pass to the constructor — there is no separate configuration flag.
+hiitl supports three deployment modes. The mode is derived from the client's `api_key`, `evaluation` and `sync` settings, passed to the constructor or read from their `HIITL_*` variables — there is no separate mode flag. Both SDKs derive it by the same table.
 
 | Mode | How to activate | Evaluator | Audit storage | Latency |
 |------|----------------|-----------|---------------|---------|
-| **Local** | No `api_key` | In-process | SQLite | Sub-millisecond |
-| **Hosted** | `api_key` + `server_url` | Server-side | PostgreSQL | Low tens of ms |
-| **Hybrid** | `api_key` only | In-process | Local + future sync | Sub-millisecond |
+| **Local** | No `api_key` | In-process | SQLite | In-process, no network hop |
+| **Hybrid** (the default with a key) | `api_key` without remote evaluation (`server_url`, when given, is the sync target) | In-process, from policies synced from the hosted service | Local SQLite buffer, uploaded in batches | In-process, no network hop |
+| **Hosted** | `api_key` + `server_url` + remote evaluation (`evaluation="remote"` / `evaluation: 'remote'`) | Server-side | PostgreSQL | One HTTP round trip |
 
 ## Local mode
 
-Local mode runs everything in your process. No network calls, no external dependencies, no API key required. Policies are loaded from local files and audit records are written to an embedded SQLite database.
+Local mode runs everything in your process. No API key, no account, no hiitl server. Policies and routes are loaded from local files and audit records are written to an embedded SQLite database. The only network calls are to the sync routes you configure.
 
 <CodeGroup>
 
@@ -25,10 +25,11 @@ from hiitl import HIITL
 # Zero-config — starts in OBSERVE mode
 hiitl = HIITL()
 
-# With a local policy file
+# With a local policy file; mode="RESPECT_POLICY" makes it bind (the default OBSERVE_ALL observes)
 hiitl = HIITL(
     agent_id="payment-agent",
     policy_path="./policies/payments.yaml",
+    mode="RESPECT_POLICY",
 )
 ```
 
@@ -40,8 +41,9 @@ const hiitl = new HIITL();
 
 // With a local policy file
 const hiitl = new HIITL({
-  agentId: 'payment-agent',
-  policyPath: './policies/payments.yaml',
+  agent_id: 'payment-agent',
+  policy_path: './policies/payments.yaml',
+  mode: 'RESPECT_POLICY',
 });
 ```
 
@@ -54,14 +56,14 @@ const hiitl = new HIITL({
 - Evaluating hiitl before committing to a hosted deployment
 
 **What you get:**
-- Sub-millisecond evaluation (the evaluator runs in-process in your language)
+- The evaluator runs in-process in your language
 - Local SQLite audit trail
 - No API key, no account, no infrastructure
-- Full policy evaluation with all operators and conditions
+- Full policy evaluation with all operators and conditions, and sync routes to your own endpoints
 
 ## Hosted mode
 
-Hosted mode sends envelopes to the hiitl server for evaluation. Policies are managed via the API, and audit records are stored in PostgreSQL with team-wide visibility.
+Hosted mode sends envelopes to the hiitl service for evaluation. Policies are managed via the API, and audit records are stored in PostgreSQL with team-wide visibility. It is an explicit opt-in: `evaluation="remote"` (Python) or `evaluation: 'remote'` (TypeScript), with `api_key` and `server_url`.
 
 <CodeGroup>
 
@@ -72,7 +74,9 @@ hiitl = HIITL(
     agent_id="payment-agent",
     org_id="org_mycompany123456789",
     api_key="sk_live_abc123...",
-    server_url="https://ecp.hiitl.com",
+    server_url="https://api.hiitl.com",
+    evaluation="remote",
+    signature_key="...",  # the API key's signing secret, shown when the key was created
 )
 ```
 
@@ -80,10 +84,12 @@ hiitl = HIITL(
 import { HIITL } from '@hiitl/sdk';
 
 const hiitl = new HIITL({
-  agentId: 'payment-agent',
-  orgId: 'org_mycompany123456789',
-  apiKey: 'sk_live_abc123...',
-  serverUrl: 'https://ecp.hiitl.com',
+  agent_id: 'payment-agent',
+  org_id: 'org_mycompany123456789',
+  api_key: 'sk_live_abc123...',
+  server_url: 'https://api.hiitl.com',
+  signature_key: '...', // the API key's signing secret, shown when the key was created
+  evaluation: 'remote',
 });
 ```
 
@@ -93,18 +99,18 @@ const hiitl = new HIITL({
 - Production deployments with multiple agents or services
 - When you need centralized policy management
 - When teams need shared audit visibility
-- When you need webhook emission to observability/GRC platforms
 
 **What you get:**
 - Centralized policy management via API
-- PostgreSQL audit storage with search, filtering, and retention
+- PostgreSQL audit storage, queryable by environment, agent, action and decision type
 - Shared rate limit counters across distributed agents
-- Webhook emission to external systems
 - Team collaboration on policies and audit review
 
 ## Hybrid mode
 
-Hybrid mode runs the evaluator locally for sub-millisecond latency, but stores your API key for future synchronization with the hosted backend. This is designed for teams that want local speed today with a migration path to hosted features.
+Hybrid mode runs the evaluator locally and keeps it in step with the hosted service: policies are pulled on an interval (five minutes by default), audit records are uploaded in batches (every thirty seconds), and a disk cache lets the evaluator keep deciding when the service is unreachable, behind a circuit breaker. Routes are downloaded too but not yet applied by the SDK: a hybrid client asks only the routes in its own `routes_path`. A kill switch activated in the service is a new policy version: the SDK's kill-switch poll (every thirty seconds by default) sees the version change and pulls it in the same poll, and the version decides, never the switch list. This is the default mode when an API key is given.
+
+**Cold start.** With no disk cache and no successful first sync, the default is to warn and continue in the client's own mode until a sync lands (`cache_status='empty'` on each decision): under `OBSERVE_ALL` every action is observed; under `RESPECT_POLICY` every action is blocked for want of a matching rule. `cold_start_behavior="fail-closed"` makes the Python constructor refuse to start, and the TypeScript client throw at its first `evaluate()`.
 
 <CodeGroup>
 
@@ -114,7 +120,7 @@ from hiitl import HIITL
 hiitl = HIITL(
     agent_id="payment-agent",
     api_key="sk_live_abc123...",
-    # No server_url — triggers hybrid mode
+    # api_key without evaluation="remote" is hybrid mode
 )
 ```
 
@@ -122,31 +128,31 @@ hiitl = HIITL(
 import { HIITL } from '@hiitl/sdk';
 
 const hiitl = new HIITL({
-  agentId: 'payment-agent',
-  apiKey: 'sk_live_abc123...',
-  // No serverUrl — triggers hybrid mode
+  agent_id: 'payment-agent',
+  api_key: 'sk_live_abc123...',
+  // api_key without evaluation: 'remote' is hybrid mode; server_url, when given, is the sync target
 });
 ```
 
 </CodeGroup>
 
 **When to use hybrid mode:**
-- You want local evaluation speed with a future path to hosted sync
-- You are starting local but plan to move to hosted mode later
+- You want local evaluation speed with policies managed centrally in the hosted service
+- You want the evaluator to keep deciding when the service is unreachable
 
 ## How mode is auto-detected
 
-The SDK determines the deployment mode from the constructor arguments:
+The SDK determines the deployment mode from its resolved settings (constructor arguments, then `HIITL_*` variables):
 
 ```
 No api_key provided?
   └─ Yes → LOCAL mode
-  └─ No  → api_key + server_url provided?
-              └─ Yes → HOSTED mode
-              └─ No  → HYBRID mode
+  └─ No  → evaluation is remote?
+              └─ Yes → HOSTED mode (server_url required, else ConfigurationError)
+              └─ No  → HYBRID mode (sync=false forces LOCAL, key stored)
 ```
 
-You never need to set a `mode` flag. The SDK infers it from what you provide.
+You never need to set a mode flag for local versus hybrid; hosted evaluation is an explicit opt-in.
 
 ## The evaluate() call is the same
 
@@ -161,7 +167,7 @@ decision = hiitl.evaluate(
     target={"account_id": "acct_123"},
 )
 
-if decision.ok:
+if decision.allowed:
     process_payment(...)
 ```
 
@@ -172,7 +178,7 @@ const decision = await hiitl.evaluate({
   target: { accountId: 'acct_123' },
 });
 
-if (decision.ok) {
+if (decision.allowed) {
   await processPayment(...);
 }
 ```
@@ -191,16 +197,10 @@ Moving from local to hosted is a constructor change, not a code rewrite. Your `e
     `HIITL(policy_path="./policies/payments.yaml")` to evaluate against local policy files.
   </Step>
   <Step title="Move to hosted">
-    `HIITL(api_key="sk_live_...", server_url="https://ecp.hiitl.com")` to switch to server-side evaluation with centralized management.
+    `HIITL(api_key="sk_live_...")` for hybrid mode: policies managed centrally, evaluation still in-process. `HIITL(api_key="sk_live_...", server_url="https://api.hiitl.com", evaluation="remote")` for server-side evaluation.
   </Step>
 </Steps>
 
 ## Outage behavior
 
-In hosted mode, hiitl defines explicit behavior when the server is unreachable:
-
-- **Fail-closed** (default): If the server cannot be reached, the action is blocked. Safe by default.
-- **Fail-open** (opt-in): If the server cannot be reached, the action is allowed with a warning logged. Requires explicit configuration.
-- **Circuit breaker**: Prevents cascading retries. After repeated failures, the circuit opens and subsequent calls fail fast rather than waiting for timeouts.
-
-In local mode, there is no network dependency, so outage behavior does not apply.
+In hosted mode, a request that cannot reach the service is retried with exponential backoff up to `max_retries`, and then `evaluate()` returns `CONTROL_PLANE_UNAVAILABLE`: not allowed under the default `fail_mode`, `FAIL_CLOSED`, and allowed with a warning under `FAIL_OPEN`. Either way the client records the call in its local store (`audit_db_path`) and sends the records the service could not take before its next call, once the service answers; while the breaker is open no call, and so no record, is sent. The hosted client holds a circuit breaker: after repeated outages it opens, and calls fail fast with `CIRCUIT_BREAKER_OPEN` until a reset interval passes and a probe is sent. In hybrid mode the evaluator keeps deciding from its cached policies, and the sync channel sits behind a circuit breaker that opens after repeated failures and probes again after a reset interval. In local mode there is no service to reach; a sync route that does not answer falls to the route's own `timeout_action`.

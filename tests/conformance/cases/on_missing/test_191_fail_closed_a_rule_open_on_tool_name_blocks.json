@@ -1,0 +1,93 @@
+{
+  "test_id": "test_191_fail_closed_a_rule_open_on_tool_name_blocks",
+  "description": "Under on_missing: fail_closed, a 1.x approval rule all_of [tool_name equals process_payment, parameters.amount >= 1000] is open on a 5,000 payment from 2.0 (row 225: no call carries tool_name), so it decides BLOCK (MISSING_FIELD) naming tool_name, over the matching ALLOW (policy_format.md 2.17, 'A field the call does not carry'; HTL-27, Codex's review condition 1).",
+  "envelope": {
+    "schema_version": "v2.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_finance_bot",
+    "action_id": "act_test19100000000000000000",
+    "timestamp": "2026-11-09T10:00:00Z",
+    "action": "process_payment",
+    "operation": "execute",
+    "parameters": {
+      "amount": 5000,
+      "currency": "usd"
+    },
+    "idempotency_key": "idem_test_191",
+    "target": {
+      "account_id": "acct_vendor_4471"
+    },
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "policy_set": {
+    "name": "payments_policy",
+    "version": "v1.0.0",
+    "description": "Payment controls for the finance agent",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
+    "on_missing": "fail_closed",
+    "rules": [
+      {
+        "name": "approve_large_payments",
+        "description": "Payments of 1000 or more need a finance approval",
+        "priority": 200,
+        "conditions": {
+          "all_of": [
+            {
+              "field": "tool_name",
+              "operator": "equals",
+              "value": "process_payment"
+            },
+            {
+              "field": "parameters.amount",
+              "operator": "greater_than_or_equal",
+              "value": 1000
+            }
+          ]
+        },
+        "decision": "REQUIRE_APPROVAL",
+        "reason_code": "LARGE_PAYMENT_NEEDS_APPROVAL"
+      },
+      {
+        "name": "allow_payments",
+        "description": "Payments are allowed",
+        "priority": 100,
+        "conditions": {
+          "field": "action",
+          "operator": "equals",
+          "value": "process_payment"
+        },
+        "decision": "ALLOW",
+        "reason_code": "PAYMENT_ALLOWED"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "BLOCK",
+    "allowed": false,
+    "reason_codes": [
+      "MISSING_FIELD"
+    ],
+    "matched_rules": [
+      {
+        "rule_name": "approve_large_payments",
+        "policy_set": "payments_policy",
+        "priority": 200
+      }
+    ],
+    "remediation": {
+      "message": "Rule 'approve_large_payments' in policy set 'payments_policy' reads tool_name, which the call does not carry, and the set's on_missing is fail_closed.",
+      "suggestion": "Add tool_name to the call and evaluate it again.",
+      "type": "custom",
+      "details": {
+        "fields": [
+          "tool_name"
+        ]
+      }
+    },
+    "missing_fields": null
+  }
+}

@@ -2,10 +2,12 @@
 
 import time
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
 from hiitl.core.types import PolicySet
+from hiitl.core.tests.measurements import record_measurement
 from hiitl.sdk.exceptions import PolicyLoadError
 from hiitl.sdk.policy_loader import PolicyLoader
 
@@ -23,7 +25,7 @@ class TestPolicyLoaderValidFiles:
         policy = loader.load()
 
         assert isinstance(policy, PolicySet)
-        assert policy.version == "1.0.0"
+        assert policy.version == "v1.0.0"
         assert policy.name == "test_policy"
         assert len(policy.rules) == 1
         assert policy.rules[0].name == "allow_small_amounts"
@@ -35,7 +37,7 @@ class TestPolicyLoaderValidFiles:
         policy = loader.load()
 
         assert isinstance(policy, PolicySet)
-        assert policy.version == "1.0.0"
+        assert policy.version == "v1.0.0"
         assert policy.name == "test_policy_yaml"
         assert len(policy.rules) == 1
         assert policy.rules[0].name == "allow_small_amounts"
@@ -88,7 +90,9 @@ class TestPolicyLoaderCaching:
         # Create temporary policy file
         policy_file = tmp_path / "test_policy.json"
         policy_file.write_text('''{
-            "version": "1.0.0",
+            "version": "v1.0.0",
+            "description": "Cache miss after file modification",
+            "scope": {"org_id": "org_devlocal0000000000", "environment": "dev"},
             "name": "test_v1",
             "rules": []
         }''')
@@ -104,7 +108,9 @@ class TestPolicyLoaderCaching:
 
         # Modify file
         policy_file.write_text('''{
-            "version": "1.0.0",
+            "version": "v1.0.0",
+            "description": "Cache miss after file modification",
+            "scope": {"org_id": "org_devlocal0000000000", "environment": "dev"},
             "name": "test_v2",
             "rules": []
         }''')
@@ -221,7 +227,9 @@ class TestPolicyLoaderFormatDetection:
         # Create file without extension containing JSON
         policy_file = tmp_path / "policy"
         policy_file.write_text('''{
-            "version": "1.0.0",
+            "version": "v1.0.0",
+            "description": "No extension tries json first",
+            "scope": {"org_id": "org_devlocal0000000000", "environment": "dev"},
             "name": "no_extension_json",
             "rules": []
         }''')
@@ -235,8 +243,12 @@ class TestPolicyLoaderFormatDetection:
         """File without extension should fallback to YAML if JSON fails."""
         # Create file without extension containing YAML
         policy_file = tmp_path / "policy"
-        policy_file.write_text('''version: "1.0.0"
+        policy_file.write_text('''version: "v1.0.0"
 name: no_extension_yaml
+description: A YAML set in a file with no extension
+scope:
+  org_id: org_devlocal0000000000
+  environment: dev
 rules: []
 ''')
 
@@ -249,12 +261,23 @@ rules: []
 class TestPolicyLoaderPerformance:
     """Test PolicyLoader performance characteristics."""
 
-    def test_cache_provides_performance_benefit(self, tmp_path):
-        """Cached load should be faster than first load and return same object."""
+    def test_unchanged_file_returns_cached_policy_without_parsing_again(self):
+        """The unchanged-file cache reuses the loaded policy; this proves cache behavior without a timing proxy."""
+        loader = PolicyLoader(FIXTURES_DIR / "valid_policy.json")
+        with patch.object(loader, "_parse_file", wraps=loader._parse_file) as parse:
+            first = loader.load()
+            again = loader.load()
+        assert again is first
+        parse.assert_called_once_with((FIXTURES_DIR / "valid_policy.json").read_text())
+
+    def test_cache_load_measurements_and_identity(self, tmp_path, record_property):
+        """Record cold/cached load durations and assert the cache returns the same object."""
         # Create policy file
         policy_file = tmp_path / "performance_test.json"
         policy_file.write_text('''{
-            "version": "1.0.0",
+            "version": "v1.0.0",
+            "description": "Cache provides performance benefit",
+            "scope": {"org_id": "org_devlocal0000000000", "environment": "dev"},
             "name": "performance_test",
             "rules": []
         }''')
@@ -271,20 +294,23 @@ class TestPolicyLoaderPerformance:
         policy2 = loader.load()
         cached_load_time = time.perf_counter() - start
 
-        # Cache should be faster (both times are sub-millisecond, so just check it's faster)
-        assert cached_load_time < first_load_time
+        record_measurement(record_property, metric="policy_cold_and_cached_load", unit="seconds",
+                           source="hiitl.sdk.policy_loader.PolicyLoader.load",
+                           value={"cold": first_load_time, "cached": cached_load_time})
 
         # Should be same object (cache hit)
         assert policy1 is policy2
 
-    def test_json_parsing_faster_than_yaml(self, tmp_path):
-        """JSON parsing should be faster than YAML parsing (JSON is primary format)."""
+    def test_json_and_yaml_load_measurements(self, tmp_path, record_property):
+        """Record equivalent JSON/YAML loads without a host-dependent speed ratio."""
         # Create equivalent JSON and YAML files
         json_file = tmp_path / "test.json"
         yaml_file = tmp_path / "test.yaml"
 
         policy_content = {
-            "version": "1.0.0",
+            "version": "v1.0.0",
+            "description": "Json parsing faster than yaml",
+            "scope": {"org_id": "org_devlocal0000000000", "environment": "dev"},
             "name": "performance_comparison",
             "rules": []
         }
@@ -316,6 +342,23 @@ class TestPolicyLoaderPerformance:
         avg_json_time = sum(json_times) / len(json_times)
         avg_yaml_time = sum(yaml_times) / len(yaml_times)
 
-        # JSON should be faster (or at least not significantly slower)
-        # Allow some tolerance for measurement noise
-        assert avg_json_time <= avg_yaml_time * 1.5
+        record_measurement(record_property, metric="policy_json_and_yaml_load", unit="seconds",
+                           source="hiitl.sdk.policy_loader.PolicyLoader.load",
+                           value={"json_samples": json_times, "yaml_samples": yaml_times,
+                                  "json_mean": avg_json_time, "yaml_mean": avg_yaml_time})
+
+
+def test_lint_runs_on_load_and_logs_findings(tmp_path, caplog):
+    """The loader lints the set it loads and logs warning/error findings; the load
+    itself is never blocked by a finding."""
+    import json as _json
+    import logging
+    from hiitl.sdk.policy_loader import PolicyLoader
+    p = tmp_path / "p.json"
+    p.write_text(_json.dumps({"name": "p", "version": "v1.0.0", "description": "Lint runs on load and logs findings", "scope": {"org_id": "org_devlocal0000000000", "environment": "dev"}, "rules": [
+        {"name": "rl", "description": "rl", "priority": 1, "decision": "RATE_LIMIT", "reason_code": "RL",
+         "conditions": {"field": "action", "operator": "equals", "value": "x"}}]}))
+    with caplog.at_level(logging.WARNING, logger="hiitl.sdk.policy_loader"):
+        policy = PolicyLoader(str(p)).load()
+    assert policy.rules[0].name == "rl"
+    assert "RATE_LIMIT_NO_WINDOW" in caplog.text

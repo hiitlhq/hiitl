@@ -1,15 +1,17 @@
-# Ecosystem Integration - HIITL ECP
+# Ecosystem Integration - hiitl ECP
 
 **Version**: 1.1
-**Last Updated**: 2026-02-16
+**Last Updated**: 2026-11-04
 
 ---
 
 ## Overview
 
-HIITL ECP is **connective infrastructure**. It does not compete with the AI ecosystem — it gives the ecosystem a deterministic enforcement layer to plug into.
+hiitl ECP is **connective infrastructure**. It does not compete with the AI ecosystem — it gives the ecosystem a deterministic enforcement layer to plug into.
 
 This document describes how ECP integrates with each ecosystem category and the value it provides to each.
+
+**Status (hiitl 0.2.0).** This document is the integration design. Built today: the SDK integration (Python and TypeScript), routes that ECP asks during evaluation (`direction: bidirectional`), and human review cases. Not built: signal ingestion (external systems pushing signals into ECP), event emission to observability, security, eval or GRC platforms, OpenTelemetry export, and one-click integrations. The "Value ECP Provides" sections describe the design once these are built; the sections below mark each planned piece.
 
 ---
 
@@ -32,11 +34,16 @@ This document describes how ECP integrates with each ecosystem category and the 
 
 ## Integration Surfaces
 
-ECP has **three integration surfaces**:
+ECP has **two integration surfaces**:
 
 1. **SDK Inbound** - Actions entering the control point via developer SDKs
-2. **Ecosystem Outbound** - Structured execution events emitted to external platforms
-3. **Signal Ingestion Inbound** - External systems pushing risk signals into ECP
+2. **Routes** - All external communication: outbound (ECP to an external system), inbound (an external system to ECP) and bidirectional (ECP asks, and waits for the answer)
+
+Routes replace the earlier "ecosystem outbound" and "signal ingestion" surfaces ([route spec](../specs/routes.md)).
+
+Today ECP asks a route during evaluation. A rule with `decision: "ROUTE"` names a route with `direction: bidirectional`. When that rule binds, the SDK (or the hosted service, in hosted mode) sends the route its context, waits for the answer, and evaluates the same envelope again. The answer's declared fields are read at `external.<route name>.<field>`. Outbound event emission and inbound routes are not built.
+
+The policy examples below read `external.<source>.<field>`. Such a condition matches only once a route named `<source>` has answered. Until then the field is absent, and a condition on it is false.
 
 ---
 
@@ -51,14 +58,14 @@ ECP has **three integration surfaces**:
 
 ### How They Integrate with ECP
 
-**Outbound: Event Emission**
+**Outbound: Event Emission (planned, not built)**
 
-ECP emits structured execution events to observability platforms via:
-- **Webhooks** (Phase 1)
+ECP would emit structured execution events to observability platforms via:
+- **Webhooks** (outbound routes)
 - **OpenTelemetry export** (Phase 2)
 - **Native integrations** (roadmap)
 
-**What observability platforms receive**:
+**What observability platforms would receive**:
 - Every action attempted (allowed, blocked, paused)
 - Decision outcomes with reason codes
 - Timing metadata (latency per evaluation)
@@ -68,9 +75,9 @@ ECP emits structured execution events to observability platforms via:
 
 **Event format**: See [Event Format Spec](../specs/event_format.md)
 
-**Inbound: Signal Ingestion**
+**Inbound: Signal Ingestion (planned, not built)**
 
-Observability platforms can push signals into ECP:
+Observability platforms could push signals into ECP:
 - System load alerts (`cpu_percent`, `memory_percent`)
 - Incident mode flags (`incident_active: true`)
 - Error rate thresholds (`error_rate_high: true`)
@@ -78,15 +85,16 @@ Observability platforms can push signals into ECP:
 **Policy example**:
 ```yaml
 - name: "throttle-during-high-load"
+  description: "Meter calls while the observability platform reports high CPU"
+  priority: 500
   conditions:
     all_of:
-      - field: "external.datadog.system_load.cpu_percent"
+      - field: "external.datadog.cpu_percent"
         operator: "greater_than"
         value: 80
   decision: "RATE_LIMIT"
-  metadata:
-    rate_limit:
-      limit: 10  # Reduce limit during high load
+  reason_code: "HIGH_SYSTEM_LOAD"
+  rate_limit: {limit: 10, window_seconds: 60, scope: org}  # Reduce limit during high load
 ```
 
 ### Value ECP Provides
@@ -115,9 +123,9 @@ Observability platforms can push signals into ECP:
 
 ### How They Integrate with ECP
 
-**Inbound: Signal Ingestion**
+**Inbound: Signal Ingestion (planned, not built)**
 
-Security platforms push risk signals:
+Security platforms would push risk signals:
 - Agent risk scores (`risk_score: 0.85`)
 - Anomaly detection flags (`anomaly_detected: true`)
 - Threat levels (`threat_level: "high"`)
@@ -126,6 +134,8 @@ Security platforms push risk signals:
 **Policy example**:
 ```yaml
 - name: "escalate-high-risk-agent"
+  description: "Escalate actions from an agent the security platform scores as high risk"
+  priority: 200
   conditions:
     all_of:
       - field: "external.crowdstrike.risk_score"
@@ -135,9 +145,9 @@ Security platforms push risk signals:
   reason_code: "HIGH_SECURITY_RISK"
 ```
 
-**Outbound: Event Emission**
+**Outbound: Event Emission (planned, not built)**
 
-Security platforms receive execution events:
+Security platforms would receive execution events:
 - Actions attempted by each agent
 - Blocked actions (potential threats)
 - Kill switch activations
@@ -153,7 +163,7 @@ Security platforms receive execution events:
 **With ECP**:
 - Security signals trigger runtime enforcement (block, escalate, pause)
 - Policies encode security requirements (no PII access from untrusted agents)
-- Immediate response to threats (kill switch for compromised agent)
+- Fast response to threats (kill switch for compromised agent; the [kill switch runbook](../onboarding/kill_switch_runbook.md) says when it takes effect)
 - Security team has runtime control point (not just detection)
 
 ---
@@ -169,9 +179,9 @@ Security platforms receive execution events:
 
 ### How They Integrate with ECP
 
-**Inbound: Signal Ingestion**
+**Inbound: Signal Ingestion (planned, not built)**
 
-Eval platforms push quality signals:
+Eval platforms would push quality signals:
 - Model drift flags (`model_drift: true`)
 - Accuracy drops (`accuracy_drop: 0.15`)
 - Eval failures (`eval_failure: true`)
@@ -180,6 +190,8 @@ Eval platforms push quality signals:
 **Policy example**:
 ```yaml
 - name: "pause-on-model-drift"
+  description: "Pause actions while the eval platform reports model drift"
+  priority: 300
   conditions:
     all_of:
       - field: "external.braintrust.model_drift"
@@ -189,9 +201,9 @@ Eval platforms push quality signals:
   reason_code: "MODEL_DRIFT_DETECTED"
 ```
 
-**Outbound: Event Emission**
+**Outbound: Event Emission (planned, not built)**
 
-Eval platforms receive execution data:
+Eval platforms would receive execution data:
 - Actions taken by agents
 - Decision patterns (what gets blocked vs. allowed)
 - Confidence scores from agents
@@ -223,9 +235,9 @@ Eval platforms receive execution data:
 
 ### How They Integrate with ECP
 
-**Outbound: Event Emission (Audit Evidence)**
+**Outbound: Audit Evidence (planned, not built)**
 
-GRC platforms receive comprehensive audit trails:
+GRC platforms would receive the audit trail:
 - Every action attempted (allowed or blocked)
 - Policy versions applied
 - Approval workflows (who approved what, when)
@@ -233,12 +245,12 @@ GRC platforms receive comprehensive audit trails:
 - Rate limit enforcement
 - Access control decisions
 
-**Audit format**: Immutable, timestamped, complete
+**Audit format**: timestamped, a record for every evaluation, each with a SHA-256 hash of its content. Today the records are read through the audit API (`GET /v1/audit`: list with filters, read one record).
 - See [Event Format Spec](../specs/event_format.md)
 
-**Inbound: Signal Ingestion**
+**Inbound: Signal Ingestion (planned, not built)**
 
-Compliance platforms push regulatory signals:
+Compliance platforms would push regulatory signals:
 - Compliance flags (`regulatory_restriction: "GDPR_DATA_FREEZE"`)
 - Audit mode activation (`audit_mode: true`)
 - Policy violations (`policy_violation: "SOC2"`)
@@ -246,6 +258,8 @@ Compliance platforms push regulatory signals:
 **Policy example**:
 ```yaml
 - name: "block-on-compliance-restriction"
+  description: "Block actions while a regulatory restriction is in force"
+  priority: 400
   conditions:
     all_of:
       - field: "external.compliance-system.regulatory_restriction"
@@ -268,7 +282,7 @@ Compliance platforms push regulatory signals:
 - **Centralized audit**: Single source of truth for all agent actions
 - **Provable enforcement**: "This action was blocked by policy X at time Y"
 - **Compliance automation**: Regulatory restrictions flow directly into runtime policies
-- **SOC 2 / ISO 27001 readiness**: Comprehensive, immutable audit trail
+- **SOC 2 / ISO 27001 readiness**: an audit record for every evaluation, each with a SHA-256 hash of its content
 
 ---
 
@@ -295,20 +309,20 @@ Agent frameworks integrate ECP via SDK:
 **Integration pattern**:
 ```python
 # Before
-result = agent.execute_tool("process_payment", {...})
+result = agent.execute_tool("process_payment", {"amount": 150.00, "currency": "usd"})
 
 # After
-decision = hiitl.evaluate(tool="process_payment", ...)
+decision = hiitl.evaluate("process_payment", parameters={"amount": 150.00, "currency": "usd"})
 if decision.allowed:
-    result = agent.execute_tool("process_payment", {...})
+    result = agent.execute_tool("process_payment", {"amount": 150.00, "currency": "usd"})
 ```
 
-**Outbound: Event Emission**
+**Outbound: The Decision**
 
-Agent frameworks receive execution events:
-- Which actions were allowed/blocked
-- Rate limit states
-- Policy decisions
+The framework receives the decision that `evaluate()` returns:
+- Whether the action is allowed, and the decision
+- Reason codes, and remediation on a block
+- Rate limit state
 
 ### Value ECP Provides
 
@@ -344,14 +358,14 @@ ECP provides the raw material for explaining AI execution decisions to non-techn
 - Matched rules with human-readable names and descriptions
 - Policy versions (what rules were in effect)
 - Timing metadata
-- HITL config details (when human review was involved)
+- Route details (when human review was involved)
 - Full escalation lifecycle (who reviewed, what they decided, why)
 
 **Event format**: See [Event Format Spec](../specs/event_format.md)
 
-**Inbound: Signal Ingestion**
+**Inbound: Signal Ingestion (planned, not built)**
 
-Explainability platforms can push signals:
+Explainability platforms could push signals:
 - Explanation quality scores (`explanation_quality: "insufficient"`)
 - User comprehension flags (`user_confusion_detected: true`)
 - Regulatory explanation requirements (`explanation_required: "GDPR_Article_22"`)
@@ -369,7 +383,7 @@ Explainability platforms can push signals:
 - **Audit trail for explanations**: Complete record of what was evaluated, what decision was made, and why
 - **Human review context**: When humans were involved, the full review lifecycle is recorded
 - **Standardized format**: Explainability platforms receive structured, consistent data
-- **Regulatory compliance**: Decision records satisfy explanation requirements
+- **Regulatory explanation**: Decision records carry the reason codes and matched rules an explanation draws on
 
 ---
 
@@ -385,13 +399,13 @@ Explainability platforms can push signals:
 ### How They Integrate with ECP
 
 **Deployment Modes**:
-- **Local/Edge**: ECP runs in customer's cloud environment (ultra-low latency)
+- **Local/Edge**: the SDK evaluates in the customer's own process, in their cloud environment (ultra-low latency)
 - **Hosted**: ECP runs as managed service (any cloud)
 
 **Infrastructure Primitives**:
-- Storage: PostgreSQL (audit log), Redis (rate limits)
+- Storage: PostgreSQL in the hosted service (audit log, rate-limit counters); SQLite in the SDK (local audit log)
 - Compute: Stateless evaluator (horizontal scale)
-- Networking: HTTPS API, webhooks
+- Networking: HTTPS API; routes call webhooks
 
 **Cloud-agnostic design**:
 - No vendor-specific dependencies
@@ -409,7 +423,7 @@ Explainability platforms can push signals:
 - **Standardized execution boundary** across all clouds
 - **Portable control logic**: Policies work regardless of cloud provider
 - **Multi-cloud support**: Same ECP instance can govern agents across AWS, GCP, Azure
-- **Hybrid deployment**: Local mode for edge, hosted for central control
+- **Hybrid deployment**: evaluation in the agent's process, policies and the audit trail managed centrally
 
 ---
 
@@ -418,15 +432,17 @@ Explainability platforms can push signals:
 ### Phase 1: Developer-First
 **Focus**: SDK integration, basic outbound events
 
+The framework integrations are patterns in the [integration examples](../onboarding/integration_examples.md), not separate packages.
+
 **Integrations**:
 - ✅ LangChain (Python)
 - ✅ LangChain.js (TypeScript)
 - ✅ OpenAI Agents SDK
 - ✅ Vercel AI SDK
 - ✅ Custom agent loops
-- ✅ Webhooks (basic event emission)
+- Webhooks (basic event emission) (not built)
 
-### Phase 2: Ecosystem Expansion
+### Phase 2: Ecosystem Expansion (planned)
 **Focus**: Signal ingestion, native integrations
 
 **Integrations**:
@@ -436,7 +452,7 @@ Explainability platforms can push signals:
 - Vanta/Drata (audit export)
 - OpenTelemetry (native OTel export)
 
-### Phase 3: Enterprise & GRC
+### Phase 3: Enterprise & GRC (planned)
 **Focus**: Compliance automation, native integrations
 
 **Integrations**:
@@ -448,6 +464,8 @@ Explainability platforms can push signals:
 ---
 
 ## One-Click Integration Pattern
+
+None of this is built: it records the plan.
 
 Pre-built, lightweight connectors for key ecosystem categories. The vision: "Connect your Datadog → ECP sends execution events automatically." "Connect your Vanta → ECP feeds compliance evidence continuously."
 
@@ -480,6 +498,8 @@ This keeps the core event system simple while enabling partner-specific formatti
 
 ## Integration Patterns
 
+Patterns 1 to 3 depend on signal ingestion, event emission and audit export, which are not built. Pattern 4 is built.
+
 ### Pattern 1: Detect → Enforce (Observability)
 
 1. Observability platform detects issue (high error rate, latency spike)
@@ -499,7 +519,7 @@ This keeps the core event system simple while enabling partner-specific formatti
 ### Pattern 3: Audit → Certify (GRC)
 
 1. ECP enforces policies (rate limits, approvals, blocks)
-2. Every action produces immutable audit record
+2. Every evaluation produces an audit record, with a SHA-256 hash of its content
 3. GRC platform ingests audit trail via export API or webhook
 4. GRC platform certifies controls are enforced (SOC 2, ISO 27001)
 5. Auditors review ECP audit trail as evidence
@@ -544,7 +564,7 @@ This keeps the core event system simple while enabling partner-specific formatti
 ### For Explainability Vendors
 - "Structured, deterministic decision data for explanation generation"
 - "Complete human review lifecycle records"
-- "Satisfy regulatory explanation requirements (EU AI Act, GDPR Article 22)"
+- "Support regulatory explanation requirements (EU AI Act, GDPR Article 22)"
 
 ---
 
@@ -562,9 +582,9 @@ This keeps the core event system simple while enabling partner-specific formatti
 ### For Ecosystem Partners
 
 **Want to integrate?**
-1. Review [Signal Schema Spec](../specs/signal_schema.md) for signal ingestion
-2. Review [Event Format Spec](../specs/event_format.md) for webhook events
-3. Contact partnerships@hiitl.ai for integration support
+1. Review [Signal Schema Spec](../specs/signal_schema.md) for signal ingestion (specified; not built)
+2. Review [Event Format Spec](../specs/event_format.md) for the event format (webhook emission is not built)
+3. Contact partnerships@hiitl.com for integration support
 
 ### For Developers
 
@@ -577,9 +597,9 @@ This keeps the core event system simple while enabling partner-specific formatti
 
 ## Related Documents
 
-- [Signal Schema Spec](../specs/signal_schema.md) - Signal ingestion format
-- [Event Format Spec](../specs/event_format.md) - Outbound event format
-- [North Star](../product_planning/hiitl_north_star.md) - Where HIITL Sits in the Ecosystem
+- [Signal Schema Spec](../specs/signal_schema.md) - Signal ingestion format (not built)
+- [Event Format Spec](../specs/event_format.md) - Outbound event format (emission not built)
+- [Route spec](../specs/routes.md) - Routes, including the sync routes ECP asks during evaluation
 
 ---
 

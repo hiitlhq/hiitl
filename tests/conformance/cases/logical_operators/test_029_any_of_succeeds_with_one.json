@@ -2,7 +2,7 @@
   "test_id": "test_029_any_of_succeeds_with_one",
   "description": "Test any_of succeeds when only one condition matches",
   "envelope": {
-    "schema_version": "v1.0",
+    "schema_version": "v2.0",
     "org_id": "org_1234567890abcdef",
     "environment": "dev",
     "agent_id": "agent_test_bot",
@@ -18,13 +18,17 @@
     "action": "database_query"
   },
   "policy_set": {
-    "version": "1.0.0",
+    "version": "v1.0.0",
+    "description": "Test any_of succeeds when only one condition matches",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "dev"
+    },
     "name": "test_policy",
     "rules": [
       {
         "name": "allow_non_prod",
         "priority": 100,
-        "enabled": true,
         "conditions": {
           "any_of": [
             {

@@ -2,7 +2,7 @@
   "test_id": "test_032_first_match_wins",
   "description": "First matching rule wins (highest priority evaluated first)",
   "envelope": {
-    "schema_version": "v1.0",
+    "schema_version": "v2.0",
     "org_id": "org_1234567890abcdef",
     "environment": "prod",
     "agent_id": "agent_finance_bot",
@@ -18,13 +18,17 @@
     "action": "transfer_money"
   },
   "policy_set": {
-    "version": "1.0.0",
+    "version": "v1.0.0",
+    "description": "First matching rule wins (highest priority evaluated first)",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
     "name": "test_policy",
     "rules": [
       {
         "name": "first_matching_rule",
         "priority": 100,
-        "enabled": true,
         "conditions": {
           "field": "parameters.amount",
           "operator": "greater_than",
@@ -37,7 +41,6 @@
       {
         "name": "second_matching_rule",
         "priority": 90,
-        "enabled": true,
         "conditions": {
           "field": "parameters.amount",
           "operator": "less_than",

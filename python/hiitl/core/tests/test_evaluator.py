@@ -10,10 +10,14 @@ Tests cover:
 """
 
 import pytest
-from datetime import datetime
+from hiitl.core.tests.declared_values import pure_local_budget_ms, typical_core_budget_ms, latency_run, latency_statistic, record_latencies
+from hiitl.core.tests.measurements import record_measurement
+from datetime import datetime, timezone
+from types import SimpleNamespace
 
 from hiitl.core import PolicyEvaluator, Envelope, PolicySet, Rule, Decision
 from hiitl.core.types import (
+    ENVELOPE_SCHEMA_VERSION,
     Condition,
     ConditionOperator,
     DecisionType,
@@ -26,33 +30,34 @@ from hiitl.core.types import (
 class TestPolicyEvaluator:
     """Test suite for PolicyEvaluator."""
 
-    def test_simple_allow_rule(self):
+    def test_simple_allow_rule(self, record_property):
         """Test a simple ALLOW rule with exact match."""
         evaluator = PolicyEvaluator()
 
         envelope = Envelope(
-            schema_version="v1.0",
+            schema_version=ENVELOPE_SCHEMA_VERSION,
             org_id="org_test123456789012",
             environment=Environment.DEV,
             agent_id="test-agent",
             action_id="act_01234567890123456789",
             idempotency_key="idem_test",
-            tool_name="read_data",
+            action="read_data",
             operation=Operation.READ,
             target={"resource": "database"},
             parameters={},
-            timestamp=datetime.now(),
+            timestamp=datetime.now(timezone.utc),
             signature="a" * 64,
         )
 
         policy = PolicySet(
             name="test-policy",
             version="v1.0.0",
+            description="Simple allow rule",
+            scope={"org_id": "org_test123456789012", "environment": "dev"},
             rules=[
                 Rule(
                     name="allow-reads",
                     description="Allow all read operations",
-                    enabled=True,
                     priority=100,
                     conditions=Condition(
                         field="operation",
@@ -70,35 +75,46 @@ class TestPolicyEvaluator:
         assert decision.decision == DecisionType.ALLOW
         assert decision.allowed is True
         assert "ALLOWED_READ" in decision.reason_codes
-        assert decision.timing.evaluation_ms < 10  # Should be very fast
+        record_measurement(record_property, metric="typical_core_evaluation", unit="ms",
+                           source="hiitl.core.evaluator.PolicyEvaluator.evaluate",
+                           value=decision.timing.model_dump())
+        # HTL-17 680f8ccf: the warmup and run the timing catalogue declares; this call is the first warmup call.
+        warmup, count = latency_run('core/allow/evaluation')
+        timings = [decision.timing] + [evaluator.evaluate(envelope, policy).timing
+                                      for _ in range(warmup + count - 1)]
+        record_latencies([('core/allow/evaluation', [t.evaluation_ms for t in timings[warmup:]], 'core',
+                           [t.evaluation_ms for t in timings[:warmup]]),
+                          ('core/allow/total', [t.total_ms for t in timings[warmup:]], 'local',
+                           [t.total_ms for t in timings[:warmup]])])
 
     def test_block_rule(self):
         """Test a BLOCK rule."""
         evaluator = PolicyEvaluator()
 
         envelope = Envelope(
-            schema_version="v1.0",
+            schema_version=ENVELOPE_SCHEMA_VERSION,
             org_id="org_test123456789012",
             environment=Environment.PROD,
             agent_id="test-agent",
             action_id="act_01234567890123456789",
             idempotency_key="idem_test",
-            tool_name="delete_data",
+            action="delete_data",
             operation=Operation.DELETE,
             target={"resource": "production_db"},
             parameters={},
-            timestamp=datetime.now(),
+            timestamp=datetime.now(timezone.utc),
             signature="a" * 64,
         )
 
         policy = PolicySet(
             name="test-policy",
             version="v1.0.0",
+            description="Block rule",
+            scope={"org_id": "org_test123456789012", "environment": "dev"},
             rules=[
                 Rule(
                     name="block-prod-deletes",
                     description="Block deletes in production",
-                    enabled=True,
                     priority=100,
                     conditions=LogicalCondition(
                         all_of=[
@@ -131,28 +147,29 @@ class TestPolicyEvaluator:
         evaluator = PolicyEvaluator()
 
         envelope = Envelope(
-            schema_version="v1.0",
+            schema_version=ENVELOPE_SCHEMA_VERSION,
             org_id="org_test123456789012",
             environment=Environment.PROD,
             agent_id="payment-agent",
             action_id="act_01234567890123456789",
             idempotency_key="idem_test",
-            tool_name="process_payment",
+            action="process_payment",
             operation=Operation.EXECUTE,
             target={"account_id": "acct_123"},
             parameters={"amount": 1500.00, "currency": "usd"},
-            timestamp=datetime.now(),
+            timestamp=datetime.now(timezone.utc),
             signature="a" * 64,
         )
 
         policy = PolicySet(
             name="payment-policy",
             version="v1.0.0",
+            description="Greater than operator",
+            scope={"org_id": "org_test123456789012", "environment": "dev"},
             rules=[
                 Rule(
                     name="require-approval-high-value",
                     description="Require approval for payments over $1000",
-                    enabled=True,
                     priority=100,
                     conditions=Condition(
                         field="parameters.amount",
@@ -176,29 +193,30 @@ class TestPolicyEvaluator:
         evaluator = PolicyEvaluator()
 
         envelope = Envelope(
-            schema_version="v1.0",
+            schema_version=ENVELOPE_SCHEMA_VERSION,
             org_id="org_test123456789012",
             environment=Environment.PROD,
             agent_id="test-agent",
             action_id="act_01234567890123456789",
             idempotency_key="idem_test",
-            tool_name="process_payment",
+            action="process_payment",
             operation=Operation.EXECUTE,
             target={"account_id": "acct_123"},
             parameters={"amount": 100.00},
             sensitivity=["money", "irreversible"],
-            timestamp=datetime.now(),
+            timestamp=datetime.now(timezone.utc),
             signature="a" * 64,
         )
 
         policy = PolicySet(
             name="test-policy",
             version="v1.0.0",
+            description="Contains operator array",
+            scope={"org_id": "org_test123456789012", "environment": "dev"},
             rules=[
                 Rule(
                     name="pause-money-operations",
                     description="Pause operations involving money",
-                    enabled=True,
                     priority=100,
                     conditions=Condition(
                         field="sensitivity",
@@ -221,31 +239,32 @@ class TestPolicyEvaluator:
         evaluator = PolicyEvaluator()
 
         envelope = Envelope(
-            schema_version="v1.0",
+            schema_version=ENVELOPE_SCHEMA_VERSION,
             org_id="org_test123456789012",
             environment=Environment.DEV,
             agent_id="test-agent",
             action_id="act_01234567890123456789",
             idempotency_key="idem_test",
-            tool_name="send_email",
+            action="send_email",
             operation=Operation.EXECUTE,
             target={"email": "user@example.com"},
             parameters={},
-            timestamp=datetime.now(),
+            timestamp=datetime.now(timezone.utc),
             signature="a" * 64,
         )
 
         policy = PolicySet(
             name="test-policy",
             version="v1.0.0",
+            description="In operator",
+            scope={"org_id": "org_test123456789012", "environment": "dev"},
             rules=[
                 Rule(
                     name="allow-safe-tools",
                     description="Allow safe tools",
-                    enabled=True,
                     priority=100,
                     conditions=Condition(
-                        field="tool_name",
+                        field="action",
                         operator=ConditionOperator.IN,
                         value=["send_email", "read_data", "log_event"],
                     ),
@@ -265,28 +284,29 @@ class TestPolicyEvaluator:
         evaluator = PolicyEvaluator()
 
         envelope = Envelope(
-            schema_version="v1.0",
+            schema_version=ENVELOPE_SCHEMA_VERSION,
             org_id="org_test123456789012",
             environment=Environment.PROD,
             agent_id="test-agent",
             action_id="act_01234567890123456789",
             idempotency_key="idem_test",
-            tool_name="process_payment",
+            action="process_payment",
             operation=Operation.EXECUTE,
             target={"account_id": "acct_123"},
             parameters={"amount": 5000.00},
-            timestamp=datetime.now(),
+            timestamp=datetime.now(timezone.utc),
             signature="a" * 64,
         )
 
         policy = PolicySet(
             name="test-policy",
             version="v1.0.0",
+            description="All of logical operator",
+            scope={"org_id": "org_test123456789012", "environment": "dev"},
             rules=[
                 Rule(
                     name="escalate-high-value-prod",
                     description="Escalate high-value payments in prod",
-                    enabled=True,
                     priority=100,
                     conditions=LogicalCondition(
                         all_of=[
@@ -296,7 +316,7 @@ class TestPolicyEvaluator:
                                 value="prod",
                             ),
                             Condition(
-                                field="tool_name",
+                                field="action",
                                 operator=ConditionOperator.EQUALS,
                                 value="process_payment",
                             ),
@@ -323,38 +343,39 @@ class TestPolicyEvaluator:
         evaluator = PolicyEvaluator()
 
         envelope = Envelope(
-            schema_version="v1.0",
+            schema_version=ENVELOPE_SCHEMA_VERSION,
             org_id="org_test123456789012",
             environment=Environment.DEV,
             agent_id="test-agent",
             action_id="act_01234567890123456789",
             idempotency_key="idem_test",
-            tool_name="grant_access",
+            action="grant_access",
             operation=Operation.EXECUTE,
             target={"user_id": "user_123"},
             parameters={"role": "admin"},
-            timestamp=datetime.now(),
+            timestamp=datetime.now(timezone.utc),
             signature="a" * 64,
         )
 
         policy = PolicySet(
             name="test-policy",
             version="v1.0.0",
+            description="Any of logical operator",
+            scope={"org_id": "org_test123456789012", "environment": "dev"},
             rules=[
                 Rule(
                     name="require-approval-sensitive",
                     description="Require approval for sensitive operations",
-                    enabled=True,
                     priority=100,
                     conditions=LogicalCondition(
                         any_of=[
                             Condition(
-                                field="tool_name",
+                                field="action",
                                 operator=ConditionOperator.EQUALS,
                                 value="grant_access",
                             ),
                             Condition(
-                                field="tool_name",
+                                field="action",
                                 operator=ConditionOperator.EQUALS,
                                 value="revoke_access",
                             ),
@@ -381,28 +402,29 @@ class TestPolicyEvaluator:
         evaluator = PolicyEvaluator()
 
         envelope = Envelope(
-            schema_version="v1.0",
+            schema_version=ENVELOPE_SCHEMA_VERSION,
             org_id="org_test123456789012",
             environment=Environment.PROD,
             agent_id="test-agent",
             action_id="act_01234567890123456789",
             idempotency_key="idem_test",
-            tool_name="read_data",
+            action="read_data",
             operation=Operation.READ,
             target={"resource": "database"},
             parameters={},
-            timestamp=datetime.now(),
+            timestamp=datetime.now(timezone.utc),
             signature="a" * 64,
         )
 
         policy = PolicySet(
             name="test-policy",
             version="v1.0.0",
+            description="None of logical operator",
+            scope={"org_id": "org_test123456789012", "environment": "dev"},
             rules=[
                 Rule(
                     name="allow-safe-ops",
                     description="Allow operations that aren't dangerous",
-                    enabled=True,
                     priority=100,
                     conditions=LogicalCondition(
                         none_of=[
@@ -412,7 +434,7 @@ class TestPolicyEvaluator:
                                 value="delete",
                             ),
                             Condition(
-                                field="tool_name",
+                                field="action",
                                 operator=ConditionOperator.EQUALS,
                                 value="drop_database",
                             ),
@@ -434,32 +456,33 @@ class TestPolicyEvaluator:
         evaluator = PolicyEvaluator()
 
         envelope = Envelope(
-            schema_version="v1.0",
+            schema_version=ENVELOPE_SCHEMA_VERSION,
             org_id="org_test123456789012",
             environment=Environment.PROD,
             agent_id="test-agent",
             action_id="act_01234567890123456789",
             idempotency_key="idem_test",
-            tool_name="process_payment",
+            action="process_payment",
             operation=Operation.EXECUTE,
             target={"account_id": "acct_123"},
             parameters={"amount": 100.00},
-            timestamp=datetime.now(),
+            timestamp=datetime.now(timezone.utc),
             signature="a" * 64,
         )
 
         policy = PolicySet(
             name="test-policy",
             version="v1.0.0",
+            description="Priority ordering",
+            scope={"org_id": "org_test123456789012", "environment": "dev"},
             rules=[
                 # Lower priority - would allow
                 Rule(
                     name="allow-all-payments",
                     description="Allow all payments",
-                    enabled=True,
                     priority=10,
                     conditions=Condition(
-                        field="tool_name",
+                        field="action",
                         operator=ConditionOperator.EQUALS,
                         value="process_payment",
                     ),
@@ -470,7 +493,6 @@ class TestPolicyEvaluator:
                 Rule(
                     name="block-prod-payments",
                     description="Block payments in prod",
-                    enabled=True,
                     priority=100,
                     conditions=LogicalCondition(
                         all_of=[
@@ -480,7 +502,7 @@ class TestPolicyEvaluator:
                                 value="prod",
                             ),
                             Condition(
-                                field="tool_name",
+                                field="action",
                                 operator=ConditionOperator.EQUALS,
                                 value="process_payment",
                             ),
@@ -503,32 +525,34 @@ class TestPolicyEvaluator:
         evaluator = PolicyEvaluator()
 
         envelope = Envelope(
-            schema_version="v1.0",
+            schema_version=ENVELOPE_SCHEMA_VERSION,
             org_id="org_test123456789012",
             environment=Environment.DEV,
             agent_id="test-agent",
             action_id="act_01234567890123456789",
             idempotency_key="idem_test",
-            tool_name="test_tool",
+            action="test_tool",
             operation=Operation.EXECUTE,
             target={},
             parameters={},
-            timestamp=datetime.now(),
+            timestamp=datetime.now(timezone.utc),
             signature="a" * 64,
         )
 
         policy = PolicySet(
             name="test-policy",
             version="v1.0.0",
+            description="Disabled rule skipped",
+            scope={"org_id": "org_test123456789012", "environment": "dev"},
             rules=[
                 # Disabled rule - should be skipped
                 Rule(
                     name="allow-test",
                     description="Allow test",
-                    enabled=False,  # Disabled!
+                    lifecycle_stage="disabled",  # Disabled
                     priority=100,
                     conditions=Condition(
-                        field="tool_name",
+                        field="action",
                         operator=ConditionOperator.EQUALS,
                         value="test_tool",
                     ),
@@ -549,31 +573,32 @@ class TestPolicyEvaluator:
         evaluator = PolicyEvaluator()
 
         envelope = Envelope(
-            schema_version="v1.0",
+            schema_version=ENVELOPE_SCHEMA_VERSION,
             org_id="org_test123456789012",
             environment=Environment.DEV,
             agent_id="test-agent",
             action_id="act_01234567890123456789",
             idempotency_key="idem_test",
-            tool_name="unknown_tool",
+            action="unknown_tool",
             operation=Operation.EXECUTE,
             target={},
             parameters={},
-            timestamp=datetime.now(),
+            timestamp=datetime.now(timezone.utc),
             signature="a" * 64,
         )
 
         policy = PolicySet(
             name="test-policy",
             version="v1.0.0",
+            description="No matching rule defaults to block",
+            scope={"org_id": "org_test123456789012", "environment": "dev"},
             rules=[
                 Rule(
                     name="allow-specific-tool",
                     description="Allow specific tool only",
-                    enabled=True,
                     priority=100,
                     conditions=Condition(
-                        field="tool_name",
+                        field="action",
                         operator=ConditionOperator.EQUALS,
                         value="specific_tool",
                     ),
@@ -595,29 +620,30 @@ class TestPolicyEvaluator:
         evaluator = PolicyEvaluator()
 
         envelope = Envelope(
-            schema_version="v1.0",
+            schema_version=ENVELOPE_SCHEMA_VERSION,
             org_id="org_test123456789012",
             environment=Environment.DEV,
             agent_id="test-agent",
             action_id="act_01234567890123456789",
             idempotency_key="idem_test",
-            tool_name="test_tool",
+            action="test_tool",
             operation=Operation.EXECUTE,
             target={},
             parameters={},
             user_id="user_123",  # Optional field present
-            timestamp=datetime.now(),
+            timestamp=datetime.now(timezone.utc),
             signature="a" * 64,
         )
 
         policy = PolicySet(
             name="test-policy",
             version="v1.0.0",
+            description="Exists operator",
+            scope={"org_id": "org_test123456789012", "environment": "dev"},
             rules=[
                 Rule(
                     name="require-user-id",
                     description="Require user_id to be present",
-                    enabled=True,
                     priority=100,
                     conditions=Condition(
                         field="user_id",
@@ -640,28 +666,29 @@ class TestPolicyEvaluator:
         evaluator = PolicyEvaluator()
 
         envelope = Envelope(
-            schema_version="v1.0",
+            schema_version=ENVELOPE_SCHEMA_VERSION,
             org_id="org_test123456789012",
             environment=Environment.DEV,
             agent_id="test-agent",
             action_id="act_01234567890123456789",
             idempotency_key="idem_test",
-            tool_name="read_data",
+            action="read_data",
             operation=Operation.READ,
             target={},
             parameters={},
-            timestamp=datetime.now(),
+            timestamp=datetime.now(timezone.utc),
             signature="a" * 64,
         )
 
         policy = PolicySet(
             name="my-policy",
             version="v2.1.0",
+            description="Matched rules metadata",
+            scope={"org_id": "org_test123456789012", "environment": "dev"},
             rules=[
                 Rule(
                     name="allow-reads",
                     description="Allow reads",
-                    enabled=True,
                     priority=50,
                     conditions=Condition(
                         field="operation",
@@ -682,36 +709,37 @@ class TestPolicyEvaluator:
         assert decision.matched_rules[0].policy_set == "my-policy"
         assert decision.matched_rules[0].priority == 50
 
-    def test_timing_metadata_present(self):
-        """Test that timing metadata is present and reasonable."""
+    def test_timing_metadata_present(self, monkeypatch, record_property):
+        """Timing metadata records validation, evaluation and complete intervals exactly."""
         evaluator = PolicyEvaluator()
 
         envelope = Envelope(
-            schema_version="v1.0",
+            schema_version=ENVELOPE_SCHEMA_VERSION,
             org_id="org_test123456789012",
             environment=Environment.DEV,
             agent_id="test-agent",
             action_id="act_01234567890123456789",
             idempotency_key="idem_test",
-            tool_name="test_tool",
+            action="test_tool",
             operation=Operation.EXECUTE,
             target={},
             parameters={},
-            timestamp=datetime.now(),
+            timestamp=datetime.now(timezone.utc),
             signature="a" * 64,
         )
 
         policy = PolicySet(
             name="test-policy",
             version="v1.0.0",
+            description="Timing metadata present",
+            scope={"org_id": "org_test123456789012", "environment": "dev"},
             rules=[
                 Rule(
                     name="allow-all",
                     description="Allow all",
-                    enabled=True,
                     priority=1,
                     conditions=Condition(
-                        field="tool_name",
+                        field="action",
                         operator=ConditionOperator.EXISTS,
                         value=True,
                     ),
@@ -721,18 +749,26 @@ class TestPolicyEvaluator:
             ],
         )
 
+        clock = iter([10.0, 10.125, 10.25, 10.75])
+        with monkeypatch.context() as fixed_clock:
+            fixed_clock.setattr("hiitl.core.evaluator.time", SimpleNamespace(perf_counter=lambda: next(clock)))
+            decision = evaluator.evaluate(envelope, policy)
+        assert decision.timing.model_dump() == {"ingest_ms": 125.0, "evaluation_ms": 500.0, "total_ms": 750.0}
+
+        # Keep real measurements separate from the controlled-clock metadata cell.
+        # HTL-30 retires the undeclared total budget; retain its observed timing.
         decision = evaluator.evaluate(envelope, policy)
-
-        # Timing metadata should be present
-        assert decision.timing is not None
-        assert decision.timing.ingest_ms >= 0
-        assert decision.timing.evaluation_ms >= 0
-        assert decision.timing.total_ms >= 0
-        assert decision.timing.total_ms >= decision.timing.evaluation_ms
-
-        # For such a simple policy, evaluation should be very fast
-        assert decision.timing.total_ms < 100  # Should be < 100ms
-        assert decision.timing.evaluation_ms < 10  # Should be < 10ms
+        record_measurement(record_property, metric="evaluator_timing", unit="ms",
+                           source="hiitl.core.evaluator.PolicyEvaluator.evaluate",
+                           value=decision.timing.model_dump())
+        # HTL-17 680f8ccf: the warmup and run the timing catalogue declares; this call is the first warmup call.
+        warmup, count = latency_run('core/timing/evaluation')
+        timings = [decision.timing] + [evaluator.evaluate(envelope, policy).timing
+                                      for _ in range(warmup + count - 1)]
+        record_latencies([('core/timing/evaluation', [t.evaluation_ms for t in timings[warmup:]], 'core',
+                           [t.evaluation_ms for t in timings[:warmup]]),
+                          ('core/timing/total', [t.total_ms for t in timings[warmup:]], 'local',
+                           [t.total_ms for t in timings[:warmup]])])
 
 
     def test_resume_token_generated_for_require_approval(self):
@@ -740,28 +776,29 @@ class TestPolicyEvaluator:
         evaluator = PolicyEvaluator()
 
         envelope = Envelope(
-            schema_version="v1.0",
+            schema_version=ENVELOPE_SCHEMA_VERSION,
             org_id="org_test123456789012",
             environment=Environment.PROD,
             agent_id="payment-agent",
             action_id="act_01234567890123456789",
             idempotency_key="idem_test",
-            tool_name="process_payment",
+            action="process_payment",
             operation=Operation.EXECUTE,
             target={"account_id": "acct_123"},
             parameters={"amount": 5000.00},
-            timestamp=datetime.now(),
+            timestamp=datetime.now(timezone.utc),
             signature="a" * 64,
         )
 
         policy = PolicySet(
             name="test-policy",
             version="v1.0.0",
+            description="Resume token generated for require approval",
+            scope={"org_id": "org_test123456789012", "environment": "dev"},
             rules=[
                 Rule(
                     name="require-approval-high-value",
                     description="Require approval for high-value payments",
-                    enabled=True,
                     priority=100,
                     conditions=Condition(
                         field="parameters.amount",
@@ -786,29 +823,30 @@ class TestPolicyEvaluator:
         evaluator = PolicyEvaluator()
 
         envelope = Envelope(
-            schema_version="v1.0",
+            schema_version=ENVELOPE_SCHEMA_VERSION,
             org_id="org_test123456789012",
             environment=Environment.PROD,
             agent_id="test-agent",
             action_id="act_01234567890123456789",
             idempotency_key="idem_test",
-            tool_name="process_payment",
+            action="process_payment",
             operation=Operation.EXECUTE,
             target={"account_id": "acct_123"},
             parameters={"amount": 100.00},
             sensitivity=["money"],
-            timestamp=datetime.now(),
+            timestamp=datetime.now(timezone.utc),
             signature="a" * 64,
         )
 
         policy = PolicySet(
             name="test-policy",
             version="v1.0.0",
+            description="Resume token generated for pause",
+            scope={"org_id": "org_test123456789012", "environment": "dev"},
             rules=[
                 Rule(
                     name="pause-money-operations",
                     description="Pause operations involving money",
-                    enabled=True,
                     priority=100,
                     conditions=Condition(
                         field="sensitivity",
@@ -832,28 +870,29 @@ class TestPolicyEvaluator:
         evaluator = PolicyEvaluator()
 
         envelope = Envelope(
-            schema_version="v1.0",
+            schema_version=ENVELOPE_SCHEMA_VERSION,
             org_id="org_test123456789012",
             environment=Environment.PROD,
             agent_id="test-agent",
             action_id="act_01234567890123456789",
             idempotency_key="idem_test",
-            tool_name="process_payment",
+            action="process_payment",
             operation=Operation.EXECUTE,
             target={"account_id": "acct_123"},
             parameters={"amount": 5000.00},
-            timestamp=datetime.now(),
+            timestamp=datetime.now(timezone.utc),
             signature="a" * 64,
         )
 
         policy = PolicySet(
             name="test-policy",
             version="v1.0.0",
+            description="Resume token generated for escalate",
+            scope={"org_id": "org_test123456789012", "environment": "dev"},
             rules=[
                 Rule(
                     name="escalate-high-value",
                     description="Escalate high-value payments",
-                    enabled=True,
                     priority=100,
                     conditions=Condition(
                         field="parameters.amount",
@@ -877,28 +916,29 @@ class TestPolicyEvaluator:
         evaluator = PolicyEvaluator()
 
         envelope = Envelope(
-            schema_version="v1.0",
+            schema_version=ENVELOPE_SCHEMA_VERSION,
             org_id="org_test123456789012",
             environment=Environment.DEV,
             agent_id="test-agent",
             action_id="act_01234567890123456789",
             idempotency_key="idem_test",
-            tool_name="read_data",
+            action="read_data",
             operation=Operation.READ,
             target={"resource": "database"},
             parameters={},
-            timestamp=datetime.now(),
+            timestamp=datetime.now(timezone.utc),
             signature="a" * 64,
         )
 
         policy = PolicySet(
             name="test-policy",
             version="v1.0.0",
+            description="No resume token for allow",
+            scope={"org_id": "org_test123456789012", "environment": "dev"},
             rules=[
                 Rule(
                     name="allow-reads",
                     description="Allow all read operations",
-                    enabled=True,
                     priority=100,
                     conditions=Condition(
                         field="operation",
@@ -922,28 +962,29 @@ class TestPolicyEvaluator:
         evaluator = PolicyEvaluator()
 
         envelope = Envelope(
-            schema_version="v1.0",
+            schema_version=ENVELOPE_SCHEMA_VERSION,
             org_id="org_test123456789012",
             environment=Environment.PROD,
             agent_id="test-agent",
             action_id="act_01234567890123456789",
             idempotency_key="idem_test",
-            tool_name="delete_data",
+            action="delete_data",
             operation=Operation.DELETE,
             target={"resource": "production_db"},
             parameters={},
-            timestamp=datetime.now(),
+            timestamp=datetime.now(timezone.utc),
             signature="a" * 64,
         )
 
         policy = PolicySet(
             name="test-policy",
             version="v1.0.0",
+            description="No resume token for block",
+            scope={"org_id": "org_test123456789012", "environment": "dev"},
             rules=[
                 Rule(
                     name="block-prod-deletes",
                     description="Block deletes in production",
-                    enabled=True,
                     priority=100,
                     conditions=Condition(
                         field="operation",
@@ -967,28 +1008,29 @@ class TestPolicyEvaluator:
         evaluator = PolicyEvaluator()
 
         envelope = Envelope(
-            schema_version="v1.0",
+            schema_version=ENVELOPE_SCHEMA_VERSION,
             org_id="org_test123456789012",
             environment=Environment.PROD,
             agent_id="payment-agent",
             action_id="act_01234567890123456789",
             idempotency_key="idem_test",
-            tool_name="process_payment",
+            action="process_payment",
             operation=Operation.EXECUTE,
             target={"account_id": "acct_123"},
             parameters={"amount": 5000.00},
-            timestamp=datetime.now(),
+            timestamp=datetime.now(timezone.utc),
             signature="a" * 64,
         )
 
         policy = PolicySet(
             name="payment-policy",
             version="v2.0.0",
+            description="Route ref passed from rule",
+            scope={"org_id": "org_test123456789012", "environment": "dev"},
             rules=[
                 Rule(
                     name="require-approval-high-value",
                     description="Require approval for high-value payments",
-                    enabled=True,
                     priority=100,
                     conditions=Condition(
                         field="parameters.amount",
@@ -1013,28 +1055,29 @@ class TestPolicyEvaluator:
         evaluator = PolicyEvaluator()
 
         envelope = Envelope(
-            schema_version="v1.0",
+            schema_version=ENVELOPE_SCHEMA_VERSION,
             org_id="org_test123456789012",
             environment=Environment.PROD,
             agent_id="test-agent",
             action_id="act_01234567890123456789",
             idempotency_key="idem_test",
-            tool_name="process_payment",
+            action="process_payment",
             operation=Operation.EXECUTE,
             target={"account_id": "acct_123"},
             parameters={"amount": 5000.00},
-            timestamp=datetime.now(),
+            timestamp=datetime.now(timezone.utc),
             signature="a" * 64,
         )
 
         policy = PolicySet(
             name="test-policy",
             version="v1.0.0",
+            description="Route ref none when rule has no config",
+            scope={"org_id": "org_test123456789012", "environment": "dev"},
             rules=[
                 Rule(
                     name="require-approval-no-config",
                     description="Require approval without HITL config",
-                    enabled=True,
                     priority=100,
                     conditions=Condition(
                         field="parameters.amount",
@@ -1063,28 +1106,29 @@ class TestPolicyEvaluator:
         evaluator = PolicyEvaluator()
 
         envelope = Envelope(
-            schema_version="v1.0",
+            schema_version=ENVELOPE_SCHEMA_VERSION,
             org_id="org_test123456789012",
             environment=Environment.PROD,
             agent_id="payment-agent",
             action_id="act_01234567890123456789",
             idempotency_key="idem_test",
-            tool_name="process_payment",
+            action="process_payment",
             operation=Operation.EXECUTE,
             target={"account_id": "acct_123"},
             parameters={"amount": 5000.00},
-            timestamp=datetime.now(),
+            timestamp=datetime.now(timezone.utc),
             signature="a" * 64,
         )
 
         policy = PolicySet(
             name="payment-policy",
             version="v2.0.0",
+            description="Escalation context is none from evaluator",
+            scope={"org_id": "org_test123456789012", "environment": "dev"},
             rules=[
                 Rule(
                     name="require-approval-high-value",
                     description="Require approval for high-value payments",
-                    enabled=True,
                     priority=100,
                     conditions=Condition(
                         field="parameters.amount",
@@ -1107,28 +1151,29 @@ class TestPolicyEvaluator:
         evaluator = PolicyEvaluator()
 
         envelope = Envelope(
-            schema_version="v1.0",
+            schema_version=ENVELOPE_SCHEMA_VERSION,
             org_id="org_test123456789012",
             environment=Environment.PROD,
             agent_id="payment-agent",
             action_id="act_01234567890123456789",
             idempotency_key="idem_test",
-            tool_name="process_payment",
+            action="process_payment",
             operation=Operation.EXECUTE,
             target={"account_id": "acct_123"},
             parameters={"amount": 5000.00},
-            timestamp=datetime.now(),
+            timestamp=datetime.now(timezone.utc),
             signature="a" * 64,
         )
 
         policy = PolicySet(
             name="test-policy",
             version="v1.0.0",
+            description="Resume token unique per evaluation",
+            scope={"org_id": "org_test123456789012", "environment": "dev"},
             rules=[
                 Rule(
                     name="require-approval",
                     description="Require approval",
-                    enabled=True,
                     priority=100,
                     conditions=Condition(
                         field="parameters.amount",

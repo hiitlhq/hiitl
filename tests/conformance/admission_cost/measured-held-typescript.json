@@ -1,0 +1,166 @@
+{
+  "source": "2b18488d",
+  "source_manifest_sha256": "18e1e74f49818a3f07aea94ad7d886c61fe2ef77bb1172dd68efac62bcab36b1",
+  "shapes_sha256": "5bc8f4b6e3f7260474dd947b08e9b360e7522ba946ccc96c57f07d2f25000ffa",
+  "measurement_driver_sha256": "7617876bb63b097cc1895fc92a1123248a0f4860b34073137344c43c44c6eedf",
+  "runtime": "v22.22.3",
+  "iterations": 1500,
+  "warmup": 200,
+  "rows": [
+    {
+      "shape": "tiny_active",
+      "core": {
+        "p50_ms": 0.01474999999999227,
+        "p95_ms": 0.021835099999987048,
+        "p99_ms": 0.03879684000000338,
+        "numeric_visits": 41,
+        "admission_roots": 2
+      },
+      "sdk": {
+        "p50_ms": 0.45110400000004347,
+        "p95_ms": 0.5862416499999283,
+        "p99_ms": 0.8042721699999912,
+        "numeric_visits": 10,
+        "admission_roots": 1
+      },
+      "sdk_pull": {
+        "p50_ms": 0.43591650000007576,
+        "p95_ms": 0.5500020999999378,
+        "p99_ms": 0.6882845899999279,
+        "numeric_visits": 10,
+        "admission_roots": 1
+      },
+      "sdk_disk": {
+        "p50_ms": 0.42729149999991023,
+        "p95_ms": 0.5598371499998166,
+        "p99_ms": 0.6919902500002217,
+        "numeric_visits": 10,
+        "admission_roots": 1
+      }
+    },
+    {
+      "shape": "small_active",
+      "core": {
+        "p50_ms": 0.012458000000151515,
+        "p95_ms": 0.014502049999782683,
+        "p99_ms": 0.02387834000031489,
+        "numeric_visits": 97,
+        "admission_roots": 2
+      },
+      "sdk": {
+        "p50_ms": 0.46929150000005393,
+        "p95_ms": 0.9693943499998565,
+        "p99_ms": 1.2114005900000482,
+        "numeric_visits": 18,
+        "admission_roots": 1
+      },
+      "sdk_pull": {
+        "p50_ms": 0.4441664999999375,
+        "p95_ms": 0.5841726000001699,
+        "p99_ms": 0.8283838399999285,
+        "numeric_visits": 18,
+        "admission_roots": 1
+      },
+      "sdk_disk": {
+        "p50_ms": 0.43504200000006676,
+        "p95_ms": 0.5615586500003246,
+        "p99_ms": 0.791750410000686,
+        "numeric_visits": 18,
+        "admission_roots": 1
+      }
+    },
+    {
+      "shape": "medium_with_scope",
+      "core": {
+        "p50_ms": 0.04845800000020972,
+        "p95_ms": 0.05937914999985878,
+        "p99_ms": 0.2675799200004985,
+        "numeric_visits": 407,
+        "admission_roots": 2
+      },
+      "sdk": {
+        "p50_ms": 0.4978124999997817,
+        "p95_ms": 0.7227749999994556,
+        "p99_ms": 1.1248983300004238,
+        "numeric_visits": 48,
+        "admission_roots": 1
+      },
+      "sdk_pull": {
+        "p50_ms": 0.4831869999998162,
+        "p95_ms": 0.6338423000001967,
+        "p99_ms": 0.9597079999998367,
+        "numeric_visits": 48,
+        "admission_roots": 1
+      },
+      "sdk_disk": {
+        "p50_ms": 0.47789600000032806,
+        "p95_ms": 0.6660139499999331,
+        "p99_ms": 0.983845500000225,
+        "numeric_visits": 48,
+        "admission_roots": 1
+      }
+    },
+    {
+      "shape": "medium_with_staged",
+      "core": {
+        "p50_ms": 0.03795900000113761,
+        "p95_ms": 0.04512705000051937,
+        "p99_ms": 0.2322816699991199,
+        "numeric_visits": 321,
+        "admission_roots": 2
+      },
+      "sdk": {
+        "p50_ms": 0.5141249999996944,
+        "p95_ms": 0.6814409999989947,
+        "p99_ms": 1.0495439199993777,
+        "numeric_visits": 50,
+        "admission_roots": 1
+      },
+      "sdk_pull": {
+        "p50_ms": 0.50335399999949,
+        "p95_ms": 0.6630756499993367,
+        "p99_ms": 0.926590500000384,
+        "numeric_visits": 50,
+        "admission_roots": 1
+      },
+      "sdk_disk": {
+        "p50_ms": 0.4969584999998915,
+        "p95_ms": 0.6335618500010242,
+        "p99_ms": 0.8974795900004573,
+        "numeric_visits": 50,
+        "admission_roots": 1
+      }
+    },
+    {
+      "shape": "large_with_staged",
+      "core": {
+        "p50_ms": 0.16608300000007148,
+        "p95_ms": 0.43919970000106323,
+        "p99_ms": 0.6650443400001859,
+        "numeric_visits": 1441,
+        "admission_roots": 2
+      },
+      "sdk": {
+        "p50_ms": 0.676229499999863,
+        "p95_ms": 1.047711049999998,
+        "p99_ms": 1.2801635700013136,
+        "numeric_visits": 210,
+        "admission_roots": 1
+      },
+      "sdk_pull": {
+        "p50_ms": 0.6637289999998757,
+        "p95_ms": 0.9695035499998993,
+        "p99_ms": 1.1177533399994355,
+        "numeric_visits": 210,
+        "admission_roots": 1
+      },
+      "sdk_disk": {
+        "p50_ms": 0.6652290000001813,
+        "p95_ms": 0.9748982500008423,
+        "p99_ms": 1.1075743399994098,
+        "numeric_visits": 210,
+        "admission_roots": 1
+      }
+    }
+  ]
+}

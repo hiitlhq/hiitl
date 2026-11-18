@@ -19,13 +19,27 @@ hiitl.evaluate(
     reason: str | None = None,
     sensitivity: list[Sensitivity] | None = None,
     cost_estimate: CostEstimate | None = None,
+    requested_scopes: list[str] | None = None,
     idempotency_key: str | None = None,
+    principal_token: str | None = None,
+    correlation_id: str | None = None,
 ) -> Decision
 ```
 
 Only `action` is required (positional). Everything else is keyword-only with sensible defaults.
 
 ## Parameters
+
+Every numeric value, including numbers nested in `parameters`, `target` or metadata,
+follows [the shared numeric domain](https://github.com/hiitlhq/hiitl/blob/main/docs/specs/sync_engine.md#numeric-domain).
+A typed numeric member requires a number within its declared type and range. Where text is admitted,
+pass nanosecond timestamps and smallest-unit amounts outside that domain as text;
+a reached numeric condition on that text stops and blocks with
+`POLICY_ERROR` / `POLICY_EVALUATION_FAILED`, unless the other conditions already
+settle the rule. A refusal names the value's path.
+
+An optional SDK argument left at its default or passed as `None` remains not given.
+A null supplied inside a file, body or mapping still follows that data field's declared type; a null in open caller data remains data.
 
 <ParamField path="action" type="str" required>
   Action name. This is the tool or operation being evaluated (e.g., `"process_payment"`, `"send_email"`, `"delete_user"`).
@@ -84,8 +98,26 @@ Only `action` is required (positional). Everything else is keyword-only with sen
   ```
 </ParamField>
 
+<ParamField path="requested_scopes" type="list[str] | None" default="None">
+  Permission scopes this call requests — free strings your code supplies, distinct from the verified principal's scopes. A policy compares them with `principal.scopes` (e.g. block a call that requests a scope the principal was not granted).
+
+  ```python
+  requested_scopes=["refunds:write"]
+  ```
+</ParamField>
+
 <ParamField path="idempotency_key" type="str | None" default="None">
-  Idempotency key for deduplication. Auto-generated if not provided. Use this to prevent duplicate evaluations on retries.
+  Key for one logical action, recorded in the envelope. Auto-generated if not provided. Pass the same key when you retry an action: a call under a key the audit store already holds, for an envelope within the dedup window (`dedup_window_seconds`, default 24 hours) of this one, returns the first call's decision (its `action_id` names the first action) and writes no record. The scope is the org and the environment. Two calls in flight at once under one new key, from any clients of one audit store in one process, are taken as if one came first: the second waits for the first and returns its decision. Processes that share an audit file are not held to this.
+</ParamField>
+
+<ParamField path="principal_token" type="str | None" default="None">
+  A token that identifies the caller. In local and hybrid mode, the SDK passes it to the `principal_verifier` you configure and sets the envelope's `principal` from the claims it returns. A token the verifier rejects leaves `principal` unset. Without a `principal_verifier`, `evaluate()` raises `ConfigurationError`. In hosted mode, the SDK sends the token to the service, which verifies it.
+</ParamField>
+
+<ParamField path="correlation_id" type="str | None" default="None">
+  Your own ID tying this action to others, such as a request ID. Recorded in the envelope as given.
+
+  The envelope's `trace_id` is not an option. When the OpenTelemetry API (`opentelemetry-api`) is installed, the SDK sets it from the span active when you call `evaluate()`. Without the API, or outside a span, it is unset. The API is never a dependency of `hiitl`.
 </ParamField>
 
 ## Returns
@@ -150,7 +182,12 @@ decision = hiitl.evaluate(
     parameters={"amount": 10000.00, "currency": "usd"},
 )
 
-if decision.ok:
+if decision.observed:
+    # OBSERVE mode — action was logged but not enforced
+    print(f"Would have been: {decision.would_be}")
+    process_payment()
+
+elif decision.ok:
     # ALLOW or SANDBOX — safe to proceed
     process_payment()
 
@@ -165,16 +202,13 @@ elif decision.needs_approval:
     print(f"Needs review: {decision.reason_codes}")
     if decision.escalation_context:
         print(f"Route to: {decision.escalation_context}")
-
-elif decision.observed:
-    # OBSERVE mode — action was logged but not enforced
-    print(f"Would have been: {decision.would_be}")
-    process_payment()
 ```
+
+Check `decision.observed` first: `decision.ok` is also `True` for `OBSERVE`.
 
 ### Observe mode awareness
 
-In OBSERVE_ALL mode (the default), actions are never blocked. The decision tells you what *would* happen under enforcement:
+In OBSERVE_ALL mode (the default), nothing is blocked, a [rate-limit rule](/concepts/policies#rate-limit-rules) included: a call past its limit returns `OBSERVE` with `would_be: RATE_LIMIT`. The decision tells you what *would* happen under enforcement:
 
 ```python
 hiitl = HIITL()  # OBSERVE_ALL by default
@@ -185,21 +219,20 @@ print(decision.allowed)               # True (observe mode)
 print(decision.decision)              # "OBSERVE"
 print(decision.observed)              # True
 print(decision.would_be)              # "BLOCK" (what enforcement would do)
-print(decision.would_be_reason_codes) # ["PAYMENT_TOO_HIGH"]
+print(decision.would_be_reason_codes) # ["NO_MATCHING_RULE"] (no policy loaded)
 ```
 
 ## Errors
 
 | Exception | When |
 |-----------|------|
-| `EnvelopeValidationError` | Invalid field values (e.g., confidence > 1.0) |
-| `PolicyLoadError` | Policy file cannot be loaded or parsed (local mode) |
-| `AuditLogError` | Audit log write fails (local mode, fail-closed) |
-| `ServerError` | Server returns an error response (hosted mode) |
-| `NetworkError` | Server is unreachable (hosted mode) |
+| `EnvelopeValidationError` | Invalid field values (e.g., confidence > 1.0): the envelope cannot be built |
+| `ValueError` | `operation` is not one of the six operations |
+| `ConfigurationError` | `principal_token` passed with no `principal_verifier` configured (local and hybrid mode) |
+| `ServerError` | The server answers with no decision (hosted mode): a missing or unknown API key, a key without the `evaluate` scope, a body it cannot read as an envelope |
 
 ```python
-from hiitl.sdk.exceptions import EnvelopeValidationError, PolicyLoadError
+from hiitl.sdk.exceptions import EnvelopeValidationError
 
 try:
     decision = hiitl.evaluate("process_payment", confidence=5.0)
@@ -209,5 +242,41 @@ except EnvelopeValidationError as e:
 ```
 
 <Tip>
-  In fail-closed mode (the default for high-stakes routes), audit write failures block the action. This ensures no action executes without a durable record.
+  `evaluate()` raises only before an envelope exists. Once it does, a failure is a decision with `allowed` false: `SIGNATURE_INVALID` for a signature that does not verify, `POLICY_ERROR` for a policy that cannot be loaded or evaluated, and `BLOCK` with `AUDIT_WRITE_FAILED` when the audit record cannot be written. Any other failure is `BLOCK` too: `error.code` `AUDIT_READ_FAILED` when the store cannot be read for the key's first decision, and `EVALUATION_FAILED` for the rest. Each is recorded where the store answers, and no action runs without a record. In hosted mode a service that cannot be reached is `CONTROL_PLANE_UNAVAILABLE` (with `metadata`; not allowed unless `fail_mode` is `FAIL_OPEN`), recorded in the local store and sent to the service before the next call once it answers. Do not run the action when `evaluate()` raises.
 </Tip>
+
+## Recording the result
+
+An action's records make its lifecycle: its decision, then what happened when it ran. Once an action the decision allowed has run, record its result against the decision's `action_id`. In hosted mode the call goes to [`POST /v1/actions/{action_id}/result`](/api/evaluate#recording-the-result); in local and hybrid mode it is written to the SDK's own store, with the same refusals. The result is its own record, its content hash covering the result, and hybrid mode uploads it with the decision records.
+
+```python
+import time
+from hiitl import LifecycleError
+
+decision = hiitl.evaluate("process_payment", parameters={"amount": 150.00, "currency": "usd"})
+if decision.ok:
+    started = time.monotonic()
+    try:
+        process_payment(...)
+        status, error = "succeeded", None
+    except Exception as e:
+        status, error = "failed", str(e)
+    try:
+        hiitl.record_result(decision.action_id, status, error=error,
+                            duration_ms=(time.monotonic() - started) * 1000)
+    except LifecycleError as e:
+        print(e.reason)   # e.g. RESULT_ALREADY_RECORDED: a different result is recorded
+```
+
+`record_result(action_id, status, *, error=None, duration_ms=None)` returns the record that holds the result. In hosted mode while the service cannot be reached, it returns `{"action_id": ..., "execution_result": ..., "held": True}`: the result is held in the local store at `audit_db_path` and sent before the next call, after its decision. A store that cannot write the result raises `AuditLogError`. A result that is not recorded raises `LifecycleError`; its `reason` is one of:
+
+| Reason | When |
+|--------|------|
+| `RESULT_INVALID` | `status` is not `succeeded`, `failed` or `canceled`, `error` is not a string, or `duration_ms` is not a non-negative number |
+| `ACTION_NOT_FOUND` | No decision is recorded for the `action_id` in this organization and environment |
+| `RESULT_ON_UNALLOWED_DECISION` | The decision did not allow the action and holds it for no review (it carries no `resume_token`), so it never ran and has no result |
+| `RESULT_ALREADY_RECORDED` | A different result is already recorded for the action. Sending the same result again returns its record |
+
+A decision held for review (it carries a `resume_token`) takes its result. The local store holds no review case, so in local and hybrid mode the record names the review it did not read, `review: {"unread": "<resume_token>"}`, and its content hash covers it. In hybrid mode the service reads the case when the record is uploaded and refuses it when the case did not let the action run; in local mode the record stands as named. In hosted mode the service reads the case when the result is sent.
+
+The same result again returns the record that holds it, so a retry is safe.

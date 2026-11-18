@@ -1,0 +1,46 @@
+{
+  "test_id": "test_177_policy_set_refuses_an_on_missing_outside_its_two",
+  "description": "A policy set's on_missing is skip or fail_closed; any other value is refused at on_missing, naming it (policy_format.md Policy Set Fields; HTL-22 row 176).",
+  "policy_set": {
+    "name": "payments_policy",
+    "version": "v1.0.0",
+    "description": "Payment controls for the finance agent",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
+    "on_missing": "fail_open",
+    "rules": [
+      {
+        "name": "allow_payments_to_known_accounts",
+        "description": "Payments to a known account are allowed",
+        "priority": 100,
+        "conditions": {
+          "all_of": [
+            {
+              "field": "action",
+              "operator": "equals",
+              "value": "process_payment"
+            },
+            {
+              "field": "target.account_id",
+              "operator": "starts_with",
+              "value": "acct_"
+            }
+          ]
+        },
+        "decision": "ALLOW",
+        "reason_code": "KNOWN_ACCOUNT"
+      }
+    ]
+  },
+  "expected_refusal": {
+    "artifact": "policy_set",
+    "at": [
+      "on_missing"
+    ],
+    "names": [
+      "fail_open"
+    ]
+  }
+}

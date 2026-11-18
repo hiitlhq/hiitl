@@ -9,7 +9,7 @@ tags: ["invoice", "billing", "financial"]
 
 evaluate_examples:
   python: |
-    result = hiitl.evaluate("create_invoice", {
+    result = hiitl.evaluate("create_invoice", parameters={
         "amount": 4500.00,
         "customer_id": "cust_3mK8nR2pQ7",
         "line_items": [
@@ -19,9 +19,9 @@ evaluate_examples:
     if result.ok:
         create_invoice(customer_id="cust_3mK8nR2pQ7", line_items=line_items)
   typescript: |
-    const result = hiitl.evaluate({
+    const result = await hiitl.evaluate({
       action: 'create_invoice',
-      params: {
+      parameters: {
         amount: 4500.00,
         customer_id: 'cust_3mK8nR2pQ7',
         line_items: [
@@ -29,7 +29,7 @@ evaluate_examples:
         ],
       },
     });
-    if (result.ok) {
+    if (result.allowed) {
       await createInvoice({ customerId: 'cust_3mK8nR2pQ7', lineItems });
     }
 
@@ -39,7 +39,7 @@ context_enrichment:
     example: "user_4gT2hN8kLm"
   - field: "cost_estimate"
     why: "Total invoice amount enables budget-based policies and spend anomaly detection"
-    example: 4500.00
+    example: {"dollars": 4500.00}
   - field: "parameters.customer_id"
     why: "Customer identifier enables per-customer invoice frequency limits and fraud detection"
     example: "cust_3mK8nR2pQ7"
@@ -54,7 +54,6 @@ starter_policies:
   - name: "allow-normal-invoices"
     description: "Auto-approve invoices under $10,000 — standard billing operations"
     priority: 200
-    enabled: true
     conditions:
       all_of:
         - field: "action"
@@ -66,14 +65,13 @@ starter_policies:
     decision: "ALLOW"
     reason_code: "INVOICE_AUTO_APPROVED"
     remediation:
-      type: "static"
+      type: "threshold"
       message: "Invoice auto-approved (under $10,000 threshold)"
       suggestion: "No action needed"
 
   - name: "approve-large-invoices"
     description: "Require approval for invoices $10,000 and above — material revenue events"
     priority: 150
-    enabled: true
     conditions:
       all_of:
         - field: "action"
@@ -85,14 +83,13 @@ starter_policies:
     decision: "REQUIRE_APPROVAL"
     reason_code: "LARGE_INVOICE_NEEDS_APPROVAL"
     remediation:
-      type: "static"
+      type: "threshold"
       message: "Invoices of $10,000 or more require finance team approval before creation"
       suggestion: "Route this invoice to the finance team for review. Include supporting documentation such as the contract or purchase order reference."
 
   - name: "block-suspicious-amounts"
     description: "Block invoices over $100,000 — likely erroneous or requires executive approval outside automated systems"
     priority: 100
-    enabled: true
     conditions:
       all_of:
         - field: "action"
@@ -104,22 +101,25 @@ starter_policies:
     decision: "BLOCK"
     reason_code: "INVOICE_AMOUNT_SUSPICIOUS"
     remediation:
-      type: "static"
+      type: "threshold"
       message: "Invoice amount exceeds $100,000 and cannot be created through automated billing"
       suggestion: "Verify the amount is correct. Invoices of this size must be created manually with executive sign-off. Contact the finance director."
 
   - name: "rate-limit-invoice-creation"
     description: "Limit invoice creation to 100 per hour per agent to prevent bulk billing errors"
     priority: 50
-    enabled: true
     conditions:
       field: "action"
       operator: "equals"
       value: "create_invoice"
     decision: "RATE_LIMIT"
     reason_code: "INVOICE_RATE_EXCEEDED"
+    rate_limit:
+      limit: 100
+      window_seconds: 3600
+      scope: "agent"
     remediation:
-      type: "static"
+      type: "rate_limit"
       message: "This agent has exceeded the maximum of 100 invoices per hour"
       suggestion: "Wait for the rate limit window to reset. If bulk invoice generation is needed, use the batch billing API instead of individual invoice creation."
 

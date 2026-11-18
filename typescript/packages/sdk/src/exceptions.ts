@@ -52,9 +52,17 @@ export class HIITLError extends Error {
  * - File permissions issue
  */
 export class PolicyLoadError extends HIITLError {
-  constructor(message: string) {
+  /**
+   * On the evaluate path it is not thrown to the caller: an envelope exists, so the failure is the decision
+   * POLICY_ERROR with `reason` as its cause and this message logged (decision_response.md "Error Handling"; HTL-22
+   * row 159). `reason` is the Error Handling cause: POLICY_NOT_FOUND, POLICY_LOAD_FAILED or POLICY_VALIDATION_ERROR.
+   */
+  readonly reason: string;
+
+  constructor(message: string, reason: string = 'POLICY_VALIDATION_ERROR') {
     super(message);
     this.name = 'PolicyLoadError';
+    this.reason = reason;
   }
 }
 
@@ -83,7 +91,7 @@ export class AuditLogError extends HIITLError {
  *
  * Common causes:
  * - Missing required config fields (environment, agent_id, org_id, policy_path)
- * - Invalid org_id format (must match pattern org_[a-z0-9]{18,})
+ * - Invalid org_id format (must match the envelope's org_id pattern, ORG_ID_PATTERN)
  * - Invalid environment value (must be dev/stage/prod)
  * - Invalid mode (only 'local' supported)
  */
@@ -157,6 +165,42 @@ export class ServerError extends HIITLError {
 }
 
 /**
+ * A result `recordResult` does not record on the action's lifecycle (event_format.md "The lifecycle"; HTL-22 row
+ * 150). `reason` is why, the code the hosted service answers too: RESULT_INVALID, ACTION_NOT_FOUND,
+ * RESULT_ON_UNALLOWED_DECISION or RESULT_ALREADY_RECORDED. Mirrors exceptions.py.
+ */
+export class LifecycleError extends HIITLError {
+  public readonly reason: string;
+
+  constructor(reason: string, message: string) {
+    super(`[${reason}] ${message}`);
+    this.name = 'LifecycleError';
+    this.reason = reason;
+  }
+}
+
+/**
+ * Sync engine encountered an error.
+ *
+ * Raised internally by the sync engine for recoverable sync failures.
+ * These errors are logged but never bubble up to evaluate() — sync
+ * failures degrade gracefully (cached data continues to be used).
+ *
+ * Mirrors `python/hiitl/sdk/exceptions.py:SyncError` exactly.
+ */
+export class SyncError extends HIITLError {
+  public readonly channel: string;
+  public readonly cause_error?: Error;
+
+  constructor(channel: string, message: string, cause?: Error) {
+    super(`Sync error [${channel}]: ${message}`);
+    this.name = 'SyncError';
+    this.channel = channel;
+    this.cause_error = cause;
+  }
+}
+
+/**
  * Failed to connect to ECP server.
  *
  * Thrown when the SDK cannot reach the server due to network issues,
@@ -178,5 +222,40 @@ export class NetworkError extends HIITLError {
     this.name = 'NetworkError';
     this.server_url = server_url;
     this.cause_error = cause;
+  }
+}
+
+/**
+ * Raised when the initial sync at SDK startup fails AND
+ * cold_start_behavior is 'fail-closed' (TICKET-121 / TICKET-116).
+ *
+ * Thrown from `evaluate()` (NOT the constructor) on the first call
+ * after the initial sync has resolved as a failure. Why on evaluate
+ * and not the constructor: JavaScript constructors cannot be async,
+ * so we can't block on initialSync from `new HIITL(...)`. Instead,
+ * fail-closed is enforced at the first evaluate() — the safety net
+ * a developer can't accidentally bypass.
+ *
+ * The other cold_start_behavior values ('warn-and-observe' (default),
+ * 'observe-silent') never throw this — they continue in OBSERVE_ALL
+ * with `cache_status='empty'` on every Decision until background sync
+ * succeeds.
+ */
+export class ColdStartError extends HIITLError {
+  public readonly server_url: string;
+  public readonly timeout_seconds: number;
+
+  constructor(server_url: string, timeout_seconds: number) {
+    super(
+      `Cold-start sync failed: could not reach ${server_url} within ` +
+        `${timeout_seconds}s and no disk cache was available. ` +
+        "cold_start_behavior='fail-closed' was set, so evaluate() " +
+        'refused to run against an empty policy set. ' +
+        "Switch to cold_start_behavior='warn-and-observe' to allow " +
+        'the SDK to operate in OBSERVE_ALL until background sync succeeds.'
+    );
+    this.name = 'ColdStartError';
+    this.server_url = server_url;
+    this.timeout_seconds = timeout_seconds;
   }
 }

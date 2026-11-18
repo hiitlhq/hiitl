@@ -1,55 +1,68 @@
 ---
 title: "Envelope Signing"
-description: "HMAC-SHA256 envelope integrity verification"
+description: "HMAC-SHA256 signatures on evaluation requests"
 ---
 
 ## How signing works
 
-Every envelope submitted to hiitl includes an HMAC-SHA256 signature. This prevents tampering between the SDK and the decision plane.
+An evaluation request's body is the envelope, and it carries an HMAC-SHA256 signature of that envelope in `envelope_signature`. The hosted service verifies the signature before it evaluates the action. An envelope with no signature, or one whose signature does not verify, is not evaluated. It receives a recorded `SIGNATURE_INVALID` refusal decision, as described below.
 
 ```
-Envelope fields --> HMAC-SHA256(secret_key) --> signature
+Envelope without envelope_signature --> RFC 8785 canonical JSON --> HMAC-SHA256(signing secret) --> envelope_signature
 ```
 
-The SDK computes the signature automatically using the org's secret key. The decision plane verifies the signature before evaluation. If the signature does not match, the envelope is rejected.
+The service recomputes the HMAC with your API key's signing secret and compares the two values in constant time.
+
+Each API key has its own signing secret. It is shown once, beside the key, when the key is created: on the API keys page, and as `signing_secret` in the `POST /v1/api-keys` response. Store it with the key; it cannot be retrieved again.
 
 ## SDK handles signing
 
-You do not need to compute signatures manually. The SDK signs every envelope automatically.
+You do not need to compute signatures yourself. Set `signature_key` to your API key's signing secret, and the SDK signs every envelope it builds. Hosted evaluation needs it: without `signature_key`, a client set up for hosted evaluation refuses to start, because the service would refuse every envelope.
+
+In local mode the SDK signs the envelope it records and checks the signature before it evaluates, so an envelope changed after signing receives a recorded `SIGNATURE_INVALID` refusal. If the record cannot be written, the refusal still reaches the caller and the write failure is logged. Without a `signature_key`, the local record's `signature` is 64 zeros.
 
 <CodeGroup>
 
 ```python Python
-# Signing happens automatically inside evaluate()
+from hiitl import HIITL
+
 hiitl = HIITL(
-    api_key="hiitl_prod_abc123...",
+    api_key="sk_prod_...",
+    server_url="https://api.hiitl.com",
+    signature_key="...",  # your API key's signing secret
+    evaluation="remote",
     environment="prod",
-    agent_id="payment-agent"
+    agent_id="payment-agent",
 )
 
-# The SDK signs this envelope before sending
+# The SDK signs this request before sending it
 decision = hiitl.evaluate(
-    tool="process_payment",
+    "process_payment",
     operation="execute",
-    target={"account_id": "acct_123"},
-    parameters={"amount": 150.00}
+    target={"account_id": "acct_8f3k2m"},
+    parameters={"amount": 150.00, "currency": "usd"},
 )
 ```
 
 ```typescript TypeScript
-// Signing happens automatically inside evaluate()
+import { HIITL } from '@hiitl/sdk';
+
 const hiitl = new HIITL({
-  apiKey: 'hiitl_prod_abc123...',
+  api_key: 'sk_prod_...',
+  signature_key: '...', // your API key's signing secret
+  server_url: 'https://api.hiitl.com',
+  evaluation: 'remote',
   environment: 'prod',
-  agentId: 'payment-agent',
+  agent_id: 'payment-agent',
+  org_id: 'org_...',
 });
 
-// The SDK signs this envelope before sending
+// The SDK signs this request before sending it
 const decision = await hiitl.evaluate({
-  tool: 'process_payment',
+  action: 'process_payment',
   operation: 'execute',
-  target: { accountId: 'acct_123' },
-  parameters: { amount: 150.0 },
+  target: { account_id: 'acct_8f3k2m' },
+  parameters: { amount: 150.0, currency: 'usd' },
 });
 ```
 
@@ -57,56 +70,65 @@ const decision = await hiitl.evaluate({
 
 ## Verification failure
 
-If the signature does not match, the decision plane rejects the envelope with `SIGNATURE_INVALID` and records the attempt in the audit trail.
+If the envelope has no `envelope_signature`, or the signature does not verify, the service does not evaluate it. The answer is the decision `SIGNATURE_INVALID`, with status 403, and it is recorded under the API key's organization. Its reason is `ENVELOPE_SIGNATURE_VERIFICATION_FAILED`, or `ENVELOPE_SIGNATURE_MISSING` when there is no signature:
 
 ```json
 {
-  "decision": "BLOCK",
+  "action_id": "act_01HQZ6X8Z9P5ABCDEFGHIJK",
+  "decision": "SIGNATURE_INVALID",
   "allowed": false,
-  "reason_codes": ["SIGNATURE_INVALID"],
+  "reason_codes": ["ENVELOPE_SIGNATURE_VERIFICATION_FAILED"],
+  "policy_version": "",
+  "timing": { "ingest_ms": 0.0, "evaluation_ms": 0.0, "total_ms": 0.9 },
+  "envelope_hash": "dde27998781fe487ef7619e4c374c55f66191e7c2d2157439dd32a5ce0b80492",
   "error": {
     "code": "SIGNATURE_INVALID",
-    "message": "Envelope signature verification failed. The envelope may have been tampered with in transit."
+    "message": "envelope_signature does not verify over the envelope as sent. It is HMAC-SHA256 under the API key's signing secret over the RFC 8785 form of the envelope without its signature (hiitl.core.canonical envelope_signed_form; @hiitl/core envelopeSignedForm). Sign the envelope you send, with the secret shown when this key was created, and send it unchanged."
   }
 }
 ```
 
-This event is always audited, even though the action was rejected. The audit record includes the source IP and timestamp for forensic analysis.
+Each refusal below is also a decision, recorded the same way. The service also refuses:
+
+- an envelope whose `signature_version` is not `hmac-sha256-v1`: `400`, `SIGNATURE_INVALID` / `SIGNATURE_VERSION_UNSUPPORTED`
+- an envelope whose `org_id` or `environment` is not the API key's: `403`, `VALIDATION_ERROR` / `TENANT_MISMATCH`
+- an envelope whose `timestamp` is further from the service's clock than the dedup window (24 hours): `403`, `VALIDATION_ERROR` / `TIMESTAMP_OUT_OF_WINDOW`. A resubmitted envelope is caught only within the window, so one outside it is not evaluated
 
 ## What is signed
 
-The signature covers the canonical JSON representation of the envelope's action-relevant fields:
+The signature covers the whole envelope except `envelope_signature`: its identifiers, timestamp, action, operation, target, and parameters, and every optional field it carries. Changing any of them after signing makes the signature fail. The `principal` is not in the body: the service sets it from the `X-Hiitl-Principal-Token` header with your organization's verifier.
 
-- `action` / `tool_name`
-- `operation`
-- `target`
-- `parameters`
-- `agent_id`
-- `org_id`
-- `environment`
-- `action_id`
-- `idempotency_key`
+The envelope is put in RFC 8785 (JCS) canonical JSON before it is signed. The envelope's own `signature_version`, `hmac-sha256-v1`, names that form. It is signed with the rest of the envelope, so the record names the version that signed it, and no header names it. An envelope that leaves it out takes `hmac-sha256-v1`.
 
-Metadata fields (timestamps, SDK version) are excluded from the signature to avoid clock-skew issues.
+If you sign requests yourself:
+
+- Send the whole envelope: `schema_version`, `org_id`, `environment`, `agent_id`, `action_id`, `idempotency_key`, `timestamp` (with its UTC offset), and `action`, plus any optional fields
+- Sign it with `hiitl.core.canonical.envelope_signature` (Python) or `envelopeSignature` from `@hiitl/core` (TypeScript), and send the body you signed, unchanged, with the signature as `envelope_signature`
+- Leave `signature_version` out, or set it to `hmac-sha256-v1`, before you sign
 
 ## Envelope hash in response
 
-Every decision response includes a SHA-256 hash of the evaluated envelope:
+Every response from `POST /v1/evaluate` includes `envelope_hash`, the SHA-256 hash (hex) of the envelope the service evaluated:
 
 ```json
 {
   "decision": "ALLOW",
   "allowed": true,
-  "envelope_hash": "sha256:a3f2b8c9d1e4f5..."
+  "envelope_hash": "091f9062534331a6d577f480f1d2c1f3c179ac28b02b5798da1c2271807f208f"
 }
 ```
 
-The caller can verify this hash matches what they submitted, confirming that hiitl evaluated the exact envelope that was sent.
+The hash is over the envelope you sent, in the form that is signed, so you can recompute it from your own request. The audit record stores the envelope as sent, with the signature you sent as its `signature` and the verified `principal`, and its `decision` carries the same `envelope_hash`. A field declared for [redaction](/security/data-handling#redaction) is stored as `[REDACTED]` (a gateway argument as its hash), after the hash and the signature are computed. To confirm which envelope a decision was made on, recompute the hash from the envelope you sent, or from the record's `envelope` when it holds no redacted field:
+
+```python
+from hiitl.core.canonical import envelope_hash
+
+# envelope is the body you sent, or the `envelope` of GET /v1/audit/{event_id} when nothing in it is redacted
+assert envelope_hash(envelope) == decision["envelope_hash"]
+```
+
+In TypeScript, `envelopeHash` from `@hiitl/core` is the same function.
 
 ## Trust model
 
-HMAC-SHA256 is appropriate for the trust model where the org trusts its own SDK. Both the SDK and the server share the same secret key (derived from the API key).
-
-<Note>
-Asymmetric signing (RSA, ECDSA) can be evaluated later if envelopes need to pass through untrusted intermediaries. For Phase 1, HMAC provides integrity verification with minimal latency overhead.
-</Note>
+HMAC-SHA256 fits a trust model where the organization trusts its own SDK. The SDK and the hosted service share the same signing secret, one per API key. Envelopes uploaded by hybrid-mode sync are not checked against their signature; the sync channel checks the API key, its scope, and that each record names the key's organization and environment.

@@ -25,7 +25,7 @@ ALLOW     BLOCK / PAUSE / ESCALATE ...
 Execute   Don't execute
 ```
 
-The evaluation is deterministic: the same envelope and the same policy always produce the same decision. There is no LLM inference, no probabilistic reasoning, and no model calls at decision time.
+The evaluation is deterministic: the same envelope and the same policy produce the same decision. Two inputs sit outside the envelope: the clock, for a rule's `valid_from` / `valid_to` window, and the SDK's rate-limit counters. There is no LLM inference, no probabilistic reasoning, and no model calls at decision time.
 
 ## The four internal planes
 
@@ -36,13 +36,13 @@ Every piece of hiitl code belongs to one of four internal planes.
     Developer-facing SDKs that construct envelopes, submit them for evaluation, and return decisions. This is the integration surface — the code your application calls.
   </Accordion>
   <Accordion title="Decision Plane">
-    The deterministic policy evaluation engine. Receives an envelope, evaluates it against the active policy set in priority order, and returns a decision. Side-effect free — evaluation never mutates state.
+    The deterministic policy evaluation engine. Receives an envelope, evaluates it against the active policy set in precedence order, and returns a decision. Side-effect free — evaluation never mutates state.
   </Accordion>
   <Accordion title="Execution Plane">
     Optional adapters that execute or pass-through actions after an ALLOW decision. In most integrations, your application handles execution directly based on the decision.
   </Accordion>
   <Accordion title="Audit / Ops Plane">
-    Immutable logging, policy management, and observability. Every action produces an audit record — even blocked ones. Records are append-only and tamper-evident.
+    Audit logging, policy management, and observability. Each new evaluation of an admitted envelope produces an audit record where the store answers, including blocked actions. Each record carries a SHA-256 hash of its content.
   </Accordion>
 </AccordionGroup>
 
@@ -52,16 +52,16 @@ When your code calls `evaluate()`, here is what happens internally:
 
 <Steps>
   <Step title="Envelope construction">
-    The SDK builds a full [execution envelope](/concepts/envelope) from the minimal arguments you provide. It fills in `org_id`, `agent_id`, `action_id`, timestamps, and an HMAC signature automatically.
+    The SDK first admits the supplied values, then builds a full [execution envelope](/concepts/envelope) from the minimal arguments you provide. A number outside the numeric domain is refused before an envelope exists, with no decision or record; the refusal names the field and its declared type and range, recommending text only where text is admitted. It fills in `org_id`, `agent_id`, `action_id` and the timestamp automatically, and an HMAC signature when you configure a `signature_key`.
   </Step>
   <Step title="Policy evaluation">
-    The evaluator loads the active [policy set](/concepts/policies) and evaluates rules in priority order (highest first). Kill switches and deny rules are checked before allow rules. The first matching rule produces the decision.
-  </Step>
-  <Step title="Decision returned">
-    A [decision object](/concepts/decisions) is returned with the outcome (`ALLOW`, `BLOCK`, `REQUIRE_APPROVAL`, etc.), reason codes, timing metadata, and the policy version used. Your code inspects `decision.allowed` or `decision.ok` and acts accordingly.
+    The evaluator loads the active [policy set](/concepts/policies) and finds the rules that match. A matching `KILL_SWITCH` rule binds first, then a matching `BLOCK` rule, then any other matching rule. Within each, the highest priority wins; on a tie, the rule defined first. Under `RESPECT_POLICY`, an action no rule matches is blocked (`NO_MATCHING_RULE`). The SDK then applies any rate-limit window.
   </Step>
   <Step title="Audit record written">
-    An immutable [audit record](/concepts/audit-trail) is written for every evaluation — including blocked actions. In fail-closed mode, if the audit write fails, the action is blocked.
+    An [audit record](/concepts/audit-trail) is written for every evaluation — including blocked actions. If the audit write fails, the action is blocked: the decision is `BLOCK` with `error.code` `AUDIT_WRITE_FAILED`, in local, hybrid and hosted mode alike. Any other failure once the envelope exists is a decision too, recorded where the store answers: `BLOCK` with `error.code` `AUDIT_READ_FAILED` or `EVALUATION_FAILED` (see [error decisions](/concepts/decisions)).
+  </Step>
+  <Step title="Decision returned">
+    A [decision object](/concepts/decisions) is returned with the outcome (`ALLOW`, `BLOCK`, `REQUIRE_APPROVAL`, etc.), reason codes, timing metadata, and the policy version used. Under the default `OBSERVE_ALL` mode, a decision that is not allowed comes back as `OBSERVE`, with the enforced decision in `would_be`. Your code inspects `decision.allowed` (or `decision.ok` in Python) and acts accordingly.
   </Step>
 </Steps>
 
@@ -82,13 +82,13 @@ Both evaluators are validated by a shared **conformance test suite** — a set o
 
 ## Deployment modes
 
-hiitl supports three deployment modes, auto-detected from how you construct the client.
+hiitl supports three deployment modes, auto-detected from how you construct the client. The two SDKs read the same options differently:
 
 | Mode | Config | Evaluator | Audit | Latency |
 |------|--------|-----------|-------|---------|
 | **Local** | No `api_key` | In-process | SQLite | Sub-millisecond |
-| **Hosted** | `api_key` + `server_url` | Server-side | PostgreSQL | Low tens of ms |
-| **Hybrid** | `api_key` only | In-process | Local + sync | Sub-millisecond |
+| **Hosted** | `api_key` + `server_url` + remote evaluation (`evaluation="remote"` / `evaluation: 'remote'`) | Server-side | PostgreSQL | Low tens of ms |
+| **Hybrid** | `api_key`, with or without `server_url` (the sync target) | In-process | Local + sync | Sub-millisecond |
 
 Learn more in [Deployment Modes](/concepts/deployment-modes).
 

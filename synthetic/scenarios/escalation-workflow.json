@@ -1,7 +1,7 @@
 {
   "scenario_id": "escalation-workflow",
   "name": "Escalation With HITL Config Reference",
-  "description": "High-value payment triggers REQUIRE_APPROVAL with resume_token and hitl_config_ref populated for reviewer routing",
+  "description": "High-value payment triggers REQUIRE_APPROVAL with resume_token and route_ref populated for reviewer routing",
   "category": "escalation",
   "difficulty": "intermediate",
   "policy_path": "../policies/payment-policy.json",
@@ -12,7 +12,7 @@
       "action": "evaluate",
       "agent_id": "payment-agent",
       "envelope": {
-        "tool": "process_payment",
+        "action": "process_payment",
         "operation": "execute",
         "target": {"account_id": "acct_enterprise_001"},
         "parameters": {"amount": 15000.00, "currency": "usd", "description": "Annual license renewal"}
@@ -23,7 +23,7 @@
         {"field": "decision.allowed", "equals": false},
         {"field": "decision.decision", "equals": "REQUIRE_APPROVAL"},
         {"field": "decision.resume_token", "exists": true},
-        {"field": "decision.hitl_config_ref", "equals": "payment-approval"},
+        {"field": "decision.route_ref", "equals": "payment-approval"},
         {"field": "decision.timing.evaluation_ms", "less_than": 10}
       ]
     },

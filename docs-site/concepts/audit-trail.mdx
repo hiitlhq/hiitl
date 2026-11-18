@@ -1,75 +1,51 @@
 ---
 title: "Audit Trail"
-description: "Immutable record of every action, even blocked ones"
+description: "One record per evaluation: what it holds, where it is stored, and how it is queried"
 ---
 
 ## What gets recorded
 
-Every action that passes through hiitl produces an audit record. This includes actions that were allowed, blocked, rate-limited, escalated, or failed validation. There are no silent actions.
+Every evaluation writes one audit record: allowed, blocked, observed, rate-limited, routed, or returned for a person. An envelope that fails validation, a signature that does not verify, or a policy that cannot be loaded or evaluated is answered with its error decision (`VALIDATION_ERROR`, `SIGNATURE_INVALID`, `POLICY_ERROR`), and that decision is recorded too. A request with no valid API key, insufficient scope, or a body that is not an envelope at all leaves no record. A body outside the numeric domain is not yet an envelope: after key and scope checks, the service returns a located 422 naming the field and its declared type and range, recommending text only where text is admitted. Even when that body carries a string `action_id`, this refusal leaves no audit record. When the record itself cannot be written, the answer is `BLOCK` with `AUDIT_WRITE_FAILED`, and nothing runs.
 
-Each audit record captures:
+Each record carries:
 
-| Data | Description |
-|------|-------------|
-| **Envelope** | The full (or redacted) execution envelope that was submitted |
-| **Decision** | The outcome: `ALLOW`, `BLOCK`, `REQUIRE_APPROVAL`, etc. |
-| **Reason codes** | Machine-readable codes explaining why that decision was made |
-| **Policy version** | Exact version of the policy set used during evaluation |
-| **Matched rules** | Which rules fired and at what priority |
-| **Timing** | Latency breakdown: ingest, evaluation, and total milliseconds |
-| **Identifiers** | org_id, environment, agent_id, user_id, action_id |
+| Field group | Contents |
+|---|---|
+| **Identifiers** | `event_id`, `org_id`, `environment`, `agent_id`, `user_id`, `action_id` |
+| **The envelope** | the envelope as the integrating system built it, with each declared field stored as `[REDACTED]` and, through the gateway, each argument not declared recorded stored as its SHA-256 hash ([Data handling](/security/data-handling#redaction)) |
+| **The decision** | the decision type, `allowed`, the reason codes, the matched rules, `policy_version`, and for `OBSERVE` the `would_be` decision with its reason codes |
+| **Routes asked** | for each route the evaluation asked: the rule, the route, the outcome (`answered`, `failed_open`, `unanswered`), the names of the fields sent, any error |
+| **Timing** | `ingest_ms`, `evaluation_ms`, `total_ms` |
+| **Content hash** | SHA-256 over `event_id`, the canonical envelope and the canonical decision (RFC 8785) as stored, then `execution_result`, `redaction` and `review` where the record carries them, the same bytes in both SDKs and the hosted service |
+| **Event type** | `action.evaluated`, or `signature.invalid` / `control_plane.unavailable` for those two decisions: computed from the decision each time the record is read or uploaded, never stored |
 
-## Immutability
+An action's records make its lifecycle: its decision, then the result of running it. `record_result()` / `recordResult()` and `POST /v1/actions/{action_id}/result` write the result as a new record carrying `execution_result`, against the action's latest decision, its content hash covering the result. They refuse a result for an action that was not allowed (a decision held for review takes one once its review lets it run) or a second, different one. An SDK's local store holds no review case: a result for a held decision is written there naming the review it did not read (`review`), and the service reads the case when the record is uploaded, refusing it when the case did not let the action run. In hosted mode, while the service cannot be reached, the SDK holds the result in its local store and sends it before the next call. See [Recording the result](/sdk/python-evaluate#recording-the-result) and [the API](/api/evaluate#recording-the-result).
 
-The audit trail is **append-only**. Once a record is written, it cannot be updated, modified, or deleted.
+## Append-only
+
+The SDK writes a record once and never changes its content or deletes it. In hybrid mode it marks a record as uploaded once the service has accepted it. The hosted service exposes no endpoint that updates or deletes a record.
 
 <Warning>
-In fail-closed mode (the default), if the audit write fails, the action is blocked. hiitl will not allow an action to execute without a durable record of the evaluation.
+In the hosted service the audit write is awaited before the decision is returned; if the write fails, the request fails and the action does not proceed. hiitl does not return a decision without a record of it.
 </Warning>
-
-This design guarantees:
-- Every attempted action has a permanent record for its retention window
-- Blocked actions are recorded, not silently dropped
-- The audit trail is a reliable source of truth for compliance, debugging, and incident response
-
-## Event types
-
-Audit records are typed by lifecycle stage. The `event_type` field indicates what happened.
-
-| Event type | When |
-|------------|------|
-| `action.evaluated` | Policy evaluation completed |
-| `action.executed` | Action was executed after an ALLOW decision |
-| `action.failed` | Action execution failed (after ALLOW) |
-| `action.canceled` | Action was canceled |
-| `action.escalated` | Action was escalated to human review |
-| `action.review_pending` | Escalation routed to a reviewer, awaiting response |
-| `action.review_received` | Reviewer submitted their response |
-| `action.resumed` | Previously paused action resumed or canceled after review |
-| `policy.changed` | A policy was created, updated, or activated |
-| `kill_switch.activated` | A kill switch rule was enabled |
-| `kill_switch.deactivated` | A kill switch rule was disabled |
-| `rate_limit.exceeded` | An action exceeded its rate limit |
-| `signature.invalid` | Envelope signature verification failed |
-| `control_plane.unavailable` | The control plane was unreachable |
 
 ## Storage
 
 <Tabs>
-  <Tab title="Local mode">
-    In local mode, audit records are stored in an embedded **SQLite** database. No external infrastructure required.
+  <Tab title="Local and hybrid mode">
+    Records are written to an embedded **SQLite** database in the agent's process. No external infrastructure is required.
 
-    - File location is configurable (defaults to `./hiitl_audit.db`)
-    - Same append-only guarantees as hosted mode
-    - Suitable for development, testing, and single-process deployments
+    - File location is configurable (`audit_db_path`; the default is `./hiitl_audit.db` in the working directory)
+    - In hybrid mode the file is also the upload buffer: records are uploaded to the service in batches and marked as uploaded
+    - Query it with the SDK's audit queries or any SQLite client
   </Tab>
   <Tab title="Hosted mode">
-    In hosted mode, audit records are stored in **PostgreSQL** with time-based partitioning.
+    Records are stored in **PostgreSQL** by the service.
 
-    - Partitioned by month for efficient retention management
-    - Indexed by org_id, environment, timestamp, agent_id, action, and decision type
-    - Row-level security ensures strict tenant isolation
-    - Configurable retention per organization
+    - Indexed by `action_id`, `org_id`, `envelope_hash` and creation time
+    - Row-level security on the audit tables: a tenant request reads only its own organization's rows
+    - Retention is not applied by the service; records stay until removed under the service's terms
+    - A record the service could not take (an outage's decision, a result recorded during one) is held in the client's own SQLite store (`audit_db_path`) and sent, oldest first, before its next call
   </Tab>
 </Tabs>
 
@@ -77,85 +53,24 @@ Audit records are typed by lifecycle stage. The `event_type` field indicates wha
 
 ### Content hashing
 
-Every audit record includes a **SHA-256 hash** of its own content, computed at write time. This enables individual record tamper detection: if any field in the record is modified after write, the hash will not match.
+Every record carries a SHA-256 content hash of its own content. Recompute it from the stored row to detect a change to the row since it was written.
 
-### Policy change audit trail
+### Policy change record
 
-Policy modifications produce their own audit records, separate from the action audit trail. Each policy change record includes:
-
-- Who changed the policy
-- What version was active before and after
-- Content hashes of the old and new policy versions
-- A structured diff showing rules added, removed, or modified
-
-If the policy change audit write fails, the policy change is rejected.
+In the hosted service every policy version carries a SHA-256 content hash, and each new version records when it was created and what changed: each rule added or removed, by name, and each changed field of a rule or of the set, before and after (see [List policy changes](/api/policies#list-policy-changes)). Every change record (a policy version, a route, an API key, the principal verifier, the redaction policy) names who made it in `changed_by` and the kind of caller in `actor_type`, read from the credential: `api_key`, `human` (a dashboard session), or `system` (a write the service makes itself, such as the onboarding default or an automatic rollback).
 
 ### Envelope hash in decisions
 
-Every [decision response](/concepts/decisions) includes a SHA-256 hash of the evaluated envelope. The caller can verify that what hiitl evaluated matches what they submitted.
-
-## Redaction
-
-Sensitive parameters can be redacted before storage. Redaction is configured at the org level and happens **after** policy evaluation (the evaluator sees the full envelope).
-
-```json Before redaction
-{
-  "parameters": {
-    "account_number": "1234567890",
-    "amount": 500
-  }
-}
-```
-
-```json After redaction
-{
-  "parameters": {
-    "account_number": "[REDACTED]",
-    "amount": 500
-  }
-}
-```
-
-Auto-redaction patterns match common sensitive field names like `password`, `secret`, `api_key`, `token`, `ssn`, and `credit_card`. Custom fields can be added per organization.
+In hosted mode the decision response includes `envelope_hash`, a SHA-256 hash of the evaluated envelope, so the caller can confirm that what the service evaluated is what it sent. In local and hybrid mode the field is not set.
 
 ## Querying the audit trail
 
-Audit records are searchable by:
+In local and hybrid mode, query the SQLite file: the Python SDK offers `query_by_org()` and `query_by_action_id()`; the TypeScript SDK offers `queryAudit()`.
 
-- **Time range** -- find all actions in the last hour
-- **Agent** -- what did `payment-agent` do today?
-- **Action** -- all `process_payment` evaluations this week
-- **Decision type** -- show me every `BLOCK` and `KILL_SWITCH`
-- **User** -- actions on behalf of a specific end user
-- **Environment** -- filter to `prod` only
+A record names its action `action`, as its envelope does. Before record format 2.0 it was `tool_name`: a local store written before then renames its column when it opens, keeping each record, its hash and its sync mark.
 
-## OpenTelemetry compatibility
+In the hosted service, `GET /v1/audit` returns pages of up to 500 records, filtered by `environment`, `agent_id`, `action` and `decision_type`; `GET /v1/audit/{event_id}` returns one record. Both need the `read` scope.
 
-The event format maps cleanly to OpenTelemetry spans and events. Key field mappings:
+## Taking records elsewhere
 
-| hiitl field | OTel span field |
-|-------------|-----------------|
-| `event_id` | `span.id` |
-| `trace_id` | `span.trace_id` |
-| `timestamp` | `span.start_time` |
-| `timing.total_ms` | `span.duration` |
-| `event_type` | `span.name` |
-| `decision` | `span.attributes["decision"]` |
-
-Phase 1 emits events via webhooks. Native OTel export is planned for Phase 2.
-
-## Webhook emission
-
-Organizations can configure webhook endpoints to receive audit events in real time. Webhooks support filtering so consumers only receive relevant events.
-
-```yaml Example webhook configuration
-webhooks:
-  - name: "security-alerts"
-    url: "https://hooks.example.com/hiitl"
-    events: ["action.evaluated", "kill_switch.activated"]
-    filters:
-      decision: ["BLOCK", "KILL_SWITCH"]
-      environment: ["prod"]
-```
-
-Webhook payloads use the same JSON format as audit records and are signed with HMAC-SHA256 so consumers can verify authenticity.
+Records leave through the query API, the SQLite file, a database dump, or an outbound route. On the hosted service, each record the service writes, evaluated there or uploaded by a hybrid-mode SDK, is sent to every [outbound route](/configuration/routes#outbound-routes) whose filters it passes, as the audit API reads it, and retried on failure. A pure-local SDK delivers to no outbound route, and there is no OpenTelemetry export; see [Limits and roadmap](/reference/limits-and-roadmap).

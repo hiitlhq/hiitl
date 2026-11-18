@@ -9,7 +9,7 @@ tags: ["documents", "report", "analytics", "data"]
 
 evaluate_examples:
   python: |
-    result = hiitl.evaluate("generate_report", {
+    result = hiitl.evaluate("generate_report", parameters={
         "report_type": "quarterly_revenue",
         "format": "pdf",
         "date_range": "2025-Q4",
@@ -18,16 +18,16 @@ evaluate_examples:
     if result.ok:
         generate_and_deliver_report()
   typescript: |
-    const result = hiitl.evaluate({
+    const result = await hiitl.evaluate({
       action: 'generate_report',
-      params: {
+      parameters: {
         report_type: 'quarterly_revenue',
         format: 'pdf',
         date_range: '2025-Q4',
         includes_pii: false,
       },
     });
-    if (result.ok) {
+    if (result.allowed) {
       await generateAndDeliverReport();
     }
 
@@ -37,7 +37,7 @@ context_enrichment:
     example: "user_8a3f2c"
   - field: "sensitivity"
     why: "Set to 'regulated' when includes_pii is true to trigger stricter policy evaluation"
-    example: "regulated"
+    example: ["regulated"]
   - field: "target.report_type"
     why: "Determines which policy rules apply based on report classification"
     example: "quarterly_revenue"
@@ -52,7 +52,6 @@ starter_policies:
   - name: "allow-standard-reports"
     description: "Allow report generation when no PII is included and format is rendered"
     priority: 500
-    enabled: true
     conditions:
       all_of:
         - field: "action"
@@ -67,14 +66,13 @@ starter_policies:
     decision: "ALLOW"
     reason_code: "REPORT_STANDARD_ALLOWED"
     remediation:
-      type: "static"
+      type: "custom"
       message: "Standard report generation permitted"
       suggestion: "No action needed"
 
   - name: "require-approval-pii-reports"
     description: "Require human approval before generating any report containing personally identifiable information"
     priority: 200
-    enabled: true
     conditions:
       all_of:
         - field: "action"
@@ -86,14 +84,13 @@ starter_policies:
     decision: "REQUIRE_APPROVAL"
     reason_code: "PII_REPORT_REQUIRES_APPROVAL"
     remediation:
-      type: "static"
+      type: "custom"
       message: "Reports containing PII require human approval before generation"
       suggestion: "Submit an approval request to your data protection officer or team lead. Include the business justification for accessing PII in the report."
 
   - name: "block-raw-export-with-pii"
     description: "Block raw data exports (CSV, JSON) that include PII to prevent uncontrolled data exfiltration"
     priority: 100
-    enabled: true
     conditions:
       all_of:
         - field: "action"
@@ -108,34 +105,37 @@ starter_policies:
     decision: "BLOCK"
     reason_code: "PII_RAW_EXPORT_BLOCKED"
     remediation:
-      type: "static"
+      type: "custom"
       message: "Raw data exports containing PII are not permitted. PII data must use rendered formats with access controls."
       suggestion: "Switch the export format to PDF or XLSX, which support access controls and watermarking. If raw format is required, file a data export request through your compliance team."
 
   - name: "rate-limit-report-generation"
     description: "Limit report generation to prevent resource exhaustion and detect unusual extraction patterns"
     priority: 300
-    enabled: true
     conditions:
       field: "action"
       operator: "equals"
       value: "generate_report"
     decision: "RATE_LIMIT"
     reason_code: "REPORT_RATE_LIMITED"
+    rate_limit:
+      limit: {"$uncalibrated": "generate_report calls per agent per hour, set from your own traffic"}
+      window_seconds: 3600
+      scope: "agent"
     remediation:
-      type: "static"
+      type: "rate_limit"
       message: "Report generation rate limit exceeded. This prevents resource exhaustion and protects against bulk data extraction."
       suggestion: "Wait for the rate limit window to reset. If you need to generate reports at higher volume, request a rate limit increase from your administrator."
 
 remediation:
   block_message: "Report generation was blocked by policy. Check the reason_code in the response for specifics — common causes include PII in raw exports or exceeding date range limits."
   developer_action: "Inspect the decision response reason_codes array. For PII-related blocks, either remove PII fields from the report or switch to an approved format. For rate limits, implement backoff and retry logic using the retry_after field."
-  approval_message: "This report requires human approval because it contains sensitive data. The approval request has been routed to your configured approver. You will receive a callback or can poll for the decision status."
+  approval_message: "This report requires human approval because it contains sensitive data. Send it to your configured approver. A hosted review case (POST /v1/reviews) reports its resolution on GET /v1/reviews/{case_id}/stream."
 
 compliance:
   - regulation: "GDPR"
     relevance: "Reports containing personal data of EU residents must comply with data minimization and purpose limitation principles"
     note: "Ensure report requests include a lawful basis for processing. PII reports should be logged in your Record of Processing Activities (ROPA)."
   - regulation: "Data Access Logging"
-    relevance: "All report generation events are recorded in the immutable audit trail for compliance and forensic review"
+    relevance: "All report generation events are recorded in the audit trail for compliance and forensic review"
     note: "Audit records include the requesting user, report parameters, decision outcome, and timestamp. Retention follows your organization's configured policy."

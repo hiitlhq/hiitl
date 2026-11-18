@@ -1,0 +1,1085 @@
+{
+  "description": "Independent stdlib compact sorted ASCII JSON; no floating-point values or non-ASCII keys. RFC8785 signed-form byte expectations, not computed with hiitl helpers.",
+  "cases": {
+    "lexical-0-timestamp-equals": {
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000000",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "b942813130e4a33b60893198518be595ea22cee2fddf5c5645331ce4ee0a4dee",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        },
+        "signature_version": "hmac-sha256-v1"
+      },
+      "signed_form": "{\"action\":\"read\",\"action_id\":\"act_00000000000000000000\",\"agent_id\":\"fixture\",\"environment\":\"dev\",\"idempotency_key\":\"scalar\",\"operation\":\"execute\",\"org_id\":\"org_1234567890abcdef\",\"parameters\":{},\"principal\":{\"sub\":\"review-user\",\"verified_at\":\"2026-11-14T01:02:03Z\",\"verified_by\":\"sdk_verifier\"},\"schema_version\":\"v2.0\",\"signature_version\":\"hmac-sha256-v1\",\"target\":{},\"timestamp\":\"2026-11-14T01:02:03Z\"}",
+      "envelope_hash": "28a3d4b0e32f0b6ee5883ab38de1ea146a3fdad627ee291584729fb61ba185a4"
+    },
+    "lexical-0-timestamp-starts_with": {
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000001",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "38489eea8da904dd5a0bf7fba689c43ba54ced609ebb8952ade6dd8d5e611b86",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        },
+        "signature_version": "hmac-sha256-v1"
+      },
+      "signed_form": "{\"action\":\"read\",\"action_id\":\"act_00000000000000000001\",\"agent_id\":\"fixture\",\"environment\":\"dev\",\"idempotency_key\":\"scalar\",\"operation\":\"execute\",\"org_id\":\"org_1234567890abcdef\",\"parameters\":{},\"principal\":{\"sub\":\"review-user\",\"verified_at\":\"2026-11-14T01:02:03Z\",\"verified_by\":\"sdk_verifier\"},\"schema_version\":\"v2.0\",\"signature_version\":\"hmac-sha256-v1\",\"target\":{},\"timestamp\":\"2026-11-14T01:02:03Z\"}",
+      "envelope_hash": "c8028698d36d2b13ddf3d5d6fe1040ed020d5ed4dfd40cb2ec713ba3b095eae9"
+    },
+    "lexical-0-principal.verified_at-equals": {
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000002",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "ee9fc69b5bb3cea9787217a064a7707650859eb4806bddffe60cf949b1695068",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        },
+        "signature_version": "hmac-sha256-v1"
+      },
+      "signed_form": "{\"action\":\"read\",\"action_id\":\"act_00000000000000000002\",\"agent_id\":\"fixture\",\"environment\":\"dev\",\"idempotency_key\":\"scalar\",\"operation\":\"execute\",\"org_id\":\"org_1234567890abcdef\",\"parameters\":{},\"principal\":{\"sub\":\"review-user\",\"verified_at\":\"2026-11-14T01:02:03Z\",\"verified_by\":\"sdk_verifier\"},\"schema_version\":\"v2.0\",\"signature_version\":\"hmac-sha256-v1\",\"target\":{},\"timestamp\":\"2026-11-14T01:02:03Z\"}",
+      "envelope_hash": "6e683069610dfdbffac8716087d8ae522d6d7fd5bd25dd371ed75c52a976ba0a"
+    },
+    "lexical-0-principal.verified_at-starts_with": {
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000003",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "5f9491dcf3b48018c573eef03853c86ebdb0c690b3b03f645a934b00f5408ff2",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        },
+        "signature_version": "hmac-sha256-v1"
+      },
+      "signed_form": "{\"action\":\"read\",\"action_id\":\"act_00000000000000000003\",\"agent_id\":\"fixture\",\"environment\":\"dev\",\"idempotency_key\":\"scalar\",\"operation\":\"execute\",\"org_id\":\"org_1234567890abcdef\",\"parameters\":{},\"principal\":{\"sub\":\"review-user\",\"verified_at\":\"2026-11-14T01:02:03Z\",\"verified_by\":\"sdk_verifier\"},\"schema_version\":\"v2.0\",\"signature_version\":\"hmac-sha256-v1\",\"target\":{},\"timestamp\":\"2026-11-14T01:02:03Z\"}",
+      "envelope_hash": "8696504cdcabc4ba56e4f94fae9a09d0110999507610e1c18de1df616c54f4d7"
+    },
+    "lexical-0-principal-equals": {
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000004",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "2c3436fc4d9f238ffc73171d6595308e71fa1905fb838fcbb4d138d97cc0c07c",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        },
+        "signature_version": "hmac-sha256-v1"
+      },
+      "signed_form": "{\"action\":\"read\",\"action_id\":\"act_00000000000000000004\",\"agent_id\":\"fixture\",\"environment\":\"dev\",\"idempotency_key\":\"scalar\",\"operation\":\"execute\",\"org_id\":\"org_1234567890abcdef\",\"parameters\":{},\"principal\":{\"sub\":\"review-user\",\"verified_at\":\"2026-11-14T01:02:03Z\",\"verified_by\":\"sdk_verifier\"},\"schema_version\":\"v2.0\",\"signature_version\":\"hmac-sha256-v1\",\"target\":{},\"timestamp\":\"2026-11-14T01:02:03Z\"}",
+      "envelope_hash": "630046d435c457fe5ce59e0f24ab3a9fc838b6a9281a90a68e62f2f00c79c151"
+    },
+    "lexical-1-timestamp-equals": {
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000005",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14t01:02:03z",
+        "signature": "1eff61e6f9fd57db0ac21d078a934c747b879faec9f8937dba027228d726d028",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03z"
+        },
+        "signature_version": "hmac-sha256-v1"
+      },
+      "signed_form": "{\"action\":\"read\",\"action_id\":\"act_00000000000000000005\",\"agent_id\":\"fixture\",\"environment\":\"dev\",\"idempotency_key\":\"scalar\",\"operation\":\"execute\",\"org_id\":\"org_1234567890abcdef\",\"parameters\":{},\"principal\":{\"sub\":\"review-user\",\"verified_at\":\"2026-11-14t01:02:03z\",\"verified_by\":\"sdk_verifier\"},\"schema_version\":\"v2.0\",\"signature_version\":\"hmac-sha256-v1\",\"target\":{},\"timestamp\":\"2026-11-14t01:02:03z\"}",
+      "envelope_hash": "f17020ef0f7aee3a4902ad758840d6fd76a15c8213e2923dd1fb1ba523b63404"
+    },
+    "lexical-1-timestamp-starts_with": {
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000006",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14t01:02:03z",
+        "signature": "4c724e7bfc0a49f88182d8e809221ef29b633a2d6feb5370caa3b4ca1fad0cfc",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03z"
+        },
+        "signature_version": "hmac-sha256-v1"
+      },
+      "signed_form": "{\"action\":\"read\",\"action_id\":\"act_00000000000000000006\",\"agent_id\":\"fixture\",\"environment\":\"dev\",\"idempotency_key\":\"scalar\",\"operation\":\"execute\",\"org_id\":\"org_1234567890abcdef\",\"parameters\":{},\"principal\":{\"sub\":\"review-user\",\"verified_at\":\"2026-11-14t01:02:03z\",\"verified_by\":\"sdk_verifier\"},\"schema_version\":\"v2.0\",\"signature_version\":\"hmac-sha256-v1\",\"target\":{},\"timestamp\":\"2026-11-14t01:02:03z\"}",
+      "envelope_hash": "de4cbc5aac6e21c6caac84eb60dd4dbcc7a47372a57c8c2a20d34345951f8536"
+    },
+    "lexical-1-principal.verified_at-equals": {
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000007",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14t01:02:03z",
+        "signature": "bdf6d4eaebd2a3596f1ec2165f7af5f5b654f33a6f797fabaf59210da929c1e9",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03z"
+        },
+        "signature_version": "hmac-sha256-v1"
+      },
+      "signed_form": "{\"action\":\"read\",\"action_id\":\"act_00000000000000000007\",\"agent_id\":\"fixture\",\"environment\":\"dev\",\"idempotency_key\":\"scalar\",\"operation\":\"execute\",\"org_id\":\"org_1234567890abcdef\",\"parameters\":{},\"principal\":{\"sub\":\"review-user\",\"verified_at\":\"2026-11-14t01:02:03z\",\"verified_by\":\"sdk_verifier\"},\"schema_version\":\"v2.0\",\"signature_version\":\"hmac-sha256-v1\",\"target\":{},\"timestamp\":\"2026-11-14t01:02:03z\"}",
+      "envelope_hash": "875e701ebab7374238c24fe661946101023b67b2fb138d40dee9108af85ed3ba"
+    },
+    "lexical-1-principal.verified_at-starts_with": {
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000008",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14t01:02:03z",
+        "signature": "eeae27c134b705012302a846cdecf0d1a724e9e63b529ae4b8addd84eafb8908",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03z"
+        },
+        "signature_version": "hmac-sha256-v1"
+      },
+      "signed_form": "{\"action\":\"read\",\"action_id\":\"act_00000000000000000008\",\"agent_id\":\"fixture\",\"environment\":\"dev\",\"idempotency_key\":\"scalar\",\"operation\":\"execute\",\"org_id\":\"org_1234567890abcdef\",\"parameters\":{},\"principal\":{\"sub\":\"review-user\",\"verified_at\":\"2026-11-14t01:02:03z\",\"verified_by\":\"sdk_verifier\"},\"schema_version\":\"v2.0\",\"signature_version\":\"hmac-sha256-v1\",\"target\":{},\"timestamp\":\"2026-11-14t01:02:03z\"}",
+      "envelope_hash": "8c4bbe63f1a4449430b1c4eb6f3a8de3fa6d7413bc0e06c86a39af75b48e3738"
+    },
+    "lexical-1-principal-equals": {
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000009",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14t01:02:03z",
+        "signature": "81ed7933143dc4a6fd915898bf30a0520440e01a798f5f9bc04a28ff767cb907",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03z"
+        },
+        "signature_version": "hmac-sha256-v1"
+      },
+      "signed_form": "{\"action\":\"read\",\"action_id\":\"act_00000000000000000009\",\"agent_id\":\"fixture\",\"environment\":\"dev\",\"idempotency_key\":\"scalar\",\"operation\":\"execute\",\"org_id\":\"org_1234567890abcdef\",\"parameters\":{},\"principal\":{\"sub\":\"review-user\",\"verified_at\":\"2026-11-14t01:02:03z\",\"verified_by\":\"sdk_verifier\"},\"schema_version\":\"v2.0\",\"signature_version\":\"hmac-sha256-v1\",\"target\":{},\"timestamp\":\"2026-11-14t01:02:03z\"}",
+      "envelope_hash": "f6512656240ba8fc16fded3a6a550b8d537760ca527213ad785d1bcb2278aa71"
+    },
+    "lexical-2-timestamp-equals": {
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000010",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03+00:00",
+        "signature": "7a61e8bea6cf6bba4eb230e6cd684ab7cd472169d624c02c2794605e922af1d0",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03+00:00"
+        },
+        "signature_version": "hmac-sha256-v1"
+      },
+      "signed_form": "{\"action\":\"read\",\"action_id\":\"act_00000000000000000010\",\"agent_id\":\"fixture\",\"environment\":\"dev\",\"idempotency_key\":\"scalar\",\"operation\":\"execute\",\"org_id\":\"org_1234567890abcdef\",\"parameters\":{},\"principal\":{\"sub\":\"review-user\",\"verified_at\":\"2026-11-14T01:02:03+00:00\",\"verified_by\":\"sdk_verifier\"},\"schema_version\":\"v2.0\",\"signature_version\":\"hmac-sha256-v1\",\"target\":{},\"timestamp\":\"2026-11-14T01:02:03+00:00\"}",
+      "envelope_hash": "4159ef75139f5062112a3a0dcd206dd7c3cce6a894bf1fc684ce6267f00da797"
+    },
+    "lexical-2-timestamp-starts_with": {
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000011",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03+00:00",
+        "signature": "372d0440c95c78e0710b83b6fbab3248e47fce54059b7687bc15df9405320448",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03+00:00"
+        },
+        "signature_version": "hmac-sha256-v1"
+      },
+      "signed_form": "{\"action\":\"read\",\"action_id\":\"act_00000000000000000011\",\"agent_id\":\"fixture\",\"environment\":\"dev\",\"idempotency_key\":\"scalar\",\"operation\":\"execute\",\"org_id\":\"org_1234567890abcdef\",\"parameters\":{},\"principal\":{\"sub\":\"review-user\",\"verified_at\":\"2026-11-14T01:02:03+00:00\",\"verified_by\":\"sdk_verifier\"},\"schema_version\":\"v2.0\",\"signature_version\":\"hmac-sha256-v1\",\"target\":{},\"timestamp\":\"2026-11-14T01:02:03+00:00\"}",
+      "envelope_hash": "96cbe06d2ff588ae41eb72284e947440b1df1396ac22f5926a151f048a381bdc"
+    },
+    "lexical-2-principal.verified_at-equals": {
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000012",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03+00:00",
+        "signature": "e597c4a32b9bdf362102519d43ac5a499486a075fb1f290b012408f9b1a0c906",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03+00:00"
+        },
+        "signature_version": "hmac-sha256-v1"
+      },
+      "signed_form": "{\"action\":\"read\",\"action_id\":\"act_00000000000000000012\",\"agent_id\":\"fixture\",\"environment\":\"dev\",\"idempotency_key\":\"scalar\",\"operation\":\"execute\",\"org_id\":\"org_1234567890abcdef\",\"parameters\":{},\"principal\":{\"sub\":\"review-user\",\"verified_at\":\"2026-11-14T01:02:03+00:00\",\"verified_by\":\"sdk_verifier\"},\"schema_version\":\"v2.0\",\"signature_version\":\"hmac-sha256-v1\",\"target\":{},\"timestamp\":\"2026-11-14T01:02:03+00:00\"}",
+      "envelope_hash": "d0d84dc24d1d4982a438ecb139160c8723c2b70ab79313976a4c3ec2f21a9ec0"
+    },
+    "lexical-2-principal.verified_at-starts_with": {
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000013",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03+00:00",
+        "signature": "9fd6bed32d620188fee1703a2c0544da7b09c5e3fd2b3ecd02dad06acf9d1f56",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03+00:00"
+        },
+        "signature_version": "hmac-sha256-v1"
+      },
+      "signed_form": "{\"action\":\"read\",\"action_id\":\"act_00000000000000000013\",\"agent_id\":\"fixture\",\"environment\":\"dev\",\"idempotency_key\":\"scalar\",\"operation\":\"execute\",\"org_id\":\"org_1234567890abcdef\",\"parameters\":{},\"principal\":{\"sub\":\"review-user\",\"verified_at\":\"2026-11-14T01:02:03+00:00\",\"verified_by\":\"sdk_verifier\"},\"schema_version\":\"v2.0\",\"signature_version\":\"hmac-sha256-v1\",\"target\":{},\"timestamp\":\"2026-11-14T01:02:03+00:00\"}",
+      "envelope_hash": "cca890c1167ab59a95b00f6861e92d5aff31e11a72d9f7efdacbab00a9ba28c6"
+    },
+    "lexical-2-principal-equals": {
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000014",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03+00:00",
+        "signature": "2fe2380d953f4a7dce87d321a86dfc82d486062a0ed82bc38aebc2009d403a38",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03+00:00"
+        },
+        "signature_version": "hmac-sha256-v1"
+      },
+      "signed_form": "{\"action\":\"read\",\"action_id\":\"act_00000000000000000014\",\"agent_id\":\"fixture\",\"environment\":\"dev\",\"idempotency_key\":\"scalar\",\"operation\":\"execute\",\"org_id\":\"org_1234567890abcdef\",\"parameters\":{},\"principal\":{\"sub\":\"review-user\",\"verified_at\":\"2026-11-14T01:02:03+00:00\",\"verified_by\":\"sdk_verifier\"},\"schema_version\":\"v2.0\",\"signature_version\":\"hmac-sha256-v1\",\"target\":{},\"timestamp\":\"2026-11-14T01:02:03+00:00\"}",
+      "envelope_hash": "f06fb1f9d8ae271274114c3ac7ae8be277d8e49b92f0db03ceb58001bf07d528"
+    },
+    "lexical-3-timestamp-equals": {
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000015",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03-00:00",
+        "signature": "ca8eaa68886fa07481d2cc493ec7bd8c6df7e2efcd66dba076754df7e0ea5719",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03-00:00"
+        },
+        "signature_version": "hmac-sha256-v1"
+      },
+      "signed_form": "{\"action\":\"read\",\"action_id\":\"act_00000000000000000015\",\"agent_id\":\"fixture\",\"environment\":\"dev\",\"idempotency_key\":\"scalar\",\"operation\":\"execute\",\"org_id\":\"org_1234567890abcdef\",\"parameters\":{},\"principal\":{\"sub\":\"review-user\",\"verified_at\":\"2026-11-14T01:02:03-00:00\",\"verified_by\":\"sdk_verifier\"},\"schema_version\":\"v2.0\",\"signature_version\":\"hmac-sha256-v1\",\"target\":{},\"timestamp\":\"2026-11-14T01:02:03-00:00\"}",
+      "envelope_hash": "8105f1e0415dcf666fd120ebbc914cc82a4206f2743b7c07a7f1aba8953a3fe3"
+    },
+    "lexical-3-timestamp-starts_with": {
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000016",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03-00:00",
+        "signature": "cfb69be8bdb7cf5ba2b1031227d3e10812ca1baefeece5a64834a374477d4a93",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03-00:00"
+        },
+        "signature_version": "hmac-sha256-v1"
+      },
+      "signed_form": "{\"action\":\"read\",\"action_id\":\"act_00000000000000000016\",\"agent_id\":\"fixture\",\"environment\":\"dev\",\"idempotency_key\":\"scalar\",\"operation\":\"execute\",\"org_id\":\"org_1234567890abcdef\",\"parameters\":{},\"principal\":{\"sub\":\"review-user\",\"verified_at\":\"2026-11-14T01:02:03-00:00\",\"verified_by\":\"sdk_verifier\"},\"schema_version\":\"v2.0\",\"signature_version\":\"hmac-sha256-v1\",\"target\":{},\"timestamp\":\"2026-11-14T01:02:03-00:00\"}",
+      "envelope_hash": "be8a874df785e2bbed96e14a124509155fb30900f25350cadc2406e904ab7e3e"
+    },
+    "lexical-3-principal.verified_at-equals": {
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000017",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03-00:00",
+        "signature": "1fb35fde9e0e2e34f8e3288e7e6407e473837cabdc56cff751c2f96d78676d37",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03-00:00"
+        },
+        "signature_version": "hmac-sha256-v1"
+      },
+      "signed_form": "{\"action\":\"read\",\"action_id\":\"act_00000000000000000017\",\"agent_id\":\"fixture\",\"environment\":\"dev\",\"idempotency_key\":\"scalar\",\"operation\":\"execute\",\"org_id\":\"org_1234567890abcdef\",\"parameters\":{},\"principal\":{\"sub\":\"review-user\",\"verified_at\":\"2026-11-14T01:02:03-00:00\",\"verified_by\":\"sdk_verifier\"},\"schema_version\":\"v2.0\",\"signature_version\":\"hmac-sha256-v1\",\"target\":{},\"timestamp\":\"2026-11-14T01:02:03-00:00\"}",
+      "envelope_hash": "9e8c9c41ab9cb1e514b758fc9859480dceddf7efd10390fc1524558d6d451004"
+    },
+    "lexical-3-principal.verified_at-starts_with": {
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000018",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03-00:00",
+        "signature": "d864ac068af49a381b679c29ea30dd86fbb964d13ef58d9097c04d83c6d5998d",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03-00:00"
+        },
+        "signature_version": "hmac-sha256-v1"
+      },
+      "signed_form": "{\"action\":\"read\",\"action_id\":\"act_00000000000000000018\",\"agent_id\":\"fixture\",\"environment\":\"dev\",\"idempotency_key\":\"scalar\",\"operation\":\"execute\",\"org_id\":\"org_1234567890abcdef\",\"parameters\":{},\"principal\":{\"sub\":\"review-user\",\"verified_at\":\"2026-11-14T01:02:03-00:00\",\"verified_by\":\"sdk_verifier\"},\"schema_version\":\"v2.0\",\"signature_version\":\"hmac-sha256-v1\",\"target\":{},\"timestamp\":\"2026-11-14T01:02:03-00:00\"}",
+      "envelope_hash": "bc97dc1cb8efbf699e9cd172d57d77d3222f67fcf3ef2a4bc4822a0c3b82f1f2"
+    },
+    "lexical-3-principal-equals": {
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000019",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03-00:00",
+        "signature": "91227fbf0021f484f08a03b96d3a07e3d9d005b608e2d88d196e3377d1c09cb7",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03-00:00"
+        },
+        "signature_version": "hmac-sha256-v1"
+      },
+      "signed_form": "{\"action\":\"read\",\"action_id\":\"act_00000000000000000019\",\"agent_id\":\"fixture\",\"environment\":\"dev\",\"idempotency_key\":\"scalar\",\"operation\":\"execute\",\"org_id\":\"org_1234567890abcdef\",\"parameters\":{},\"principal\":{\"sub\":\"review-user\",\"verified_at\":\"2026-11-14T01:02:03-00:00\",\"verified_by\":\"sdk_verifier\"},\"schema_version\":\"v2.0\",\"signature_version\":\"hmac-sha256-v1\",\"target\":{},\"timestamp\":\"2026-11-14T01:02:03-00:00\"}",
+      "envelope_hash": "2aff2f173e86ecd7dc2ee9401ea0fafdb3642d4fe146eca07bf76c9790123408"
+    },
+    "lexical-4-timestamp-equals": {
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000020",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03+05:30",
+        "signature": "99ab8f7e61a1664b3a6eefb85aab048db2c2e6bf9e414857578eb4de8b33baf2",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03+05:30"
+        },
+        "signature_version": "hmac-sha256-v1"
+      },
+      "signed_form": "{\"action\":\"read\",\"action_id\":\"act_00000000000000000020\",\"agent_id\":\"fixture\",\"environment\":\"dev\",\"idempotency_key\":\"scalar\",\"operation\":\"execute\",\"org_id\":\"org_1234567890abcdef\",\"parameters\":{},\"principal\":{\"sub\":\"review-user\",\"verified_at\":\"2026-11-14T01:02:03+05:30\",\"verified_by\":\"sdk_verifier\"},\"schema_version\":\"v2.0\",\"signature_version\":\"hmac-sha256-v1\",\"target\":{},\"timestamp\":\"2026-11-14T01:02:03+05:30\"}",
+      "envelope_hash": "21956a7e8ad20f069cf708e94d149679a4c7968ab08eb1fe11bed2d1a85a8a0f"
+    },
+    "lexical-4-timestamp-starts_with": {
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000021",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03+05:30",
+        "signature": "d9ba8caa3769d5e6bc631824e7c76916a6f0ae1b4306fb6738a323be52b690ae",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03+05:30"
+        },
+        "signature_version": "hmac-sha256-v1"
+      },
+      "signed_form": "{\"action\":\"read\",\"action_id\":\"act_00000000000000000021\",\"agent_id\":\"fixture\",\"environment\":\"dev\",\"idempotency_key\":\"scalar\",\"operation\":\"execute\",\"org_id\":\"org_1234567890abcdef\",\"parameters\":{},\"principal\":{\"sub\":\"review-user\",\"verified_at\":\"2026-11-14T01:02:03+05:30\",\"verified_by\":\"sdk_verifier\"},\"schema_version\":\"v2.0\",\"signature_version\":\"hmac-sha256-v1\",\"target\":{},\"timestamp\":\"2026-11-14T01:02:03+05:30\"}",
+      "envelope_hash": "528d668530394a617641f1c7446592660b750bda1d692a4ceafd75fb60907fca"
+    },
+    "lexical-4-principal.verified_at-equals": {
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000022",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03+05:30",
+        "signature": "8adf97e686a87a05502d2bee0be34b595591f951fc5f781fe5eacacde638594f",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03+05:30"
+        },
+        "signature_version": "hmac-sha256-v1"
+      },
+      "signed_form": "{\"action\":\"read\",\"action_id\":\"act_00000000000000000022\",\"agent_id\":\"fixture\",\"environment\":\"dev\",\"idempotency_key\":\"scalar\",\"operation\":\"execute\",\"org_id\":\"org_1234567890abcdef\",\"parameters\":{},\"principal\":{\"sub\":\"review-user\",\"verified_at\":\"2026-11-14T01:02:03+05:30\",\"verified_by\":\"sdk_verifier\"},\"schema_version\":\"v2.0\",\"signature_version\":\"hmac-sha256-v1\",\"target\":{},\"timestamp\":\"2026-11-14T01:02:03+05:30\"}",
+      "envelope_hash": "bae73e9b4dd9d029d1a5874e9ccf6508905e7f43119c629f5dc4b6c2241f8b76"
+    },
+    "lexical-4-principal.verified_at-starts_with": {
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000023",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03+05:30",
+        "signature": "9075734ca4aad75e852f2ba12548d4293fb2a823781cb73771b185010e72c06a",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03+05:30"
+        },
+        "signature_version": "hmac-sha256-v1"
+      },
+      "signed_form": "{\"action\":\"read\",\"action_id\":\"act_00000000000000000023\",\"agent_id\":\"fixture\",\"environment\":\"dev\",\"idempotency_key\":\"scalar\",\"operation\":\"execute\",\"org_id\":\"org_1234567890abcdef\",\"parameters\":{},\"principal\":{\"sub\":\"review-user\",\"verified_at\":\"2026-11-14T01:02:03+05:30\",\"verified_by\":\"sdk_verifier\"},\"schema_version\":\"v2.0\",\"signature_version\":\"hmac-sha256-v1\",\"target\":{},\"timestamp\":\"2026-11-14T01:02:03+05:30\"}",
+      "envelope_hash": "c52c8578f0cdebdaa544ec93f4956bfb71969d27237f9e750b34f8ccfba3617f"
+    },
+    "lexical-4-principal-equals": {
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000024",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03+05:30",
+        "signature": "334df0385b22be168db15bb12c2724ea42f12cfee08b91522f8a7e167f4cb79e",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03+05:30"
+        },
+        "signature_version": "hmac-sha256-v1"
+      },
+      "signed_form": "{\"action\":\"read\",\"action_id\":\"act_00000000000000000024\",\"agent_id\":\"fixture\",\"environment\":\"dev\",\"idempotency_key\":\"scalar\",\"operation\":\"execute\",\"org_id\":\"org_1234567890abcdef\",\"parameters\":{},\"principal\":{\"sub\":\"review-user\",\"verified_at\":\"2026-11-14T01:02:03+05:30\",\"verified_by\":\"sdk_verifier\"},\"schema_version\":\"v2.0\",\"signature_version\":\"hmac-sha256-v1\",\"target\":{},\"timestamp\":\"2026-11-14T01:02:03+05:30\"}",
+      "envelope_hash": "2f09c446e0cf4e67404dada218be575604608fa48c300573e50bc449fb081409"
+    },
+    "lexical-5-timestamp-equals": {
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000025",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03-04:00",
+        "signature": "acbbf8a0c66f7aac2503cbc28c8e2d04c196840f6b0e566e99c81daacb865840",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03-04:00"
+        },
+        "signature_version": "hmac-sha256-v1"
+      },
+      "signed_form": "{\"action\":\"read\",\"action_id\":\"act_00000000000000000025\",\"agent_id\":\"fixture\",\"environment\":\"dev\",\"idempotency_key\":\"scalar\",\"operation\":\"execute\",\"org_id\":\"org_1234567890abcdef\",\"parameters\":{},\"principal\":{\"sub\":\"review-user\",\"verified_at\":\"2026-11-14T01:02:03-04:00\",\"verified_by\":\"sdk_verifier\"},\"schema_version\":\"v2.0\",\"signature_version\":\"hmac-sha256-v1\",\"target\":{},\"timestamp\":\"2026-11-14T01:02:03-04:00\"}",
+      "envelope_hash": "cb6873cdbc33b9b291e7f77c2df8d20151f789bb085414ef1d1821aa4914517a"
+    },
+    "lexical-5-timestamp-starts_with": {
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000026",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03-04:00",
+        "signature": "3fa5cb50dca33238dc097b164b5c0a566088922731af22b694abad5120a6439a",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03-04:00"
+        },
+        "signature_version": "hmac-sha256-v1"
+      },
+      "signed_form": "{\"action\":\"read\",\"action_id\":\"act_00000000000000000026\",\"agent_id\":\"fixture\",\"environment\":\"dev\",\"idempotency_key\":\"scalar\",\"operation\":\"execute\",\"org_id\":\"org_1234567890abcdef\",\"parameters\":{},\"principal\":{\"sub\":\"review-user\",\"verified_at\":\"2026-11-14T01:02:03-04:00\",\"verified_by\":\"sdk_verifier\"},\"schema_version\":\"v2.0\",\"signature_version\":\"hmac-sha256-v1\",\"target\":{},\"timestamp\":\"2026-11-14T01:02:03-04:00\"}",
+      "envelope_hash": "ef20e965c9d0e3a46087dad870fabc058ca29aa4033dbf5a2b3fab38ae59b730"
+    },
+    "lexical-5-principal.verified_at-equals": {
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000027",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03-04:00",
+        "signature": "4c490fe1d6180407dc730621a79d528a6a70857b225f52e5e9865ede734daab7",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03-04:00"
+        },
+        "signature_version": "hmac-sha256-v1"
+      },
+      "signed_form": "{\"action\":\"read\",\"action_id\":\"act_00000000000000000027\",\"agent_id\":\"fixture\",\"environment\":\"dev\",\"idempotency_key\":\"scalar\",\"operation\":\"execute\",\"org_id\":\"org_1234567890abcdef\",\"parameters\":{},\"principal\":{\"sub\":\"review-user\",\"verified_at\":\"2026-11-14T01:02:03-04:00\",\"verified_by\":\"sdk_verifier\"},\"schema_version\":\"v2.0\",\"signature_version\":\"hmac-sha256-v1\",\"target\":{},\"timestamp\":\"2026-11-14T01:02:03-04:00\"}",
+      "envelope_hash": "d85c82f6209cff314fa8dfc8e87d96a0b10db867ea40e087cb931b91c55974d9"
+    },
+    "lexical-5-principal.verified_at-starts_with": {
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000028",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03-04:00",
+        "signature": "69bfeb0562ab3ddbd2dab7bac6c23b33c5d00a5b8734e5c628f4ef72a28fab57",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03-04:00"
+        },
+        "signature_version": "hmac-sha256-v1"
+      },
+      "signed_form": "{\"action\":\"read\",\"action_id\":\"act_00000000000000000028\",\"agent_id\":\"fixture\",\"environment\":\"dev\",\"idempotency_key\":\"scalar\",\"operation\":\"execute\",\"org_id\":\"org_1234567890abcdef\",\"parameters\":{},\"principal\":{\"sub\":\"review-user\",\"verified_at\":\"2026-11-14T01:02:03-04:00\",\"verified_by\":\"sdk_verifier\"},\"schema_version\":\"v2.0\",\"signature_version\":\"hmac-sha256-v1\",\"target\":{},\"timestamp\":\"2026-11-14T01:02:03-04:00\"}",
+      "envelope_hash": "d42042666eb7c1329bd316a8cd32285a17adeef6370e6064407baef96c9073cd"
+    },
+    "lexical-5-principal-equals": {
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000029",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03-04:00",
+        "signature": "56005888b4f94d8c15646acee88b51418dae056e0c99845be470df3fe4128eba",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03-04:00"
+        },
+        "signature_version": "hmac-sha256-v1"
+      },
+      "signed_form": "{\"action\":\"read\",\"action_id\":\"act_00000000000000000029\",\"agent_id\":\"fixture\",\"environment\":\"dev\",\"idempotency_key\":\"scalar\",\"operation\":\"execute\",\"org_id\":\"org_1234567890abcdef\",\"parameters\":{},\"principal\":{\"sub\":\"review-user\",\"verified_at\":\"2026-11-14T01:02:03-04:00\",\"verified_by\":\"sdk_verifier\"},\"schema_version\":\"v2.0\",\"signature_version\":\"hmac-sha256-v1\",\"target\":{},\"timestamp\":\"2026-11-14T01:02:03-04:00\"}",
+      "envelope_hash": "4a77e5d2fea7e845c6f316f4ac4120a6c6c998833c68f3d185ddb1eca560c99c"
+    },
+    "lexical-6-timestamp-equals": {
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000030",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03.1000000Z",
+        "signature": "168c15f320a3945ed7f3c2a4923e438df17995825c69e9e06e5abc57cb03fccd",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03.1000000Z"
+        },
+        "signature_version": "hmac-sha256-v1"
+      },
+      "signed_form": "{\"action\":\"read\",\"action_id\":\"act_00000000000000000030\",\"agent_id\":\"fixture\",\"environment\":\"dev\",\"idempotency_key\":\"scalar\",\"operation\":\"execute\",\"org_id\":\"org_1234567890abcdef\",\"parameters\":{},\"principal\":{\"sub\":\"review-user\",\"verified_at\":\"2026-11-14T01:02:03.1000000Z\",\"verified_by\":\"sdk_verifier\"},\"schema_version\":\"v2.0\",\"signature_version\":\"hmac-sha256-v1\",\"target\":{},\"timestamp\":\"2026-11-14T01:02:03.1000000Z\"}",
+      "envelope_hash": "a2d78d03441fbc242ae32c1d68af10fba501913ad6ce2f39f938bc9cf324cd2b"
+    },
+    "lexical-6-timestamp-starts_with": {
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000031",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03.1000000Z",
+        "signature": "ee4f40b58c7536a45c6c4a7114b1a261c773cf0358b4b1ac77c81c2f3ed3b0a0",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03.1000000Z"
+        },
+        "signature_version": "hmac-sha256-v1"
+      },
+      "signed_form": "{\"action\":\"read\",\"action_id\":\"act_00000000000000000031\",\"agent_id\":\"fixture\",\"environment\":\"dev\",\"idempotency_key\":\"scalar\",\"operation\":\"execute\",\"org_id\":\"org_1234567890abcdef\",\"parameters\":{},\"principal\":{\"sub\":\"review-user\",\"verified_at\":\"2026-11-14T01:02:03.1000000Z\",\"verified_by\":\"sdk_verifier\"},\"schema_version\":\"v2.0\",\"signature_version\":\"hmac-sha256-v1\",\"target\":{},\"timestamp\":\"2026-11-14T01:02:03.1000000Z\"}",
+      "envelope_hash": "1a2060654a4f1965b23d845ebac7772e1e83aafd63111c5585258ab6ca6b318c"
+    },
+    "lexical-6-principal.verified_at-equals": {
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000032",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03.1000000Z",
+        "signature": "1f6bc17faa854547657c988c95d580961666542fe57303b36fd0a13817ae8df4",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03.1000000Z"
+        },
+        "signature_version": "hmac-sha256-v1"
+      },
+      "signed_form": "{\"action\":\"read\",\"action_id\":\"act_00000000000000000032\",\"agent_id\":\"fixture\",\"environment\":\"dev\",\"idempotency_key\":\"scalar\",\"operation\":\"execute\",\"org_id\":\"org_1234567890abcdef\",\"parameters\":{},\"principal\":{\"sub\":\"review-user\",\"verified_at\":\"2026-11-14T01:02:03.1000000Z\",\"verified_by\":\"sdk_verifier\"},\"schema_version\":\"v2.0\",\"signature_version\":\"hmac-sha256-v1\",\"target\":{},\"timestamp\":\"2026-11-14T01:02:03.1000000Z\"}",
+      "envelope_hash": "22ae158e777af73b6aa56a72cc6435a6821214a3b642d023fa68ace14f0ec1c1"
+    },
+    "lexical-6-principal.verified_at-starts_with": {
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000033",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03.1000000Z",
+        "signature": "318fce030c3557a814f5bdf8e4114329700ef3e68bb5f93ca22bfeebfd78b8bf",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03.1000000Z"
+        },
+        "signature_version": "hmac-sha256-v1"
+      },
+      "signed_form": "{\"action\":\"read\",\"action_id\":\"act_00000000000000000033\",\"agent_id\":\"fixture\",\"environment\":\"dev\",\"idempotency_key\":\"scalar\",\"operation\":\"execute\",\"org_id\":\"org_1234567890abcdef\",\"parameters\":{},\"principal\":{\"sub\":\"review-user\",\"verified_at\":\"2026-11-14T01:02:03.1000000Z\",\"verified_by\":\"sdk_verifier\"},\"schema_version\":\"v2.0\",\"signature_version\":\"hmac-sha256-v1\",\"target\":{},\"timestamp\":\"2026-11-14T01:02:03.1000000Z\"}",
+      "envelope_hash": "7dd3dfa3997e38788234d9ae6ec90a5a820e30772ac02838c24617f6b642a7e1"
+    },
+    "lexical-6-principal-equals": {
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000034",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03.1000000Z",
+        "signature": "0b91a40003fd80833189ce026772cefa88887b2e767108e1a9b3678ce1084843",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03.1000000Z"
+        },
+        "signature_version": "hmac-sha256-v1"
+      },
+      "signed_form": "{\"action\":\"read\",\"action_id\":\"act_00000000000000000034\",\"agent_id\":\"fixture\",\"environment\":\"dev\",\"idempotency_key\":\"scalar\",\"operation\":\"execute\",\"org_id\":\"org_1234567890abcdef\",\"parameters\":{},\"principal\":{\"sub\":\"review-user\",\"verified_at\":\"2026-11-14T01:02:03.1000000Z\",\"verified_by\":\"sdk_verifier\"},\"schema_version\":\"v2.0\",\"signature_version\":\"hmac-sha256-v1\",\"target\":{},\"timestamp\":\"2026-11-14T01:02:03.1000000Z\"}",
+      "envelope_hash": "fa915f2b6fc13850d759feb9a820307edce61dbf0f7546b649b22d0b97073b75"
+    },
+    "lexical-7-timestamp-equals": {
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000035",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03.123456789+05:30",
+        "signature": "6cf6b62f234092a50f1870bfcadd72cd91eefe937e3e1ca277e7863678ca8346",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03.123456789+05:30"
+        },
+        "signature_version": "hmac-sha256-v1"
+      },
+      "signed_form": "{\"action\":\"read\",\"action_id\":\"act_00000000000000000035\",\"agent_id\":\"fixture\",\"environment\":\"dev\",\"idempotency_key\":\"scalar\",\"operation\":\"execute\",\"org_id\":\"org_1234567890abcdef\",\"parameters\":{},\"principal\":{\"sub\":\"review-user\",\"verified_at\":\"2026-11-14T01:02:03.123456789+05:30\",\"verified_by\":\"sdk_verifier\"},\"schema_version\":\"v2.0\",\"signature_version\":\"hmac-sha256-v1\",\"target\":{},\"timestamp\":\"2026-11-14T01:02:03.123456789+05:30\"}",
+      "envelope_hash": "fa937658e2094e417eec93faf5eda8073f745215a5eb0e8e28e9dbd986650793"
+    },
+    "lexical-7-timestamp-starts_with": {
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000036",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03.123456789+05:30",
+        "signature": "e39ad1cbf3b2817b4e9ff11173a3058ba949555269627ad22dd6b4e188c61561",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03.123456789+05:30"
+        },
+        "signature_version": "hmac-sha256-v1"
+      },
+      "signed_form": "{\"action\":\"read\",\"action_id\":\"act_00000000000000000036\",\"agent_id\":\"fixture\",\"environment\":\"dev\",\"idempotency_key\":\"scalar\",\"operation\":\"execute\",\"org_id\":\"org_1234567890abcdef\",\"parameters\":{},\"principal\":{\"sub\":\"review-user\",\"verified_at\":\"2026-11-14T01:02:03.123456789+05:30\",\"verified_by\":\"sdk_verifier\"},\"schema_version\":\"v2.0\",\"signature_version\":\"hmac-sha256-v1\",\"target\":{},\"timestamp\":\"2026-11-14T01:02:03.123456789+05:30\"}",
+      "envelope_hash": "225eb0072ebe9b131d4111d8423713f474db72813e0fdcc25c03e401d7380ff4"
+    },
+    "lexical-7-principal.verified_at-equals": {
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000037",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03.123456789+05:30",
+        "signature": "41f79aa50ea620c3d89dcc2966c5c188ac40ae7d8f9a025703b48ca13db83b79",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03.123456789+05:30"
+        },
+        "signature_version": "hmac-sha256-v1"
+      },
+      "signed_form": "{\"action\":\"read\",\"action_id\":\"act_00000000000000000037\",\"agent_id\":\"fixture\",\"environment\":\"dev\",\"idempotency_key\":\"scalar\",\"operation\":\"execute\",\"org_id\":\"org_1234567890abcdef\",\"parameters\":{},\"principal\":{\"sub\":\"review-user\",\"verified_at\":\"2026-11-14T01:02:03.123456789+05:30\",\"verified_by\":\"sdk_verifier\"},\"schema_version\":\"v2.0\",\"signature_version\":\"hmac-sha256-v1\",\"target\":{},\"timestamp\":\"2026-11-14T01:02:03.123456789+05:30\"}",
+      "envelope_hash": "267b3d2f02d50ae8429f88b818e1a7792a59d2f87cf479e2b81ba319c054a497"
+    },
+    "lexical-7-principal.verified_at-starts_with": {
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000038",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03.123456789+05:30",
+        "signature": "0e56499c13ae604d91b9c908860b3a3b82840ac809f476a14ea3f51f856171ca",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03.123456789+05:30"
+        },
+        "signature_version": "hmac-sha256-v1"
+      },
+      "signed_form": "{\"action\":\"read\",\"action_id\":\"act_00000000000000000038\",\"agent_id\":\"fixture\",\"environment\":\"dev\",\"idempotency_key\":\"scalar\",\"operation\":\"execute\",\"org_id\":\"org_1234567890abcdef\",\"parameters\":{},\"principal\":{\"sub\":\"review-user\",\"verified_at\":\"2026-11-14T01:02:03.123456789+05:30\",\"verified_by\":\"sdk_verifier\"},\"schema_version\":\"v2.0\",\"signature_version\":\"hmac-sha256-v1\",\"target\":{},\"timestamp\":\"2026-11-14T01:02:03.123456789+05:30\"}",
+      "envelope_hash": "ffe2db8e4d8b62e129d25eeb8cc59c765c07aab0df1a7360c32ceab038ad275e"
+    },
+    "lexical-7-principal-equals": {
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000039",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03.123456789+05:30",
+        "signature": "093c716c8fdd4342db74f3c6fe2b5040eab48d2bb625ecab693fea6a3359dde5",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03.123456789+05:30"
+        },
+        "signature_version": "hmac-sha256-v1"
+      },
+      "signed_form": "{\"action\":\"read\",\"action_id\":\"act_00000000000000000039\",\"agent_id\":\"fixture\",\"environment\":\"dev\",\"idempotency_key\":\"scalar\",\"operation\":\"execute\",\"org_id\":\"org_1234567890abcdef\",\"parameters\":{},\"principal\":{\"sub\":\"review-user\",\"verified_at\":\"2026-11-14T01:02:03.123456789+05:30\",\"verified_by\":\"sdk_verifier\"},\"schema_version\":\"v2.0\",\"signature_version\":\"hmac-sha256-v1\",\"target\":{},\"timestamp\":\"2026-11-14T01:02:03.123456789+05:30\"}",
+      "envelope_hash": "2e472fd22424bd91b4eae63cb942a074e0c29bcccd803406eb0a44b76e24db94"
+    },
+    "lexical-8-timestamp-equals": {
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000040",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03.0000000Z",
+        "signature": "29b31b7a21d88c26f15f25388b3e77f2b01e42f5c94d459ae8dd6f3b7857afae",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03.0000000Z"
+        },
+        "signature_version": "hmac-sha256-v1"
+      },
+      "signed_form": "{\"action\":\"read\",\"action_id\":\"act_00000000000000000040\",\"agent_id\":\"fixture\",\"environment\":\"dev\",\"idempotency_key\":\"scalar\",\"operation\":\"execute\",\"org_id\":\"org_1234567890abcdef\",\"parameters\":{},\"principal\":{\"sub\":\"review-user\",\"verified_at\":\"2026-11-14T01:02:03.0000000Z\",\"verified_by\":\"sdk_verifier\"},\"schema_version\":\"v2.0\",\"signature_version\":\"hmac-sha256-v1\",\"target\":{},\"timestamp\":\"2026-11-14T01:02:03.0000000Z\"}",
+      "envelope_hash": "bb48f11edb8d4368303bd909c238a7340aee14306715d1c710e3793a71b152be"
+    },
+    "lexical-8-timestamp-starts_with": {
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000041",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03.0000000Z",
+        "signature": "dbd8b149bba25dd6882410f8d1a977e4ed546963c50e4a2010f06b6849fab30b",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03.0000000Z"
+        },
+        "signature_version": "hmac-sha256-v1"
+      },
+      "signed_form": "{\"action\":\"read\",\"action_id\":\"act_00000000000000000041\",\"agent_id\":\"fixture\",\"environment\":\"dev\",\"idempotency_key\":\"scalar\",\"operation\":\"execute\",\"org_id\":\"org_1234567890abcdef\",\"parameters\":{},\"principal\":{\"sub\":\"review-user\",\"verified_at\":\"2026-11-14T01:02:03.0000000Z\",\"verified_by\":\"sdk_verifier\"},\"schema_version\":\"v2.0\",\"signature_version\":\"hmac-sha256-v1\",\"target\":{},\"timestamp\":\"2026-11-14T01:02:03.0000000Z\"}",
+      "envelope_hash": "2a771e4d809d692ea0be73fab4c6d83c399e6492b1f603b0ab92bf862999e864"
+    },
+    "lexical-8-principal.verified_at-equals": {
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000042",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03.0000000Z",
+        "signature": "43b51a23788a5b33411babc5552795b7a25afb89c266ec8bd6a498cf09b44bea",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03.0000000Z"
+        },
+        "signature_version": "hmac-sha256-v1"
+      },
+      "signed_form": "{\"action\":\"read\",\"action_id\":\"act_00000000000000000042\",\"agent_id\":\"fixture\",\"environment\":\"dev\",\"idempotency_key\":\"scalar\",\"operation\":\"execute\",\"org_id\":\"org_1234567890abcdef\",\"parameters\":{},\"principal\":{\"sub\":\"review-user\",\"verified_at\":\"2026-11-14T01:02:03.0000000Z\",\"verified_by\":\"sdk_verifier\"},\"schema_version\":\"v2.0\",\"signature_version\":\"hmac-sha256-v1\",\"target\":{},\"timestamp\":\"2026-11-14T01:02:03.0000000Z\"}",
+      "envelope_hash": "7ddf063f77bfed281cc577bfd40c1fd7a7da7b5fe75801eac768bf9bc73f2c5e"
+    },
+    "lexical-8-principal.verified_at-starts_with": {
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000043",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03.0000000Z",
+        "signature": "576c5acc258716b6946d5d4b3564b1bac97d1e6e4be7041dee31991a5beeabaa",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03.0000000Z"
+        },
+        "signature_version": "hmac-sha256-v1"
+      },
+      "signed_form": "{\"action\":\"read\",\"action_id\":\"act_00000000000000000043\",\"agent_id\":\"fixture\",\"environment\":\"dev\",\"idempotency_key\":\"scalar\",\"operation\":\"execute\",\"org_id\":\"org_1234567890abcdef\",\"parameters\":{},\"principal\":{\"sub\":\"review-user\",\"verified_at\":\"2026-11-14T01:02:03.0000000Z\",\"verified_by\":\"sdk_verifier\"},\"schema_version\":\"v2.0\",\"signature_version\":\"hmac-sha256-v1\",\"target\":{},\"timestamp\":\"2026-11-14T01:02:03.0000000Z\"}",
+      "envelope_hash": "77a0577da2699af7c532fa9f4f1bc12d33a1480c3e5d9fc543b9d0fcfc7dbab4"
+    },
+    "lexical-8-principal-equals": {
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000044",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03.0000000Z",
+        "signature": "f638905dd86702bd87cb0a5b7cd72af011bbd0f06f4f696179420f015f7a176e",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03.0000000Z"
+        },
+        "signature_version": "hmac-sha256-v1"
+      },
+      "signed_form": "{\"action\":\"read\",\"action_id\":\"act_00000000000000000044\",\"agent_id\":\"fixture\",\"environment\":\"dev\",\"idempotency_key\":\"scalar\",\"operation\":\"execute\",\"org_id\":\"org_1234567890abcdef\",\"parameters\":{},\"principal\":{\"sub\":\"review-user\",\"verified_at\":\"2026-11-14T01:02:03.0000000Z\",\"verified_by\":\"sdk_verifier\"},\"schema_version\":\"v2.0\",\"signature_version\":\"hmac-sha256-v1\",\"target\":{},\"timestamp\":\"2026-11-14T01:02:03.0000000Z\"}",
+      "envelope_hash": "5c14e3179b7b0e12cd83de9c4681a5024fec1fe02f5a6ee6f32439a6b586ff20"
+    }
+  }
+}

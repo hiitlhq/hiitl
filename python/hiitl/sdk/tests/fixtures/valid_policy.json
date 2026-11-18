@@ -1,11 +1,15 @@
 {
-  "version": "1.0.0",
+  "version": "v1.0.0",
+  "description": "Allow transfers under $1000",
+  "scope": {
+    "org_id": "org_devlocal0000000000",
+    "environment": "dev"
+  },
   "name": "test_policy",
   "rules": [
     {
       "name": "allow_small_amounts",
       "priority": 100,
-      "enabled": true,
       "conditions": {
         "field": "parameters.amount",
         "operator": "less_than",

@@ -7,7 +7,7 @@ Thanks for your interest in contributing to hiitl. This document covers developm
 ### Prerequisites
 
 - Python 3.10+
-- Node.js 18+
+- Node.js 22+
 - Git
 
 ### Clone and install
@@ -36,7 +36,7 @@ npm install
 
 ### Conformance tests
 
-Both Python and TypeScript evaluators must produce identical decisions. The conformance suite has 75 JSON test cases.
+Both Python and TypeScript evaluators must produce identical decisions for the same complete inputs. The conformance runner reads the [current JSON cases](tests/conformance/cases/).
 
 ```bash
 # Python
@@ -82,9 +82,8 @@ hiitl/
 │   └── sdk/            # TypeScript SDK (local + hosted)
 ├── tests/conformance/  # Cross-language conformance test cases (JSON)
 ├── patterns/           # Action pattern templates (YAML)
-├── docs/
-│   ├── specs/          # Language-neutral specifications (source of truth)
-│   └── onboarding/     # Developer guides
+├── docs/specs/         # Language-neutral specifications (source of truth)
+├── docs/onboarding/    # Developer guides
 └── examples/           # Standalone runnable examples
 ```
 
@@ -147,7 +146,7 @@ Key design principles:
 - **Deterministic enforcement** — No LLM inference at decision time
 - **Language-neutral specs** — JSON Schema and markdown define behavior; implementations follow
 - **Architecturally neutral** — Works with any agent framework
-- **Immutable audit** — Every action produces a record, even if blocked
+- **Immutable audit** — New evaluations produce records, including refusals; retries within the dedup window reuse their first decision. If the record cannot be written, the action is blocked with `AUDIT_WRITE_FAILED` and that failure has no record
 
 ## Questions?
 

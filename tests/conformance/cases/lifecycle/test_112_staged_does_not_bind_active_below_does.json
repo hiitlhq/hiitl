@@ -1,0 +1,65 @@
+{
+  "test_id": "test_112_staged_does_not_bind_active_below_does",
+  "description": "Highest-priority rule is staged — it would have BLOCKed but does not bind. A lower-priority ACTIVE rule binds an ALLOW. This is the side-by-side evaluation invariant: staged rules don't block active rules from firing.",
+  "envelope": {
+    "schema_version": "v2.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_finance_bot",
+    "action_id": "act_test1120000000000000",
+    "timestamp": "2026-02-14T10:00:00Z",
+    "operation": "execute",
+    "parameters": {"amount": 500, "currency": "USD"},
+    "idempotency_key": "idem_test_112_staged_does_not_bind",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "transfer_money"
+  },
+  "policy_set": {
+    "version": "v1.0.0",
+    "description": "Highest-priority rule is staged — it would have BLOCKed but does not bind. A lower-priority ACTIVE rule binds an ALLOW. This is the side-by-side evaluation invariant: staged rules don't block active rules from firing.",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "high_priority_staged_block",
+        "priority": 100,
+        "conditions": {"field": "parameters.amount", "operator": "greater_than", "value": 0},
+        "decision": "BLOCK",
+        "reason_code": "STAGED_HIGH_PRIORITY",
+        "description": "Rule: high_priority_staged_block",
+        "lifecycle_stage": "staged"
+      },
+      {
+        "name": "low_priority_active_allow",
+        "priority": 50,
+        "conditions": {"field": "parameters.amount", "operator": "greater_than", "value": 0},
+        "decision": "ALLOW",
+        "reason_code": "ACTIVE_LOW_PRIORITY_ALLOW",
+        "description": "Rule: low_priority_active_allow",
+        "lifecycle_stage": "active"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "ALLOW",
+    "allowed": true,
+    "reason_codes": ["ACTIVE_LOW_PRIORITY_ALLOW"],
+    "matched_rules": [
+      {"rule_name": "low_priority_active_allow", "policy_set": "test_policy", "priority": 50}
+    ],
+    "staged_observations": [
+      {
+        "rule_name": "high_priority_staged_block",
+        "policy_set": "test_policy",
+        "priority": 100,
+        "would_be_decision": "BLOCK",
+        "would_be_reason_codes": ["STAGED_HIGH_PRIORITY"],
+        "would_be_binding": true
+      }
+    ]
+  }
+}

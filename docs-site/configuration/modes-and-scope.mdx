@@ -1,0 +1,94 @@
+---
+title: "Modes, lifecycle, and scope"
+description: "The evaluator's two modes, a rule's lifecycle stage, and expressing a responsibility's scope as policy"
+---
+
+## Two modes of the evaluator
+
+The evaluator runs in one of two modes, set on the client:
+
+- **`OBSERVE_ALL`** (the SDK's default when no policy file is given): every evaluation returns `OBSERVE` with `allowed: true`, and the decision the policy would have made is carried as `would_be` with its reason codes. Nothing binds.
+- **`RESPECT_POLICY`**: the policy's decisions bind. A policy file is required. The hosted service evaluates in this mode.
+
+A client with a policy file and no mode set runs `OBSERVE_ALL`; a deployment that must enforce sets `mode="RESPECT_POLICY"` with its `policy_path`.
+
+## A rule's lifecycle stage
+
+Every rule carries a `lifecycle_stage`. It is the one field that decides whether the rule is evaluated and whether it binds:
+
+| Stage | What the evaluator does |
+|---|---|
+| `draft` | skipped |
+| `staged` | evaluated against live traffic and recorded as a "would have" observation (`staged_observations` on the decision); never binds |
+| `active` (the default) | evaluated; its decision binds under `RESPECT_POLICY` |
+| `disabled` | skipped |
+| `archived` | skipped |
+
+The older per-rule fields `mode` and `enabled` were retired. A rule that carries either is refused by both SDKs when the file loads, with a message naming the replacement, rather than ignored.
+
+A rule needs `name`, `description`, `priority`, `conditions`, `decision` and `reason_code`. A `remediation` block, when present, needs `message`, `suggestion` and `type`.
+
+## The lifecycle in local mode
+
+Policies are files in your repository, so the lifecycle is your repository's:
+
+1. A new rule lands as `lifecycle_stage: staged`. It is evaluated on every action and its would-have decision is recorded; the action continues.
+2. Before it binds, read what it would have decided: a query over the record for that rule's name in `staged_observations`.
+3. A reviewed commit sets `lifecycle_stage: active`; the reverting commit is the rollback. The repository's history is the change record.
+
+## The lifecycle with the hosted service
+
+| Step | What happens | Endpoint |
+|---|---|---|
+| Stage | the rule is set to `staged` | `POST /v1/policies/{policy_id}/rules/{rule_name}/stage` |
+| Regression report | over the observation window, what the rule would have blocked | `POST …/rules/{rule_name}/regression-report` |
+| Promote | the rule is set to `active`; the service refuses a promotion with no ready regression report | `POST …/rules/{rule_name}/promote` |
+| Rollback | the rule returns to `staged` | `POST …/rules/{rule_name}/rollback` |
+
+Each lifecycle change records the caller that performed it and its `actor_type`, `api_key` or `human` (a dashboard session). An `active` rule whose observed false-positive signal crosses the service's threshold is demoted to `staged` by the service's rule-health loop, recorded as `system`. The SDKs pick up policy changes at their next policy sync (five minutes by default) or on restart.
+
+## Composition
+
+Among the matching active rules, a `KILL_SWITCH` or a `BLOCK` binds over a matching rule of any other decision, whatever their priorities, and a kill switch over a block. Among the remaining matching rules the higher priority binds, then the one defined first. A permit can never outrank a deny; the order between an approval and an allow is the priority you give them. So a deny added can only add restrictions, and an allow added can relax an approval if its priority is higher, which is why a new rule lands staged.
+
+## A responsibility's scope
+
+If the harness writes the responsibility's scope into the envelope it signs (for example `requested_scopes: ["customer:acme"]`) and puts the call's target in `target` as the call will execute, a rule denies any action whose target is outside the scope. Conditions read the envelope's fields and, after a sync route has answered, the answer's fields under `external.<route>.`; a condition's value may be a reference to another field of the same envelope, written `{ "$field": "<path>" }`. A field reference has exactly one key. `$field`, `$declared` and `$uncalibrated` are reserved in policy values: a sibling key or a position that does not read the form makes the policy refuse at load. A caller’s own envelope data keeps these keys as data.
+
+```yaml
+- name: deny-outside-scope
+  description: An action may only touch the customer space the responsibility is scoped to
+  priority: 1000
+  conditions:
+    all_of:
+      - field: target.customer_space
+        operator: not_in
+        value: { "$field": requested_scopes }
+  decision: BLOCK
+  reason_code: OUTSIDE_SCOPE
+  remediation:
+    message: The target is outside this responsibility's scope
+    suggestion: Retry with a target inside the scope the responsibility declares
+    type: scope
+
+- name: deny-unscoped
+  description: An envelope that declares no scope is refused rather than evaluated against none
+  priority: 1001
+  conditions:
+    all_of:
+      - field: requested_scopes
+        operator: exists
+        value: false
+  decision: BLOCK
+  reason_code: NO_SCOPE_DECLARED
+  remediation:
+    message: No scope was declared for this action
+    suggestion: The harness declares the responsibility's scope in every envelope
+    type: scope
+```
+
+The second rule matters: a field reference that resolves to nothing makes its condition false, so without it an envelope that forgot its scope would pass the first rule.
+
+## Trust, expressed as policy
+
+hiitl has no separate "trust level". A responsibility that may act, one that may only suggest, and one that is only observed are policy sets, or rules that match on `agent_id`: for the observed responsibility every consequential action routes to a person; for the trusted one, actions within the declared bounds pass and the rest route. Earning trust is promoting rules from route to allow on the evidence of the record, per responsibility, with the change recorded.

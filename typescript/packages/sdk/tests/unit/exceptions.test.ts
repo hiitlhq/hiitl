@@ -10,6 +10,17 @@ import {
   ConfigurationError,
   EnvelopeValidationError,
 } from '../../src/exceptions.js';
+import * as exceptions from '../../src/exceptions.js';
+import * as sdk from '../../src/index.js';
+
+describe('the package entry point', () => {
+  // The package's `exports` map opens only its index, so an error class the index leaves out cannot be imported or
+  // caught by type. The classes are read from exceptions.ts itself.
+  it('exports every error class the SDK throws', () => {
+    const missing = Object.keys(exceptions).filter((name) => !(name in sdk));
+    expect(missing).toEqual([]);
+  });
+});
 
 describe('Exceptions', () => {
   describe('HIITLError', () => {

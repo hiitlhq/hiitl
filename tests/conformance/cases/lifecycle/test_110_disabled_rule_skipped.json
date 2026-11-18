@@ -1,0 +1,43 @@
+{
+  "test_id": "test_110_disabled_rule_skipped",
+  "description": "Disabled lifecycle stage skips the rule entirely. Distinct from 'draft' semantically — the rule was once active and operator turned it off — but evaluator behavior is identical.",
+  "envelope": {
+    "schema_version": "v2.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_finance_bot",
+    "action_id": "act_test1100000000000000",
+    "timestamp": "2026-02-14T10:00:00Z",
+    "operation": "execute",
+    "parameters": {"amount": 500, "currency": "USD"},
+    "idempotency_key": "idem_test_110_disabled_rule_skipped",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "transfer_money"
+  },
+  "policy_set": {
+    "version": "v1.0.0",
+    "description": "Disabled lifecycle stage skips the rule entirely. Distinct from 'draft' semantically — the rule was once active and operator turned it off — but evaluator behavior is identical.",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "disabled_block_should_not_fire",
+        "priority": 100,
+        "conditions": {"field": "parameters.amount", "operator": "greater_than", "value": 0},
+        "decision": "BLOCK",
+        "reason_code": "DISABLED_SHOULD_NOT_BIND",
+        "description": "Rule: disabled_block_should_not_fire",
+        "lifecycle_stage": "disabled"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "BLOCK",
+    "allowed": false,
+    "reason_codes": ["NO_MATCHING_RULE"]
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "test_id": "test_141_field_reference_subset_does_not_match",
+  "description": "The same rule: requested scopes that are a subset of the principal's do not match.",
+  "envelope": {
+    "schema_version": "v2.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_ops_bot",
+    "action_id": "act_test1410000000000000000",
+    "timestamp": "2026-10-09T10:00:00Z",
+    "operation": "execute",
+    "parameters": {},
+    "idempotency_key": "idem_test_141_b",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "grant_access",
+    "requested_scopes": [
+      "read"
+    ],
+    "principal": {
+      "sub": "user_7",
+      "scopes": [
+        "read",
+        "write"
+      ],
+      "verified_by": "sdk_verifier"
+    }
+  },
+  "policy_set": {
+    "version": "v1.0.0",
+    "description": "The same rule: requested scopes that are a subset of the principal's do not match.",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "scopes_within_principal",
+        "priority": 900,
+        "conditions": {
+          "field": "requested_scopes",
+          "operator": "not_in",
+          "value": {
+            "$field": "principal.scopes"
+          }
+        },
+        "decision": "BLOCK",
+        "reason_code": "SCOPE_BEYOND_PRINCIPAL",
+        "description": "Rule: scopes_within_principal"
+      },
+      {
+        "name": "allow_otherwise",
+        "priority": 1,
+        "conditions": {
+          "field": "action",
+          "operator": "exists",
+          "value": true
+        },
+        "decision": "ALLOW",
+        "reason_code": "ALLOWED",
+        "description": "Rule: allow_otherwise"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "ALLOW",
+    "allowed": true,
+    "reason_codes": [
+      "ALLOWED"
+    ]
+  }
+}

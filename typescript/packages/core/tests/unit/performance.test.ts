@@ -1,30 +1,35 @@
 /**
  * Performance benchmarks for PolicyEvaluator.
  *
- * Goal: Sub-millisecond evaluation for simple policies (matching Python).
+ * Goal: Record the public typical-core target, asserting it at release (matching Python).
+ * Each cell runs its warmup, then the run whose p95 is read; the timing catalogue declares both (HTL-17 19d576ee).
  *
  * Benchmarks:
- * 1. Simple atomic condition (< 1ms average)
+ * 1. Simple atomic condition
  * 2. Logical operators (all_of, any_of, none_of)
  * 3. Multiple rules with priority sorting
  * 4. Nested conditions
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+import { latencyRun, latencyStatistic, recordLatency, timeCalls } from '../../../../test-support/latency.js';
+import { recordMeasurement } from '../../../../test-support/measurements.js';
 import { PolicyEvaluator } from '../../src/evaluator.js';
-import { DecisionType } from '../../src/types.js';
+import { DecisionType, ENVELOPE_SCHEMA_VERSION } from '../../src/types.js';
 import type { Envelope, PolicySet } from '../../src/types.js';
+
+const SOURCE = 'typescript/packages/core/tests/unit/performance.test.ts';
 
 describe('Performance Benchmarks', () => {
   // Base envelope for testing
   const baseEnvelope: Envelope = {
-    schema_version: 'v1.0',
+    schema_version: ENVELOPE_SCHEMA_VERSION,
     org_id: 'org_abc123def456ghi789',
     environment: 'dev',
     agent_id: 'payment-agent',
     action_id: 'act_01HQZ6X8Z9P5ABCDEFGHIJK',
     idempotency_key: 'idem_test123456789',
-    tool_name: 'process_payment',
+    action: 'process_payment',
     operation: 'execute',
     target: {
       account_id: 'acct_source',
@@ -38,16 +43,17 @@ describe('Performance Benchmarks', () => {
     signature: 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2',
   };
 
-  it('should evaluate simple atomic condition in < 1ms (average)', () => {
+  it('simple atomic condition meets the declared typical-core budget', () => {
     const policy: PolicySet = {
       name: 'simple-policy',
-      version: '1.0',
+      version: 'v1.0.0',
+      description: 'Evaluate a simple atomic condition',
+      scope: { org_id: 'org_abc123def456ghi789', environment: 'dev' },
       rules: [
         {
           name: 'allow-small-amounts',
           description: 'Allow small transactions',
           priority: 100,
-          enabled: true,
           decision: DecisionType.ALLOW,
           reason_code: 'SMALL_AMOUNT',
           conditions: {
@@ -60,39 +66,34 @@ describe('Performance Benchmarks', () => {
     };
 
     const evaluator = new PolicyEvaluator();
-    const iterations = 1000;
+    const run = latencyRun('core/simple-atomic');
 
-    // Warmup run (to avoid JIT compilation overhead)
-    for (let i = 0; i < 100; i++) {
-      evaluator.evaluate(baseEnvelope, policy);
-    }
+    // Warmup run (to avoid JIT compilation overhead), timed so the record shows it ran
+    const warmup = timeCalls(run.warmup, () => evaluator.evaluate(baseEnvelope, policy));
 
     // Benchmark run
-    const start = performance.now();
-    for (let i = 0; i < iterations; i++) {
-      evaluator.evaluate(baseEnvelope, policy);
-    }
-    const elapsed = performance.now() - start;
-
-    const avgMs = elapsed / iterations;
+    const samples = timeCalls(run.count, () => evaluator.evaluate(baseEnvelope, policy));
+    const p95 = latencyStatistic(samples);
 
     // Log performance for visibility
-    console.log(`Simple atomic condition: ${avgMs.toFixed(4)}ms average (${iterations} iterations)`);
+    console.log(`Simple atomic condition: ${p95.toFixed(4)}ms p95 (${samples.length} iterations after ${warmup.length} warmup)`);
 
-    // Assert: average evaluation time should be less than 1ms
-    expect(avgMs).toBeLessThan(1);
+    recordMeasurement({ metric: 'core evaluation duration', unit: 'ms', source: `${SOURCE}#simple-atomic`,
+      value: p95, samples, sample_count: samples.length, statistic: 'p95' });
+    recordLatency('core/simple-atomic', samples, 'core', warmup);
   });
 
-  it('should evaluate logical operators (all_of) in < 2ms (average)', () => {
+  it('logical operators meet the declared typical-core budget', () => {
     const policy: PolicySet = {
       name: 'logical-policy',
-      version: '1.0',
+      version: 'v1.0.0',
+      description: 'Evaluate logical operators (all_of)',
+      scope: { org_id: 'org_abc123def456ghi789', environment: 'dev' },
       rules: [
         {
           name: 'complex-rule',
           description: 'Complex logical rule',
           priority: 100,
-          enabled: true,
           decision: DecisionType.ALLOW,
           reason_code: 'ALL_CONDITIONS_MET',
           conditions: {
@@ -119,38 +120,33 @@ describe('Performance Benchmarks', () => {
     };
 
     const evaluator = new PolicyEvaluator();
-    const iterations = 1000;
+    const run = latencyRun('core/logical-all-of');
 
-    // Warmup
-    for (let i = 0; i < 100; i++) {
-      evaluator.evaluate(baseEnvelope, policy);
-    }
+    // Warmup run (to avoid JIT compilation overhead), timed so the record shows it ran
+    const warmup = timeCalls(run.warmup, () => evaluator.evaluate(baseEnvelope, policy));
 
-    // Benchmark
-    const start = performance.now();
-    for (let i = 0; i < iterations; i++) {
-      evaluator.evaluate(baseEnvelope, policy);
-    }
-    const elapsed = performance.now() - start;
+    // Benchmark run
+    const samples = timeCalls(run.count, () => evaluator.evaluate(baseEnvelope, policy));
+    const p95 = latencyStatistic(samples);
 
-    const avgMs = elapsed / iterations;
+    console.log(`Logical operators (all_of): ${p95.toFixed(4)}ms p95 (${samples.length} iterations after ${warmup.length} warmup)`);
 
-    console.log(`Logical operators (all_of): ${avgMs.toFixed(4)}ms average (${iterations} iterations)`);
-
-    // Logical operators are slightly slower but should still be < 2ms
-    expect(avgMs).toBeLessThan(2);
+    recordMeasurement({ metric: 'core evaluation duration', unit: 'ms', source: `${SOURCE}#logical-all-of`,
+      value: p95, samples, sample_count: samples.length, statistic: 'p95' });
+    recordLatency('core/logical-all-of', samples, 'core', warmup);
   });
 
-  it('should evaluate multiple rules with priority sorting in < 2ms (average)', () => {
+  it('priority sorting meets the declared typical-core budget', () => {
     const policy: PolicySet = {
       name: 'multi-rule-policy',
-      version: '1.0',
+      version: 'v1.0.0',
+      description: 'Evaluate multiple rules with priority sorting',
+      scope: { org_id: 'org_abc123def456ghi789', environment: 'dev' },
       rules: [
         {
           name: 'low-priority',
           description: 'Low priority rule',
           priority: 50,
-          enabled: true,
           decision: DecisionType.ALLOW,
           reason_code: 'LOW',
           conditions: {
@@ -163,7 +159,6 @@ describe('Performance Benchmarks', () => {
           name: 'medium-priority',
           description: 'Medium priority rule',
           priority: 100,
-          enabled: true,
           decision: DecisionType.PAUSE,
           reason_code: 'MEDIUM',
           conditions: {
@@ -176,7 +171,6 @@ describe('Performance Benchmarks', () => {
           name: 'high-priority',
           description: 'High priority rule',
           priority: 200,
-          enabled: true,
           decision: DecisionType.BLOCK,
           reason_code: 'HIGH',
           conditions: {
@@ -189,37 +183,33 @@ describe('Performance Benchmarks', () => {
     };
 
     const evaluator = new PolicyEvaluator();
-    const iterations = 1000;
+    const run = latencyRun('core/priority-sorting');
 
-    // Warmup
-    for (let i = 0; i < 100; i++) {
-      evaluator.evaluate(baseEnvelope, policy);
-    }
+    // Warmup run (to avoid JIT compilation overhead), timed so the record shows it ran
+    const warmup = timeCalls(run.warmup, () => evaluator.evaluate(baseEnvelope, policy));
 
-    // Benchmark
-    const start = performance.now();
-    for (let i = 0; i < iterations; i++) {
-      evaluator.evaluate(baseEnvelope, policy);
-    }
-    const elapsed = performance.now() - start;
+    // Benchmark run
+    const samples = timeCalls(run.count, () => evaluator.evaluate(baseEnvelope, policy));
+    const p95 = latencyStatistic(samples);
 
-    const avgMs = elapsed / iterations;
+    console.log(`Multiple rules (priority sorting): ${p95.toFixed(4)}ms p95 (${samples.length} iterations after ${warmup.length} warmup)`);
 
-    console.log(`Multiple rules (priority sorting): ${avgMs.toFixed(4)}ms average (${iterations} iterations)`);
-
-    expect(avgMs).toBeLessThan(2);
+    recordMeasurement({ metric: 'core evaluation duration', unit: 'ms', source: `${SOURCE}#priority-sorting`,
+      value: p95, samples, sample_count: samples.length, statistic: 'p95' });
+    recordLatency('core/priority-sorting', samples, 'core', warmup);
   });
 
-  it('should evaluate nested conditions in < 2ms (average)', () => {
+  it('nested conditions meet the declared typical-core budget', () => {
     const policy: PolicySet = {
       name: 'nested-policy',
-      version: '1.0',
+      version: 'v1.0.0',
+      description: 'Evaluate nested conditions',
+      scope: { org_id: 'org_abc123def456ghi789', environment: 'dev' },
       rules: [
         {
           name: 'nested-rule',
           description: 'Nested logical conditions',
           priority: 100,
-          enabled: true,
           decision: DecisionType.ALLOW,
           reason_code: 'NESTED_MATCH',
           conditions: {
@@ -250,37 +240,33 @@ describe('Performance Benchmarks', () => {
     };
 
     const evaluator = new PolicyEvaluator();
-    const iterations = 1000;
+    const run = latencyRun('core/nested-conditions');
 
-    // Warmup
-    for (let i = 0; i < 100; i++) {
-      evaluator.evaluate(baseEnvelope, policy);
-    }
+    // Warmup run (to avoid JIT compilation overhead), timed so the record shows it ran
+    const warmup = timeCalls(run.warmup, () => evaluator.evaluate(baseEnvelope, policy));
 
-    // Benchmark
-    const start = performance.now();
-    for (let i = 0; i < iterations; i++) {
-      evaluator.evaluate(baseEnvelope, policy);
-    }
-    const elapsed = performance.now() - start;
+    // Benchmark run
+    const samples = timeCalls(run.count, () => evaluator.evaluate(baseEnvelope, policy));
+    const p95 = latencyStatistic(samples);
 
-    const avgMs = elapsed / iterations;
+    console.log(`Nested conditions: ${p95.toFixed(4)}ms p95 (${samples.length} iterations after ${warmup.length} warmup)`);
 
-    console.log(`Nested conditions: ${avgMs.toFixed(4)}ms average (${iterations} iterations)`);
-
-    expect(avgMs).toBeLessThan(2);
+    recordMeasurement({ metric: 'core evaluation duration', unit: 'ms', source: `${SOURCE}#nested-conditions`,
+      value: p95, samples, sample_count: samples.length, statistic: 'p95' });
+    recordLatency('core/nested-conditions', samples, 'core', warmup);
   });
 
   it('should report timing metadata accurately', () => {
     const policy: PolicySet = {
       name: 'timing-test',
-      version: '1.0',
+      version: 'v1.0.0',
+      description: 'Report timing metadata accurately',
+      scope: { org_id: 'org_abc123def456ghi789', environment: 'dev' },
       rules: [
         {
           name: 'simple-rule',
           description: 'Simple rule for timing test',
           priority: 100,
-          enabled: true,
           decision: DecisionType.ALLOW,
           reason_code: 'OK',
           conditions: {
@@ -293,18 +279,23 @@ describe('Performance Benchmarks', () => {
     };
 
     const evaluator = new PolicyEvaluator();
-    const decision = evaluator.evaluate(baseEnvelope, policy);
-
-    // Timing metadata should be present and reasonable
-    expect(decision.timing.ingest_ms).toBeGreaterThan(0);
-    expect(decision.timing.evaluation_ms).toBeGreaterThan(0);
-    expect(decision.timing.total_ms).toBeGreaterThan(0);
-
-    // Total should be sum of ingest + evaluation (with small rounding tolerance)
-    expect(decision.timing.total_ms).toBeGreaterThanOrEqual(
-      decision.timing.ingest_ms + decision.timing.evaluation_ms - 0.001
-    );
-
-    console.log('Timing metadata:', decision.timing);
+    // These are interval facts, not latency budgets. Zero elapsed time is valid too.
+    for (const trace of [
+      { start: 100, validated: 102, rulesStarted: 103, rulesDone: 108, complete: 111 },
+      { start: 100, validated: 100, rulesStarted: 100, rulesDone: 100, complete: 100 },
+    ]) {
+      const readings = Object.values(trace);
+      const clock = vi.spyOn(performance, 'now').mockImplementation(() => readings.shift()!);
+      try {
+        expect(evaluator.evaluate(baseEnvelope, policy).timing).toEqual({
+          ingest_ms: trace.validated - trace.start,
+          evaluation_ms: trace.rulesDone - trace.rulesStarted,
+          total_ms: trace.complete - trace.start,
+        });
+        expect(readings).toEqual([]);
+      } finally {
+        clock.mockRestore();
+      }
+    }
   });
 });

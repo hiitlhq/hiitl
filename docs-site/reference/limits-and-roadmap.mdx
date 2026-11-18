@@ -1,0 +1,57 @@
+---
+title: "Limits and roadmap"
+description: "What hiitl does not do today, said plainly, and what is being built"
+---
+
+A reviewer should be able to find the edges before asking. This page lists them as of the current build. Items under "Being built" are open rows in the private repository's gap list, each with a test that closes it; they are listed here so that the other pages can describe the build as it stands.
+
+## Latency and the audit disk
+
+Each local or hybrid call writes its audit record with a synchronous durable disk
+commit. Its time depends on the disk; it is part of the whole-call latency, even
+though today's local `total_ms` leaves it out. The unchanged latency targets are
+asserted at p95 for every public runtime at release, on the release's named machine.
+For 0.2.0 that environment is the native Apple M5 Max Mac, 128 GiB RAM, macOS 26.6.2,
+with its local APFS SSD. The passing record and raw samples are saved with the
+release evidence before publication. Shared-runner numbers are measured records;
+structural checks run and fail every build. See [timing metadata](/concepts/decisions).
+
+## Limits of the design
+
+- hiitl judges the action as declared. It reads the envelope's fields; it does not inspect content beyond them, validate reasoning steps, or infer what an unseen system does. Whether the envelope is faithful is the integrating system's responsibility.
+- Policies express conditions over envelope fields and the answers of sync routes. "Should this action happen for this case" is answered only as far as it can be declared; beyond that the answer is a person, reached through a route.
+- A bypass is not caught by hiitl: every path to the outside world must go through `evaluate()` or the gateway. A drop in evaluation volume is the signal to monitor.
+
+## Limits of the build today
+
+- **Languages:** Python and TypeScript SDKs. Other runtimes reach hiitl through the gateway (any MCP server, any language) or the hosted service's HTTP API.
+- **Configuration:** both SDKs read the documented `HIITL_*` settings; an argument passed outranks its variable, and the mode is derived from the resolved settings by one table in both. `HIITL_TIMEOUT` is in seconds in both.
+- **Routes:** bidirectional sync routes, and outbound async routes on the hosted service, are built. `inbound` routes, outbound `sync` routes, a pure-local SDK's outbound delivery, escalation ladders, batching and route-level retry settings are accepted by the schema and not executed. A hybrid-mode SDK downloads routes from the service but asks only the routes in its own `routes_path`.
+- **Approvals:** in local mode a route's answer is approve or deny; `modify` is applied only through the gateway's review case with the hosted service. One person resolves a case. A case past its deadline is listed as pending until its stream or a resolve records the timeout (nothing runs in the background to record it). A route `sla.timeout` under ten seconds or over an hour cannot be a case's wait.
+- **The gateway:** runs beside the client as a local process over stdio and connects to upstream servers over stdio or SSE. It enforces a local policy file and asks local routes with no hosted service. Through it, the envelope's `parameters` are the tool call's arguments as the model made the call.
+- **Signing:** one signing form (HMAC-SHA256 over the RFC 8785 form of the envelope without its signature) in both SDKs and the hosted service. The SDK signs every envelope when it holds a key and checks it before evaluating; the hosted service evaluates only an envelope signed with the API key's signing secret. Each API key has its own signing secret. Local mode has no separate verifier: the process that signs is the one that checks. Records uploaded by hybrid-mode sync are not checked against their signature.
+- **The record:** rows carry an unkeyed SHA-256 content hash. A declared field is stored as `[REDACTED]` and a gateway argument as an HMAC-SHA256 hash under a key kept beside the gateway's audit file; in the SDK's store (the gateway's too) a declared path the call does not carry is named in the record's `redaction` member, `{"absent": [...]}`. An action's result is its own append-only record against the decision's `action_id`, its content hash covering the result. A hybrid-mode SDK applies the organization's redaction policy from its first successful pull. The hosted audit query filters by environment, agent, action and decision type and returns pages of up to 500 rows; there is no bulk export endpoint beyond the database itself.
+- **Kill switches in hybrid mode:** a kill switch activated in the hosted service is a new policy version. An SDK applies the switch from the first evaluation after its next kill-switch poll (30 seconds by default), before the version itself has landed; a switch deactivated keeps binding until the SDK's pull of the new version lands.
+- **Telemetry:** the Python SDK's collector sends counts at every level and no parameter value; parameters are counted only for the actions named in `telemetry_parameter_tools`. The TypeScript SDK ships no collector, so it sends no telemetry.
+- **Rate limits in `OBSERVE_ALL`:** a call past a limit comes back `OBSERVE` with `would_be: RATE_LIMIT`, and the counters count what enforcing would have counted, so observing a limit consumes it as enforcing would.
+- **Cold start, hybrid mode:** with no disk cache and no successful first sync, the default is to warn and continue in the client's own mode until a sync lands (under `RESPECT_POLICY` that means every call is blocked for want of a matching rule); `cold_start_behavior: "fail-closed"` makes the Python constructor refuse to start and the TypeScript client throw at the first `evaluate()`.
+- **Calibration of bounds from observed traffic** (proposing a limit from the observed distribution) is designed, not built; today's bounds are declared, and the `staged` stage is where they are checked before they bind.
+
+## Being built
+
+Each of these is an open row in the gap list with a test that closes it. They are named here so that the pages describe today's build; as each lands, its page is updated.
+
+1. **One meaning for `timing.total_ms`.** Today what it covers depends on where the decision is made. Locally it runs from the call to `evaluate()` through the evaluation; it leaves out the repeated-key check, a hybrid client's kill-switch check when no switch binds, finding the policy, a route's ask, the rate limiter and the audit write. In hosted mode an answered call carries the service's own time for the request, without the network; when the service does not answer, it is the client's own time from sending until it gave up, retries included. The decision response specification says the hosted figure includes network time. Which meaning `total_ms` takes is open.
+2. **A declared element type for computed `blocked_fields`.** A rule's `remediation.details.blocked_fields` written as `{ref, filter}` is computed from the call: the call's values at `ref` that are in `filter`. Both SDKs accept only strings in `filter` and refuse any other element when the policy loads. The policy format does not yet declare what a filter may hold or how a call's value is compared with it.
+3. **A declared contract for the `policy_set` wrapper.** A policy file may put the policy set under a top-level `policy_set` key. Both loaders read that key and ignore any other top-level key beside it, with no error or warning. Which keys the wrapper may carry is not yet declared.
+
+The two remediation items previously listed here have landed; this is not a claim that every platform gap is closed: typed errors from the SDKs (an SDK raises a typed error, with its code and message, only before an envelope exists; after, a failure is a [decision](/concepts/decisions) carrying `error`), and the lifecycle record past the evaluation ([recording the result](/sdk/python-evaluate#recording-the-result)).
+
+## Further out
+
+Multi-party approval; an approvals budget per responsibility; inbound routes; escalation ladders; batching; mutual TLS; a central gateway over Streamable HTTP with per-user authentication; a hash chain across record rows and attestation of the evaluator binary; cross-action pattern detection as a background route.
+
+## What is not on the roadmap
+
+- Content inspection or prompt filtering: a different product with a different failure mode, and it would put a model in the decision path.
+- Moving the hosted service's tooling (the dashboard, regression reports, gated promotion, the review-case queue) into the open-source core. The core is the control point itself: the evaluator, the gateway, the formats, the record, the routes. The tooling around it is the hosted service.

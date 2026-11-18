@@ -1,0 +1,18 @@
+{
+  "read_at": "2026-11-18T14:39:34Z",
+  "ruling": "HTL-17 4d086f19",
+  "subjects": [
+    {
+      "subject": "examples/mcp-server-ts",
+      "package": "hiitl-mcp-server-ts-example",
+      "ecosystem": "npm",
+      "whole": true,
+      "closure": null,
+      "installed": 126,
+      "returncode": 0
+    }
+  ],
+  "findings": [],
+  "unread": [],
+  "passed": true
+}

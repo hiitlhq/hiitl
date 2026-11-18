@@ -1,0 +1,35 @@
+{
+  "test_id": "test_163_cost_estimate_refuses_an_undefined_key",
+  "description": "A cost estimate carries tokens, dollars and api_calls (envelope_schema.json v1.4); any other key is refused, naming it (R-0872; HTL-20 row 147).",
+  "envelope": {
+    "schema_version": "v2.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_billing_bot",
+    "action_id": "act_test16300000000000000000000",
+    "timestamp": "2026-11-04T10:00:00Z",
+    "operation": "execute",
+    "parameters": {
+      "amount": 120,
+      "currency": "USD"
+    },
+    "idempotency_key": "idem_test_163",
+    "target": {
+      "account_id": "acct_7731"
+    },
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "process_payment",
+    "cost_estimate": {
+      "usd_cents": 4
+    }
+  },
+  "expected_refusal": {
+    "artifact": "envelope",
+    "at": [
+      "cost_estimate.usd_cents"
+    ],
+    "names": [
+      "usd_cents"
+    ]
+  }
+}

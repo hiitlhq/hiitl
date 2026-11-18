@@ -1,13 +1,17 @@
 {
   "policy_set": {
     "name": "wrapped-policy",
-    "version": "1.0",
+    "version": "v1.0.0",
+    "description": "Test rule",
+    "scope": {
+      "org_id": "org_devlocal0000000000",
+      "environment": "dev"
+    },
     "rules": [
       {
         "name": "test-rule",
         "description": "Test rule",
         "priority": 100,
-        "enabled": true,
         "decision": "ALLOW",
         "reason_code": "TEST",
         "conditions": {

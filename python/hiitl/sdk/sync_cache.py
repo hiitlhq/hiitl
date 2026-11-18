@@ -8,7 +8,8 @@ Key properties:
 - Atomic disk writes: Write .tmp then os.rename() (POSIX atomic)
 - TTL tracking: Each channel has independent freshness checks
 - Warm start: Load from disk on init with actual file age preservation
-- Integrity: SHA-256 hash verification on cached files
+- Integrity: SHA-256 hash sidecar per file, written with it; a file whose sidecar is absent, unreadable or names
+  another hash is discarded (sync_engine.md §4 "Integrity")
 - Max-stale: Warning when cached data exceeds staleness threshold
 
 Cache structure on disk:
@@ -19,7 +20,7 @@ Cache structure on disk:
         routes.json          # Route configurations
         routes.json.sha256   # Content hash
         routes.etag          # ETag for conditional requests
-        kill_switches.json   # Active kill switch state
+        kill_switches.json   # The last kill-switch tick, as received
         kill_switches.json.sha256  # Content hash
 """
 
@@ -33,7 +34,64 @@ import time
 from pathlib import Path
 from typing import Any, Optional
 
+from hiitl.core.evaluator import live_kill_switches
+from hiitl.core.redaction import ORG_FIELDS
+from hiitl.core.types import PolicySet
+
 logger = logging.getLogger(__name__)
+
+
+def cached_policy_set(cached: Optional[dict]) -> Optional[PolicySet]:
+    """The version a policy pull's cached data holds for evaluation: its first active policy the model reads, a refused
+    one skipped naming why (R-0872), or None when it holds none. The cache reads it once, where the pull is received or
+    the disk cache loaded, and holds it: evaluate() reads the held reading, and the kill-switch tick compares the version
+    it names with it (sync_engine.md 2.4 and Numeric domain; HTL-29 row 131; HTL-43 gap 295): one reading of the cached
+    version."""
+    if not isinstance(cached, dict):
+        return None
+    for p in cached.get("policies") or []:
+        if p.get("active", True):
+            try:
+                return PolicySet(**p.get("content", {}))
+            except Exception as e:
+                logger.warning("Failed to parse cached policy '%s': %s. Trying next source.", p.get("name", "?"), e)
+    return None
+
+
+def version_difference(tick: Optional[dict], cached: Optional[PolicySet]) -> Optional[tuple[tuple, tuple]]:
+    """The version the tick names and the cached version evaluate reads, each as (version, its live switches), when
+    the two differ; None when they agree. "A version string names one policy content per organisation and environment"
+    (policy_format.md "A version identifies what evaluates"), so the two are compared by it, never by the switches'
+    names: the tick is the change signal and the version decides (sync_engine.md 2.4; HTL-29 row 131, condition 2).
+    The engine pulls on a difference, and the cache holds the tick's part while it stands (row 240). A tick naming no
+    version differs from a cached one: an unread version is never the same one."""
+    held = (tick or {}).get("policy_set")
+    named = held.get("version") if isinstance(held, dict) else None
+    version = cached.version if cached is not None else None
+    if named == version:
+        return None
+    switches = sorted(str(s.get("rule_name")) for s in (tick or {}).get("kill_switches") or [])
+    return (named, switches), (version, live_kill_switches(cached) if cached is not None else [])
+
+
+def _tick_part(tick: dict) -> Optional[PolicySet]:
+    """A tick's `policy_set` read as a set, or None when it carries none or the model refuses it (logged): the set
+    the tick names, as far as its switches go (sync_engine.md 2.4; HTL-29 row 240)."""
+    held = tick.get("policy_set")
+    if held is None:
+        return None
+    try:
+        return PolicySet(**held)
+    except Exception as e:
+        logger.error("The kill-switch tick's policy_set cannot be read, so its switches bind only once the version's "
+                     "pull lands: %s", e)
+        return None
+
+
+from hiitl.sdk.admission import admit_configuration
+from hiitl.core.numeric_domain import validate_numeric_domain
+from hiitl.sdk.admission import admit_sync, sync_channel
+from hiitl.sdk.sync_numbers import sync_numeric_shape
 
 
 class SyncCache:
@@ -56,6 +114,7 @@ class SyncCache:
         environment: str,
         max_stale_age: float = 86400.0,
     ):
+        admit_configuration(type(self).__init__, {"max_stale_age": max_stale_age})
         self._base_dir = Path(cache_dir).expanduser() / org_id / environment
         self._org_id = org_id
         self._environment = environment
@@ -67,17 +126,29 @@ class SyncCache:
         self._policies: Optional[dict] = None
         self._policies_etag: Optional[str] = None
         self._policies_updated_at: float = 0.0
+        # The cached version evaluate reads, read through the model where the policies were received or loaded
+        # (sync_engine.md Numeric domain; HTL-43 gap 295). Computed, never stored.
+        self._policy_set: Optional[PolicySet] = None
 
         self._routes: Optional[list] = None
         self._routes_etag: Optional[str] = None
         self._routes_updated_at: float = 0.0
 
-        self._kill_switches: Optional[list] = None
+        self._kill_switches: Optional[dict] = None     # the last tick, as received
         self._kill_switches_updated_at: float = 0.0
+        # The tick's part: the set the last tick names, held from a tick naming a version other than the cached one
+        # until a pull lands after it (sync_engine.md 2.4; HTL-29 row 240, condition 2). Computed, never stored.
+        self._tick_part: Optional[PolicySet] = None
 
         # Health tracking
         self._disk_diverged = False
         self._stale_warned: dict[str, bool] = {}
+
+        # TICKET-116: distinguish "loaded from disk on warm start" from
+        # "populated by a successful sync this process." A disk-loaded
+        # cache may be stale; an in-process synced cache is fresh.
+        # Consumers use cache_status() to surface this on each Decision.
+        self._synced_this_process = False
 
     def load_from_disk(self) -> bool:
         """Load cached data from disk (warm start).
@@ -93,8 +164,10 @@ class SyncCache:
 
         policies = self._read_json("policies.json")
         if policies is not None:
+            policy_set = cached_policy_set(policies)
             with self._lock:
                 self._policies = policies
+                self._policy_set = policy_set
                 self._policies_updated_at = self._file_mtime("policies.json")
                 self._policies_etag = self._read_text("policies.etag")
             loaded_any = True
@@ -109,13 +182,17 @@ class SyncCache:
             loaded_any = True
             logger.info("Loaded cached routes from disk")
 
-        kill_switches = self._read_json("kill_switches.json")
-        if kill_switches is not None:
+        tick = self._read_json("kill_switches.json")
+        if isinstance(tick, dict):
+            # A tick read at start has had no pull after it, so its part stands until the first one lands (row 240)
             with self._lock:
-                self._kill_switches = kill_switches
+                self._hold_tick(tick)
                 self._kill_switches_updated_at = self._file_mtime("kill_switches.json")
             loaded_any = True
             logger.info("Loaded cached kill switches from disk")
+        elif tick is not None:
+            logger.info("The cached kill-switch file holds an earlier SDK's list, which decides nothing: not read. The "
+                        "next tick replaces it.")
 
         if loaded_any:
             logger.info("Warm start: loaded cache from %s", self._base_dir)
@@ -132,6 +209,20 @@ class SyncCache:
         if data is not None:
             self._check_stale("policies", self.get_policies_age_seconds())
         return data
+
+    def get_policy_set(self) -> Optional[PolicySet]:
+        """The cached version evaluate reads (lock-free read via reference): the set read through the model where the
+        policies were received or loaded, or None when they hold none (sync_engine.md Numeric domain)."""
+        policy_set = self._policy_set
+        if policy_set is not None:
+            self._check_stale("policies", self.get_policies_age_seconds())
+        return policy_set
+
+    def get_redaction_fields(self) -> list:
+        """The org's declared fields from the last policy pull (event_format.md §Redaction, row 163(a)), which the
+        local store redacts with its own. Empty until a pull carrying them lands."""
+        data = self._policies or {}
+        return list((data.get("redaction_policy") or {}).get(ORG_FIELDS) or ())
 
     def get_policies_etag(self) -> Optional[str]:
         """Get current policies ETag for conditional requests."""
@@ -154,12 +245,20 @@ class SyncCache:
             etag: ETag value from server response
         """
         disk_ok = self._try_disk_write("policies.json", data, etag, "policies.etag")
+        policy_set = cached_policy_set(data)
 
         with self._lock:
             self._policies = data
+            self._policy_set = policy_set
             self._policies_etag = etag
             self._policies_updated_at = time.monotonic()
             self._disk_diverged = not disk_ok
+            # TICKET-116: any successful update_policies — initial or
+            # background — flips cache_status to "synced" from this
+            # point forward in the process.
+            self._synced_this_process = True
+            # A pull that lands ends the tick's part (sync_engine.md 2.4; row 240)
+            self._tick_part = None
 
         self._stale_warned.pop("policies", None)
         logger.debug("Updated policy cache (etag=%s, disk_ok=%s)", etag, disk_ok)
@@ -204,11 +303,24 @@ class SyncCache:
     # ── Kill switch cache ────────────────────────────────────────
 
     def get_kill_switches(self) -> Optional[list]:
-        """Get cached kill switch state (lock-free read via reference)."""
-        data = self._kill_switches
-        if data is not None:
-            self._check_stale("kill_switches", self.get_kill_switches_age_seconds())
-        return data
+        """The last tick's switch list (lock-free read via reference)."""
+        tick = self._kill_switches
+        if tick is None:
+            return None
+        self._check_stale("kill_switches", self.get_kill_switches_age_seconds())
+        return tick.get("kill_switches")
+
+    def tick_part(self) -> Optional[PolicySet]:
+        """The set a tick no pull has followed names, as far as its switches go (lock-free read via reference):
+        evaluate reads it first, and a switch it binds stands under its version (sync_engine.md 2.4; HTL-29 row 240).
+        None when the last tick agrees with the cached version, or a pull has landed since it."""
+        return self._tick_part
+
+    def policies_landed(self) -> None:
+        """A policy pull answered 304: the cached version is the server's as of the pull, so the tick's part ends,
+        as it does when a new version lands (sync_engine.md 2.4)."""
+        with self._lock:
+            self._tick_part = None
 
     def get_kill_switches_age_seconds(self) -> float:
         """Seconds since kill switches were last updated."""
@@ -216,28 +328,65 @@ class SyncCache:
             return float("inf")
         return time.monotonic() - self._kill_switches_updated_at
 
-    def update_kill_switches(self, data: list) -> None:
-        """Atomically update kill switch cache (memory + disk).
+    def update_kill_switches(self, tick: dict) -> Optional[tuple[tuple, tuple]]:
+        """Atomically update kill switch cache (memory + disk) with the tick as received.
 
-        No ETag — kill switches always return full state.
+        No ETag — kill switches always return full state. The engine runs its channels one at a time, so a pull that
+        lands after this call was read after this tick.
 
         Args:
-            data: Full kill switch response payload
+            tick: The kill switch response payload: `kill_switches`, `policy_set`, `server_time`
+
+        Returns:
+            The version the tick names and the cached version, each with its live switches, when they differ (the
+            engine pulls), else None
         """
-        disk_ok = self._try_disk_write("kill_switches.json", data)
+        disk_ok = self._try_disk_write("kill_switches.json", tick)
 
         with self._lock:
-            self._kill_switches = data
+            difference = self._hold_tick(tick)
             self._kill_switches_updated_at = time.monotonic()
             self._disk_diverged = not disk_ok
 
         self._stale_warned.pop("kill_switches", None)
         logger.debug(
             "Updated kill switch cache (%d switches, disk_ok=%s)",
-            len(data), disk_ok,
+            len(tick.get("kill_switches") or []), disk_ok,
         )
+        return difference
+
+    def _hold_tick(self, tick: dict) -> Optional[tuple[tuple, tuple]]:
+        """Hold the tick, and its part when the version it names is not the cached one; under the lock."""
+        difference = version_difference(tick, self._policy_set)
+        self._kill_switches = tick
+        self._tick_part = _tick_part(tick) if difference is not None else None
+        return difference
 
     # ── Cache status ─────────────────────────────────────────────
+
+    def cache_status(self) -> str:
+        """Return the per-decision cache status (TICKET-116).
+
+        Returns one of:
+          - 'synced'    — `update_policies()` has been called this process
+                          (initial or background sync succeeded). Policies
+                          in memory are fresh from the server.
+          - 'from_disk' — Policies in memory came from the on-disk cache
+                          loaded at startup; no successful sync has run
+                          this process yet. May be stale.
+          - 'empty'     — No policies in memory. Evaluator falls back to
+                          OBSERVE_ALL on every action. Either cold start
+                          with no disk cache, or sync has never succeeded.
+
+        Consumers stamp this on every Decision so callers can detect
+        "I'm running against a stale or empty cache" and adjust their
+        own behavior (e.g. defer high-stakes actions until first sync).
+        """
+        if self._synced_this_process:
+            return "synced"
+        if self._policies is not None:
+            return "from_disk"
+        return "empty"
 
     def status(self) -> dict:
         """Return cache status for health reporting."""
@@ -283,6 +432,7 @@ class SyncCache:
         etag_filename: Optional[str] = None,
     ) -> bool:
         """Attempt to write data to disk. Returns True on success."""
+        admit_sync(sync_channel(filename), data, shape=sync_numeric_shape(sync_channel(filename), cache=True))
         try:
             self._write_json(filename, data)
             if etag and etag_filename:
@@ -339,7 +489,8 @@ class SyncCache:
     def _write_json(self, filename: str, data: Any) -> None:
         """Atomically write JSON + integrity hash to cache file.
 
-        Uses write-to-temp-then-rename for POSIX atomicity.
+        Uses write-to-temp-then-rename for POSIX atomicity. The sidecar is part of the write: a file without it is
+        discarded on read (sync_engine.md §4 "Integrity"), so a sidecar that cannot be written fails the write.
         Raises on failure (callers handle via _try_disk_write).
         """
         self._ensure_dir()
@@ -362,25 +513,23 @@ class SyncCache:
                 pass
             raise
 
-        # Write integrity hash (best-effort — data is already persisted)
+        # Write integrity hash
         content_hash = hashlib.sha256(content).hexdigest()
         hash_file = str(target) + ".sha256"
+        fd2, tmp_path2 = tempfile.mkstemp(
+            dir=str(self._base_dir),
+            suffix=".tmp",
+        )
         try:
-            fd2, tmp_path2 = tempfile.mkstemp(
-                dir=str(self._base_dir),
-                suffix=".tmp",
-            )
+            with os.fdopen(fd2, "w") as f:
+                f.write(content_hash)
+            os.rename(tmp_path2, hash_file)
+        except Exception:
             try:
-                with os.fdopen(fd2, "w") as f:
-                    f.write(content_hash)
-                os.rename(tmp_path2, hash_file)
-            except Exception:
-                try:
-                    os.unlink(tmp_path2)
-                except OSError:
-                    pass
-        except Exception as e:
-            logger.warning("Failed to write hash file %s: %s", hash_file, e)
+                os.unlink(tmp_path2)
+            except OSError:
+                pass
+            raise
 
     def _write_text(self, filename: str, content: str) -> None:
         """Atomically write text to cache file.
@@ -408,7 +557,8 @@ class SyncCache:
     def _read_json(self, filename: str) -> Optional[Any]:
         """Read JSON from cache file with integrity verification.
 
-        Returns None if file is missing, invalid JSON, or hash mismatch.
+        Returns None if file is missing, invalid JSON, or its hash sidecar is absent, unreadable or names another
+        hash: an absent hash proves nothing (sync_engine.md §4 "Integrity"; HTL-29 row 137).
         """
         path = self._base_dir / filename
         if not path.exists():
@@ -420,21 +570,25 @@ class SyncCache:
             logger.warning("Failed to read cache file %s: %s", path, e)
             return None
 
-        # Verify integrity hash if present
+        admit_sync(sync_channel(filename), data, shape=sync_numeric_shape(sync_channel(filename), cache=True))
+        # Verify the integrity hash
         hash_path = Path(str(path) + ".sha256")
-        if hash_path.exists():
-            try:
-                expected = hash_path.read_text().strip()
-                actual = hashlib.sha256(raw).hexdigest()
-                if actual != expected:
-                    logger.error(
-                        "CACHE_INTEGRITY_VIOLATION: %s content hash mismatch "
-                        "(expected=%s, got=%s). Discarding cached data.",
-                        path, expected[:16] + "...", actual[:16] + "...",
-                    )
-                    return None
-            except OSError as e:
-                logger.warning("Failed to read hash file %s: %s", hash_path, e)
+        try:
+            expected = hash_path.read_text().strip()
+        except (OSError, ValueError) as e:
+            logger.error(
+                "CACHE_INTEGRITY_VIOLATION: %s has no readable content hash (%s). Discarding cached data.",
+                path, e,
+            )
+            return None
+        actual = hashlib.sha256(raw).hexdigest()
+        if actual != expected:
+            logger.error(
+                "CACHE_INTEGRITY_VIOLATION: %s content hash mismatch "
+                "(expected=%s, got=%s). Discarding cached data.",
+                path, expected[:16] + "...", actual[:16] + "...",
+            )
+            return None
 
         return data
 

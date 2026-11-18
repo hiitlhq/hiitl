@@ -1,0 +1,39 @@
+---
+title: "Shared responsibility"
+description: "Who is responsible for what: the core you run, the hosted service hiitl runs, and a partner operating it for you"
+---
+
+hiitl has two planes. The open-source core is software you run in your own environment (local mode). The hosted service is operated by hiitl (hybrid and hosted modes). This page says where the line is in each case, so that a security review assigns each control to its owner.
+
+## The core, in your environment (local mode)
+
+| Area | hiitl (the software and its maintainers) | You (the deploying organization) | A partner operating it for you, if any |
+|---|---|---|---|
+| **Code** | secure development practices; tests and the mutation harnesses on every release; the complete dependency audits in both languages; the software bill of materials from the next release; vulnerability handling and advisories | installing the released version on the agent hosts; applying releases | — |
+| **Infrastructure** | — | the agent hosts, your reviewer endpoint, your repository, your log pipeline, encryption at rest, backups, IAM | operating within the role you grant |
+| **Identity** | `agent_id` and `org_id` in every envelope and record; envelope signing when a key is given | your identity provider for who may change a policy (repository review) and who may approve (your endpoint); custody of the signing key you choose; SSO, MFA and just-in-time access for operators | using only the identities you issue |
+| **Policies** | the formats; the lifecycle stages (`staged` watches, `active` binds); deny-wins composition; refusal of the retired fields | what the policies say; the review before a rule goes `active`; the query over the record that stands in for the regression report; the timeout posture per route | drafting and tuning policies on your instruction, under your change control |
+| **The envelope** | the schema; signing; validation | building every envelope from the actual call, never from the model's prose; routing every consequential path through `evaluate()` or the gateway; what goes into `parameters` | the harness that does this, if the partner builds it |
+| **The record** | one row per evaluation with its content hash; the SDK never changes or deletes a row | shipping, immutability in your store, retention, deletion, who may read it | — |
+| **Approvals** | the route mechanism: the question asked, the answer re-entering, the timeout and its posture | the reviewer endpoint; staffing it; the channel (Teams, email); who may answer | building and operating the endpoint, if agreed |
+| **Monitoring** | the record's fields; the Python SDK's `status()` | dashboards and alerts over the record, including evaluation volume per responsibility | watching them on your behalf, if agreed |
+| **Incidents** | advisories and fixes for vulnerabilities in hiitl | incident response in your environment; the kill switch (a named person of yours, by commit and deploy) | — |
+| **Compliance** | the documents on this site; cooperation with your penetration test | your certifications, DPIA, data-protection record, supplier onboarding | — |
+
+## The hosted service (hybrid and hosted modes)
+
+| Area | hiitl | You |
+|---|---|---|
+| **The service** | its infrastructure, availability, patching, backups, encryption, tenant isolation, logging, its own incident response | your keys' custody and rotation; who holds `admin` |
+| **Policies** | the lifecycle tooling: regression reports, gated promotion, rollback to `staged`, automatic demotion of an over-triggering rule, the change record per version | what the policies say; reading the report before promoting |
+| **Approvals** | the review-case queue the gateway uses, the dashboard, resolution, the stream the gateway waits on | staffing the queue; the channels you add |
+| **The record** | storage, content hashes, the audit query API | retention decisions within the service's terms; who may read it |
+| **The SDK side** | the cache, the circuit breaker, the buffer | the cold-start behavior; the timeout posture per route |
+
+## What a penetration test needs from hiitl
+
+Run it inside your environment, against your deployment, with your tooling or an approved tester. From hiitl you have: the public source at the version you deployed; this site; the signing key you chose; and, on request, a walk-through of the surfaces in the [whitepaper](/security/whitepaper) with the maintainers. A test of the hosted service is arranged with hiitl. Findings in hiitl itself go through the [disclosure process](/reference/licensing-and-support#security-reporting); findings in your configuration are yours.
+
+## The operator role, if a partner operates hiitl for you
+
+The partner works through identities you issue (single sign-on, multi-factor, just-in-time, logged, revocable), with an operator role scoped to the hiitl pieces and nothing else. The partner holds no key you have not issued and no copy of your data. Revoking the role leaves the deployment running. The partner's own obligations (confidentiality, sub-processor terms where personal data is in scope, insurance) sit in your agreement with the partner, not in the software.

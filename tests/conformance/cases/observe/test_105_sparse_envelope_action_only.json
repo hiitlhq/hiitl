@@ -2,7 +2,7 @@
   "test_id": "test_105_sparse_envelope_action_only",
   "description": "Sparse envelope: only action + required identifiers, operation/target/parameters use defaults",
   "envelope": {
-    "schema_version": "v1.0",
+    "schema_version": "v2.0",
     "org_id": "org_1234567890abcdef",
     "environment": "dev",
     "agent_id": "agent_test",
@@ -13,13 +13,17 @@
     "signature": "0000000000000000000000000000000000000000000000000000000000000000"
   },
   "policy_set": {
-    "version": "1.0.0",
+    "version": "v1.0.0",
+    "description": "Sparse envelope: only action + required identifiers, operation/target/parameters use defaults",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "dev"
+    },
     "name": "test_policy",
     "rules": [
       {
         "name": "allow_email",
         "priority": 100,
-        "enabled": true,
         "conditions": {
           "field": "action",
           "operator": "equals",
@@ -34,6 +38,8 @@
   "expected_decision": {
     "decision": "ALLOW",
     "allowed": true,
-    "reason_codes": ["EMAIL_ALLOWED"]
+    "reason_codes": [
+      "EMAIL_ALLOWED"
+    ]
   }
 }

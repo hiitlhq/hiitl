@@ -1,0 +1,2409 @@
+[
+  {
+    "name": "tiny_active",
+    "envelope": {
+      "schema_version": "v2.0",
+      "org_id": "org_test123456789012",
+      "environment": "dev",
+      "agent_id": "bench-agent",
+      "action_id": "act_bench0000000000000001",
+      "idempotency_key": "idem_bench",
+      "action": "send_email",
+      "timestamp": "2026-11-16T01:55:23.537455Z",
+      "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "operation": "execute",
+      "target": {
+        "to": "alice@example.com"
+      },
+      "parameters": {
+        "subject": "x",
+        "body": "y"
+      },
+      "signature_version": "hmac-sha256-v1"
+    },
+    "policy": {
+      "name": "tiny",
+      "version": "v1.0.0",
+      "description": "The tiny set",
+      "scope": {
+        "org_id": "org_test123456789012",
+        "environment": "dev"
+      },
+      "on_missing": "skip",
+      "rules": [
+        {
+          "name": "only",
+          "description": "benchmark rule only",
+          "priority": 100,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        }
+      ]
+    }
+  },
+  {
+    "name": "small_active",
+    "envelope": {
+      "schema_version": "v2.0",
+      "org_id": "org_test123456789012",
+      "environment": "dev",
+      "agent_id": "bench-agent",
+      "action_id": "act_bench0000000000000001",
+      "idempotency_key": "idem_bench",
+      "action": "send_email",
+      "timestamp": "2026-11-16T01:55:23.621477Z",
+      "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "operation": "execute",
+      "target": {
+        "to": "alice@example.com"
+      },
+      "parameters": {
+        "subject": "x",
+        "body": "y"
+      },
+      "signature_version": "hmac-sha256-v1"
+    },
+    "policy": {
+      "name": "small",
+      "version": "v1.0.0",
+      "description": "The small set",
+      "scope": {
+        "org_id": "org_test123456789012",
+        "environment": "dev"
+      },
+      "on_missing": "skip",
+      "rules": [
+        {
+          "name": "r0",
+          "description": "benchmark rule r0",
+          "priority": 100,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v0"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "r1",
+          "description": "benchmark rule r1",
+          "priority": 101,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v1"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "r2",
+          "description": "benchmark rule r2",
+          "priority": 102,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v2"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "r3",
+          "description": "benchmark rule r3",
+          "priority": 103,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v3"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "match",
+          "description": "benchmark rule match",
+          "priority": 10,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        }
+      ]
+    }
+  },
+  {
+    "name": "medium_with_scope",
+    "envelope": {
+      "schema_version": "v2.0",
+      "org_id": "org_test123456789012",
+      "environment": "dev",
+      "agent_id": "bench-agent",
+      "action_id": "act_bench0000000000000001",
+      "idempotency_key": "idem_bench",
+      "action": "send_email",
+      "timestamp": "2026-11-16T01:55:23.743761Z",
+      "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "operation": "execute",
+      "target": {
+        "to": "alice@example.com"
+      },
+      "parameters": {
+        "subject": "x",
+        "body": "y"
+      },
+      "signature_version": "hmac-sha256-v1"
+    },
+    "policy": {
+      "name": "medium_scope",
+      "version": "v1.0.0",
+      "description": "The medium_scope set",
+      "scope": {
+        "org_id": "org_test123456789012",
+        "environment": "dev"
+      },
+      "on_missing": "skip",
+      "rules": [
+        {
+          "name": "r0",
+          "description": "benchmark rule r0",
+          "priority": 100,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v0"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "scope": {
+            "agents": [
+              "bench-agent"
+            ],
+            "environments": [
+              "dev"
+            ]
+          },
+          "observation_window_days": 7
+        },
+        {
+          "name": "r1",
+          "description": "benchmark rule r1",
+          "priority": 101,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v1"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "scope": {
+            "agents": [
+              "bench-agent"
+            ],
+            "environments": [
+              "dev"
+            ]
+          },
+          "observation_window_days": 7
+        },
+        {
+          "name": "r2",
+          "description": "benchmark rule r2",
+          "priority": 102,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v2"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "scope": {
+            "agents": [
+              "bench-agent"
+            ],
+            "environments": [
+              "dev"
+            ]
+          },
+          "observation_window_days": 7
+        },
+        {
+          "name": "r3",
+          "description": "benchmark rule r3",
+          "priority": 103,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v3"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "scope": {
+            "agents": [
+              "bench-agent"
+            ],
+            "environments": [
+              "dev"
+            ]
+          },
+          "observation_window_days": 7
+        },
+        {
+          "name": "r4",
+          "description": "benchmark rule r4",
+          "priority": 104,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v4"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "scope": {
+            "agents": [
+              "bench-agent"
+            ],
+            "environments": [
+              "dev"
+            ]
+          },
+          "observation_window_days": 7
+        },
+        {
+          "name": "r5",
+          "description": "benchmark rule r5",
+          "priority": 105,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v5"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "scope": {
+            "agents": [
+              "bench-agent"
+            ],
+            "environments": [
+              "dev"
+            ]
+          },
+          "observation_window_days": 7
+        },
+        {
+          "name": "r6",
+          "description": "benchmark rule r6",
+          "priority": 106,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v6"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "scope": {
+            "agents": [
+              "bench-agent"
+            ],
+            "environments": [
+              "dev"
+            ]
+          },
+          "observation_window_days": 7
+        },
+        {
+          "name": "r7",
+          "description": "benchmark rule r7",
+          "priority": 107,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v7"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "scope": {
+            "agents": [
+              "bench-agent"
+            ],
+            "environments": [
+              "dev"
+            ]
+          },
+          "observation_window_days": 7
+        },
+        {
+          "name": "r8",
+          "description": "benchmark rule r8",
+          "priority": 108,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v8"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "scope": {
+            "agents": [
+              "bench-agent"
+            ],
+            "environments": [
+              "dev"
+            ]
+          },
+          "observation_window_days": 7
+        },
+        {
+          "name": "r9",
+          "description": "benchmark rule r9",
+          "priority": 109,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v9"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "scope": {
+            "agents": [
+              "bench-agent"
+            ],
+            "environments": [
+              "dev"
+            ]
+          },
+          "observation_window_days": 7
+        },
+        {
+          "name": "r10",
+          "description": "benchmark rule r10",
+          "priority": 110,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v10"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "scope": {
+            "agents": [
+              "bench-agent"
+            ],
+            "environments": [
+              "dev"
+            ]
+          },
+          "observation_window_days": 7
+        },
+        {
+          "name": "r11",
+          "description": "benchmark rule r11",
+          "priority": 111,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v11"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "scope": {
+            "agents": [
+              "bench-agent"
+            ],
+            "environments": [
+              "dev"
+            ]
+          },
+          "observation_window_days": 7
+        },
+        {
+          "name": "r12",
+          "description": "benchmark rule r12",
+          "priority": 112,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v12"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "scope": {
+            "agents": [
+              "bench-agent"
+            ],
+            "environments": [
+              "dev"
+            ]
+          },
+          "observation_window_days": 7
+        },
+        {
+          "name": "r13",
+          "description": "benchmark rule r13",
+          "priority": 113,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v13"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "scope": {
+            "agents": [
+              "bench-agent"
+            ],
+            "environments": [
+              "dev"
+            ]
+          },
+          "observation_window_days": 7
+        },
+        {
+          "name": "r14",
+          "description": "benchmark rule r14",
+          "priority": 114,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v14"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "scope": {
+            "agents": [
+              "bench-agent"
+            ],
+            "environments": [
+              "dev"
+            ]
+          },
+          "observation_window_days": 7
+        },
+        {
+          "name": "r15",
+          "description": "benchmark rule r15",
+          "priority": 115,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v15"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "scope": {
+            "agents": [
+              "bench-agent"
+            ],
+            "environments": [
+              "dev"
+            ]
+          },
+          "observation_window_days": 7
+        },
+        {
+          "name": "r16",
+          "description": "benchmark rule r16",
+          "priority": 116,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v16"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "scope": {
+            "agents": [
+              "bench-agent"
+            ],
+            "environments": [
+              "dev"
+            ]
+          },
+          "observation_window_days": 7
+        },
+        {
+          "name": "r17",
+          "description": "benchmark rule r17",
+          "priority": 117,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v17"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "scope": {
+            "agents": [
+              "bench-agent"
+            ],
+            "environments": [
+              "dev"
+            ]
+          },
+          "observation_window_days": 7
+        },
+        {
+          "name": "r18",
+          "description": "benchmark rule r18",
+          "priority": 118,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v18"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "scope": {
+            "agents": [
+              "bench-agent"
+            ],
+            "environments": [
+              "dev"
+            ]
+          },
+          "observation_window_days": 7
+        },
+        {
+          "name": "match",
+          "description": "benchmark rule match",
+          "priority": 10,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "scope": {
+            "agents": [
+              "bench-agent"
+            ],
+            "environments": [
+              "dev"
+            ]
+          },
+          "observation_window_days": 7
+        }
+      ]
+    }
+  },
+  {
+    "name": "medium_with_staged",
+    "envelope": {
+      "schema_version": "v2.0",
+      "org_id": "org_test123456789012",
+      "environment": "dev",
+      "agent_id": "bench-agent",
+      "action_id": "act_bench0000000000000001",
+      "idempotency_key": "idem_bench",
+      "action": "send_email",
+      "timestamp": "2026-11-16T01:55:24.081775Z",
+      "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "operation": "execute",
+      "target": {
+        "to": "alice@example.com"
+      },
+      "parameters": {
+        "subject": "x",
+        "body": "y"
+      },
+      "signature_version": "hmac-sha256-v1"
+    },
+    "policy": {
+      "name": "medium_staged",
+      "version": "v1.0.0",
+      "description": "The medium_staged set",
+      "scope": {
+        "org_id": "org_test123456789012",
+        "environment": "dev"
+      },
+      "on_missing": "skip",
+      "rules": [
+        {
+          "name": "a0",
+          "description": "benchmark rule a0",
+          "priority": 100,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v0"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a1",
+          "description": "benchmark rule a1",
+          "priority": 101,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v1"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a2",
+          "description": "benchmark rule a2",
+          "priority": 102,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v2"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a3",
+          "description": "benchmark rule a3",
+          "priority": 103,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v3"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a4",
+          "description": "benchmark rule a4",
+          "priority": 104,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v4"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a5",
+          "description": "benchmark rule a5",
+          "priority": 105,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v5"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a6",
+          "description": "benchmark rule a6",
+          "priority": 106,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v6"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a7",
+          "description": "benchmark rule a7",
+          "priority": 107,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v7"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a8",
+          "description": "benchmark rule a8",
+          "priority": 108,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v8"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a9",
+          "description": "benchmark rule a9",
+          "priority": 109,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v9"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s0",
+          "description": "benchmark rule s0",
+          "priority": 200,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s1",
+          "description": "benchmark rule s1",
+          "priority": 201,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s2",
+          "description": "benchmark rule s2",
+          "priority": 202,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s3",
+          "description": "benchmark rule s3",
+          "priority": 203,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s4",
+          "description": "benchmark rule s4",
+          "priority": 204,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s5",
+          "description": "benchmark rule s5",
+          "priority": 205,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s6",
+          "description": "benchmark rule s6",
+          "priority": 206,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s7",
+          "description": "benchmark rule s7",
+          "priority": 207,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s8",
+          "description": "benchmark rule s8",
+          "priority": 208,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s9",
+          "description": "benchmark rule s9",
+          "priority": 209,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "match",
+          "description": "benchmark rule match",
+          "priority": 10,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        }
+      ]
+    }
+  },
+  {
+    "name": "large_with_staged",
+    "envelope": {
+      "schema_version": "v2.0",
+      "org_id": "org_test123456789012",
+      "environment": "dev",
+      "agent_id": "bench-agent",
+      "action_id": "act_bench0000000000000001",
+      "idempotency_key": "idem_bench",
+      "action": "send_email",
+      "timestamp": "2026-11-16T01:55:24.517352Z",
+      "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "operation": "execute",
+      "target": {
+        "to": "alice@example.com"
+      },
+      "parameters": {
+        "subject": "x",
+        "body": "y"
+      },
+      "signature_version": "hmac-sha256-v1"
+    },
+    "policy": {
+      "name": "large_staged",
+      "version": "v1.0.0",
+      "description": "The large_staged set",
+      "scope": {
+        "org_id": "org_test123456789012",
+        "environment": "dev"
+      },
+      "on_missing": "skip",
+      "rules": [
+        {
+          "name": "a0",
+          "description": "benchmark rule a0",
+          "priority": 100,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v0"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a1",
+          "description": "benchmark rule a1",
+          "priority": 101,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v1"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a2",
+          "description": "benchmark rule a2",
+          "priority": 102,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v2"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a3",
+          "description": "benchmark rule a3",
+          "priority": 103,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v3"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a4",
+          "description": "benchmark rule a4",
+          "priority": 104,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v4"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a5",
+          "description": "benchmark rule a5",
+          "priority": 105,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v5"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a6",
+          "description": "benchmark rule a6",
+          "priority": 106,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v6"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a7",
+          "description": "benchmark rule a7",
+          "priority": 107,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v7"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a8",
+          "description": "benchmark rule a8",
+          "priority": 108,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v8"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a9",
+          "description": "benchmark rule a9",
+          "priority": 109,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v9"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a10",
+          "description": "benchmark rule a10",
+          "priority": 110,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v10"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a11",
+          "description": "benchmark rule a11",
+          "priority": 111,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v11"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a12",
+          "description": "benchmark rule a12",
+          "priority": 112,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v12"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a13",
+          "description": "benchmark rule a13",
+          "priority": 113,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v13"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a14",
+          "description": "benchmark rule a14",
+          "priority": 114,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v14"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a15",
+          "description": "benchmark rule a15",
+          "priority": 115,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v15"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a16",
+          "description": "benchmark rule a16",
+          "priority": 116,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v16"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a17",
+          "description": "benchmark rule a17",
+          "priority": 117,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v17"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a18",
+          "description": "benchmark rule a18",
+          "priority": 118,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v18"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a19",
+          "description": "benchmark rule a19",
+          "priority": 119,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v19"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a20",
+          "description": "benchmark rule a20",
+          "priority": 120,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v20"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a21",
+          "description": "benchmark rule a21",
+          "priority": 121,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v21"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a22",
+          "description": "benchmark rule a22",
+          "priority": 122,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v22"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a23",
+          "description": "benchmark rule a23",
+          "priority": 123,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v23"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a24",
+          "description": "benchmark rule a24",
+          "priority": 124,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v24"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a25",
+          "description": "benchmark rule a25",
+          "priority": 125,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v25"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a26",
+          "description": "benchmark rule a26",
+          "priority": 126,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v26"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a27",
+          "description": "benchmark rule a27",
+          "priority": 127,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v27"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a28",
+          "description": "benchmark rule a28",
+          "priority": 128,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v28"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a29",
+          "description": "benchmark rule a29",
+          "priority": 129,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v29"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a30",
+          "description": "benchmark rule a30",
+          "priority": 130,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v30"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a31",
+          "description": "benchmark rule a31",
+          "priority": 131,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v31"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a32",
+          "description": "benchmark rule a32",
+          "priority": 132,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v32"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a33",
+          "description": "benchmark rule a33",
+          "priority": 133,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v33"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a34",
+          "description": "benchmark rule a34",
+          "priority": 134,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v34"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a35",
+          "description": "benchmark rule a35",
+          "priority": 135,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v35"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a36",
+          "description": "benchmark rule a36",
+          "priority": 136,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v36"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a37",
+          "description": "benchmark rule a37",
+          "priority": 137,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v37"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a38",
+          "description": "benchmark rule a38",
+          "priority": 138,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v38"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a39",
+          "description": "benchmark rule a39",
+          "priority": 139,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v39"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a40",
+          "description": "benchmark rule a40",
+          "priority": 140,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v40"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a41",
+          "description": "benchmark rule a41",
+          "priority": 141,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v41"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a42",
+          "description": "benchmark rule a42",
+          "priority": 142,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v42"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a43",
+          "description": "benchmark rule a43",
+          "priority": 143,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v43"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a44",
+          "description": "benchmark rule a44",
+          "priority": 144,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v44"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a45",
+          "description": "benchmark rule a45",
+          "priority": 145,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v45"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a46",
+          "description": "benchmark rule a46",
+          "priority": 146,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v46"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a47",
+          "description": "benchmark rule a47",
+          "priority": 147,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v47"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a48",
+          "description": "benchmark rule a48",
+          "priority": 148,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v48"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "a49",
+          "description": "benchmark rule a49",
+          "priority": 149,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "v49"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s0",
+          "description": "benchmark rule s0",
+          "priority": 500,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s1",
+          "description": "benchmark rule s1",
+          "priority": 501,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s2",
+          "description": "benchmark rule s2",
+          "priority": 502,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s3",
+          "description": "benchmark rule s3",
+          "priority": 503,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s4",
+          "description": "benchmark rule s4",
+          "priority": 504,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s5",
+          "description": "benchmark rule s5",
+          "priority": 505,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s6",
+          "description": "benchmark rule s6",
+          "priority": 506,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s7",
+          "description": "benchmark rule s7",
+          "priority": 507,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s8",
+          "description": "benchmark rule s8",
+          "priority": 508,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s9",
+          "description": "benchmark rule s9",
+          "priority": 509,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s10",
+          "description": "benchmark rule s10",
+          "priority": 510,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s11",
+          "description": "benchmark rule s11",
+          "priority": 511,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s12",
+          "description": "benchmark rule s12",
+          "priority": 512,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s13",
+          "description": "benchmark rule s13",
+          "priority": 513,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s14",
+          "description": "benchmark rule s14",
+          "priority": 514,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s15",
+          "description": "benchmark rule s15",
+          "priority": 515,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s16",
+          "description": "benchmark rule s16",
+          "priority": 516,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s17",
+          "description": "benchmark rule s17",
+          "priority": 517,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s18",
+          "description": "benchmark rule s18",
+          "priority": 518,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s19",
+          "description": "benchmark rule s19",
+          "priority": 519,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s20",
+          "description": "benchmark rule s20",
+          "priority": 520,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s21",
+          "description": "benchmark rule s21",
+          "priority": 521,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s22",
+          "description": "benchmark rule s22",
+          "priority": 522,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s23",
+          "description": "benchmark rule s23",
+          "priority": 523,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s24",
+          "description": "benchmark rule s24",
+          "priority": 524,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s25",
+          "description": "benchmark rule s25",
+          "priority": 525,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s26",
+          "description": "benchmark rule s26",
+          "priority": 526,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s27",
+          "description": "benchmark rule s27",
+          "priority": 527,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s28",
+          "description": "benchmark rule s28",
+          "priority": 528,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s29",
+          "description": "benchmark rule s29",
+          "priority": 529,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s30",
+          "description": "benchmark rule s30",
+          "priority": 530,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s31",
+          "description": "benchmark rule s31",
+          "priority": 531,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s32",
+          "description": "benchmark rule s32",
+          "priority": 532,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s33",
+          "description": "benchmark rule s33",
+          "priority": 533,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s34",
+          "description": "benchmark rule s34",
+          "priority": 534,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s35",
+          "description": "benchmark rule s35",
+          "priority": 535,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s36",
+          "description": "benchmark rule s36",
+          "priority": 536,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s37",
+          "description": "benchmark rule s37",
+          "priority": 537,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s38",
+          "description": "benchmark rule s38",
+          "priority": 538,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s39",
+          "description": "benchmark rule s39",
+          "priority": 539,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s40",
+          "description": "benchmark rule s40",
+          "priority": 540,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s41",
+          "description": "benchmark rule s41",
+          "priority": 541,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s42",
+          "description": "benchmark rule s42",
+          "priority": 542,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s43",
+          "description": "benchmark rule s43",
+          "priority": 543,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s44",
+          "description": "benchmark rule s44",
+          "priority": 544,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s45",
+          "description": "benchmark rule s45",
+          "priority": 545,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s46",
+          "description": "benchmark rule s46",
+          "priority": 546,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s47",
+          "description": "benchmark rule s47",
+          "priority": 547,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s48",
+          "description": "benchmark rule s48",
+          "priority": 548,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "s49",
+          "description": "benchmark rule s49",
+          "priority": 549,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "BLOCK",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "staged",
+          "observation_window_days": 7
+        },
+        {
+          "name": "match",
+          "description": "benchmark rule match",
+          "priority": 10,
+          "conditions": {
+            "field": "action",
+            "operator": "equals",
+            "value": "send_email"
+          },
+          "decision": "ALLOW",
+          "reason_code": "BENCH_MATCH",
+          "lifecycle_stage": "active",
+          "observation_window_days": 7
+        }
+      ]
+    }
+  }
+]

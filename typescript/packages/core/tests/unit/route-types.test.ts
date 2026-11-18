@@ -63,11 +63,6 @@ function outboundRoute(overrides: Record<string, unknown> = {}) {
     timing: 'async',
     endpoint: 'https://audit.example.com/events',
     protocol: 'webhook',
-    context: {
-      fields: [
-        { field_path: 'tool_name', label: 'Tool' },
-      ],
-    },
     ...overrides,
   };
 }
@@ -294,7 +289,7 @@ describe('Route Schema — Inbound Validation', () => {
 
   it('rejects inbound with context', () => {
     const result = RouteSchema.safeParse(inboundRoute({
-      context: { fields: [{ field_path: 'tool_name' }] },
+      context: { fields: [{ field_path: 'action' }] },
     }));
     expect(result.success).toBe(false);
   });
@@ -463,7 +458,7 @@ describe('Route Schema — Sub-Model Validation', () => {
   });
 
   it('validates context field requires field_path', () => {
-    const result = RouteSchema.safeParse(outboundRoute({
+    const result = RouteSchema.safeParse(bidirectionalRoute({
       context: {
         fields: [{ label: 'Amount' }],
       },
@@ -520,6 +515,25 @@ describe('Route Schema — Serialization', () => {
       expect(result.data.context?.risk_framing?.consequences?.if_approved).toBe(
         'Payment will be processed immediately'
       );
+    }
+  });
+});
+
+// ============================================================================
+// Row 149 (HTL-20): sla.auto_approve_flag removed in routes.md 1.3
+// ============================================================================
+
+describe('Route Schema — retired sla fields', () => {
+  it('refuses the retired sla.auto_approve_flag, naming it', () => {
+    // As any undefined field is (row 147, R-0872): the key is not dropped silently
+    const result = RouteSchema.safeParse(bidirectionalRoute({
+      sla: { timeout: '15m', timeout_action: 'fail_open', auto_approve_flag: true },
+    }));
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.map((i) => [...i.path, ...('keys' in i ? i.keys : [])].join('.'))).toEqual([
+        'sla.auto_approve_flag',
+      ]);
     }
   });
 });

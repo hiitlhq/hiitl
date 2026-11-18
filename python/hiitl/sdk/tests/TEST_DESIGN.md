@@ -11,7 +11,7 @@ The SDK test suite validates that the Python SDK for HIITL local/edge mode:
 1. **Provides a correct, developer-friendly API** for policy evaluation
 2. **Integrates components correctly** (PolicyLoader → Evaluator → RateLimiter → AuditLogger)
 3. **Meets performance requirements** (< 10ms end-to-end latency)
-4. **Handles errors gracefully** with helpful, actionable error messages
+4. **Handles errors gracefully** with helpful messages
 5. **Validates configuration** and prevents misconfiguration
 6. **Maintains data integrity** (audit hashing, envelope signing)
 
@@ -35,7 +35,7 @@ This suite is **separate from conformance tests** (which validate evaluator corr
 - `test_config.py`: 16 tests covering all config validation
   - Valid config succeeds
   - Environment enum validation (dev/stage/prod)
-  - org_id pattern validation (org_[a-z0-9]{18,})
+  - org_id pattern validation (the envelope's `ORG_ID_PATTERN`, so every id the service mints is taken)
   - Mode validation (only "local" supported)
   - Missing required fields caught
   - Helpful error messages point to fixes
@@ -175,7 +175,7 @@ This suite is **separate from conformance tests** (which validate evaluator corr
 
 **What must work:**
 - All SDK exceptions inherit from HIITLError (easy catching)
-- Helpful, actionable error messages
+- Helpful error messages
 - Error messages point to documentation
 - EnvelopeValidationError includes validation_errors list
 
@@ -186,10 +186,34 @@ This suite is **separate from conformance tests** (which validate evaluator corr
   - Can catch all SDK errors with HIITLError
   - EnvelopeValidationError stores validation_errors
   - Error messages are helpful
+  - `test_the_package_exports_every_sdk_error` (HTL-17): every `HIITLError` subclass in `hiitl.sdk.exceptions` is
+    importable from `hiitl` itself, the classes read from the module. The TypeScript twin is
+    `exceptions.test.ts` "exports every error class the SDK throws": the package's `exports` map opens only its index,
+    so a class the index leaves out cannot be caught by type (`ColdStartError` was such a class until 0.2.0)
 
 **Success criteria:** Errors are easy to catch, messages are actionable
 
 **Status:** ✅ **PROVEN** - All tests pass, error messages helpful
+
+---
+
+### 7. The Version Reported Is the Version Published ✅ PROVEN (HTL-17)
+
+**What must work:**
+- The version is written once, in `hiitl/_version.py`, and the build reads it (`pyproject.toml`, setuptools dynamic
+  metadata), so the wheel's version is that copy
+- Every place the package states its version reads that copy: `hiitl.__version__`, the sync client's
+  `X-HIITL-SDK-Version` header, the telemetry record's `sdk_version`, the MCP proxy's server info, the synthetic
+  runner's `runner_version`
+
+**Test coverage:**
+- `test_version.py`: the package export, the proxy, the runner, the build
+- `test_sync.py::TestSyncClientHeaders`, `test_telemetry.py::TestTelemetryRecordFormat`: the header and the record
+- The TypeScript SDK reads its own `package.json` at runtime; `sync-client.test.ts` pins the header to it
+
+**Success criteria:** A second copy of the version, anywhere the package states it, fails a cell
+
+**Status:** ✅ **PROVEN** - each site's e17-version-* mutation row is caught
 
 ---
 
@@ -266,6 +290,7 @@ This suite is **separate from conformance tests** (which validate evaluator corr
 | Client integration | ✅ PROVEN | 16 tests, full flow validated |
 | Performance (< 10ms) | ✅ PROVEN | Performance test passes consistently |
 | Error handling | ✅ PROVEN | 8 tests, helpful messages confirmed |
+| Version reported = version published | ✅ PROVEN | test_version.py + the header and record cells; e17-version-* rows |
 | **Overall** | ✅ **PROVEN** | 82/82 tests passing (100%) |
 
 ---

@@ -3,58 +3,77 @@ title: "Data Access Patterns"
 description: "Database queries, data exports, and record deletion"
 ---
 
+Each starter policy below is a complete policy file. Load it with `HIITL(policy_path="policy.yaml", mode="RESPECT_POLICY")` to enforce it. Under `RESPECT_POLICY`, an action no rule matches is blocked with `NO_MATCHING_RULE`, so a policy carries an `ALLOW` rule for the calls that should proceed. Under the default mode, `OBSERVE_ALL`, a decision other than `ALLOW` or `SANDBOX` comes back as `OBSERVE`, with the rule's decision in `would_be`.
+
 ## query_database
 
 Execute a database query.
 
 ```python
 decision = hiitl.evaluate(
-    tool="query_database",
+    "query_database",
     operation="read",
     target={"database": "production", "table": "users"},
-    parameters={"query_type": "select", "limit": 100}
+    parameters={"query_type": "select", "limit": 100},
 )
 ```
 
 **Starter policy:**
 
 ```yaml
-- name: "block-unlimited-queries"
-  enabled: true
-  priority: 900
-  conditions:
-    all_of:
-      - field: "action"
-        operator: "equals"
-        value: "query_database"
-      - field: "parameters.limit"
-        operator: "greater_than"
-        value: 10000
-  decision: "BLOCK"
-  reason_code: "QUERY_TOO_LARGE"
-  remediation:
-    message: "Query limit exceeds 10,000 rows."
-    suggestion: "Add a LIMIT clause of 10,000 or less, or use the export_data action for bulk retrieval."
-    type: "threshold"
-    details:
-      max_limit: 10000
+name: "queries"
+version: "v1.0.0"
+description: "Controls on query_database"
+scope:
+  org_id: "org_devlocal0000000000"
+  environment: "dev"
+rules:
+  - name: "block-unlimited-queries"
+    description: "Block queries that return more than 10,000 rows"
+    priority: 900
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "query_database"
+        - field: "parameters.limit"
+          operator: "greater_than"
+          value: 10000
+    decision: "BLOCK"
+    reason_code: "QUERY_TOO_LARGE"
+    remediation:
+      message: "Query limit exceeds 10,000 rows."
+      suggestion: "Add a LIMIT clause of 10,000 or less, or use the export_data action for bulk retrieval."
+      type: "threshold"
+      details:
+        max_limit: 10000
 
-- name: "require-approval-pii-tables"
-  enabled: true
-  priority: 100
-  conditions:
-    all_of:
-      - field: "action"
-        operator: "equals"
-        value: "query_database"
-      - field: "target.table"
-        operator: "in"
-        value: ["users", "customers", "employees", "billing"]
-  decision: "REQUIRE_APPROVAL"
-  reason_code: "PII_TABLE_ACCESS"
-  metadata:
-    sla_hours: 1
-    reviewer_role: "data_steward"
+  - name: "require-approval-pii-tables"
+    description: "Require data steward approval for queries on tables that hold personal data"
+    priority: 100
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "query_database"
+        - field: "target.table"
+          operator: "in"
+          value: ["users", "customers", "employees", "billing"]
+    decision: "REQUIRE_APPROVAL"
+    reason_code: "PII_TABLE_ACCESS"
+    metadata:
+      sla_hours: 1
+      reviewer_role: "data_steward"
+
+  - name: "allow-queries"
+    description: "Allow other queries of 10,000 rows or fewer"
+    priority: 50
+    conditions:
+      field: "action"
+      operator: "equals"
+      value: "query_database"
+    decision: "ALLOW"
+    reason_code: "QUERY_ALLOWED"
 ```
 
 <Note>
@@ -69,50 +88,67 @@ Export data from the system to a file or external destination.
 
 ```python
 decision = hiitl.evaluate(
-    tool="export_data",
+    "export_data",
     operation="read",
     target={"source": "analytics_db", "format": "csv"},
-    parameters={"row_count": 50000, "includes_pii": True}
+    parameters={"row_count": 50000, "includes_pii": True},
 )
 ```
 
 **Starter policy:**
 
 ```yaml
-- name: "block-pii-export"
-  enabled: true
-  priority: 900
-  conditions:
-    all_of:
-      - field: "action"
-        operator: "equals"
-        value: "export_data"
-      - field: "parameters.includes_pii"
-        operator: "equals"
-        value: true
-  decision: "BLOCK"
-  reason_code: "PII_EXPORT_BLOCKED"
-  remediation:
-    message: "Exports containing PII are not permitted via automated agents."
-    suggestion: "Use the anonymized export endpoint or request manual export through the data team."
-    type: "policy"
+name: "exports"
+version: "v1.0.0"
+description: "Controls on export_data"
+scope:
+  org_id: "org_devlocal0000000000"
+  environment: "dev"
+rules:
+  - name: "block-pii-export"
+    description: "Block automated exports that contain PII"
+    priority: 900
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "export_data"
+        - field: "parameters.includes_pii"
+          operator: "equals"
+          value: true
+    decision: "BLOCK"
+    reason_code: "PII_EXPORT_BLOCKED"
+    remediation:
+      message: "Exports containing PII are not permitted via automated agents."
+      suggestion: "Use the anonymized export endpoint or request manual export through the data team."
+      type: "custom"
 
-- name: "require-approval-large-export"
-  enabled: true
-  priority: 100
-  conditions:
-    all_of:
-      - field: "action"
-        operator: "equals"
-        value: "export_data"
-      - field: "parameters.row_count"
-        operator: "greater_than"
-        value: 10000
-  decision: "REQUIRE_APPROVAL"
-  reason_code: "LARGE_EXPORT"
-  metadata:
-    sla_hours: 4
-    reviewer_role: "data_ops"
+  - name: "require-approval-large-export"
+    description: "Require approval for exports over 10,000 rows"
+    priority: 100
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "export_data"
+        - field: "parameters.row_count"
+          operator: "greater_than"
+          value: 10000
+    decision: "REQUIRE_APPROVAL"
+    reason_code: "LARGE_EXPORT"
+    metadata:
+      sla_hours: 4
+      reviewer_role: "data_ops"
+
+  - name: "allow-exports"
+    description: "Allow exports of 10,000 rows or fewer without PII"
+    priority: 50
+    conditions:
+      field: "action"
+      operator: "equals"
+      value: "export_data"
+    decision: "ALLOW"
+    reason_code: "EXPORT_ALLOWED"
 ```
 
 <Warning>
@@ -127,50 +163,59 @@ Delete records from a database or data store.
 
 ```python
 decision = hiitl.evaluate(
-    tool="delete_records",
+    "delete_records",
     operation="delete",
     target={"database": "production", "table": "orders"},
-    parameters={"record_count": 1, "where_clause": "id = 'ord_123'"}
+    parameters={"record_count": 1, "where_clause": "id = 'ord_123'"},
 )
 ```
 
 **Starter policy:**
 
 ```yaml
-- name: "block-bulk-delete"
-  enabled: true
-  priority: 900
-  conditions:
-    all_of:
-      - field: "action"
-        operator: "equals"
-        value: "delete_records"
-      - field: "parameters.record_count"
-        operator: "greater_than"
-        value: 100
-  decision: "BLOCK"
-  reason_code: "BULK_DELETE_BLOCKED"
-  remediation:
-    message: "Bulk deletion of more than 100 records is not permitted."
-    suggestion: "Delete records in smaller batches, or submit a bulk deletion request through the admin portal."
-    type: "threshold"
-    details:
-      max_records: 100
+name: "deletes"
+version: "v1.0.0"
+description: "Controls on delete_records"
+scope:
+  org_id: "org_devlocal0000000000"
+  environment: "dev"
+rules:
+  - name: "block-bulk-delete"
+    description: "Block deletion of more than 100 records in one call"
+    priority: 900
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "delete_records"
+        - field: "parameters.record_count"
+          operator: "greater_than"
+          value: 100
+    decision: "BLOCK"
+    reason_code: "BULK_DELETE_BLOCKED"
+    remediation:
+      message: "Bulk deletion of more than 100 records is not permitted."
+      suggestion: "Delete records in smaller batches, or submit a bulk deletion request through the admin portal."
+      type: "threshold"
+      details:
+        max_records: 100
 
-- name: "require-approval-any-delete"
-  enabled: true
-  priority: 100
-  conditions:
-    all_of:
-      - field: "action"
-        operator: "equals"
-        value: "delete_records"
-  decision: "REQUIRE_APPROVAL"
-  reason_code: "DELETE_REQUIRES_APPROVAL"
-  metadata:
-    sla_hours: 1
-    reviewer_role: "database_admin"
+  - name: "require-approval-any-delete"
+    description: "Require database admin approval for every delete"
+    priority: 100
+    conditions:
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "delete_records"
+    decision: "REQUIRE_APPROVAL"
+    reason_code: "DELETE_REQUIRES_APPROVAL"
+    metadata:
+      sla_hours: 1
+      reviewer_role: "database_admin"
 ```
+
+This policy has no `ALLOW` rule on purpose: every delete matches `require-approval-any-delete`, so none reaches `NO_MATCHING_RULE`.
 
 <Warning>
 **Irreversibility:** Delete operations are irreversible by nature. Consider requiring approval for ALL delete operations in production, regardless of record count. Use `sensitivity: ["irreversible"]` in the envelope for additional policy targeting.

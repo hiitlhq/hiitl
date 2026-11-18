@@ -10,7 +10,7 @@ Future: LLMGradingStrategy (pattern analysis, recommendations, standards assessm
 
 from typing import Dict, List, Optional, Protocol
 
-from hiitl.core.types import Decision, PolicySet
+from hiitl.core.types import Decision, LifecycleStage, PolicySet
 
 from .types import (
     CoverageGap,
@@ -119,9 +119,10 @@ class PolicyGrader:
         self._policy = policy
         self._strategy = strategy or DeterministicGradingStrategy()
 
-        # Initialize tracking for all enabled rules
+        # Initialize tracking for all enabled rules — `enabled: true` is `lifecycle_stage: active` (T47, 2026-10-08: the
+        # field was replaced; the policy model's own refusal states the equivalence)
         self._rule_match_counts: Dict[str, int] = {
-            rule.name: 0 for rule in policy.rules if rule.enabled
+            rule.name: 0 for rule in policy.rules if rule.lifecycle_stage == LifecycleStage.ACTIVE
         }
         self._evaluation_count = 0
         self._decision_counts: Dict[str, int] = {}

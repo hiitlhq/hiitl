@@ -1,0 +1,55 @@
+{
+ "description": "The same envelope as the hosted service records it, with the principal its verifier set after the caller signed (verified_by: hosted): that principal is outside the signed form, so the record re-derives the caller's signature and envelope_hash. the security architecture §1.3; row 127 (Trevor, 2026-11-04). Both languages must produce the signed form, the signature and the hash below byte for byte.",
+ "secret": "conformance-signing-secret-0123456789abcdef",
+ "envelope": {
+  "schema_version": "v2.0",
+  "org_id": "org_1234567890abcdef",
+  "environment": "prod",
+  "agent_id": "payment-agent",
+  "action_id": "act_0123456789abcdefghij",
+  "idempotency_key": "idem_01",
+  "action": "process_payment",
+  "operation": "execute",
+  "timestamp": "2026-11-04T12:00:00.123456Z",
+  "target": {
+   "account_id": "acct_123",
+   "région": "eu-west"
+  },
+  "parameters": {
+   "amount": 150.0,
+   "rate": 0.1,
+   "tiny": 1e-07,
+   "count": 3,
+   "memo": "line \"two\"\t é 😀",
+   "items": [
+    {
+     "sku": "a-1",
+     "qty": 2
+    }
+   ],
+   "flags": [
+    true,
+    false,
+    null
+   ]
+  },
+  "requested_scopes": [
+   "refunds:write"
+  ],
+  "signature_version": "hmac-sha256-v1",
+  "principal": {
+   "sub": "ledgerbot-ops",
+   "scopes": [
+    "refunds:write"
+   ],
+   "verified_by": "hosted",
+   "verified_at": "2026-11-04T12:00:00.5Z"
+  },
+  "signature": "907c4fd15c4fd5bc043e6e9ff0c6862acc19a45931e6fbce91627a7e6af24cb7"
+ },
+ "expected": {
+  "signed_form": "{\"action\":\"process_payment\",\"action_id\":\"act_0123456789abcdefghij\",\"agent_id\":\"payment-agent\",\"environment\":\"prod\",\"idempotency_key\":\"idem_01\",\"operation\":\"execute\",\"org_id\":\"org_1234567890abcdef\",\"parameters\":{\"amount\":150,\"count\":3,\"flags\":[true,false,null],\"items\":[{\"qty\":2,\"sku\":\"a-1\"}],\"memo\":\"line \\\"two\\\"\\t é 😀\",\"rate\":0.1,\"tiny\":1e-7},\"requested_scopes\":[\"refunds:write\"],\"schema_version\":\"v2.0\",\"signature_version\":\"hmac-sha256-v1\",\"target\":{\"account_id\":\"acct_123\",\"région\":\"eu-west\"},\"timestamp\":\"2026-11-04T12:00:00.123456Z\"}",
+  "signature": "907c4fd15c4fd5bc043e6e9ff0c6862acc19a45931e6fbce91627a7e6af24cb7",
+  "envelope_hash": "0e54de9461bf8071466cecc151861bc6f092e6b64bfc1ef821292e70e65a96e2"
+ }
+}

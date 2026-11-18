@@ -1,0 +1,1686 @@
+{
+  "before": "f15051b13bc5f4c4198aa81b33566758db7b165d",
+  "beforeZod": "3.25.76",
+  "afterZod": "4.6.7",
+  "cases": [
+    {
+      "kind": "optional-default",
+      "schema": "ContextFieldSchema.format",
+      "input": {},
+      "accepted": true,
+      "output": {}
+    },
+    {
+      "kind": "optional-default",
+      "schema": "ContextFieldSchema.format",
+      "input": {
+        "format": {
+          "$probe.undefined": true
+        }
+      },
+      "accepted": true,
+      "output": {
+        "format": {
+          "$probe.undefined": true
+        }
+      }
+    },
+    {
+      "kind": "optional-default",
+      "schema": "ContextFieldSchema.format",
+      "input": {
+        "format": "text"
+      },
+      "accepted": true,
+      "output": {
+        "format": "text"
+      }
+    },
+    {
+      "kind": "optional-default",
+      "schema": "ContextFieldSchema.format",
+      "input": {
+        "format": null
+      },
+      "accepted": false
+    },
+    {
+      "kind": "optional-default",
+      "schema": "InboundPermissionsSchema.can_enforce",
+      "input": {},
+      "accepted": true,
+      "output": {}
+    },
+    {
+      "kind": "optional-default",
+      "schema": "InboundPermissionsSchema.can_enforce",
+      "input": {
+        "can_enforce": {
+          "$probe.undefined": true
+        }
+      },
+      "accepted": true,
+      "output": {
+        "can_enforce": {
+          "$probe.undefined": true
+        }
+      }
+    },
+    {
+      "kind": "optional-default",
+      "schema": "InboundPermissionsSchema.can_enforce",
+      "input": {
+        "can_enforce": false
+      },
+      "accepted": true,
+      "output": {
+        "can_enforce": false
+      }
+    },
+    {
+      "kind": "optional-default",
+      "schema": "InboundPermissionsSchema.can_enforce",
+      "input": {
+        "can_enforce": null
+      },
+      "accepted": false
+    },
+    {
+      "kind": "optional-default",
+      "schema": "InboundPermissionsSchema.can_propose",
+      "input": {},
+      "accepted": true,
+      "output": {}
+    },
+    {
+      "kind": "optional-default",
+      "schema": "InboundPermissionsSchema.can_propose",
+      "input": {
+        "can_propose": {
+          "$probe.undefined": true
+        }
+      },
+      "accepted": true,
+      "output": {
+        "can_propose": {
+          "$probe.undefined": true
+        }
+      }
+    },
+    {
+      "kind": "optional-default",
+      "schema": "InboundPermissionsSchema.can_propose",
+      "input": {
+        "can_propose": false
+      },
+      "accepted": true,
+      "output": {
+        "can_propose": false
+      }
+    },
+    {
+      "kind": "optional-default",
+      "schema": "InboundPermissionsSchema.can_propose",
+      "input": {
+        "can_propose": null
+      },
+      "accepted": false
+    },
+    {
+      "kind": "optional-default",
+      "schema": "InboundPermissionsSchema.can_signal",
+      "input": {},
+      "accepted": true,
+      "output": {}
+    },
+    {
+      "kind": "optional-default",
+      "schema": "InboundPermissionsSchema.can_signal",
+      "input": {
+        "can_signal": {
+          "$probe.undefined": true
+        }
+      },
+      "accepted": true,
+      "output": {
+        "can_signal": {
+          "$probe.undefined": true
+        }
+      }
+    },
+    {
+      "kind": "optional-default",
+      "schema": "InboundPermissionsSchema.can_signal",
+      "input": {
+        "can_signal": false
+      },
+      "accepted": true,
+      "output": {
+        "can_signal": false
+      }
+    },
+    {
+      "kind": "optional-default",
+      "schema": "InboundPermissionsSchema.can_signal",
+      "input": {
+        "can_signal": null
+      },
+      "accepted": false
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteAuthSchema.header",
+      "input": {},
+      "accepted": true,
+      "output": {}
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteAuthSchema.header",
+      "input": {
+        "header": {
+          "$probe.undefined": true
+        }
+      },
+      "accepted": true,
+      "output": {
+        "header": {
+          "$probe.undefined": true
+        }
+      }
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteAuthSchema.header",
+      "input": {
+        "header": "Authorization"
+      },
+      "accepted": true,
+      "output": {
+        "header": "Authorization"
+      }
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteAuthSchema.header",
+      "input": {
+        "header": null
+      },
+      "accepted": false
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteAuthSchema.hmac_header",
+      "input": {},
+      "accepted": true,
+      "output": {}
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteAuthSchema.hmac_header",
+      "input": {
+        "hmac_header": {
+          "$probe.undefined": true
+        }
+      },
+      "accepted": true,
+      "output": {
+        "hmac_header": {
+          "$probe.undefined": true
+        }
+      }
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteAuthSchema.hmac_header",
+      "input": {
+        "hmac_header": "X-HIITL-Signature"
+      },
+      "accepted": true,
+      "output": {
+        "hmac_header": "X-HIITL-Signature"
+      }
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteAuthSchema.hmac_header",
+      "input": {
+        "hmac_header": null
+      },
+      "accepted": false
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteContextSchema.include_policy_ref",
+      "input": {},
+      "accepted": true,
+      "output": {}
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteContextSchema.include_policy_ref",
+      "input": {
+        "include_policy_ref": {
+          "$probe.undefined": true
+        }
+      },
+      "accepted": true,
+      "output": {
+        "include_policy_ref": {
+          "$probe.undefined": true
+        }
+      }
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteContextSchema.include_policy_ref",
+      "input": {
+        "include_policy_ref": true
+      },
+      "accepted": true,
+      "output": {
+        "include_policy_ref": true
+      }
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteContextSchema.include_policy_ref",
+      "input": {
+        "include_policy_ref": null
+      },
+      "accepted": false
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteContextSchema.include_audit_context",
+      "input": {},
+      "accepted": true,
+      "output": {}
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteContextSchema.include_audit_context",
+      "input": {
+        "include_audit_context": {
+          "$probe.undefined": true
+        }
+      },
+      "accepted": true,
+      "output": {
+        "include_audit_context": {
+          "$probe.undefined": true
+        }
+      }
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteContextSchema.include_audit_context",
+      "input": {
+        "include_audit_context": false
+      },
+      "accepted": true,
+      "output": {
+        "include_audit_context": false
+      }
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteContextSchema.include_audit_context",
+      "input": {
+        "include_audit_context": null
+      },
+      "accepted": false
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteCorrelationSchema.token_field",
+      "input": {},
+      "accepted": true,
+      "output": {}
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteCorrelationSchema.token_field",
+      "input": {
+        "token_field": {
+          "$probe.undefined": true
+        }
+      },
+      "accepted": true,
+      "output": {
+        "token_field": {
+          "$probe.undefined": true
+        }
+      }
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteCorrelationSchema.token_field",
+      "input": {
+        "token_field": "resume_token"
+      },
+      "accepted": true,
+      "output": {
+        "token_field": "resume_token"
+      }
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteCorrelationSchema.token_field",
+      "input": {
+        "token_field": null
+      },
+      "accepted": false
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteEscalationLadderSchema.final_timeout_action",
+      "input": {},
+      "accepted": true,
+      "output": {}
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteEscalationLadderSchema.final_timeout_action",
+      "input": {
+        "final_timeout_action": {
+          "$probe.undefined": true
+        }
+      },
+      "accepted": true,
+      "output": {
+        "final_timeout_action": {
+          "$probe.undefined": true
+        }
+      }
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteEscalationLadderSchema.final_timeout_action",
+      "input": {
+        "final_timeout_action": "fail_closed"
+      },
+      "accepted": true,
+      "output": {
+        "final_timeout_action": "fail_closed"
+      }
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteEscalationLadderSchema.final_timeout_action",
+      "input": {
+        "final_timeout_action": null
+      },
+      "accepted": false
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteInboundSchema.acceptance_mode",
+      "input": {},
+      "accepted": true,
+      "output": {}
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteInboundSchema.acceptance_mode",
+      "input": {
+        "acceptance_mode": {
+          "$probe.undefined": true
+        }
+      },
+      "accepted": true,
+      "output": {
+        "acceptance_mode": {
+          "$probe.undefined": true
+        }
+      }
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteInboundSchema.acceptance_mode",
+      "input": {
+        "acceptance_mode": "propose"
+      },
+      "accepted": true,
+      "output": {
+        "acceptance_mode": "propose"
+      }
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteInboundSchema.acceptance_mode",
+      "input": {
+        "acceptance_mode": null
+      },
+      "accepted": false
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteQueueSchema.batch_size",
+      "input": {},
+      "accepted": true,
+      "output": {}
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteQueueSchema.batch_size",
+      "input": {
+        "batch_size": {
+          "$probe.undefined": true
+        }
+      },
+      "accepted": true,
+      "output": {
+        "batch_size": {
+          "$probe.undefined": true
+        }
+      }
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteQueueSchema.batch_size",
+      "input": {
+        "batch_size": 100
+      },
+      "accepted": true,
+      "output": {
+        "batch_size": 100
+      }
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteQueueSchema.batch_size",
+      "input": {
+        "batch_size": null
+      },
+      "accepted": false
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteQueueSchema.flush_interval",
+      "input": {},
+      "accepted": true,
+      "output": {}
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteQueueSchema.flush_interval",
+      "input": {
+        "flush_interval": {
+          "$probe.undefined": true
+        }
+      },
+      "accepted": true,
+      "output": {
+        "flush_interval": {
+          "$probe.undefined": true
+        }
+      }
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteQueueSchema.flush_interval",
+      "input": {
+        "flush_interval": "30s"
+      },
+      "accepted": true,
+      "output": {
+        "flush_interval": "30s"
+      }
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteQueueSchema.flush_interval",
+      "input": {
+        "flush_interval": null
+      },
+      "accepted": false
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteResponseSchemaSchema.required_fields",
+      "input": {},
+      "accepted": true,
+      "output": {}
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteResponseSchemaSchema.required_fields",
+      "input": {
+        "required_fields": {
+          "$probe.undefined": true
+        }
+      },
+      "accepted": true,
+      "output": {
+        "required_fields": {
+          "$probe.undefined": true
+        }
+      }
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteResponseSchemaSchema.required_fields",
+      "input": {
+        "required_fields": [
+          "decision"
+        ]
+      },
+      "accepted": true,
+      "output": {
+        "required_fields": [
+          "decision"
+        ]
+      }
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteResponseSchemaSchema.required_fields",
+      "input": {
+        "required_fields": null
+      },
+      "accepted": false
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteRetrySchema.max_attempts",
+      "input": {},
+      "accepted": true,
+      "output": {}
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteRetrySchema.max_attempts",
+      "input": {
+        "max_attempts": {
+          "$probe.undefined": true
+        }
+      },
+      "accepted": true,
+      "output": {
+        "max_attempts": {
+          "$probe.undefined": true
+        }
+      }
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteRetrySchema.max_attempts",
+      "input": {
+        "max_attempts": 3
+      },
+      "accepted": true,
+      "output": {
+        "max_attempts": 3
+      }
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteRetrySchema.max_attempts",
+      "input": {
+        "max_attempts": null
+      },
+      "accepted": false
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteRetrySchema.backoff",
+      "input": {},
+      "accepted": true,
+      "output": {}
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteRetrySchema.backoff",
+      "input": {
+        "backoff": {
+          "$probe.undefined": true
+        }
+      },
+      "accepted": true,
+      "output": {
+        "backoff": {
+          "$probe.undefined": true
+        }
+      }
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteRetrySchema.backoff",
+      "input": {
+        "backoff": "exponential"
+      },
+      "accepted": true,
+      "output": {
+        "backoff": "exponential"
+      }
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteRetrySchema.backoff",
+      "input": {
+        "backoff": null
+      },
+      "accepted": false
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteRetrySchema.initial_delay_ms",
+      "input": {},
+      "accepted": true,
+      "output": {}
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteRetrySchema.initial_delay_ms",
+      "input": {
+        "initial_delay_ms": {
+          "$probe.undefined": true
+        }
+      },
+      "accepted": true,
+      "output": {
+        "initial_delay_ms": {
+          "$probe.undefined": true
+        }
+      }
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteRetrySchema.initial_delay_ms",
+      "input": {
+        "initial_delay_ms": 1000
+      },
+      "accepted": true,
+      "output": {
+        "initial_delay_ms": 1000
+      }
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteRetrySchema.initial_delay_ms",
+      "input": {
+        "initial_delay_ms": null
+      },
+      "accepted": false
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteSchema.protocol",
+      "input": {},
+      "accepted": true,
+      "output": {}
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteSchema.protocol",
+      "input": {
+        "protocol": {
+          "$probe.undefined": true
+        }
+      },
+      "accepted": true,
+      "output": {
+        "protocol": {
+          "$probe.undefined": true
+        }
+      }
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteSchema.protocol",
+      "input": {
+        "protocol": "webhook"
+      },
+      "accepted": true,
+      "output": {
+        "protocol": "webhook"
+      }
+    },
+    {
+      "kind": "optional-default",
+      "schema": "RouteSchema.protocol",
+      "input": {
+        "protocol": null
+      },
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "types.CostEstimateSchema.api_calls",
+      "input": -9007199254740992,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "types.CostEstimateSchema.api_calls",
+      "input": -1,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "types.CostEstimateSchema.api_calls",
+      "input": -0.5,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "types.CostEstimateSchema.api_calls",
+      "input": 0,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.CostEstimateSchema.api_calls",
+      "input": 0.5,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "types.CostEstimateSchema.api_calls",
+      "input": 1,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.CostEstimateSchema.api_calls",
+      "input": 9007199254740992,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.CostEstimateSchema.api_calls",
+      "input": 1.7976931348623157e+308,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.matched_rules[].priority",
+      "input": -9007199254740992,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.matched_rules[].priority",
+      "input": -1,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.matched_rules[].priority",
+      "input": -0.5,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.matched_rules[].priority",
+      "input": 0,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.matched_rules[].priority",
+      "input": 0.5,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.matched_rules[].priority",
+      "input": 1,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.matched_rules[].priority",
+      "input": 9007199254740992,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.matched_rules[].priority",
+      "input": 1.7976931348623157e+308,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.rate_limit.limit",
+      "input": -9007199254740992,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.rate_limit.limit",
+      "input": -1,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.rate_limit.limit",
+      "input": -0.5,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.rate_limit.limit",
+      "input": 0,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.rate_limit.limit",
+      "input": 0.5,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.rate_limit.limit",
+      "input": 1,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.rate_limit.limit",
+      "input": 9007199254740992,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.rate_limit.limit",
+      "input": 1.7976931348623157e+308,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.rate_limit.current",
+      "input": -9007199254740992,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.rate_limit.current",
+      "input": -1,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.rate_limit.current",
+      "input": -0.5,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.rate_limit.current",
+      "input": 0,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.rate_limit.current",
+      "input": 0.5,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.rate_limit.current",
+      "input": 1,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.rate_limit.current",
+      "input": 9007199254740992,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.rate_limit.current",
+      "input": 1.7976931348623157e+308,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.staged_observations[].priority",
+      "input": -9007199254740992,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.staged_observations[].priority",
+      "input": -1,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.staged_observations[].priority",
+      "input": -0.5,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.staged_observations[].priority",
+      "input": 0,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.staged_observations[].priority",
+      "input": 0.5,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.staged_observations[].priority",
+      "input": 1,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.staged_observations[].priority",
+      "input": 9007199254740992,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.staged_observations[].priority",
+      "input": 1.7976931348623157e+308,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.rate_limit_rules[].priority",
+      "input": -9007199254740992,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.rate_limit_rules[].priority",
+      "input": -1,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.rate_limit_rules[].priority",
+      "input": -0.5,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.rate_limit_rules[].priority",
+      "input": 0,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.rate_limit_rules[].priority",
+      "input": 0.5,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.rate_limit_rules[].priority",
+      "input": 1,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.rate_limit_rules[].priority",
+      "input": 9007199254740992,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.rate_limit_rules[].priority",
+      "input": 1.7976931348623157e+308,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.rate_limit_rules[].limit",
+      "input": -9007199254740992,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.rate_limit_rules[].limit",
+      "input": -1,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.rate_limit_rules[].limit",
+      "input": -0.5,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.rate_limit_rules[].limit",
+      "input": 0,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.rate_limit_rules[].limit",
+      "input": 0.5,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.rate_limit_rules[].limit",
+      "input": 1,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.rate_limit_rules[].limit",
+      "input": 9007199254740992,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.rate_limit_rules[].limit",
+      "input": 1.7976931348623157e+308,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.rate_limit_rules[].window_seconds",
+      "input": -9007199254740992,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.rate_limit_rules[].window_seconds",
+      "input": -1,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.rate_limit_rules[].window_seconds",
+      "input": -0.5,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.rate_limit_rules[].window_seconds",
+      "input": 0,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.rate_limit_rules[].window_seconds",
+      "input": 0.5,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.rate_limit_rules[].window_seconds",
+      "input": 1,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.rate_limit_rules[].window_seconds",
+      "input": 9007199254740992,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.DecisionSchema.rate_limit_rules[].window_seconds",
+      "input": 1.7976931348623157e+308,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.PolicySetSchema.rules[].priority",
+      "input": -9007199254740992,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.PolicySetSchema.rules[].priority",
+      "input": -1,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.PolicySetSchema.rules[].priority",
+      "input": -0.5,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "types.PolicySetSchema.rules[].priority",
+      "input": 0,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.PolicySetSchema.rules[].priority",
+      "input": 0.5,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "types.PolicySetSchema.rules[].priority",
+      "input": 1,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.PolicySetSchema.rules[].priority",
+      "input": 9007199254740992,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.PolicySetSchema.rules[].priority",
+      "input": 1.7976931348623157e+308,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.PolicySetSchema.rules[].scope.percentage",
+      "input": -9007199254740992,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "types.PolicySetSchema.rules[].scope.percentage",
+      "input": -1,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "types.PolicySetSchema.rules[].scope.percentage",
+      "input": -0.5,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "types.PolicySetSchema.rules[].scope.percentage",
+      "input": 0,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.PolicySetSchema.rules[].scope.percentage",
+      "input": 0.5,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "types.PolicySetSchema.rules[].scope.percentage",
+      "input": 1,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.PolicySetSchema.rules[].scope.percentage",
+      "input": 9007199254740992,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "types.PolicySetSchema.rules[].scope.percentage",
+      "input": 1.7976931348623157e+308,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "types.PolicySetSchema.rules[].observation_window_days",
+      "input": -9007199254740992,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.PolicySetSchema.rules[].observation_window_days",
+      "input": -1,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.PolicySetSchema.rules[].observation_window_days",
+      "input": -0.5,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "types.PolicySetSchema.rules[].observation_window_days",
+      "input": 0,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.PolicySetSchema.rules[].observation_window_days",
+      "input": 0.5,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "types.PolicySetSchema.rules[].observation_window_days",
+      "input": 1,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.PolicySetSchema.rules[].observation_window_days",
+      "input": 9007199254740992,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.PolicySetSchema.rules[].observation_window_days",
+      "input": 1.7976931348623157e+308,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.PolicySetSchema.rules[].rate_limit.limit|0",
+      "input": -9007199254740992,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "types.PolicySetSchema.rules[].rate_limit.limit|0",
+      "input": -1,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "types.PolicySetSchema.rules[].rate_limit.limit|0",
+      "input": -0.5,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "types.PolicySetSchema.rules[].rate_limit.limit|0",
+      "input": 0,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "types.PolicySetSchema.rules[].rate_limit.limit|0",
+      "input": 0.5,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "types.PolicySetSchema.rules[].rate_limit.limit|0",
+      "input": 1,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.PolicySetSchema.rules[].rate_limit.limit|0",
+      "input": 9007199254740992,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.PolicySetSchema.rules[].rate_limit.limit|0",
+      "input": 1.7976931348623157e+308,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.PolicySetSchema.rules[].requirement_citation|0.prompt.line",
+      "input": -9007199254740992,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.PolicySetSchema.rules[].requirement_citation|0.prompt.line",
+      "input": -1,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.PolicySetSchema.rules[].requirement_citation|0.prompt.line",
+      "input": -0.5,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "types.PolicySetSchema.rules[].requirement_citation|0.prompt.line",
+      "input": 0,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.PolicySetSchema.rules[].requirement_citation|0.prompt.line",
+      "input": 0.5,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "types.PolicySetSchema.rules[].requirement_citation|0.prompt.line",
+      "input": 1,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.PolicySetSchema.rules[].requirement_citation|0.prompt.line",
+      "input": 9007199254740992,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "types.PolicySetSchema.rules[].requirement_citation|0.prompt.line",
+      "input": 1.7976931348623157e+308,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "route-types.EscalationLevelSchema.level",
+      "input": -9007199254740992,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "route-types.EscalationLevelSchema.level",
+      "input": -1,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "route-types.EscalationLevelSchema.level",
+      "input": -0.5,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "route-types.EscalationLevelSchema.level",
+      "input": 0,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "route-types.EscalationLevelSchema.level",
+      "input": 0.5,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "route-types.EscalationLevelSchema.level",
+      "input": 1,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "route-types.EscalationLevelSchema.level",
+      "input": 9007199254740992,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "route-types.EscalationLevelSchema.level",
+      "input": 1.7976931348623157e+308,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "route-types.RouteEscalationLadderSchema.max_escalation_depth",
+      "input": -9007199254740992,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "route-types.RouteEscalationLadderSchema.max_escalation_depth",
+      "input": -1,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "route-types.RouteEscalationLadderSchema.max_escalation_depth",
+      "input": -0.5,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "route-types.RouteEscalationLadderSchema.max_escalation_depth",
+      "input": 0,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "route-types.RouteEscalationLadderSchema.max_escalation_depth",
+      "input": 0.5,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "route-types.RouteEscalationLadderSchema.max_escalation_depth",
+      "input": 1,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "route-types.RouteEscalationLadderSchema.max_escalation_depth",
+      "input": 9007199254740992,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "route-types.RouteEscalationLadderSchema.max_escalation_depth",
+      "input": 1.7976931348623157e+308,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "route-types.RouteQueueSchema.batch_size",
+      "input": -9007199254740992,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "route-types.RouteQueueSchema.batch_size",
+      "input": -1,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "route-types.RouteQueueSchema.batch_size",
+      "input": -0.5,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "route-types.RouteQueueSchema.batch_size",
+      "input": 0,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "route-types.RouteQueueSchema.batch_size",
+      "input": 0.5,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "route-types.RouteQueueSchema.batch_size",
+      "input": 1,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "route-types.RouteQueueSchema.batch_size",
+      "input": 9007199254740992,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "route-types.RouteQueueSchema.batch_size",
+      "input": 1.7976931348623157e+308,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "route-types.RouteRetrySchema.max_attempts",
+      "input": -9007199254740992,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "route-types.RouteRetrySchema.max_attempts",
+      "input": -1,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "route-types.RouteRetrySchema.max_attempts",
+      "input": -0.5,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "route-types.RouteRetrySchema.max_attempts",
+      "input": 0,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "route-types.RouteRetrySchema.max_attempts",
+      "input": 0.5,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "route-types.RouteRetrySchema.max_attempts",
+      "input": 1,
+      "accepted": true
+    },
+    {
+      "kind": "integer",
+      "schema": "route-types.RouteRetrySchema.max_attempts",
+      "input": 9007199254740992,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "route-types.RouteRetrySchema.max_attempts",
+      "input": 1.7976931348623157e+308,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "route-types.RouteRetrySchema.initial_delay_ms",
+      "input": -9007199254740992,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "route-types.RouteRetrySchema.initial_delay_ms",
+      "input": -1,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "route-types.RouteRetrySchema.initial_delay_ms",
+      "input": -0.5,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "route-types.RouteRetrySchema.initial_delay_ms",
+      "input": 0,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "route-types.RouteRetrySchema.initial_delay_ms",
+      "input": 0.5,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "route-types.RouteRetrySchema.initial_delay_ms",
+      "input": 1,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "route-types.RouteRetrySchema.initial_delay_ms",
+      "input": 9007199254740992,
+      "accepted": false
+    },
+    {
+      "kind": "integer",
+      "schema": "route-types.RouteRetrySchema.initial_delay_ms",
+      "input": 1.7976931348623157e+308,
+      "accepted": false
+    },
+    {
+      "kind": "condition-value",
+      "input": {
+        "field": "action",
+        "operator": "equals"
+      },
+      "output": {
+        "field": "action",
+        "operator": "equals"
+      }
+    },
+    {
+      "kind": "condition-value",
+      "input": {
+        "field": "action",
+        "operator": "equals",
+        "value": {
+          "$probe.undefined": true
+        }
+      },
+      "output": {
+        "field": "action",
+        "operator": "equals",
+        "value": {
+          "$probe.undefined": true
+        }
+      }
+    },
+    {
+      "kind": "condition-value",
+      "input": {
+        "field": "action",
+        "operator": "equals",
+        "value": null
+      },
+      "output": {
+        "field": "action",
+        "operator": "equals",
+        "value": null
+      }
+    },
+    {
+      "kind": "enum-refusal",
+      "input": {
+        "toString": null
+      }
+    },
+    {
+      "kind": "enum-refusal",
+      "input": {
+        "toString": "data"
+      }
+    },
+    {
+      "kind": "enum-refusal",
+      "input": [
+        "ALLOW"
+      ]
+    },
+    {
+      "kind": "enum-refusal",
+      "input": null
+    },
+    {
+      "kind": "enum-refusal",
+      "input": {
+        "$probe.undefined": true
+      }
+    },
+    {
+      "kind": "enum-refusal",
+      "input": 42
+    }
+  ]
+}

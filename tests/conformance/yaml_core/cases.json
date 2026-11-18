@@ -1,0 +1,913 @@
+{
+  "source": "YAML1.2.2 \u00a710.3.2; quoted strings \u00a77.3; hiitl numeric-domain post-parse refusal",
+  "resolution_rows": [
+    [
+      "null | Null | NULL | ~",
+      "tag:yaml.org,2002:null"
+    ],
+    [
+      "/* Empty */",
+      "tag:yaml.org,2002:null"
+    ],
+    [
+      "true | True | TRUE | false | False | FALSE",
+      "tag:yaml.org,2002:bool"
+    ],
+    [
+      "[-+]? [0-9]+",
+      "tag:yaml.org,2002:int (Base 10)"
+    ],
+    [
+      "0o [0-7]+",
+      "tag:yaml.org,2002:int (Base 8)"
+    ],
+    [
+      "0x [0-9a-fA-F]+",
+      "tag:yaml.org,2002:int (Base 16)"
+    ],
+    [
+      "[-+]? ( \\. [0-9]+ | [0-9]+ ( \\. [0-9]* )? ) ( [eE] [-+]? [0-9]+ )?",
+      "tag:yaml.org,2002:float (Number)"
+    ],
+    [
+      "[-+]? ( \\.inf | \\.Inf | \\.INF )",
+      "tag:yaml.org,2002:float (Infinity)"
+    ],
+    [
+      "\\.nan | \\.NaN | \\.NAN",
+      "tag:yaml.org,2002:float (Not a number)"
+    ],
+    [
+      "*",
+      "tag:yaml.org,2002:str (Default)"
+    ]
+  ],
+  "cases": [
+    {
+      "id": "null-0",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "null",
+      "input": "null",
+      "expected_accept": true,
+      "expected": null
+    },
+    {
+      "id": "null-1",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "null",
+      "input": "Null",
+      "expected_accept": true,
+      "expected": null
+    },
+    {
+      "id": "null-2",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "null",
+      "input": "NULL",
+      "expected_accept": true,
+      "expected": null
+    },
+    {
+      "id": "null-3",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "null",
+      "input": "~",
+      "expected_accept": true,
+      "expected": null
+    },
+    {
+      "id": "null-4",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "null",
+      "input": "",
+      "expected_accept": true,
+      "expected": null
+    },
+    {
+      "id": "boolean-5",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "boolean",
+      "input": "true",
+      "expected_accept": true,
+      "expected": true
+    },
+    {
+      "id": "boolean-6",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "boolean",
+      "input": "True",
+      "expected_accept": true,
+      "expected": true
+    },
+    {
+      "id": "boolean-7",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "boolean",
+      "input": "TRUE",
+      "expected_accept": true,
+      "expected": true
+    },
+    {
+      "id": "boolean-8",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "boolean",
+      "input": "false",
+      "expected_accept": true,
+      "expected": false
+    },
+    {
+      "id": "boolean-9",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "boolean",
+      "input": "False",
+      "expected_accept": true,
+      "expected": false
+    },
+    {
+      "id": "boolean-10",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "boolean",
+      "input": "FALSE",
+      "expected_accept": true,
+      "expected": false
+    },
+    {
+      "id": "integer-decimal-11",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "integer-decimal",
+      "input": "0",
+      "expected_accept": true,
+      "expected": 0
+    },
+    {
+      "id": "integer-decimal-12",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "integer-decimal",
+      "input": "-0",
+      "expected_accept": true,
+      "expected": 0
+    },
+    {
+      "id": "integer-decimal-13",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "integer-decimal",
+      "input": "+17",
+      "expected_accept": true,
+      "expected": 17
+    },
+    {
+      "id": "integer-decimal-14",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "integer-decimal",
+      "input": "-17",
+      "expected_accept": true,
+      "expected": -17
+    },
+    {
+      "id": "integer-decimal-15",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "integer-decimal",
+      "input": "017",
+      "expected_accept": true,
+      "expected": 17
+    },
+    {
+      "id": "integer-octal-16",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "integer-octal",
+      "input": "0o17",
+      "expected_accept": true,
+      "expected": 15
+    },
+    {
+      "id": "integer-octal-17",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "integer-octal",
+      "input": "0o0",
+      "expected_accept": true,
+      "expected": 0
+    },
+    {
+      "id": "integer-hex-18",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "integer-hex",
+      "input": "0x3A",
+      "expected_accept": true,
+      "expected": 58
+    },
+    {
+      "id": "integer-hex-19",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "integer-hex",
+      "input": "0x3a",
+      "expected_accept": true,
+      "expected": 58
+    },
+    {
+      "id": "float-20",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "float",
+      "input": ".5",
+      "expected_accept": true,
+      "expected": 0.5
+    },
+    {
+      "id": "float-21",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "float",
+      "input": "0.",
+      "expected_accept": true,
+      "expected": 0
+    },
+    {
+      "id": "float-22",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "float",
+      "input": "-0.0",
+      "expected_accept": true,
+      "expected": 0
+    },
+    {
+      "id": "float-23",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "float",
+      "input": "+12e03",
+      "expected_accept": true,
+      "expected": 12000
+    },
+    {
+      "id": "float-24",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "float",
+      "input": "-2E+05",
+      "expected_accept": true,
+      "expected": -200000
+    },
+    {
+      "id": "float-25",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "float",
+      "input": "1e-400",
+      "expected_accept": true,
+      "expected": 0
+    },
+    {
+      "id": "float-26",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "float",
+      "input": "5e-324",
+      "expected_accept": true,
+      "expected": 5e-324
+    },
+    {
+      "id": "fallback-27",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "fallback",
+      "input": "on",
+      "expected_accept": true,
+      "expected": "on"
+    },
+    {
+      "id": "fallback-28",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "fallback",
+      "input": "On",
+      "expected_accept": true,
+      "expected": "On"
+    },
+    {
+      "id": "fallback-29",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "fallback",
+      "input": "ON",
+      "expected_accept": true,
+      "expected": "ON"
+    },
+    {
+      "id": "fallback-30",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "fallback",
+      "input": "off",
+      "expected_accept": true,
+      "expected": "off"
+    },
+    {
+      "id": "fallback-31",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "fallback",
+      "input": "yes",
+      "expected_accept": true,
+      "expected": "yes"
+    },
+    {
+      "id": "fallback-32",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "fallback",
+      "input": "no",
+      "expected_accept": true,
+      "expected": "no"
+    },
+    {
+      "id": "fallback-33",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "fallback",
+      "input": "y",
+      "expected_accept": true,
+      "expected": "y"
+    },
+    {
+      "id": "fallback-34",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "fallback",
+      "input": "n",
+      "expected_accept": true,
+      "expected": "n"
+    },
+    {
+      "id": "fallback-35",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "fallback",
+      "input": "1:20",
+      "expected_accept": true,
+      "expected": "1:20"
+    },
+    {
+      "id": "fallback-36",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "fallback",
+      "input": "0b10",
+      "expected_accept": true,
+      "expected": "0b10"
+    },
+    {
+      "id": "fallback-37",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "fallback",
+      "input": "1_000",
+      "expected_accept": true,
+      "expected": "1_000"
+    },
+    {
+      "id": "fallback-38",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "fallback",
+      "input": "-0o17",
+      "expected_accept": true,
+      "expected": "-0o17"
+    },
+    {
+      "id": "fallback-39",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "fallback",
+      "input": "+0x3A",
+      "expected_accept": true,
+      "expected": "+0x3A"
+    },
+    {
+      "id": "fallback-40",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "fallback",
+      "input": "0o8",
+      "expected_accept": true,
+      "expected": "0o8"
+    },
+    {
+      "id": "fallback-41",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "fallback",
+      "input": "0xG",
+      "expected_accept": true,
+      "expected": "0xG"
+    },
+    {
+      "id": "fallback-42",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "fallback",
+      "input": "tRuE",
+      "expected_accept": true,
+      "expected": "tRuE"
+    },
+    {
+      "id": "fallback-43",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "fallback",
+      "input": "1e",
+      "expected_accept": true,
+      "expected": "1e"
+    },
+    {
+      "id": "fallback-44",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "fallback",
+      "input": "2026-11-14T00:00:00Z",
+      "expected_accept": true,
+      "expected": "2026-11-14T00:00:00Z"
+    },
+    {
+      "id": "quoted-45",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "quoted",
+      "input": "\"on\"",
+      "expected_accept": true,
+      "expected": "on"
+    },
+    {
+      "id": "quoted-46",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "quoted",
+      "input": "\"true\"",
+      "expected_accept": true,
+      "expected": "true"
+    },
+    {
+      "id": "quoted-47",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "quoted",
+      "input": "\"null\"",
+      "expected_accept": true,
+      "expected": "null"
+    },
+    {
+      "id": "quoted-48",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "quoted",
+      "input": "\"017\"",
+      "expected_accept": true,
+      "expected": "017"
+    },
+    {
+      "id": "quoted-49",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "quoted",
+      "input": "\"0o17\"",
+      "expected_accept": true,
+      "expected": "0o17"
+    },
+    {
+      "id": "quoted-50",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "quoted",
+      "input": "\"1e3\"",
+      "expected_accept": true,
+      "expected": "1e3"
+    },
+    {
+      "id": "quoted-51",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "quoted",
+      "input": "\"\"",
+      "expected_accept": true,
+      "expected": ""
+    },
+    {
+      "id": "infinity-.inf",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "infinity",
+      "input": ".inf",
+      "expected_accept": false
+    },
+    {
+      "id": "infinity--.Inf",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "infinity",
+      "input": "-.Inf",
+      "expected_accept": false
+    },
+    {
+      "id": "infinity-+.INF",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "infinity",
+      "input": "+.INF",
+      "expected_accept": false
+    },
+    {
+      "id": "nan-.nan",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "nan",
+      "input": ".nan",
+      "expected_accept": false
+    },
+    {
+      "id": "nan-.NaN",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "nan",
+      "input": ".NaN",
+      "expected_accept": false
+    },
+    {
+      "id": "nan-.NAN",
+      "declaration": "https://yaml.org/spec/1.2.2/#1032-tag-resolution",
+      "kind": "nan",
+      "input": ".NAN",
+      "expected_accept": false
+    },
+    {
+      "input": "null",
+      "expected_accept": true,
+      "expected": null,
+      "declaration": "null | Null | NULL | ~",
+      "kind": "tag:yaml.org,2002:null",
+      "id": "source-0"
+    },
+    {
+      "input": "Null",
+      "expected_accept": true,
+      "expected": null,
+      "declaration": "null | Null | NULL | ~",
+      "kind": "tag:yaml.org,2002:null",
+      "id": "source-1"
+    },
+    {
+      "input": "NULL",
+      "expected_accept": true,
+      "expected": null,
+      "declaration": "null | Null | NULL | ~",
+      "kind": "tag:yaml.org,2002:null",
+      "id": "source-2"
+    },
+    {
+      "input": "~",
+      "expected_accept": true,
+      "expected": null,
+      "declaration": "null | Null | NULL | ~",
+      "kind": "tag:yaml.org,2002:null",
+      "id": "source-3"
+    },
+    {
+      "input": "",
+      "expected_accept": true,
+      "expected": null,
+      "declaration": "/* Empty */",
+      "kind": "tag:yaml.org,2002:null",
+      "id": "source-4"
+    },
+    {
+      "input": "true",
+      "expected_accept": true,
+      "expected": true,
+      "declaration": "true | True | TRUE | false | False | FALSE",
+      "kind": "tag:yaml.org,2002:bool",
+      "id": "source-5"
+    },
+    {
+      "input": "True",
+      "expected_accept": true,
+      "expected": true,
+      "declaration": "true | True | TRUE | false | False | FALSE",
+      "kind": "tag:yaml.org,2002:bool",
+      "id": "source-6"
+    },
+    {
+      "input": "TRUE",
+      "expected_accept": true,
+      "expected": true,
+      "declaration": "true | True | TRUE | false | False | FALSE",
+      "kind": "tag:yaml.org,2002:bool",
+      "id": "source-7"
+    },
+    {
+      "input": "false",
+      "expected_accept": true,
+      "expected": false,
+      "declaration": "true | True | TRUE | false | False | FALSE",
+      "kind": "tag:yaml.org,2002:bool",
+      "id": "source-8"
+    },
+    {
+      "input": "False",
+      "expected_accept": true,
+      "expected": false,
+      "declaration": "true | True | TRUE | false | False | FALSE",
+      "kind": "tag:yaml.org,2002:bool",
+      "id": "source-9"
+    },
+    {
+      "input": "FALSE",
+      "expected_accept": true,
+      "expected": false,
+      "declaration": "true | True | TRUE | false | False | FALSE",
+      "kind": "tag:yaml.org,2002:bool",
+      "id": "source-10"
+    },
+    {
+      "input": "0",
+      "expected_accept": true,
+      "expected": 0,
+      "declaration": "[-+]? [0-9]+",
+      "kind": "tag:yaml.org,2002:int (Base 10)",
+      "id": "source-11"
+    },
+    {
+      "input": "-0",
+      "expected_accept": true,
+      "expected": 0,
+      "declaration": "[-+]? [0-9]+",
+      "kind": "tag:yaml.org,2002:int (Base 10)",
+      "id": "source-12"
+    },
+    {
+      "input": "+0",
+      "expected_accept": true,
+      "expected": 0,
+      "declaration": "[-+]? [0-9]+",
+      "kind": "tag:yaml.org,2002:int (Base 10)",
+      "id": "source-13"
+    },
+    {
+      "input": "00",
+      "expected_accept": true,
+      "expected": 0,
+      "declaration": "[-+]? [0-9]+",
+      "kind": "tag:yaml.org,2002:int (Base 10)",
+      "id": "source-14"
+    },
+    {
+      "input": "9",
+      "expected_accept": true,
+      "expected": 9,
+      "declaration": "[-+]? [0-9]+",
+      "kind": "tag:yaml.org,2002:int (Base 10)",
+      "id": "source-15"
+    },
+    {
+      "input": "0o0",
+      "expected_accept": true,
+      "expected": 0,
+      "declaration": "0o [0-7]+",
+      "kind": "tag:yaml.org,2002:int (Base 8)",
+      "id": "source-16"
+    },
+    {
+      "input": "0o00",
+      "expected_accept": true,
+      "expected": 0,
+      "declaration": "0o [0-7]+",
+      "kind": "tag:yaml.org,2002:int (Base 8)",
+      "id": "source-17"
+    },
+    {
+      "input": "0o7",
+      "expected_accept": true,
+      "expected": 7,
+      "declaration": "0o [0-7]+",
+      "kind": "tag:yaml.org,2002:int (Base 8)",
+      "id": "source-18"
+    },
+    {
+      "input": "0x0",
+      "expected_accept": true,
+      "expected": 0,
+      "declaration": "0x [0-9a-fA-F]+",
+      "kind": "tag:yaml.org,2002:int (Base 16)",
+      "id": "source-19"
+    },
+    {
+      "input": "0x00",
+      "expected_accept": true,
+      "expected": 0,
+      "declaration": "0x [0-9a-fA-F]+",
+      "kind": "tag:yaml.org,2002:int (Base 16)",
+      "id": "source-20"
+    },
+    {
+      "input": "0x9",
+      "expected_accept": true,
+      "expected": 9,
+      "declaration": "0x [0-9a-fA-F]+",
+      "kind": "tag:yaml.org,2002:int (Base 16)",
+      "id": "source-21"
+    },
+    {
+      "input": "0xa",
+      "expected_accept": true,
+      "expected": 10,
+      "declaration": "0x [0-9a-fA-F]+",
+      "kind": "tag:yaml.org,2002:int (Base 16)",
+      "id": "source-22"
+    },
+    {
+      "input": "0xf",
+      "expected_accept": true,
+      "expected": 15,
+      "declaration": "0x [0-9a-fA-F]+",
+      "kind": "tag:yaml.org,2002:int (Base 16)",
+      "id": "source-23"
+    },
+    {
+      "input": "0xA",
+      "expected_accept": true,
+      "expected": 10,
+      "declaration": "0x [0-9a-fA-F]+",
+      "kind": "tag:yaml.org,2002:int (Base 16)",
+      "id": "source-24"
+    },
+    {
+      "input": "0xF",
+      "expected_accept": true,
+      "expected": 15,
+      "declaration": "0x [0-9a-fA-F]+",
+      "kind": "tag:yaml.org,2002:int (Base 16)",
+      "id": "source-25"
+    },
+    {
+      "input": ".0",
+      "expected_accept": true,
+      "expected": 0.0,
+      "declaration": "[-+]? ( \\. [0-9]+ | [0-9]+ ( \\. [0-9]* )? ) ( [eE] [-+]? [0-9]+ )?",
+      "kind": "tag:yaml.org,2002:float (Number)",
+      "id": "source-26"
+    },
+    {
+      "input": "-.0",
+      "expected_accept": true,
+      "expected": -0.0,
+      "declaration": "[-+]? ( \\. [0-9]+ | [0-9]+ ( \\. [0-9]* )? ) ( [eE] [-+]? [0-9]+ )?",
+      "kind": "tag:yaml.org,2002:float (Number)",
+      "id": "source-27"
+    },
+    {
+      "input": "+.0",
+      "expected_accept": true,
+      "expected": 0.0,
+      "declaration": "[-+]? ( \\. [0-9]+ | [0-9]+ ( \\. [0-9]* )? ) ( [eE] [-+]? [0-9]+ )?",
+      "kind": "tag:yaml.org,2002:float (Number)",
+      "id": "source-28"
+    },
+    {
+      "input": ".00",
+      "expected_accept": true,
+      "expected": 0.0,
+      "declaration": "[-+]? ( \\. [0-9]+ | [0-9]+ ( \\. [0-9]* )? ) ( [eE] [-+]? [0-9]+ )?",
+      "kind": "tag:yaml.org,2002:float (Number)",
+      "id": "source-29"
+    },
+    {
+      "input": ".9",
+      "expected_accept": true,
+      "expected": 0.9,
+      "declaration": "[-+]? ( \\. [0-9]+ | [0-9]+ ( \\. [0-9]* )? ) ( [eE] [-+]? [0-9]+ )?",
+      "kind": "tag:yaml.org,2002:float (Number)",
+      "id": "source-30"
+    },
+    {
+      "input": "0",
+      "expected_accept": true,
+      "expected": 0.0,
+      "declaration": "[-+]? ( \\. [0-9]+ | [0-9]+ ( \\. [0-9]* )? ) ( [eE] [-+]? [0-9]+ )?",
+      "kind": "tag:yaml.org,2002:float (Number)",
+      "id": "source-31"
+    },
+    {
+      "input": "00",
+      "expected_accept": true,
+      "expected": 0.0,
+      "declaration": "[-+]? ( \\. [0-9]+ | [0-9]+ ( \\. [0-9]* )? ) ( [eE] [-+]? [0-9]+ )?",
+      "kind": "tag:yaml.org,2002:float (Number)",
+      "id": "source-32"
+    },
+    {
+      "input": "9",
+      "expected_accept": true,
+      "expected": 9.0,
+      "declaration": "[-+]? ( \\. [0-9]+ | [0-9]+ ( \\. [0-9]* )? ) ( [eE] [-+]? [0-9]+ )?",
+      "kind": "tag:yaml.org,2002:float (Number)",
+      "id": "source-33"
+    },
+    {
+      "input": "0.",
+      "expected_accept": true,
+      "expected": 0.0,
+      "declaration": "[-+]? ( \\. [0-9]+ | [0-9]+ ( \\. [0-9]* )? ) ( [eE] [-+]? [0-9]+ )?",
+      "kind": "tag:yaml.org,2002:float (Number)",
+      "id": "source-34"
+    },
+    {
+      "input": "0.0",
+      "expected_accept": true,
+      "expected": 0.0,
+      "declaration": "[-+]? ( \\. [0-9]+ | [0-9]+ ( \\. [0-9]* )? ) ( [eE] [-+]? [0-9]+ )?",
+      "kind": "tag:yaml.org,2002:float (Number)",
+      "id": "source-35"
+    },
+    {
+      "input": "0.9",
+      "expected_accept": true,
+      "expected": 0.9,
+      "declaration": "[-+]? ( \\. [0-9]+ | [0-9]+ ( \\. [0-9]* )? ) ( [eE] [-+]? [0-9]+ )?",
+      "kind": "tag:yaml.org,2002:float (Number)",
+      "id": "source-36"
+    },
+    {
+      "input": ".0e0",
+      "expected_accept": true,
+      "expected": 0.0,
+      "declaration": "[-+]? ( \\. [0-9]+ | [0-9]+ ( \\. [0-9]* )? ) ( [eE] [-+]? [0-9]+ )?",
+      "kind": "tag:yaml.org,2002:float (Number)",
+      "id": "source-37"
+    },
+    {
+      "input": ".0E0",
+      "expected_accept": true,
+      "expected": 0.0,
+      "declaration": "[-+]? ( \\. [0-9]+ | [0-9]+ ( \\. [0-9]* )? ) ( [eE] [-+]? [0-9]+ )?",
+      "kind": "tag:yaml.org,2002:float (Number)",
+      "id": "source-38"
+    },
+    {
+      "input": ".0e-0",
+      "expected_accept": true,
+      "expected": 0.0,
+      "declaration": "[-+]? ( \\. [0-9]+ | [0-9]+ ( \\. [0-9]* )? ) ( [eE] [-+]? [0-9]+ )?",
+      "kind": "tag:yaml.org,2002:float (Number)",
+      "id": "source-39"
+    },
+    {
+      "input": ".0e+0",
+      "expected_accept": true,
+      "expected": 0.0,
+      "declaration": "[-+]? ( \\. [0-9]+ | [0-9]+ ( \\. [0-9]* )? ) ( [eE] [-+]? [0-9]+ )?",
+      "kind": "tag:yaml.org,2002:float (Number)",
+      "id": "source-40"
+    },
+    {
+      "input": ".0e00",
+      "expected_accept": true,
+      "expected": 0.0,
+      "declaration": "[-+]? ( \\. [0-9]+ | [0-9]+ ( \\. [0-9]* )? ) ( [eE] [-+]? [0-9]+ )?",
+      "kind": "tag:yaml.org,2002:float (Number)",
+      "id": "source-41"
+    },
+    {
+      "input": ".0e9",
+      "expected_accept": true,
+      "expected": 0.0,
+      "declaration": "[-+]? ( \\. [0-9]+ | [0-9]+ ( \\. [0-9]* )? ) ( [eE] [-+]? [0-9]+ )?",
+      "kind": "tag:yaml.org,2002:float (Number)",
+      "id": "source-42"
+    },
+    {
+      "input": ".inf",
+      "expected_accept": false,
+      "declaration": "[-+]? ( \\.inf | \\.Inf | \\.INF )",
+      "kind": "tag:yaml.org,2002:float (Infinity)",
+      "id": "source-43"
+    },
+    {
+      "input": "-.inf",
+      "expected_accept": false,
+      "declaration": "[-+]? ( \\.inf | \\.Inf | \\.INF )",
+      "kind": "tag:yaml.org,2002:float (Infinity)",
+      "id": "source-44"
+    },
+    {
+      "input": "+.inf",
+      "expected_accept": false,
+      "declaration": "[-+]? ( \\.inf | \\.Inf | \\.INF )",
+      "kind": "tag:yaml.org,2002:float (Infinity)",
+      "id": "source-45"
+    },
+    {
+      "input": ".Inf",
+      "expected_accept": false,
+      "declaration": "[-+]? ( \\.inf | \\.Inf | \\.INF )",
+      "kind": "tag:yaml.org,2002:float (Infinity)",
+      "id": "source-46"
+    },
+    {
+      "input": ".INF",
+      "expected_accept": false,
+      "declaration": "[-+]? ( \\.inf | \\.Inf | \\.INF )",
+      "kind": "tag:yaml.org,2002:float (Infinity)",
+      "id": "source-47"
+    },
+    {
+      "input": ".nan",
+      "expected_accept": false,
+      "declaration": "\\.nan | \\.NaN | \\.NAN",
+      "kind": "tag:yaml.org,2002:float (Not a number)",
+      "id": "source-48"
+    },
+    {
+      "input": ".NaN",
+      "expected_accept": false,
+      "declaration": "\\.nan | \\.NaN | \\.NAN",
+      "kind": "tag:yaml.org,2002:float (Not a number)",
+      "id": "source-49"
+    },
+    {
+      "input": ".NAN",
+      "expected_accept": false,
+      "declaration": "\\.nan | \\.NaN | \\.NAN",
+      "kind": "tag:yaml.org,2002:float (Not a number)",
+      "id": "source-50"
+    },
+    {
+      "input": "unmatched-scalar",
+      "expected_accept": true,
+      "expected": "unmatched-scalar",
+      "declaration": "*",
+      "kind": "tag:yaml.org,2002:str (Default)",
+      "id": "source-51"
+    }
+  ]
+}

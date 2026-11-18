@@ -1,0 +1,177 @@
+[
+  {
+    "mode": "local",
+    "source": "none",
+    "evaluation": "OBSERVE_ALL",
+    "startup": "immediate",
+    "cold_start": "warn-and-observe"
+  },
+  {
+    "mode": "local",
+    "source": "json",
+    "evaluation": "OBSERVE_ALL",
+    "startup": "immediate",
+    "cold_start": "warn-and-observe"
+  },
+  {
+    "mode": "local",
+    "source": "json",
+    "evaluation": "RESPECT_POLICY",
+    "startup": "immediate",
+    "cold_start": "warn-and-observe"
+  },
+  {
+    "mode": "local",
+    "source": "yaml",
+    "evaluation": "OBSERVE_ALL",
+    "startup": "immediate",
+    "cold_start": "warn-and-observe"
+  },
+  {
+    "mode": "local",
+    "source": "yaml",
+    "evaluation": "RESPECT_POLICY",
+    "startup": "immediate",
+    "cold_start": "warn-and-observe"
+  },
+  {
+    "mode": "hybrid",
+    "source": "none",
+    "evaluation": "OBSERVE_ALL",
+    "startup": "immediate",
+    "cold_start": "warn-and-observe"
+  },
+  {
+    "mode": "hybrid",
+    "source": "none",
+    "evaluation": "RESPECT_POLICY",
+    "startup": "immediate",
+    "cold_start": "warn-and-observe"
+  },
+  {
+    "mode": "hybrid",
+    "source": "json",
+    "evaluation": "OBSERVE_ALL",
+    "startup": "immediate",
+    "cold_start": "warn-and-observe"
+  },
+  {
+    "mode": "hybrid",
+    "source": "json",
+    "evaluation": "RESPECT_POLICY",
+    "startup": "immediate",
+    "cold_start": "warn-and-observe"
+  },
+  {
+    "mode": "hybrid",
+    "source": "yaml",
+    "evaluation": "OBSERVE_ALL",
+    "startup": "immediate",
+    "cold_start": "warn-and-observe"
+  },
+  {
+    "mode": "hybrid",
+    "source": "yaml",
+    "evaluation": "RESPECT_POLICY",
+    "startup": "immediate",
+    "cold_start": "warn-and-observe"
+  },
+  {
+    "mode": "hybrid",
+    "source": "disk",
+    "evaluation": "OBSERVE_ALL",
+    "startup": "immediate",
+    "cold_start": "warn-and-observe"
+  },
+  {
+    "mode": "hybrid",
+    "source": "disk",
+    "evaluation": "OBSERVE_ALL",
+    "startup": "settled",
+    "cold_start": "warn-and-observe"
+  },
+  {
+    "mode": "hybrid",
+    "source": "disk",
+    "evaluation": "OBSERVE_ALL",
+    "startup": "immediate",
+    "cold_start": "fail-closed"
+  },
+  {
+    "mode": "hybrid",
+    "source": "disk",
+    "evaluation": "RESPECT_POLICY",
+    "startup": "immediate",
+    "cold_start": "warn-and-observe"
+  },
+  {
+    "mode": "hybrid",
+    "source": "disk",
+    "evaluation": "RESPECT_POLICY",
+    "startup": "settled",
+    "cold_start": "warn-and-observe"
+  },
+  {
+    "mode": "hybrid",
+    "source": "disk",
+    "evaluation": "RESPECT_POLICY",
+    "startup": "immediate",
+    "cold_start": "fail-closed"
+  },
+  {
+    "mode": "hybrid",
+    "source": "pull",
+    "evaluation": "OBSERVE_ALL",
+    "startup": "immediate",
+    "cold_start": "warn-and-observe"
+  },
+  {
+    "mode": "hybrid",
+    "source": "pull",
+    "evaluation": "OBSERVE_ALL",
+    "startup": "settled",
+    "cold_start": "warn-and-observe"
+  },
+  {
+    "mode": "hybrid",
+    "source": "pull",
+    "evaluation": "OBSERVE_ALL",
+    "startup": "immediate",
+    "cold_start": "fail-closed"
+  },
+  {
+    "mode": "hybrid",
+    "source": "pull",
+    "evaluation": "RESPECT_POLICY",
+    "startup": "immediate",
+    "cold_start": "warn-and-observe"
+  },
+  {
+    "mode": "hybrid",
+    "source": "pull",
+    "evaluation": "RESPECT_POLICY",
+    "startup": "settled",
+    "cold_start": "warn-and-observe"
+  },
+  {
+    "mode": "hybrid",
+    "source": "pull",
+    "evaluation": "RESPECT_POLICY",
+    "startup": "immediate",
+    "cold_start": "fail-closed"
+  },
+  {
+    "mode": "hosted",
+    "source": "service",
+    "evaluation": "OBSERVE_ALL",
+    "startup": "immediate",
+    "cold_start": "warn-and-observe"
+  },
+  {
+    "mode": "hosted",
+    "source": "service",
+    "evaluation": "RESPECT_POLICY",
+    "startup": "immediate",
+    "cold_start": "warn-and-observe"
+  }
+]

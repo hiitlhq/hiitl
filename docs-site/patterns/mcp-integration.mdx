@@ -21,9 +21,11 @@ async def handle_tool(name: str, arguments: dict):
 ```python After (protected by hiitl)
 @server.call_tool()
 async def handle_tool(name: str, arguments: dict):
-    result = hiitl.evaluate(name, arguments)
+    result = hiitl.evaluate(name, parameters=arguments)
     if not result.ok:
-        return f"Blocked: {result.reason_codes}"
+        return CallToolResult(isError=True, content=[
+            TextContent(type="text", text=f"Blocked: {result.reason_codes}")
+        ])
 
     if name == "send_email":
         return await send_email(arguments["to"], arguments["subject"], arguments["body"])
@@ -51,21 +53,23 @@ npm install @hiitl/sdk
 
 ## Step 2: Initialize
 
-Add hiitl initialization alongside your MCP server setup.
+Add hiitl initialization alongside your existing MCP server setup. The snippets use that server's installed MCP library and application handlers; Python replies below use `CallToolResult` and `TextContent` from `mcp.types`.
 
 <CodeGroup>
 
 ```python Python
 from hiitl import HIITL
 from mcp.server import Server
+from mcp.types import CallToolResult, TextContent
 
 server = Server("my-mcp-server")
 
 hiitl = HIITL(
     environment="dev",
     agent_id="my-mcp-server",
-    org_id="org_devlocal000000000",
+    org_id="org_devlocal0000000000",
     policy_path="./policy.yaml",
+    mode="RESPECT_POLICY",
 )
 ```
 
@@ -80,15 +84,16 @@ const server = new Server(
 
 const hiitl = new HIITL({
   environment: 'dev',
-  agentId: 'my-mcp-server',
-  orgId: 'org_devlocal000000000',
-  policyPath: './policy.yaml',
+  agent_id: 'my-mcp-server',
+  org_id: 'org_devlocal0000000000',
+  policy_path: './policy.yaml',
+  mode: 'RESPECT_POLICY',
 });
 ```
 
 </CodeGroup>
 
-No API key needed for local mode. The SDK runs evaluation entirely in-process.
+No API key needed for local mode. The SDK runs evaluation entirely in-process. `mode="RESPECT_POLICY"` enforces the policy; under the default mode, `OBSERVE_ALL`, a decision other than `ALLOW` or `SANDBOX` comes back as `OBSERVE`, with `allowed` true and the policy's decision in `would_be`.
 
 ## Step 3: Wrap tool handlers
 
@@ -99,10 +104,12 @@ Add `evaluate()` at the top of your tool handler.
 ```python Python
 @server.call_tool()
 async def handle_tool(name: str, arguments: dict):
-    result = hiitl.evaluate(name, arguments)
+    result = hiitl.evaluate(name, parameters=arguments)
 
     if not result.ok:
-        return f"Action blocked by policy: {result.reason_codes}"
+        return CallToolResult(isError=True, content=[
+            TextContent(type="text", text=f"Action blocked by policy: {result.reason_codes}")
+        ])
 
     if name == "send_email":
         return await send_email(arguments["to"], arguments["subject"], arguments["body"])
@@ -116,10 +123,11 @@ async def handle_tool(name: str, arguments: dict):
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
 
-  const result = hiitl.evaluate({ action: name, params: args ?? {} });
+  const result = await hiitl.evaluate({ action: name, parameters: args ?? {} });
 
-  if (!result.ok) {
+  if (!result.allowed) {
     return {
+      isError: true,
       content: [{ type: 'text', text: `Action blocked: ${result.reason_codes}` }],
     };
   }
@@ -136,11 +144,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `result.ok` | bool | Safe to proceed (ALLOW or SANDBOX) |
+| `result.ok` | bool | Safe to proceed (the decision's `allowed`) |
 | `result.blocked` | bool | Denied by policy |
 | `result.needs_approval` | bool | Requires human review |
 | `result.reason_codes` | list | Why the decision was made |
 | `result.remediation` | object | Guidance on what to do |
+
+These are the Python properties. The TypeScript Decision has `result.allowed`, `result.decision`, `result.reason_codes` and `result.remediation`.
 
 ## Step 4: Add a policy
 
@@ -150,13 +160,14 @@ Create `policy.yaml`:
 policy_set:
   name: "mcp-server-policy"
   version: "v1.0.0"
+  description: "Controls on the MCP server's tools"
   scope:
-    org_id: "org_devlocal000000000"
+    org_id: "org_devlocal0000000000"
     environment: "dev"
 
   rules:
     - name: "block-large-payments"
-      enabled: true
+      description: "Block payments over $500"
       priority: 100
       conditions:
         all_of:
@@ -170,7 +181,7 @@ policy_set:
       reason_code: "PAYMENT_TOO_HIGH"
 
     - name: "allow-all"
-      enabled: true
+      description: "Allow every other tool call"
       priority: 1
       conditions:
         all_of:
@@ -183,7 +194,7 @@ policy_set:
 
 ## Step 5: Run it
 
-Start your MCP server as usual. Evaluations happen inline -- no extra processes, no network calls in local mode.
+Start your MCP server as usual. Evaluations happen inline. A local policy check needs no hosted hiitl service; configured sync routes and the tool itself may make network calls.
 
 ---
 
@@ -194,48 +205,55 @@ Start your MCP server as usual. Evaluations happen inline -- no extra processes,
 ```python Python
 @server.call_tool()
 async def handle_tool(name: str, arguments: dict):
-    result = hiitl.evaluate(name, arguments)
+    result = hiitl.evaluate(name, parameters=arguments)
 
     if result.ok:
         return await execute_tool(name, arguments)
 
     if result.needs_approval:
-        return f"This action requires approval. Action ID: {result.action_id}"
+        return CallToolResult(isError=True, content=[
+            TextContent(type="text", text=f"This action requires approval. Action ID: {result.action_id}")
+        ])
 
     if result.blocked:
         msg = f"Blocked: {result.reason_codes}"
         if result.remediation:
             msg += f"\nSuggestion: {result.remediation.suggestion}"
-        return msg
+        return CallToolResult(isError=True, content=[TextContent(type="text", text=msg)])
 
-    return f"Action not allowed: {result.reason_codes}"
+    return CallToolResult(isError=True, content=[
+        TextContent(type="text", text=f"Action not allowed: {result.reason_codes}")
+    ])
 ```
 
 ```typescript TypeScript
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
-  const result = hiitl.evaluate({ action: name, params: args ?? {} });
+  const result = await hiitl.evaluate({ action: name, parameters: args ?? {} });
 
-  if (result.ok) {
+  if (result.allowed) {
     return await executeTool(name, args);
   }
 
-  if (result.needs_approval) {
+  if (['REQUIRE_APPROVAL', 'PAUSE', 'ESCALATE'].includes(result.decision)) {
     return {
+      isError: true,
       content: [{ type: 'text', text: `Requires approval. ID: ${result.action_id}` }],
     };
   }
 
-  if (result.blocked) {
+  if (['BLOCK', 'KILL_SWITCH', 'RATE_LIMIT'].includes(result.decision)) {
     const suggestion = result.remediation?.suggestion
       ? `\nSuggestion: ${result.remediation.suggestion}`
       : '';
     return {
+      isError: true,
       content: [{ type: 'text', text: `Blocked: ${result.reason_codes}${suggestion}` }],
     };
   }
 
   return {
+    isError: true,
     content: [{ type: 'text', text: `Not allowed: ${result.reason_codes}` }],
   };
 });
@@ -252,29 +270,34 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 | Payment processing | [process_payment](/patterns/financial) | Amount thresholds, rate limits |
 | Email sending | [send_email](/patterns/communication) | Rate limits, recipient validation |
 | Database queries | [query_database](/patterns/data-access) | PII access, query scope |
-| File operations | [export_data](/patterns/data-access) | Size limits, format controls |
+| File operations | [export_data](/patterns/data-access) | Size limits, PII controls |
 
 ---
 
 ## Moving to production
 
-Switch from local to hosted mode by adding an API key:
+Connect to the hosted service by adding an API key:
 
 ```python
+import os
+
 hiitl = HIITL(
     api_key=os.getenv("HIITL_API_KEY"),
     server_url=os.getenv("HIITL_SERVER_URL"),
     environment="prod",
     agent_id="governed-mcp-server",
+    mode="RESPECT_POLICY",
 )
 ```
+
+In Python, an `api_key` (with or without `server_url`) runs the SDK in hybrid mode: evaluation stays in-process, and policies (with their kill-switch rules) and audit records sync with the hosted service. TypeScript uses the same table: an `api_key` enables hybrid mode, with `server_url` as its sync target when supplied. Hosted evaluation requires `evaluation: 'remote'`, `server_url` and the API key's `signature_key`.
 
 The `evaluate()` calls stay exactly the same. Only the initialization changes.
 
 ## Troubleshooting
 
-**`evaluate()` always returns ok** -- You are running without a policy. Create a `policy.yaml` and pass the path to HIITL.
+**`evaluate()` always returns ok** -- The SDK is running in its default mode, `OBSERVE_ALL`, which reports a policy's decision in `would_be` without stopping the call. Create a `policy.yaml`, pass its path to HIITL, and pass `mode="RESPECT_POLICY"`.
 
-**Action name mismatch** -- The `name` in `evaluate(name, arguments)` must match the `action` value in your policy conditions.
+**Action name mismatch** -- The `name` in `evaluate(name, parameters=arguments)` must match the `action` value in your policy conditions.
 
 **Arguments structure** -- `evaluate()` passes `arguments` as parameters. Policy conditions reference them as `parameters.field_name`.

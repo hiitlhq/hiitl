@@ -1,0 +1,23 @@
+{
+  "name": "startup",
+  "version": "v1.0.0",
+  "description": "A guarded action is blocked",
+  "scope": {
+    "org_id": "org_startup000000000000",
+    "environment": "dev"
+  },
+  "rules": [
+    {
+      "name": "guard",
+      "description": "Block the guarded action",
+      "priority": 100,
+      "conditions": {
+        "field": "action",
+        "operator": "equals",
+        "value": "guarded"
+      },
+      "decision": "BLOCK",
+      "reason_code": "STARTUP_GUARD"
+    }
+  ]
+}

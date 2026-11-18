@@ -9,7 +9,7 @@ tags: ["slack", "communication", "messaging", "team"]
 
 evaluate_examples:
   python: |
-    result = hiitl.evaluate("post_to_slack", {
+    result = hiitl.evaluate("post_to_slack", parameters={
         "channel": "#engineering-alerts",
         "message_type": "notification",
         "mentions_count": 0,
@@ -17,15 +17,15 @@ evaluate_examples:
     if result.ok:
         slack_client.post_message(channel=channel, text=message)
   typescript: |
-    const result = hiitl.evaluate({
+    const result = await hiitl.evaluate({
       action: 'post_to_slack',
-      params: {
+      parameters: {
         channel: '#engineering-alerts',
         message_type: 'notification',
         mentions_count: 0,
       },
     });
-    if (result.ok) {
+    if (result.allowed) {
       await slackClient.postMessage({ channel, text: message });
     }
 
@@ -47,9 +47,11 @@ starter_policies:
   - name: "allow-normal-post"
     description: "Allow standard messages without broadcast mentions to permitted channels"
     priority: 500
-    enabled: true
     conditions:
       all_of:
+        - field: "action"
+          operator: "equals"
+          value: "post_to_slack"
         - field: "parameters.mentions_count"
           operator: "less_than_or_equal"
           value: 5
@@ -59,16 +61,18 @@ starter_policies:
     decision: "ALLOW"
     reason_code: "SLACK_POST_ALLOWED"
     remediation:
-      type: "static"
+      type: "threshold"
       message: "Slack post permitted under standard policy"
       suggestion: "No action required"
 
   - name: "block-broadcast-in-prod-channels"
     description: "Block @channel and @here mentions in production alert channels to prevent notification storms"
     priority: 100
-    enabled: true
     conditions:
       all_of:
+        - field: "action"
+          operator: "equals"
+          value: "post_to_slack"
         - field: "parameters.has_broadcast_mention"
           operator: "equals"
           value: true
@@ -78,52 +82,61 @@ starter_policies:
     decision: "BLOCK"
     reason_code: "SLACK_BROADCAST_BLOCKED_PROD"
     remediation:
-      type: "static"
+      type: "custom"
       message: "Broadcast mentions (@channel/@here) are blocked in production channels to prevent notification fatigue."
       suggestion: "Remove the @channel or @here mention from your message. If this is a genuine incident requiring broad notification, use the incident management tool instead, or request an exception from your team lead."
 
   - name: "rate-limit-per-agent"
     description: "Limit each agent to 60 messages per minute to prevent bot spam in channels"
     priority: 200
-    enabled: true
     conditions:
-      field: "agent_id"
-      operator: "exists"
-      value: true
+      field: "action"
+      operator: "equals"
+      value: "post_to_slack"
     decision: "RATE_LIMIT"
     reason_code: "SLACK_RATE_LIMIT_AGENT"
+    rate_limit:
+      limit: 60
+      window_seconds: 60
+      scope: "agent"
     remediation:
-      type: "static"
+      type: "rate_limit"
       message: "Slack posting rate limit exceeded for this agent. Maximum 60 messages per minute."
       suggestion: "Implement message batching or reduce posting frequency. Consider aggregating multiple updates into a single threaded message instead of separate posts."
 
   - name: "sandbox-in-dev"
     description: "Sandbox all Slack posts in dev environment to a dedicated test channel"
-    priority: 80
-    enabled: true
+    priority: 600
     conditions:
-      field: "environment"
-      operator: "equals"
-      value: "dev"
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "post_to_slack"
+        - field: "environment"
+          operator: "equals"
+          value: "dev"
     decision: "SANDBOX"
     reason_code: "SLACK_SANDBOXED_DEV"
     remediation:
-      type: "static"
+      type: "custom"
       message: "Slack posts in the dev environment are sandboxed to #dev-bot-testing to prevent messages reaching real channels."
       suggestion: "Your message will be redirected to #dev-bot-testing. To test against real channels, use the staging environment with appropriate approvals."
 
   - name: "require-approval-mass-mention"
     description: "Require approval for messages mentioning more than 10 users"
     priority: 130
-    enabled: true
     conditions:
-      field: "parameters.mentions_count"
-      operator: "greater_than"
-      value: 10
+      all_of:
+        - field: "action"
+          operator: "equals"
+          value: "post_to_slack"
+        - field: "parameters.mentions_count"
+          operator: "greater_than"
+          value: 10
     decision: "REQUIRE_APPROVAL"
     reason_code: "SLACK_MASS_MENTION_APPROVAL"
     remediation:
-      type: "static"
+      type: "threshold"
       message: "Messages mentioning more than 10 users require approval to prevent notification overload."
       suggestion: "Consider whether all mentioned users need direct notification. Reduce the mention count or submit for approval with justification for the broad notification."
 
@@ -138,4 +151,4 @@ compliance:
     note: "Bot-generated messages should be clearly labeled as automated. Respect channel-specific posting guidelines and quiet hours where configured."
   - regulation: "Audit Trail Requirements"
     relevance: "All automated communications must be logged for accountability and incident review"
-    note: "Every Slack post attempt (allowed, blocked, or sandboxed) is recorded in the ECP audit trail with the full message context, channel target, and decision rationale."
+    note: "Every Slack post attempt (allowed, blocked, or sandboxed) is recorded in the ECP audit trail with the envelope the call passed (the channel and the message parameters) and the decision with its reason codes."

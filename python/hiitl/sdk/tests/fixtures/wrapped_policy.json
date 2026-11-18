@@ -1,14 +1,18 @@
 {
   "policy_set": {
-    "version": "1.0.0",
+    "version": "v1.0.0",
+    "description": "Test rule",
+    "scope": {
+      "org_id": "org_devlocal0000000000",
+      "environment": "dev"
+    },
     "name": "wrapped_test_policy",
     "rules": [
       {
         "name": "test_rule",
         "priority": 100,
-        "enabled": true,
         "conditions": {
-          "field": "tool_name",
+          "field": "action",
           "operator": "equals",
           "value": "test_tool"
         },

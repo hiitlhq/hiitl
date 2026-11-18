@@ -18,27 +18,51 @@ jobs:
         working-directory: python
     steps:
       - uses: actions/checkout@v4
+      # Named by a step: GitHub allows no runner context in a job's env.
+      - name: Name this job's latency record directory
+        run: echo "HIITL_LATENCY_RECORD_DIR=$RUNNER_TEMP/hiitl-latency" >> "$GITHUB_ENV"
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+      - name: Install the declared Python bootstrap
+        run: python -m pip install --upgrade -r requirements-bootstrap.txt
       - name: Install package
-        run: pip install -e ".[dev]"
+        run: |
+          pip install -r requirements.txt
+          pip install -e ".[mcp]"
       - name: Run SDK tests
         run: python -m pytest hiitl/ -v --tb=short
+
+      - name: Preserve latency samples, including a failed build
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: latency-python-${{ matrix.python-version }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.HIITL_LATENCY_RECORD_DIR }}
+          if-no-files-found: error
 
   conformance:
     name: Conformance Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # Named by a step: GitHub allows no runner context in a job's env.
+      - name: Name this job's latency record directory
+        run: echo "HIITL_LATENCY_RECORD_DIR=$RUNNER_TEMP/hiitl-latency" >> "$GITHUB_ENV"
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
+      - name: Install the declared Python bootstrap
+        working-directory: python
+        run: python -m pip install --upgrade -r requirements-bootstrap.txt
       - name: Install Python package
-        run: cd python && pip install -e ".[dev]"
+        working-directory: python
+        run: |
+          pip install -r requirements.txt
+          pip install -e ".[mcp]"
       - name: Install TypeScript deps
         run: cd typescript/packages/core && npm ci
       - name: Run Python conformance
@@ -46,26 +70,124 @@ jobs:
       - name: Run TypeScript conformance
         run: cd typescript/packages/core && npx vitest run --reporter=verbose
 
+      - name: Preserve latency samples, including a failed build
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: latency-conformance-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.HIITL_LATENCY_RECORD_DIR }}
+          if-no-files-found: error
+
   typescript:
     name: TypeScript Tests
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ["22", "24", "26"]
     defaults:
       run:
         working-directory: typescript
     steps:
       - uses: actions/checkout@v4
+      # Named by a step: GitHub allows no runner context in a job's env.
+      - name: Name this job's latency record directory
+        run: echo "HIITL_LATENCY_RECORD_DIR=$RUNNER_TEMP/hiitl-latency" >> "$GITHUB_ENV"
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: ${{ matrix.node }}
       - name: Install core dependencies
         run: cd packages/core && npm ci
       - name: Install SDK dependencies
         run: cd packages/sdk && npm ci
       - name: Type check core
-        run: cd packages/core && npx tsc --noEmit
+        run: cd packages/core && npm run type-check
+      - name: Build core for its SDK consumer
+        run: cd packages/core && npm run build
       - name: Type check SDK
-        run: cd packages/sdk && npx tsc --noEmit
+        run: cd packages/sdk && npm run type-check
       - name: Run core tests
-        run: cd packages/core && npx vitest run --reporter=verbose
+        run: cd packages/core && npm test -- --reporter=verbose
       - name: Run SDK tests
-        run: cd packages/sdk && npx vitest run --reporter=verbose
+        run: cd packages/sdk && npm test -- --reporter=verbose
+
+      - name: Preserve latency samples, including a failed build
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: latency-node-${{ matrix.node }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.HIITL_LATENCY_RECORD_DIR }}
+          if-no-files-found: error
+
+  release-evidence:
+    name: Public package SBOMs, advisories and licence inventory
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Name this run's fresh evidence directory
+        id: evidence-path
+        run: echo "path=docs/security/sbom/$(date -u +%F)/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.14.0"
+      - name: Install evidence tools separately from the measured environment
+        run: |
+          python -m pip install --upgrade -r python/requirements-bootstrap.txt
+          pip install cyclonedx-bom==8.0.1 pip-audit==2.10.1
+      - name: Install the Python package, MCP extra and test dependencies
+        run: |
+          python -m venv "$RUNNER_TEMP/hiitl-sbom-python"
+          "$RUNNER_TEMP/hiitl-sbom-python/bin/python" -m pip install --upgrade -r python/requirements-bootstrap.txt
+          "$RUNNER_TEMP/hiitl-sbom-python/bin/pip" install -r python/requirements.txt
+          "$RUNNER_TEMP/hiitl-sbom-python/bin/pip" install -e './python[mcp]'
+      - name: Install each npm package's dependencies
+        run: |
+          npm ci --prefix typescript/packages/core
+          npm ci --prefix typescript/packages/sdk
+      - name: Collect all three SBOMs and advisory results
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python .github/scripts/release_evidence.py \
+            --python "$RUNNER_TEMP/hiitl-sbom-python/bin/python" \
+            --output "${{ steps.evidence-path.outputs.path }}"
+      # A red audit remains red. Preserve its actual output for the reviewer.
+      - name: Preserve this run's evidence for the public PR
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: public-release-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ steps.evidence-path.outputs.path }}
+          if-no-files-found: error
+
+  example-audit:
+    name: npm audit (MCP example complete graph)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install the example's locked graph
+        working-directory: examples/mcp-server-ts
+        run: npm ci
+      # Read whole: the example is not a published package (HTL-17 `4d086f19`, TEST_DESIGN_advisory_gate.md).
+      - name: Audit the example's complete graph
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python .github/scripts/advisory_gate.py npm --package examples/mcp-server-ts --output example-advisories
+      - name: Preserve the example advisory result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: example-advisories
+          path: example-advisories/
+          if-no-files-found: error

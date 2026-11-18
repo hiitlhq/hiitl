@@ -8,29 +8,23 @@ pip install hiitl
 
 ## Local Evaluation (No API Key Needed)
 
-When no `api_key` is provided, the SDK automatically runs evaluation in-process with no external dependencies.
+When no `api_key` is provided, the SDK automatically runs evaluation in-process with no external dependencies. With no policy loaded, every action is observed: it is recorded and allowed.
 
 Create `example.py`:
 
 ```python
 from hiitl import HIITL
 
-hiitl = HIITL(
-    environment="dev",
-    agent_id="my-first-agent",
-    org_id="org_devlocal000000000",
-    policy_path="./policy.yaml"
-)
+hiitl = HIITL(agent_id="my-first-agent")
 
 def process_payment(account_id: str, amount: float):
     print(f"Processing ${amount} payment for account {account_id}")
     return {"status": "success", "transaction_id": "txn_123"}
 
 decision = hiitl.evaluate(
-    tool="process_payment",
-    operation="execute",
+    "process_payment",
     target={"account_id": "acct_123"},
-    parameters={"amount": 150.00, "currency": "usd"}
+    parameters={"amount": 150.00, "currency": "usd"},
 )
 
 if decision.allowed:
@@ -40,25 +34,27 @@ else:
     print(f"✗ Blocked: {decision.reason_codes}")
 ```
 
+The payment goes through. `decision.decision` is `OBSERVE`, and `decision.would_be` says what enforcement would have decided: `BLOCK`, with `NO_MATCHING_RULE` in `decision.would_be_reason_codes`, because no rule allows the action yet.
+
 ## Add a Policy
 
-Create `policies/my-policy.yaml`:
+Create `policy.yaml`. An action no rule matches is blocked once you enforce, so the policy allows payments and blocks the large ones. Every rule needs a `description`:
 
 ```yaml
 policy_set:
-  name: "my-first-policy"
+  name: "payment-controls"
   version: "v1.0.0"
+  description: "Payment controls for the quickstart agent"
   scope:
-    org_id: "org_devlocal000000000"
-    environment: "dev"
-
+    org_id: "org_devlocal0000000000"
+    environment: "prod"
   rules:
     - name: "block-high-value-payments"
-      enabled: true
+      description: "Payments over $500 are refused"
       priority: 100
       conditions:
         all_of:
-          - field: "tool"
+          - field: "action"
             operator: "equals"
             value: "process_payment"
           - field: "parameters.amount"
@@ -66,37 +62,33 @@ policy_set:
             value: 500
       decision: "BLOCK"
       reason_code: "PAYMENT_TOO_HIGH"
-
-    - name: "allow-all-else"
-      enabled: true
-      priority: 1
+    - name: "allow-payments"
+      description: "Other payments proceed"
+      priority: 10
       conditions:
-        all_of:
-          - field: "tool"
-            operator: "equals"
-            value: "process_payment"
+        field: "action"
+        operator: "equals"
+        value: "process_payment"
       decision: "ALLOW"
-      reason_code: "DEFAULT_ALLOW"
+      reason_code: "PAYMENT_ALLOWED"
 ```
 
-Update `example.py` to load the policy:
+Update `example.py` to load the policy and enforce it. The default mode, `OBSERVE_ALL`, only records what the policy would do; `mode="RESPECT_POLICY"` enforces it:
 
 ```python
 from hiitl import HIITL
 
 hiitl = HIITL(
-    environment="dev",
     agent_id="my-first-agent",
-    org_id="org_devlocal000000000",
-    policy_path="policies/my-policy.yaml"  # Load policy
+    policy_path="./policy.yaml",  # Load policy
+    mode="RESPECT_POLICY",        # Enforce it
 )
 
 # Try a payment over $500
 decision = hiitl.evaluate(
-    tool="process_payment",
-    operation="execute",
+    "process_payment",
     target={"account_id": "acct_456"},
-    parameters={"amount": 1000.00, "currency": "usd"}  # Over the limit!
+    parameters={"amount": 1000.00, "currency": "usd"},  # Over the limit!
 )
 
 if decision.allowed:
@@ -117,6 +109,8 @@ Expected output:
 
 **The policy worked!** Payments over $500 are now blocked.
 
+Without `mode="RESPECT_POLICY"`, the same call comes back as `OBSERVE`, with `would_be` `BLOCK` and `would_be_reason_codes` `['PAYMENT_TOO_HIGH']`. That lets you watch what a policy would do before you enforce it.
+
 ---
 
 ## What Just Happened?
@@ -124,7 +118,7 @@ Expected output:
 1. **Envelope Creation**: The SDK created a structured envelope with all required metadata
 2. **Policy Evaluation**: Your policy was evaluated against the envelope
 3. **Deterministic Decision**: The rule matched (amount > 500) → BLOCK decision
-4. **Audit Trail**: An immutable audit record was created (check `~/.hiitl/audit.db` for local evaluation)
+4. **Audit Trail**: An audit record was written to `./hiitl_audit.db` (the default `audit_db_path`), with a SHA-256 hash of its content
 
 ---
 
@@ -136,35 +130,42 @@ The SDK automatically determines how to evaluate based on the configuration you 
 
 | Configuration | Evaluation | Latency | Storage | Use Case |
 |---------------|-----------|---------|---------|----------|
-| `policy_path` only (no `api_key`) | Local | < 10ms | SQLite | Development, edge, single-instance |
-| `api_key` + `server_url` | Hosted | < 50ms | PostgreSQL | Production, multi-instance, team collaboration |
-| `api_key` only (no `server_url`) | Hybrid | Varies | Both | Local evaluation with remote audit/policy sync |
+| No `api_key` (optional `policy_path`) | Local | < 10ms | SQLite | Development, edge, single-instance |
+| `api_key`, with or without `server_url` | Hybrid | Same as local (in-process) | SQLite, synced to hosted | Production: local evaluation with policy and audit sync |
+| `api_key` + `server_url` + `evaluation="remote"` | Hosted | < 50ms | PostgreSQL | Teams that want no local state |
 
 **Local evaluation** runs in-process. No API key required. Provide a `policy_path` and evaluation happens entirely locally.
 
-**Hosted evaluation** sends envelopes to the HIITL server. Provide both `api_key` and `server_url`.
+**Hybrid evaluation** evaluates in-process too, against policies synced from the hosted service, and syncs the audit trail up in the background. Provide an `api_key`; `server_url` defaults to `https://api.hiitl.com`.
 
-**Hybrid evaluation** evaluates locally but syncs policies and audit data remotely. Provide `api_key` without `server_url`.
+**Hosted evaluation** sends every envelope to the hiitl server. Provide `api_key`, `server_url` and `evaluation="remote"`.
 
 ### Envelopes
 
 `evaluate()` creates an envelope with:
 - Identifiers: org_id, environment, agent_id, action_id
-- Action: tool, operation, target, parameters
+- Action: action, operation, target, parameters
 - Risk signals: sensitivity, cost_estimate (optional)
 - Metadata: reason, timestamps
 
-Action ID and timestamps are auto-generated.
+Action ID, idempotency key and timestamps are auto-generated.
 
 ### Decisions
 
-| Decision | Meaning | Your Action |
-|----------|---------|-------------|
-| `ALLOW` | Safe to proceed | Execute the action |
-| `BLOCK` | Denied by policy | Do not execute, log reason |
-| `REQUIRE_APPROVAL` | Needs human review | Send to approval queue |
-| `RATE_LIMIT` | Too many requests | Wait and retry |
-| `KILL_SWITCH` | Emergency stop | Alert ops, do not retry |
+| Decision | `allowed` | Meaning |
+|----------|-----------|---------|
+| `ALLOW` | `true` | Safe to proceed |
+| `OBSERVE` | `true` | Recorded, not enforced (`OBSERVE_ALL` mode); `would_be` holds the enforced decision |
+| `BLOCK` | `false` | Denied by policy |
+| `REQUIRE_APPROVAL` | `false` | Needs human review before execution |
+| `PAUSE` | `false` | Held for later processing |
+| `ESCALATE` | `false` | Escalated to a higher authority |
+| `ROUTE` | `false` | A sync route was asked and has not answered |
+| `RATE_LIMIT` | `false` | Too many requests — wait and retry |
+| `KILL_SWITCH` | `false` | Emergency stop — do not retry |
+| `SANDBOX` | `true` | Allowed in isolated environment |
+
+Under `OBSERVE_ALL`, an ALLOW or SANDBOX comes back as itself; every other decision comes back as `OBSERVE`. A windowed `RATE_LIMIT` rule still refuses the call past its limit in either mode.
 
 ---
 
@@ -174,7 +175,7 @@ Action ID and timestamps are auto-generated.
 
 ```python
 decision = hiitl.evaluate(
-    tool="send_email",
+    "send_email",
     operation="execute",
     target={"email": "customer@example.com"},
     parameters={"subject": "Welcome", "body": "Hello..."}
@@ -188,7 +189,7 @@ if decision.allowed:
 
 ```python
 decision = hiitl.evaluate(
-    tool="grant_access",
+    "grant_access",
     operation="create",
     target={"user_id": "user_123"},
     parameters={"role": "admin"},
@@ -203,7 +204,7 @@ if decision.allowed:
 
 ```python
 decision = hiitl.evaluate(
-    tool="run_batch_job",
+    "run_batch_job",
     operation="execute",
     target={"job_id": "job_456"},
     parameters={"records": 1000000},
@@ -216,14 +217,14 @@ if decision.allowed:
 
 ### Pattern 4: Handling Rate Limits
 
+A rate limit is a `RATE_LIMIT` rule with a window, such as `rate_limit: {limit: 100, window_seconds: 3600, scope: "agent"}`. The call past the limit comes back as `RATE_LIMIT`, with the counter state in `decision.rate_limit`:
+
 ```python
-decision = hiitl.evaluate(...)
+decision = hiitl.evaluate("send_email", parameters={"to": "customer@example.com"})
 
 if decision.decision == "RATE_LIMIT":
-    # SDK provides helper to wait until reset
-    reset_time = decision.rate_limit["reset_at"]
+    reset_time = decision.rate_limit.reset_at
     print(f"Rate limited. Retry after {reset_time}")
-    # Or use: hiitl.wait_until_reset(decision)
 elif decision.allowed:
     execute_action(...)
 ```
@@ -235,8 +236,8 @@ elif decision.allowed:
 ### See Timing Metadata
 
 ```python
-decision = hiitl.evaluate(...)
-print(f"Evaluation took {decision.timing['total_ms']}ms")
+decision = hiitl.evaluate("process_payment", parameters={"amount": 50.00})
+print(f"Evaluation took {decision.timing.total_ms}ms")
 ```
 
 **Target latency**:
@@ -245,21 +246,23 @@ print(f"Evaluation took {decision.timing['total_ms']}ms")
 
 ### View Audit Log (Local Evaluation)
 
+The Python SDK has no audit query method. In local and hybrid mode the trail is a SQLite file (`audit_db_path`, default `./hiitl_audit.db`) that you can read directly:
+
 ```python
-from hiitl import HIITL
+import sqlite3
 
-hiitl = HIITL(environment="dev", agent_id="my-agent", org_id="org_devlocal000000000", policy_path="./policy.yaml")
-
-# Query audit log
-events = hiitl.audit.query(
-    agent_id="my-first-agent",
-    decision="BLOCK",
-    limit=10
+con = sqlite3.connect("hiitl_audit.db")
+rows = con.execute(
+    "SELECT timestamp, action, decision_type FROM audit_log "
+    "WHERE agent_id = ? AND decision_type = ? ORDER BY timestamp DESC LIMIT 10",
+    ("my-first-agent", "BLOCK"),
 )
 
-for event in events:
-    print(f"{event.timestamp}: {event.decision} - {event.reason_codes}")
+for timestamp, action, decision in rows:
+    print(f"{timestamp}: {action} {decision}")
 ```
+
+The `action` column holds the action name, as the envelope does (`tool_name` in a store written before record format 2.0, renamed when the store opens).
 
 ### Enable Debug Logging
 
@@ -267,7 +270,8 @@ for event in events:
 import logging
 logging.basicConfig(level=logging.DEBUG)
 
-# Now HIITL will log detailed evaluation steps
+# Now hiitl logs sync and cache activity (hybrid mode) in detail.
+# Evaluation logs warnings only; there is no step-by-step evaluation log.
 ```
 
 ---
@@ -277,15 +281,15 @@ logging.basicConfig(level=logging.DEBUG)
 ### 1. Add More Policies
 
 Create policies for:
-- Rate limiting: `rate_limit: {scope: "agent_id", window: "hour", limit: 100}`
-- Kill switches: High-priority rules you can enable/disable instantly
-- Approval workflows: `decision: "REQUIRE_APPROVAL"` for high-stakes actions
+- Rate limiting: a `RATE_LIMIT` rule with `rate_limit: {limit: 100, window_seconds: 3600, scope: "agent"}`
+- Kill switches: `KILL_SWITCH` rules you switch on and off with `lifecycle_stage` (`active` / `disabled`)
+- Approval workflows: `decision: "REQUIRE_APPROVAL"` for high-stakes actions. The decision comes back to your code; nothing is queued unless a review case is opened
 
 See: [Policy Cookbook](policy_cookbook.md)
 
 ### 2. Integrate with Your Framework
 
-HIITL works with any Python code, but we have examples for:
+hiitl works with any Python code, but we have examples for:
 - LangChain agents
 - OpenAI Agents SDK
 - Custom agent loops
@@ -295,24 +299,27 @@ See: [Integration Examples](integration_examples.md)
 ### 3. Deploy to Production
 
 When ready:
-1. Sign up for hosted ECP at https://hiitl.ai
-2. Create production environment
-3. Update SDK config -- the SDK auto-detects hosted evaluation when both `api_key` and `server_url` are provided:
+1. Sign up for hosted ECP at https://hiitl.com
+2. Create an API key for the `prod` environment
+3. Add the key to your SDK config. An `api_key` turns on hybrid mode: evaluation stays in-process, and policies and the audit trail sync with the hosted service in the background:
    ```python
+   import os
+
    hiitl = HIITL(
        api_key=os.getenv("HIITL_API_KEY"),
-       server_url=os.getenv("HIITL_SERVER_URL"),
        environment="prod",
-       agent_id="my-agent"
+       agent_id="my-agent",
+       policy_path="./policy.yaml",  # Used until the first policy sync
+       mode="RESPECT_POLICY",
    )
    ```
-4. Deploy policies via API or dashboard
+   For hosted evaluation, where every call goes to the server, add `server_url=os.getenv("HIITL_SERVER_URL")` and `evaluation="remote"`.
+4. Deploy policies through the API (`POST /v1/policies`, admin scope). The dashboard shows them
 
 ### 4. Monitor & Observe
 
 - View audit trail in dashboard
-- Set up webhook alerts for blocks/kills witches
-- Export audit logs for compliance
+- Query audit logs through the API (`GET /v1/audit`, read scope) for compliance
 
 ---
 
@@ -331,75 +338,73 @@ policy_path = os.path.join(os.path.dirname(__file__), "policies/my-policy.yaml")
 hiitl = HIITL(policy_path=policy_path, ...)
 ```
 
-### Decision Always ALLOW (Policy Not Applying)
+### Decision Always OBSERVE (Policy Not Enforcing)
 
-**Solution**: Check policy scope matches your SDK config:
-- Policy `org_id` must match SDK `org_id` (must match pattern `org_[a-z0-9]{18,}`)
-- Policy `environment` must match SDK `environment`
-
-### "Signature Invalid" Error
-
-**Solution**: For hosted evaluation, ensure your API key is correct:
+**Solution**: The default mode, `OBSERVE_ALL`, records what the policy would decide and enforces nothing: a BLOCK comes back as `OBSERVE`, with the rule's decision in `would_be`. Pass `mode="RESPECT_POLICY"` to enforce:
 ```python
-hiitl = HIITL(
-    api_key=os.getenv("HIITL_API_KEY"),  # Check this is set correctly
-    server_url=os.getenv("HIITL_SERVER_URL"),
-    ...
-)
+hiitl = HIITL(policy_path="./policy.yaml", mode="RESPECT_POLICY")
 ```
+
+### Every Action Blocked with `NO_MATCHING_RULE`
+
+**Solution**: Under `RESPECT_POLICY`, an action no rule matches is blocked. Add an `ALLOW` rule, at a lower priority than your BLOCK rules, for each action you mean to let through.
 
 ---
 
 ## SDK Reference
 
-### HIITL Configuration
+### `HIITL` Configuration
 
 ```python
 # Local evaluation (no api_key → auto-detected as local)
 hiitl = HIITL(
     environment="dev",                     # "dev", "stage", or "prod"
     agent_id="my-agent",                   # Stable agent identifier
-    org_id="org_devlocal000000000",        # Organization ID (must match org_[a-z0-9]{18,})
-    policy_path="./policy.yaml",           # Path to policy file (required for local evaluation)
+    org_id="org_devlocal0000000000",       # Organization ID (default shown; must match ^org_[a-zA-Z0-9]{16,}$)
+    policy_path="./policy.yaml",           # Path to policy file (required with mode="RESPECT_POLICY")
+    mode="OBSERVE_ALL",                    # Default; "RESPECT_POLICY" enforces the policy
     audit_db_path="./hiitl_audit.db",      # SQLite audit log path (default shown)
     enable_rate_limiting=True,             # Enable in-memory rate limiting (default: True)
-    signature_key=None,                    # Optional: HMAC signature key for envelope signing
+    signature_key=None,                    # Optional locally: HMAC signature key; required for hosted evaluation
 )
 
-# Hosted evaluation (api_key + server_url → auto-detected as hosted)
+# Hybrid evaluation (api_key → hybrid, with or without server_url)
 hiitl = HIITL(
-    api_key=os.getenv("HIITL_API_KEY"),    # Triggers hosted or hybrid evaluation
-    server_url=os.getenv("HIITL_SERVER_URL"),  # With api_key → hosted evaluation
+    api_key=os.getenv("HIITL_API_KEY"),    # An api_key turns on hybrid evaluation
     environment="prod",
     agent_id="my-agent",
+    policy_path="./policy.yaml",           # Fallback until the first policy sync
+    mode="RESPECT_POLICY",
 )
 
-# Hybrid evaluation (api_key only, no server_url → auto-detected as hybrid)
+# Hosted evaluation (api_key + server_url + evaluation="remote")
 hiitl = HIITL(
-    api_key=os.getenv("HIITL_API_KEY"),    # api_key without server_url → hybrid
+    api_key=os.getenv("HIITL_API_KEY"),
+    server_url=os.getenv("HIITL_SERVER_URL"),
+    evaluation="remote",                   # Every evaluate() is a call to the server
+    signature_key=os.getenv("HIITL_SIGNATURE_KEY"),  # the API key's signing secret, shown when the key was created
     environment="prod",
     agent_id="my-agent",
-    policy_path="./policy.yaml",           # Local evaluation with remote sync
 )
 ```
 
-**Mode is auto-detected** -- you never need to set it explicitly:
+**Where evaluation runs is auto-detected** from what you pass:
 - No `api_key` provided → local evaluation
-- `api_key` + `server_url` provided → hosted evaluation
-- `api_key` without `server_url` → hybrid evaluation
+- `api_key`, with or without `server_url` → hybrid evaluation
+- `api_key` + `server_url` + `evaluation="remote"` → hosted evaluation
 
-Environment variables `HIITL_API_KEY` and `HIITL_SERVER_URL` are also supported and follow the same auto-detection logic.
+Pass `api_key` and `server_url` as arguments, as above. Setting `HIITL_API_KEY` or `HIITL_SERVER_URL` in the environment does not change where evaluation runs.
 
 ### evaluate() Parameters
 
 ```python
 decision = hiitl.evaluate(
-    action="action_name",              # Required: Action name
-    operation="execute",               # Required: read/write/create/delete/execute
-    target={},                         # Required: Resource identifiers
-    parameters={},                     # Required: Action parameters
+    action="action_name",              # Required: Action name (or the first positional argument)
+    operation="execute",               # Optional: read/write/create/update/delete/execute (default: execute)
+    target={},                         # Optional: Resource identifiers (default: {})
+    parameters={},                     # Optional: Action parameters (default: {})
     sensitivity=[],                    # Optional: Risk flags
-    cost_estimate={},                  # Optional: Cost metadata
+    cost_estimate={},                  # Optional: Cost metadata (tokens, dollars, api_calls)
     user_id=None,                      # Optional: End-user ID
     session_id=None,                   # Optional: Session ID
     reason=None,                       # Optional: Brief reason string
@@ -409,23 +414,28 @@ decision = hiitl.evaluate(
 ### Decision Object
 
 ```python
-decision.allowed          # bool: True if ALLOW or SANDBOX
-decision.decision         # str: Decision type (ALLOW, BLOCK, etc.)
+decision.allowed          # bool: True if ALLOW, SANDBOX or OBSERVE
+decision.decision         # str: Decision type (ALLOW, BLOCK, OBSERVE, etc.)
 decision.reason_codes     # list[str]: Reason codes
+decision.would_be         # str|None: The enforced decision, when decision is OBSERVE
+decision.would_be_reason_codes  # list[str]|None: Its reason codes
 decision.policy_version   # str: Policy version used
-decision.timing           # dict: Timing metadata
-decision.rate_limit       # dict|None: Rate limit state (if applicable)
-decision.approval_metadata  # dict|None: Approval workflow data (if applicable)
+decision.timing           # Timing: ingest_ms, evaluation_ms, total_ms
+decision.rate_limit       # RateLimit|None: scope, window, limit, current, reset_at (on RATE_LIMIT)
+decision.remediation      # Remediation|None: Guidance from the rule, on a BLOCK
+decision.ok               # Same as allowed
+decision.blocked          # BLOCK, KILL_SWITCH or RATE_LIMIT
+decision.needs_approval   # REQUIRE_APPROVAL, PAUSE or ESCALATE
+decision.observed         # OBSERVE
 ```
 
 ---
 
 ## Getting Help
 
-- **Documentation**: https://docs.hiitl.ai
-- **Examples**: https://github.com/hiitlhq/hiitl/tree/main/examples
+- **Documentation**: the `docs-site/` directory of https://github.com/hiitlhq/hiitl
+- **Examples**: the `examples/` directory of https://github.com/hiitlhq/hiitl
 - **Issues**: https://github.com/hiitlhq/hiitl/issues
-- **Discord**: https://discord.gg/hiitl
 
 ---
 

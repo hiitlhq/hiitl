@@ -1,15 +1,18 @@
 {
   "name": "kill-switch-policy",
-  "version": "1.0.0",
+  "version": "v1.0.0",
+  "scope": {
+    "org_id": "org_synthetictest00001",
+    "environment": "dev"
+  },
   "description": "Policy with kill switch enabled — blocks all payments",
   "rules": [
     {
       "name": "kill-switch-payments",
       "description": "Emergency stop all payments",
-      "enabled": true,
       "priority": 1000,
       "conditions": {
-        "field": "tool_name",
+        "field": "action",
         "operator": "equals",
         "value": "process_payment"
       },
@@ -19,10 +22,9 @@
     {
       "name": "allow-all",
       "description": "Allow everything else",
-      "enabled": true,
       "priority": 1,
       "conditions": {
-        "field": "tool_name",
+        "field": "action",
         "operator": "exists",
         "value": true
       },

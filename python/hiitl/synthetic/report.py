@@ -2,13 +2,13 @@
 
 Produces two output formats:
 1. JSON report: Full RunReport, consumable by UI Testing page
-2. Console summary: Human-readable pass/fail with grading stats
+2. Console summary: Human-readable pass/fail with each scenario's grading stats
 """
 
 import json
 import sys
 from datetime import datetime, timezone
-from typing import IO, List, Optional
+from typing import IO, List
 from uuid import uuid4
 
 from .types import GradingReport, RunReport, ScenarioResult
@@ -16,10 +16,9 @@ from .types import GradingReport, RunReport, ScenarioResult
 
 def build_run_report(
     scenarios: List[ScenarioResult],
-    grading: Optional[GradingReport] = None,
     mode: str = "local",
 ) -> RunReport:
-    """Build a complete RunReport from scenario results and optional grading."""
+    """Build a complete RunReport from scenario results (each carries its own grading)."""
     total_passed = sum(1 for s in scenarios if s.status == "passed")
     total_failed = sum(1 for s in scenarios if s.status in ("failed", "error"))
     total_assertions = sum(s.total_assertions for s in scenarios)
@@ -31,7 +30,6 @@ def build_run_report(
         mode=mode,
         timestamp=datetime.now(timezone.utc),
         scenarios=scenarios,
-        grading=grading,
         summary={
             "total_scenarios": len(scenarios),
             "passed": total_passed,
@@ -54,7 +52,7 @@ def write_json_report(report: RunReport, output: IO) -> None:
 def print_console_summary(report: RunReport, file: IO = sys.stdout) -> None:
     """Print human-readable summary to console."""
     print("", file=file)
-    print("=== HIITL Synthetic Test Results ===", file=file)
+    print("=== hiitl synthetic test results ===", file=file)
     print("", file=file)
 
     for scenario in report.scenarios:
@@ -73,9 +71,6 @@ def print_console_summary(report: RunReport, file: IO = sys.stdout) -> None:
     )
     print(f"  Total time: {s['total_latency_ms']}ms", file=file)
     print("", file=file)
-
-    if report.grading:
-        _print_grading(report.grading, file)
 
 
 def _print_scenario(scenario: ScenarioResult, file: IO) -> None:
@@ -120,13 +115,15 @@ def _print_scenario(scenario: ScenarioResult, file: IO) -> None:
         file=file,
     )
     print("", file=file)
+    if scenario.grading:
+        _print_grading(scenario.grading, file)
 
 
 def _print_grading(grading: GradingReport, file: IO) -> None:
     """Print grading section."""
-    print("  Policy Grading:", file=file)
+    print("    Policy Grading:", file=file)
     print(
-        f"    Coverage: {grading.coverage_pct}% ({grading.rules_matched}/{grading.total_rules} rules matched)",
+        f"      Coverage: {grading.coverage_pct}% ({grading.rules_matched}/{grading.total_rules} rules matched)",
         file=file,
     )
 
@@ -136,15 +133,15 @@ def _print_grading(grading: GradingReport, file: IO) -> None:
             for g in grading.gaps
             if g.gap_type == "unmatched_rule"
         ]
-        print(f"    Unmatched rules: {', '.join(unmatched)}", file=file)
+        print(f"      Unmatched rules: {', '.join(unmatched)}", file=file)
 
     uncovered = [g for g in grading.gaps if g.gap_type == "uncovered_action"]
-    print(f"    Uncovered actions: {len(uncovered)}", file=file)
+    print(f"      Uncovered actions: {len(uncovered)}", file=file)
 
     if grading.decision_distribution:
         dist_str = ", ".join(
             f"{k}: {v}" for k, v in sorted(grading.decision_distribution.items())
         )
-        print(f"    Decisions: {dist_str}", file=file)
+        print(f"      Decisions: {dist_str}", file=file)
 
     print("", file=file)

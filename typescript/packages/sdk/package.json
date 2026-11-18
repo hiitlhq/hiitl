@@ -1,7 +1,7 @@
 {
   "name": "@hiitl/sdk",
-  "version": "0.1.0",
-  "description": "HIITL SDK - TypeScript SDK for local/edge mode policy evaluation",
+  "version": "0.2.0",
+  "description": "TypeScript SDK for the hiitl Execution Control Plane \u2014 evaluate(), local + hybrid sync, audit, rate limiting.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -14,46 +14,65 @@
   "files": [
     "dist",
     "README.md",
-    "LICENSE"
+    "CHANGELOG.md",
+    "LICENSE",
+    "NOTICE"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
+    "check:core-dist": "node scripts/check-core-dist.mjs",
+    "pretest": "npm run check:core-dist",
+    "pretest:unit": "npm run check:core-dist",
+    "pretest:integration": "npm run check:core-dist",
+    "pretype-check": "npm run check:core-dist",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:unit": "vitest run tests/unit",
     "test:integration": "vitest run tests/integration",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "prepublishOnly": "npm run build && npm test"
   },
   "keywords": [
     "hiitl",
     "sdk",
     "policy",
-    "local-mode",
-    "edge",
-    "execution-control"
+    "execution-control",
+    "ai-agents",
+    "governance",
+    "guardrails",
+    "audit",
+    "hybrid",
+    "edge"
   ],
-  "author": "HIITL, Inc.",
-  "license": "MIT",
+  "author": "hiitl",
+  "license": "Apache-2.0",
+  "homepage": "https://hiitl.com",
   "repository": {
     "type": "git",
-    "url": "https://github.com/hiitlhq/hiitl.git",
+    "url": "git+https://github.com/hiitlhq/hiitl.git",
     "directory": "typescript/packages/sdk"
   },
-  "homepage": "https://github.com/hiitlhq/hiitl#readme",
   "bugs": {
     "url": "https://github.com/hiitlhq/hiitl/issues"
   },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=22"
+  },
   "dependencies": {
-    "@hiitl/core": "^0.1.0",
-    "better-sqlite3": "^9.4.0",
+    "@hiitl/core": "^0.2.0",
+    "better-sqlite3": "^13.1.1",
     "js-yaml": "^4.1.0",
-    "zod": "^3.22.4"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.9",
     "@types/js-yaml": "^4.0.9",
-    "@types/node": "^20.11.0",
+    "@types/node": "^22.20.5",
     "typescript": "^5.3.3",
-    "vitest": "^1.2.0"
+    "vitest": "^5.1.0",
+    "vite": "^8.3.8"
   }
 }

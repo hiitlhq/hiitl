@@ -9,7 +9,7 @@ tags: ["classification", "ticket", "support", "triage"]
 
 evaluate_examples:
   python: |
-    result = hiitl.evaluate("classify_ticket", {
+    result = hiitl.evaluate("classify_ticket", parameters={
         "category": "billing_dispute",
         "priority": "high",
         "confidence_score": 0.87,
@@ -17,15 +17,15 @@ evaluate_examples:
     if result.ok:
         apply_ticket_classification()
   typescript: |
-    const result = hiitl.evaluate({
+    const result = await hiitl.evaluate({
       action: 'classify_ticket',
-      params: {
+      parameters: {
         category: 'billing_dispute',
         priority: 'high',
         confidence_score: 0.87,
       },
     });
-    if (result.ok) {
+    if (result.allowed) {
       await applyTicketClassification();
     }
 
@@ -50,7 +50,6 @@ starter_policies:
   - name: "allow-high-confidence-classification"
     description: "Allow automated classification when model confidence exceeds the reliability threshold"
     priority: 500
-    enabled: true
     conditions:
       all_of:
         - field: "action"
@@ -65,14 +64,13 @@ starter_policies:
     decision: "ALLOW"
     reason_code: "HIGH_CONFIDENCE_CLASSIFICATION_ALLOWED"
     remediation:
-      type: "static"
+      type: "threshold"
       message: "Ticket classification permitted — model confidence meets threshold"
       suggestion: "No action needed"
 
   - name: "require-review-low-confidence"
     description: "Route low-confidence classifications to human reviewers to prevent misrouting"
     priority: 200
-    enabled: true
     conditions:
       all_of:
         - field: "action"
@@ -84,14 +82,13 @@ starter_policies:
     decision: "REQUIRE_APPROVAL"
     reason_code: "LOW_CONFIDENCE_REQUIRES_REVIEW"
     remediation:
-      type: "static"
+      type: "threshold"
       message: "Classification confidence is below the 0.85 threshold. Human review is required to prevent ticket misrouting."
       suggestion: "The ticket has been queued for human triage. A support team member will review the suggested classification and either confirm or correct it. Average review time is under 15 minutes during business hours."
 
   - name: "escalate-critical-priority"
     description: "Immediately escalate tickets classified as critical or emergency priority to senior support staff"
-    priority: 100
-    enabled: true
+    priority: 300
     conditions:
       all_of:
         - field: "action"
@@ -103,22 +100,25 @@ starter_policies:
     decision: "ESCALATE"
     reason_code: "CRITICAL_TICKET_ESCALATED"
     remediation:
-      type: "static"
+      type: "custom"
       message: "Critical and emergency priority tickets are automatically escalated to senior support staff regardless of classification confidence"
       suggestion: "The ticket has been escalated to the on-call senior support engineer. Escalation notifications are sent via PagerDuty or your configured alerting channel. Do not attempt to re-classify — the escalation takes priority."
 
   - name: "rate-limit-classification"
     description: "Rate-limit classification actions to detect and contain model drift or bulk misclassification events"
     priority: 300
-    enabled: true
     conditions:
       field: "action"
       operator: "equals"
       value: "classify_ticket"
     decision: "RATE_LIMIT"
     reason_code: "CLASSIFICATION_RATE_LIMITED"
+    rate_limit:
+      limit: {"$uncalibrated": "classify_ticket calls per agent per hour, set from your own traffic"}
+      window_seconds: 3600
+      scope: "agent"
     remediation:
-      type: "static"
+      type: "rate_limit"
       message: "Ticket classification rate limit exceeded. This safeguard helps detect model drift or bulk processing anomalies."
       suggestion: "If processing a backlog, implement batching with delays between groups. If this is unexpected volume, investigate whether the classification agent is in a retry loop or processing duplicate tickets."
 

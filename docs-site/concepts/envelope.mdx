@@ -5,9 +5,9 @@ description: "The normalized representation of an action"
 
 ## What is an envelope?
 
-An execution envelope is the normalized, machine-readable representation of an action plus all its required metadata. Every action that passes through hiitl is described by an envelope — identifiers, action definition, risk signals, context, and a cryptographic signature.
+An execution envelope is the normalized, machine-readable representation of an action plus all its required metadata. Every action that passes through hiitl is described by an envelope — identifiers, action definition, risk signals, context, and a signature field.
 
-The full envelope has roughly 20 fields. You provide 1 to 5 of them. The SDK handles everything else.
+The full envelope has 28 fields. You provide 1 to 5 of them. The SDK handles everything else.
 
 ## What you provide vs. what the SDK constructs
 
@@ -26,7 +26,7 @@ decision = hiitl.evaluate(
 const decision = await hiitl.evaluate({
   action: 'process_payment',
   operation: 'execute',
-  target: { accountId: 'acct_123' },
+  target: { account_id: 'acct_123' },
   parameters: { amount: 150.0, currency: 'usd' },
 });
 ```
@@ -35,14 +35,14 @@ const decision = await hiitl.evaluate({
 
 The SDK constructs the full envelope behind the scenes:
 
-```json Full envelope (constructed by SDK)
+```json Full envelope (constructed by SDK; unset fields omitted)
 {
-  "schema_version": "v1.0",
-  "org_id": "org_abc123def456ghi7",
+  "schema_version": "v2.0",
+  "org_id": "org_mycompany123456789",
   "environment": "prod",
   "agent_id": "payment-agent",
-  "action_id": "act_01HQZ6X8Z9P5ABCDEFGHIJK",
-  "idempotency_key": "idem_01HQZ6X8Z9P5ABCDEFGHIJK",
+  "action_id": "act_b56c9e0e5a334253948e",
+  "idempotency_key": "idem_9e81dac4478d4da2a6a6909d51223691",
   "action": "process_payment",
   "operation": "execute",
   "target": {
@@ -52,12 +52,13 @@ The SDK constructs the full envelope behind the scenes:
     "amount": 150.00,
     "currency": "usd"
   },
-  "timestamp": "2026-02-14T12:34:56.789Z",
-  "signature": "a1b2c3d4e5f6..."
+  "timestamp": "2026-11-04T03:47:27.282833Z",
+  "signature": "d0c7d35e032e6fd4ad83eefd16508b44bd4aa060c4312169fd2b438ad4d07031",
+  "signature_version": "hmac-sha256-v1"
 }
 ```
 
-Fields like `org_id`, `environment`, and `agent_id` come from SDK configuration (set once at init). Fields like `action_id`, `idempotency_key`, `timestamp`, and `signature` are auto-generated per call.
+Fields like `org_id`, `environment`, and `agent_id` come from SDK configuration (set once at init). Fields like `action_id`, `idempotency_key` and `timestamp` are auto-generated per call. When you configure a `signature_key`, the SDK computes `signature` for each call.
 
 ## Field reference
 
@@ -65,17 +66,18 @@ Fields like `org_id`, `environment`, and `agent_id` come from SDK configuration 
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `schema_version` | string | Yes | Envelope schema version (e.g. `"v1.0"`) |
-| `org_id` | string | Yes | Organization identifier. Tenant isolation boundary. Pattern: `org_{alphanumeric 16+}` |
+| `schema_version` | string | Yes | Envelope schema version, `"v2.0"` in this release. An envelope of another major version is refused, naming the version it carries, the version taken and the migration note (see **Migrating from schema 1.x** below) |
+| `org_id` | string | Yes | Organization identifier. Tenant isolation boundary. Pattern: `^org_[a-zA-Z0-9]{16,}$`, the same one the SDK's `org_id` setting checks |
 | `environment` | string | Yes | One of `"dev"`, `"stage"`, `"prod"` |
 | `agent_id` | string | Yes | Stable identifier for the agent across runs |
 | `agent_instance_id` | string | No | Per-run instance identifier (useful for distributed systems) |
 | `user_id` | string | No | End-user on whose behalf the action runs |
+| `principal` | object | No | The verified principal: `{ sub, scopes, iss, aud, verified_by, verified_at }`. The SDK sets it from `principal_token`, using the `principal_verifier` you configure. A token the verifier rejects leaves it unset |
 | `session_id` | string | No | Groups actions within a user session |
 | `action_id` | string | Yes | Client-generated unique ID. Pattern: `act_{alphanumeric 20+}` |
-| `idempotency_key` | string | Yes | Prevents duplicate execution on retry |
-| `correlation_id` | string | No | Distributed tracing correlation ID |
-| `trace_id` | string | No | OpenTelemetry trace ID |
+| `idempotency_key` | string | Yes | Key for one logical action. Auto-generated per call when you omit it; pass the same value when you retry |
+| `correlation_id` | string | No | Your own ID tying this action to others, such as a request ID. Set from `evaluate()`'s `correlation_id` option |
+| `trace_id` | string | No | The OpenTelemetry trace ID of the span active when `evaluate()` ran, 32 lowercase hex. The SDK sets it when the OpenTelemetry API is installed and leaves it unset otherwise |
 
 ### Action definition
 
@@ -102,21 +104,22 @@ Fields like `org_id`, `environment`, and `agent_id` come from SDK configuration 
 |-------|------|----------|-------------|
 | `reason` | string | No | Brief reason for the action (max 500 chars, for audit). Never include full prompts. |
 | `prompt_hash` | string | No | Hash of the prompt that led to this action (audit without logging the prompt) |
-| `policy_refs` | array | No | References to policies that should apply (usually determined server-side) |
 
 ### Security
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `timestamp` | string | Yes | ISO 8601 timestamp. Used for replay attack prevention. |
-| `signature` | string | Yes | HMAC-SHA256 signature of the canonical envelope. 64-character hex string. |
-| `signature_version` | string | No | Signature algorithm version. Defaults to `"hmac-sha256-v1"` |
+| `timestamp` | string | Yes | ISO 8601 timestamp, set by the SDK when it builds the envelope. |
+| `signature` | string | Yes | HMAC-SHA256 signature, computed with your `signature_key`. 64-character hex string. |
+| `signature_version` | string | No | The signature's version, signed with the envelope; no header names it. `"hmac-sha256-v1"`, its one value, is the default |
 
 ### Metadata
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `metadata` | object | No | Free-form metadata. Not used in policy evaluation. |
+| `metadata` | object | No | Free-form metadata. A condition can read it as `metadata.<key>`. |
+
+`evaluate()` sets the fields it has options for, and `trace_id` from the active OpenTelemetry span. It has no option for `agent_instance_id`, `action_type`, `prompt_hash` or `metadata`, so the SDK leaves them unset.
 
 ## Envelope design principles
 
@@ -125,7 +128,18 @@ The envelope is the developer's friend, not their burden. You specify only what 
 </Note>
 
 - **JSON is the native format.** Envelopes are JSON objects. All language implementations serialize to and from JSON.
-- **Versioned.** The `schema_version` field allows backward-compatible evolution.
-- **Signed.** HMAC-SHA256 signature prevents tampering between the SDK and the evaluator.
-- **Deterministic.** The same envelope evaluated against the same policy always produces the same decision.
-- **No raw prompts.** The `reason` field is for brief audit context. Use `prompt_hash` if you need prompt traceability without logging sensitive content.
+- **Versioned.** A minor version adds what a reader can take without change. A major version is a breaking change, made with its migration path: the SDKs and the service take one major version, and refuse an envelope of another one, naming it.
+- **Signable.** With a `signature_key` configured, the SDK signs each envelope with HMAC-SHA256.
+- **Deterministic.** The same envelope evaluated against the same policy produces the same decision. Two inputs sit outside the envelope: the clock, for a rule's `valid_from` / `valid_to` window, and the SDK's rate-limit counters.
+- **No raw prompts.** The `reason` field is for brief audit context. The schema's `prompt_hash` field is for prompt traceability without logging sensitive content; `evaluate()` has no option for it.
+
+### Migrating from schema 1.x
+
+Schema 2.0 (2026-11-07) is a major version. Both SDKs build `v2.0` envelopes, so an SDK upgrade carries the change. A caller that builds envelopes itself:
+
+- sets `schema_version` to `"v2.0"`;
+- drops `policy_refs`, which nothing read: a 2.0 envelope carrying it is refused as a field the schema does not define, naming it;
+- sends `action`, never `tool_name`: the 1.x alias is gone, so an envelope carrying `tool_name` is refused, naming `action`. No call carries `tool_name`, so a policy condition on it reads an absent field: a comparison on it is false, `exists: false` on it matches every call, and a `none_of` over it matches unless another of its children does. The policy lint names it, with `action`; rewrite it to read `action` before upgrading;
+- gives `trace_id` in W3C Trace Context's form (32 lowercase hex), or moves another ID to `correlation_id`.
+
+An envelope that still carries a 1.x `schema_version` is refused, naming the version it carries, the version taken and this note. There is no acceptance window. Records written before 2.0 are kept as written.

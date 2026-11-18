@@ -1,12 +1,16 @@
 {
   "name": "check-test-policy",
-  "version": "1.0",
+  "version": "v1.0.0",
+  "description": "Allow transactions under $1000",
+  "scope": {
+    "org_id": "org_1234567890abcdef",
+    "environment": "dev"
+  },
   "rules": [
     {
       "name": "allow-small-amounts",
       "description": "Allow transactions under $1000",
       "priority": 100,
-      "enabled": true,
       "decision": "ALLOW",
       "reason_code": "SMALL_AMOUNT",
       "conditions": {
@@ -19,7 +23,6 @@
       "name": "block-large-amounts",
       "description": "Block transactions $1000 and above",
       "priority": 50,
-      "enabled": true,
       "decision": "BLOCK",
       "reason_code": "LARGE_AMOUNT",
       "conditions": {

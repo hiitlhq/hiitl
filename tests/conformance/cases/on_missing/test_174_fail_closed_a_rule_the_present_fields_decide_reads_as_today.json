@@ -1,0 +1,116 @@
+{
+  "test_id": "test_174_fail_closed_a_rule_the_present_fields_decide_reads_as_today",
+  "description": "Under fail_closed a rule is blocked on only when the absent field leaves its outcome open: on a send_email call with no amount the payment rule is false on action whichever order its conditions are in, exists reads the absent attachments, and the call is read as today, with no flag (HTL-22 row 176).",
+  "envelope": {
+    "schema_version": "v2.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_finance_bot",
+    "action_id": "act_test1740000000000000000",
+    "timestamp": "2026-11-05T10:00:00Z",
+    "action": "send_email",
+    "operation": "execute",
+    "parameters": {
+      "to": "ops@example.com",
+      "subject": "Daily summary"
+    },
+    "idempotency_key": "idem_test_174",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "policy_set": {
+    "name": "finance_agent_policy",
+    "version": "v1.0.0",
+    "description": "Controls for the finance agent's payments, refunds and email",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
+    "on_missing": "fail_closed",
+    "rules": [
+      {
+        "name": "approve_large_payments",
+        "description": "Payments of 1000 or more need a finance approval",
+        "priority": 200,
+        "conditions": {
+          "all_of": [
+            {
+              "field": "action",
+              "operator": "equals",
+              "value": "process_payment"
+            },
+            {
+              "field": "parameters.amount",
+              "operator": "greater_than_or_equal",
+              "value": 1000
+            }
+          ]
+        },
+        "decision": "REQUIRE_APPROVAL",
+        "reason_code": "LARGE_PAYMENT_NEEDS_APPROVAL"
+      },
+      {
+        "name": "approve_large_refunds",
+        "description": "Refunds of 500 or more need a finance approval",
+        "priority": 150,
+        "conditions": {
+          "all_of": [
+            {
+              "field": "parameters.amount",
+              "operator": "greater_than_or_equal",
+              "value": 500
+            },
+            {
+              "field": "action",
+              "operator": "equals",
+              "value": "issue_refund"
+            }
+          ]
+        },
+        "decision": "REQUIRE_APPROVAL",
+        "reason_code": "LARGE_REFUND_NEEDS_APPROVAL"
+      },
+      {
+        "name": "block_email_attachments",
+        "description": "The agent may not send attachments",
+        "priority": 800,
+        "conditions": {
+          "all_of": [
+            {
+              "field": "action",
+              "operator": "equals",
+              "value": "send_email"
+            },
+            {
+              "field": "parameters.attachments",
+              "operator": "exists",
+              "value": true
+            }
+          ]
+        },
+        "decision": "BLOCK",
+        "reason_code": "ATTACHMENTS_NOT_ALLOWED"
+      },
+      {
+        "name": "allow_email",
+        "description": "Agents may send email",
+        "priority": 50,
+        "conditions": {
+          "field": "action",
+          "operator": "equals",
+          "value": "send_email"
+        },
+        "decision": "ALLOW",
+        "reason_code": "EMAIL_ALLOWED"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "ALLOW",
+    "allowed": true,
+    "reason_codes": [
+      "EMAIL_ALLOWED"
+    ],
+    "missing_fields": null
+  }
+}

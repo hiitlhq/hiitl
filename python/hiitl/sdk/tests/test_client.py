@@ -1,17 +1,19 @@
 """Tests for HIITL client class."""
 
 import time
+from datetime import timedelta
 from pathlib import Path
 
 import pytest
 
 from hiitl.core.types import DecisionType
+from hiitl.core.tests.declared_values import pure_local_budget_ms, latency_run, latency_sample_count, latency_statistic, record_latency, record_latencies
+from hiitl.core.tests.measurements import record_measurement
 from hiitl.sdk.client import HIITL
 from hiitl.sdk.exceptions import (
     AuditLogError,
     ConfigurationError,
     EnvelopeValidationError,
-    PolicyLoadError,
 )
 
 
@@ -35,7 +37,9 @@ class TestHIITLInitialization:
         """Valid configuration with policy should initialize successfully."""
         policy_file = tmp_path / "test_policy.json"
         policy_file.write_text('''{
-            "version": "1.0.0",
+            "version": "v1.0.0",
+            "description": "Valid initialization with policy",
+            "scope": {"org_id": "org_devlocal0000000000", "environment": "dev"},
             "name": "test_policy",
             "rules": []
         }''')
@@ -83,8 +87,11 @@ class TestHIITLInitialization:
                 audit_db_path=str(tmp_path / "audit.db"),
             )
 
-    def test_missing_policy_file_raises_error_on_evaluate(self, tmp_path):
-        """Nonexistent policy file should raise error on evaluate."""
+    def test_missing_policy_file_is_a_policy_error_on_evaluate(self, tmp_path):
+        """A policy removed after construction is POLICY_ERROR, recorded (HTL-45 6d410ffd)."""
+        policy_file = tmp_path / "nonexistent.yaml"
+        policy_file.write_text('version: v1.0.0\nname: test\ndescription: test\n'
+                               'scope: {org_id: org_test000000000000000, environment: dev}\nrules: []\n')
         hiitl = HIITL(
             environment="dev",
             agent_id="test-agent",
@@ -94,8 +101,11 @@ class TestHIITLInitialization:
             mode="RESPECT_POLICY",
         )
 
-        with pytest.raises(PolicyLoadError):
-            hiitl.evaluate("test_tool")
+        policy_file.unlink()
+        d = hiitl.evaluate("test_tool")
+        assert (d.decision, d.allowed, d.reason_codes) == ("POLICY_ERROR", False, ["POLICY_NOT_FOUND"])
+        assert d.error.code == "POLICY_ERROR"
+        assert [r["decision"]["decision"] for r in hiitl._audit_logger.get_unsynced(limit=10)] == ["POLICY_ERROR"]
 
 
 class TestHIITLEvaluate:
@@ -106,12 +116,15 @@ class TestHIITLEvaluate:
         """Create HIITL client with test policy."""
         policy_file = tmp_path / "test_policy.yaml"
         policy_file.write_text('''
-version: "1.0.0"
+version: "v1.0.0"
+description: "Allow small amounts"
+scope:
+  org_id: org_devlocal0000000000
+  environment: dev
 name: test_policy
 rules:
   - name: allow_small_amounts
     priority: 100
-    enabled: true
     conditions:
       field: parameters.amount
       operator: less_than
@@ -121,7 +134,6 @@ rules:
     description: Allow small amounts
   - name: block_large_amounts
     priority: 50
-    enabled: true
     conditions:
       field: parameters.amount
       operator: greater_than_or_equal
@@ -187,11 +199,11 @@ rules:
         import sqlite3
         conn = sqlite3.connect(tmp_path / "audit.db")
         cursor = conn.cursor()
-        cursor.execute("SELECT COUNT(*) FROM audit_log")
-        count = cursor.fetchone()[0]
+        cursor.execute("SELECT action_id, decision_type FROM audit_log")
+        records = cursor.fetchall()
         conn.close()
 
-        assert count >= 1
+        assert records == [(decision.action_id, decision.decision)]
 
     def test_evaluate_with_optional_fields(self, hiitl_client):
         """evaluate() should accept optional fields."""
@@ -218,21 +230,28 @@ rules:
 
         assert decision.allowed is True or decision.allowed is False
 
-    def test_evaluate_uses_cached_policy(self, hiitl_client):
-        """Second evaluate() should use cached policy (faster)."""
-        # First evaluate
-        start = time.perf_counter()
-        hiitl_client.evaluate("test_tool", parameters={"amount": 100})
-        first_time = time.perf_counter() - start
-
-        # Second evaluate (should use cached policy)
-        start = time.perf_counter()
-        hiitl_client.evaluate("test_tool", parameters={"amount": 100})
-        second_time = time.perf_counter() - start
-
-        assert second_time <= first_time * 2
-        assert first_time < 0.01
-        assert second_time < 0.01
+    def test_evaluate_uses_cached_policy(self, hiitl_client, record_property):
+        """Record first/repeated evaluation latency; enforce the declared local target."""
+        first_times, repeated_times = [], []
+        for sample in range(latency_sample_count()):
+            client = hiitl_client if sample == 0 else HIITL(
+                policy_path=hiitl_client.config.policy_path, org_id=hiitl_client.config.org_id,
+                environment=hiitl_client.config.environment, agent_id=hiitl_client.config.agent_id,
+                mode='RESPECT_POLICY', audit_db_path=str(Path(hiitl_client.config.audit_db_path).with_name(f'audit-{sample}.db')))
+            try:
+                for samples in (first_times, repeated_times):
+                    start = time.perf_counter()
+                    client.evaluate('test_tool', parameters={'amount': 100})
+                    samples.append((time.perf_counter() - start) * 1000)
+            finally:
+                client.close()
+        record_measurement(record_property, metric='sdk_first_and_repeated_evaluation', unit='ms',
+                           source='hiitl.sdk.client.HIITL.evaluate',
+                           value={'first': first_times, 'repeated': repeated_times,
+                                  'first_p95': latency_statistic(first_times),
+                                  'repeated_p95': latency_statistic(repeated_times)})
+        record_latencies([('cached-policy/first', first_times, 'local'),
+                          ('cached-policy/repeated', repeated_times, 'local')])
 
 
 class TestHIITLZeroConfig:
@@ -282,7 +301,9 @@ class TestHIITLEnvelopeBuilding:
         """Envelope should include values from config."""
         policy_file = tmp_path / "test_policy.json"
         policy_file.write_text('''{
-            "version": "1.0.0",
+            "version": "v1.0.0",
+            "description": "Envelope includes config values",
+            "scope": {"org_id": "org_devlocal0000000000", "environment": "dev"},
             "name": "test_policy",
             "rules": []
         }''')
@@ -349,7 +370,11 @@ class TestHIITLRateLimiting:
         """Rate limiting should be enforced when enabled."""
         policy_file = tmp_path / "test_policy.yaml"
         policy_file.write_text('''
-version: "1.0.0"
+version: "v1.0.0"
+description: "Rate limiting enforced when enabled"
+scope:
+  org_id: org_devlocal0000000000
+  environment: dev
 name: test_policy
 metadata:
   rate_limits:
@@ -359,7 +384,6 @@ metadata:
 rules:
   - name: allow_all
     priority: 100
-    enabled: true
     conditions:
       field: action
       operator: equals
@@ -393,7 +417,11 @@ rules:
         """Rate limiting should not apply when disabled."""
         policy_file = tmp_path / "test_policy.yaml"
         policy_file.write_text('''
-version: "1.0.0"
+version: "v1.0.0"
+description: "Rate limiting disabled when configured"
+scope:
+  org_id: org_devlocal0000000000
+  environment: dev
 name: test_policy
 metadata:
   rate_limits:
@@ -403,7 +431,6 @@ metadata:
 rules:
   - name: allow_all
     priority: 100
-    enabled: true
     conditions:
       field: action
       operator: equals
@@ -436,13 +463,14 @@ class TestHIITLPerformance:
         """evaluate() should complete in < 10ms (including audit write)."""
         policy_file = tmp_path / "test_policy.json"
         policy_file.write_text('''{
-            "version": "1.0.0",
+            "version": "v1.0.0",
+            "description": "Evaluate latency under 10ms",
+            "scope": {"org_id": "org_devlocal0000000000", "environment": "dev"},
             "name": "test_policy",
             "rules": [
                 {
                     "name": "allow_all",
                     "priority": 100,
-                    "enabled": true,
                     "conditions": {
                         "field": "action",
                         "operator": "equals",
@@ -464,12 +492,14 @@ class TestHIITLPerformance:
             mode="RESPECT_POLICY",
         )
 
-        # Warm up (first call loads policy)
-        hiitl.evaluate("test_tool")
-
-        # Measure performance (cached policy)
-        start = time.perf_counter()
-        hiitl.evaluate("test_tool")
-        elapsed_ms = (time.perf_counter() - start) * 1000
-
-        assert elapsed_ms < 10, f"Too slow: {elapsed_ms:.2f}ms (expected < 10ms)"
+        # HTL-17 680f8ccf: warm up (first call loads policy), then the run the timing catalogue declares.
+        warmup, count = latency_run('sdk/local-call')
+        times = []
+        try:
+            for _ in range(warmup + count):
+                start = time.perf_counter()
+                hiitl.evaluate('test_tool')
+                times.append((time.perf_counter() - start) * 1000)
+            record_latency('sdk/local-call', times[warmup:], 'local', times[:warmup])
+        finally:
+            hiitl.close()

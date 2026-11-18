@@ -1,0 +1,45 @@
+{
+  "test_id": "test_186_policy_set_scope_refuses_an_org_in_another_form",
+  "description": "A policy set's scope names the organisation whose envelopes it governs, in the envelope's own form: a scope whose org_id is not org_ followed by sixteen or more letters and digits (acme-finance) is refused at scope.org_id (policy_format.md Scope Fields; HTL-22 row 165).",
+  "policy_set": {
+    "name": "payments_policy",
+    "version": "v1.0.0",
+    "description": "Payment controls for the finance agent",
+    "scope": {
+      "org_id": "acme-finance",
+      "environment": "prod"
+    },
+    "rules": [
+      {
+        "name": "allow_payments_to_known_accounts",
+        "description": "Payments to a known account are allowed",
+        "priority": 100,
+        "conditions": {
+          "all_of": [
+            {
+              "field": "action",
+              "operator": "equals",
+              "value": "process_payment"
+            },
+            {
+              "field": "target.account_id",
+              "operator": "starts_with",
+              "value": "acct_"
+            }
+          ]
+        },
+        "decision": "ALLOW",
+        "reason_code": "KNOWN_ACCOUNT"
+      }
+    ]
+  },
+  "expected_refusal": {
+    "artifact": "policy_set",
+    "at": [
+      "scope.org_id"
+    ],
+    "names": [
+      "org_id"
+    ]
+  }
+}

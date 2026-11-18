@@ -1,0 +1,68 @@
+{
+  "test_id": "test_167_fractional_token_estimate",
+  "description": "cost_estimate.tokens is a number, read as written: 1250.5 is over a 1250-token budget (envelope_schema.json v1.4; HTL-20 row 147).",
+  "envelope": {
+    "schema_version": "v2.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_billing_bot",
+    "action_id": "act_test16700000000000000000000",
+    "timestamp": "2026-11-04T10:00:00Z",
+    "operation": "execute",
+    "parameters": {
+      "report_id": "rpt_2291"
+    },
+    "idempotency_key": "idem_test_167",
+    "target": {
+      "account_id": "acct_7731"
+    },
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "summarize_report",
+    "cost_estimate": {
+      "tokens": 1250.5,
+      "dollars": 0.04
+    }
+  },
+  "policy_set": {
+    "version": "v1.0.0",
+    "description": "cost_estimate.tokens is a number, read as written: 1250.5 is over a 1250-token budget (envelope_schema.json v1.4; HTL-20 row 147).",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
+    "name": "token_budget",
+    "rules": [
+      {
+        "name": "over_the_token_budget",
+        "priority": 100,
+        "conditions": {
+          "field": "cost_estimate.tokens",
+          "operator": "greater_than",
+          "value": 1250
+        },
+        "decision": "BLOCK",
+        "reason_code": "TOKEN_BUDGET_EXCEEDED",
+        "description": "A call over 1250 tokens is blocked"
+      },
+      {
+        "name": "allow_reports",
+        "priority": 10,
+        "conditions": {
+          "field": "action",
+          "operator": "equals",
+          "value": "summarize_report"
+        },
+        "decision": "ALLOW",
+        "reason_code": "REPORT_ALLOWED",
+        "description": "Report summaries are allowed"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "BLOCK",
+    "allowed": false,
+    "reason_codes": [
+      "TOKEN_BUDGET_EXCEEDED"
+    ]
+  }
+}

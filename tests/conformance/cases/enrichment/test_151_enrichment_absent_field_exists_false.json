@@ -1,0 +1,65 @@
+{
+  "test_id": "test_151_enrichment_absent_field_exists_false",
+  "description": "exists = false matches an absent enrichment field (the only operator that does).",
+  "envelope": {
+    "schema_version": "v2.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_ops_bot",
+    "action_id": "act_test1510000000000000000",
+    "timestamp": "2026-10-11T10:00:00Z",
+    "operation": "execute",
+    "parameters": {
+      "body": "hello"
+    },
+    "idempotency_key": "idem_test_151",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "publish_post"
+  },
+  "policy_set": {
+    "version": "v1.0.0",
+    "description": "exists = false matches an absent enrichment field (the only operator that does).",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "block_unanswered_verdict",
+        "priority": 800,
+        "conditions": {
+          "field": "external.content-check.verdict",
+          "operator": "exists",
+          "value": false
+        },
+        "decision": "BLOCK",
+        "reason_code": "NO_VERDICT",
+        "description": "Rule: block_unanswered_verdict"
+      },
+      {
+        "name": "allow_otherwise",
+        "priority": 1,
+        "conditions": {
+          "field": "action",
+          "operator": "exists",
+          "value": true
+        },
+        "decision": "ALLOW",
+        "reason_code": "ALLOWED",
+        "description": "Rule: allow_otherwise"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "BLOCK",
+    "allowed": false,
+    "reason_codes": [
+      "NO_VERDICT"
+    ]
+  },
+  "enrichment": {
+    "content-check": {}
+  }
+}

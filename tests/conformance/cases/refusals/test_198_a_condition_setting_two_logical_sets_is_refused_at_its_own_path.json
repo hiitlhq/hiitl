@@ -1,0 +1,52 @@
+{
+  "test_id": "test_198_a_condition_setting_two_logical_sets_is_refused_at_its_own_path",
+  "description": "A condition setting both `all_of` and `any_of` is neither form: refused at load at the condition's own path, naming the exactly-one rule (policy_format.md 2.23; gap 322).",
+  "policy_set": {
+    "name": "payments_policy",
+    "version": "v1.0.0",
+    "description": "Payment controls for the finance agent",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
+    "rules": [
+      {
+        "name": "block_foreign_payments",
+        "description": "Payments in euros or pounds are blocked",
+        "priority": 100,
+        "conditions": {
+          "all_of": [
+            {
+              "field": "action",
+              "operator": "equals",
+              "value": "process_payment"
+            }
+          ],
+          "any_of": [
+            {
+              "field": "parameters.currency",
+              "operator": "equals",
+              "value": "eur"
+            },
+            {
+              "field": "parameters.currency",
+              "operator": "equals",
+              "value": "gbp"
+            }
+          ]
+        },
+        "decision": "BLOCK",
+        "reason_code": "FOREIGN_PAYMENT"
+      }
+    ]
+  },
+  "expected_refusal": {
+    "artifact": "policy_set",
+    "at": [
+      "rules.0.conditions"
+    ],
+    "names": [
+      "Exactly one of all_of, any_of, or none_of must be set"
+    ]
+  }
+}

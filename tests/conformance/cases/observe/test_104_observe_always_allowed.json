@@ -3,7 +3,7 @@
   "description": "OBSERVE_ALL mode: REQUIRE_APPROVAL decision becomes OBSERVE with allowed=true",
   "mode": "OBSERVE_ALL",
   "envelope": {
-    "schema_version": "v1.0",
+    "schema_version": "v2.0",
     "org_id": "org_1234567890abcdef",
     "environment": "prod",
     "agent_id": "agent_finance_bot",
@@ -19,13 +19,17 @@
     "signature": "0000000000000000000000000000000000000000000000000000000000000000"
   },
   "policy_set": {
-    "version": "1.0.0",
+    "version": "v1.0.0",
+    "description": "OBSERVE_ALL mode: REQUIRE_APPROVAL decision becomes OBSERVE with allowed=true",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
     "name": "test_policy",
     "rules": [
       {
         "name": "require_approval_payments",
         "priority": 100,
-        "enabled": true,
         "conditions": {
           "field": "action",
           "operator": "equals",
@@ -40,8 +44,12 @@
   "expected_decision": {
     "decision": "OBSERVE",
     "allowed": true,
-    "reason_codes": ["OBSERVED"],
+    "reason_codes": [
+      "OBSERVED"
+    ],
     "would_be": "REQUIRE_APPROVAL",
-    "would_be_reason_codes": ["PAYMENT_REQUIRES_APPROVAL"]
+    "would_be_reason_codes": [
+      "PAYMENT_REQUIRES_APPROVAL"
+    ]
   }
 }

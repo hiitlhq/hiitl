@@ -1,0 +1,91 @@
+{
+  "read_at": "2026-11-18T14:40:02Z",
+  "ruling": "HTL-17 4d086f19",
+  "subjects": [
+    {
+      "subject": "python",
+      "package": "hiitl",
+      "ecosystem": "PyPI",
+      "whole": false,
+      "closure": 31,
+      "installed": 50,
+      "returncode": 0
+    },
+    {
+      "subject": "typescript/packages/core",
+      "package": "@hiitl/core",
+      "ecosystem": "npm",
+      "whole": false,
+      "closure": 1,
+      "installed": 71,
+      "returncode": 1
+    },
+    {
+      "subject": "typescript/packages/sdk",
+      "package": "@hiitl/sdk",
+      "ecosystem": "npm",
+      "whole": false,
+      "closure": 7,
+      "installed": 79,
+      "returncode": 1
+    }
+  ],
+  "findings": [
+    {
+      "subject": "typescript/packages/core",
+      "ecosystem": "npm",
+      "id": "GHSA-fc5q-39xc-vjpf",
+      "aliases": [
+        "CVE-2026-112366"
+      ],
+      "package": "picomatch",
+      "versions": [
+        "4.0.7"
+      ],
+      "severity": "high",
+      "title": "picomatch vulnerable to ReDoS through single-branch repeated extglobs",
+      "url": "https://github.com/advisories/GHSA-fc5q-39xc-vjpf",
+      "range": "<=4.0.7",
+      "chains": [
+        [
+          "@hiitl/core@0.2.0",
+          "vitest@5.1.0",
+          "picomatch@4.0.7"
+        ]
+      ],
+      "ships": false,
+      "patched": [],
+      "decision": "recorded",
+      "reason": "outside what ships; no fixed release"
+    },
+    {
+      "subject": "typescript/packages/sdk",
+      "ecosystem": "npm",
+      "id": "GHSA-fc5q-39xc-vjpf",
+      "aliases": [
+        "CVE-2026-112366"
+      ],
+      "package": "picomatch",
+      "versions": [
+        "4.0.7"
+      ],
+      "severity": "high",
+      "title": "picomatch vulnerable to ReDoS through single-branch repeated extglobs",
+      "url": "https://github.com/advisories/GHSA-fc5q-39xc-vjpf",
+      "range": "<=4.0.7",
+      "chains": [
+        [
+          "@hiitl/sdk@0.2.0",
+          "vitest@5.1.0",
+          "picomatch@4.0.7"
+        ]
+      ],
+      "ships": false,
+      "patched": [],
+      "decision": "recorded",
+      "reason": "outside what ships; no fixed release"
+    }
+  ],
+  "unread": [],
+  "passed": true
+}

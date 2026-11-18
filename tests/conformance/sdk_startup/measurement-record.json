@@ -1,0 +1,66 @@
+{
+  "source": "e949cc1a7b26497546839616d96a1dd231bb7cf1",
+  "application_changes": false,
+  "cost_usd": 0,
+  "fresh_process_samples_before": 1200,
+  "evaluate_observations_before": 2400,
+  "generated_cases_per_sdk": 25,
+  "red_cells": {
+    "python": {
+      "passed": 3,
+      "failed": 22,
+      "latency_failures": 4,
+      "unread_hybrid_declaration": 18
+    },
+    "typescript": {
+      "passed": 7,
+      "failed": 18,
+      "latency_failures": 0,
+      "unread_hybrid_declaration": 18
+    }
+  },
+  "mutations": "not run: production fix stopped pending rulings",
+  "full_suites": "not run: tree is intentionally red, no production change",
+  "raw_receipt_sha256": {
+    "file-errors-recorded-python.json": "5e5cea004da10742f6a774d5d10e73ed0174f069a7d703c1e418bf9ff63afee3",
+    "measure.py": "6df65747dde84e2922606af60eaf136f4702221c87c25c787c16869a04e1c8da",
+    "before-5485345d-python.log": "921cdb95033cd8bc0229357f533141ceddfc875b172cc78f6ac2f7008ba2e12c",
+    "before-e949cc1a-typescript.jsonl": "b087df9adcf3f47b79b17ebfbfea491ad910684d42a1d7c0eacd617c3c0f3307",
+    "red-python.xml": "820435a1532bb977e22f838f57afe887320f7125866488bb061282164995acc0",
+    "file-errors.py": "758c9abad0903bcef0f953516f4dd57c26c6175ec92f8f00960be824956632f8",
+    "red-typescript.log": "38e374a48bc3bfe5493aa62e82b04b5c44faa09706af725440483b44df0a9f6e",
+    "pilot-typescript.jsonl": "8c1038786cdc145cb5f428d6c4db7aed72a83e9423165341e2f71f84bc916c9c",
+    "file-errors-python.stderr": "e7f2dd94347392e3327eaeb4662931c48af73156b64fee889200c1eb571261f7",
+    "before-5485345d-typescript.jsonl": "3193807f40be5c82565b23721602c741d2835a98028d1af0ef220fcbf1b8d062",
+    "before-5485345d-typescript.log": "59791f2236513728db09b09a38e4b645e4542188f8b7d0c46e1c2b9b8d5fbf06",
+    "file-errors-recorded-typescript.stderr": "15f5977f0b565db3c2ecd4d5f7095369be9b7fbfc112453180deceb55ac82d93",
+    "child.mjs": "86e7efe0382674e35846f497c8a21758742df8ebdeb14159e9d8da4068d29eb2",
+    "pull-diagnostic.jsonl": "2ef90a089457c81297964d5bed7f36b8957eb2769bf60e02d7a84a54c09fec5b",
+    "file-errors-recorded-python.stderr": "917537b28bd25bc0087e3b1484bd2b78b63d4513f63c3d0148c143c514186c3d",
+    "file-errors-recorded-typescript.json": "64c24d142cbedc514c0a64e09dc8bfd4e20739741cba34cbc4454ec19a4ebb2e",
+    "file-errors.mjs": "2ec6e199e3162994032dbd416dd209458361d198aa5a46424f27a0063b9f4e01",
+    "file-errors-python.json": "fd25129a55f0ef9aedf1439bcf5bde8ef07b8a01ced88c7b35f39ee02275a5b4",
+    "red-typescript.json": "6d0716674bcc46990fbd738237af9d7b4aefcb3cb6c0c0a65540816d4a2bc68e",
+    "child.py": "ec7cbf984d83f99819ac336376f04f142c9345af6b78651590f5aa39db4cf126",
+    "before-5485345d-python.jsonl": "5c127d7d32e49756f09e4d52450fd7589a2d55cffb1a09c310b31cbc5400428e",
+    "file-errors-typescript.json": "8818573986794702b809877a76ba0a12de59ded0ebc5e43041bb4d3b67fc42f6",
+    "pull-corrected2.jsonl": "26a749c812f5accd92427597c79698f39f309557f6fe244ce83bfab646f5802a",
+    "file-errors-typescript.stderr": "01c3b90c2f2ad51c60959c564439f0217e75270aaae8d4993751ed9a228e507d",
+    "red-python.log": "4b631f73b1c186b6097448aea2d95a1ce9101d9329394d37353ab022e5abeb3e",
+    "pull-corrected.jsonl": "5c3de16792a3d97ff4c4ef464ebe4286d43e4ff3c591b6b9a22900720256d8fd",
+    "before-e949cc1a-python.log": "dc1d75d19c8c9e236813f6b2190f0e7cc2352aafa83f6f768b79a61f35df7339",
+    "pilot-python.jsonl": "45d84ddaf0448b87cba42e7bc9a72b1fbddd0497c096891dbcbc456c2570b357",
+    "before-e949cc1a-python.jsonl": "25ca90e43d8524490a8c120bf43becb1b1cd5792c72b5b49e4cc0079eeaeca01",
+    "before-e949cc1a-typescript.log": "0a99f48b484b18105e0bc81b4d8e0ffec19908935a0a06b57afb22b4a8818495",
+    "original-alone.xml": "9d25b27608a5e1854876377f91fa864abef0fb030585d2b846ded9fd5620507f",
+    "original-alone.log": "a88de47a36918f0616fa2971719e88aacac0b73ac4af912e0857a64121f4a813",
+    "export-working.log": "609ecaca4c7f8f1a329071a5b9c9f0e5a403edffca597d1ea1fa2581add081c9"
+  },
+  "original_cached_policy_cell_alone": {
+    "passed": false,
+    "first_ms": 18.26424989849329,
+    "declared_limit_source": "decision_response.md Pure local mode; read by pure_local_budget_ms",
+    "reason": "assertion on first-call latency; no runtime/fixture failure"
+  },
+  "first_export_check": "One E4 finding: private architecture filename in the public test design. The filename was removed; the architecture box remains named and its canonical file is cited in the private register/plan."
+}

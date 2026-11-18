@@ -1,0 +1,79 @@
+{
+  "test_id": "test_129_rate_limit_rule_with_window_meters",
+  "description": "An active RATE_LIMIT rule with a window matches above an ALLOW: it does not bind \u2014 the ALLOW does \u2014 and it is listed in rate_limit_rules for the limiter to count (policy_format.md Rate-limit rules; R-0852).",
+  "envelope": {
+    "schema_version": "v2.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_finance_bot",
+    "action_id": "act_test1290000000000000",
+    "timestamp": "2026-02-14T10:00:00Z",
+    "operation": "execute",
+    "parameters": {
+      "amount": 500,
+      "currency": "USD"
+    },
+    "idempotency_key": "idem_test_129_rate_limit_rule_with_window_meters",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "transfer_money"
+  },
+  "policy_set": {
+    "version": "v1.0.0",
+    "description": "An active RATE_LIMIT rule with a window matches above an ALLOW: it does not bind — the ALLOW does — and it is listed in rate_limit_rules for the limiter to count (policy_format.md Rate-limit rules; R-0852).",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "refund_rate",
+        "priority": 600,
+        "conditions": {
+          "field": "parameters.currency",
+          "operator": "equals",
+          "value": "USD"
+        },
+        "decision": "RATE_LIMIT",
+        "reason_code": "REFUND_RATE",
+        "description": "Rule: refund_rate",
+        "rate_limit": {
+          "limit": 20,
+          "window_seconds": 3600,
+          "scope": "agent"
+        }
+      },
+      {
+        "name": "allow_usd",
+        "priority": 100,
+        "conditions": {
+          "field": "parameters.currency",
+          "operator": "equals",
+          "value": "USD"
+        },
+        "decision": "ALLOW",
+        "reason_code": "ALLOW_USD",
+        "description": "Rule: allow_usd"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "ALLOW",
+    "allowed": true,
+    "reason_codes": [
+      "ALLOW_USD"
+    ],
+    "rate_limit_rules": [
+      {
+        "rule_name": "refund_rate",
+        "policy_set": "test_policy",
+        "priority": 600,
+        "reason_code": "REFUND_RATE",
+        "limit": 20,
+        "window_seconds": 3600,
+        "scope": "agent"
+      }
+    ]
+  }
+}

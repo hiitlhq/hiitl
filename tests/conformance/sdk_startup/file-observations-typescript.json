@@ -1,0 +1,70 @@
+[
+  {
+    "when": "construction",
+    "fault": "missing",
+    "error": "PolicyLoadError",
+    "reason": "POLICY_NOT_FOUND"
+  },
+  {
+    "when": "construction",
+    "fault": "unreadable",
+    "error": "PolicyLoadError",
+    "reason": "POLICY_LOAD_FAILED"
+  },
+  {
+    "when": "construction",
+    "fault": "unparsable",
+    "error": "PolicyLoadError",
+    "reason": "POLICY_VALIDATION_ERROR"
+  },
+  {
+    "when": "construction",
+    "fault": "unparsable-same-mtime",
+    "error": "PolicyLoadError",
+    "reason": "POLICY_VALIDATION_ERROR"
+  },
+  {
+    "when": "after-construction",
+    "fault": "missing",
+    "decision": "POLICY_ERROR",
+    "reasons": [
+      "POLICY_NOT_FOUND"
+    ],
+    "record_decisions": [
+      "POLICY_ERROR"
+    ]
+  },
+  {
+    "when": "after-construction",
+    "fault": "unreadable",
+    "decision": "ALLOW",
+    "reasons": [
+      "STARTUP_ALLOW"
+    ],
+    "record_decisions": [
+      "ALLOW"
+    ]
+  },
+  {
+    "when": "after-construction",
+    "fault": "unparsable",
+    "decision": "POLICY_ERROR",
+    "reasons": [
+      "POLICY_VALIDATION_ERROR"
+    ],
+    "record_decisions": [
+      "POLICY_ERROR"
+    ]
+  },
+  {
+    "when": "after-construction",
+    "fault": "unparsable-same-mtime",
+    "decision": "ALLOW",
+    "reasons": [
+      "STARTUP_ALLOW"
+    ],
+    "record_decisions": [
+      "ALLOW"
+    ]
+  }
+]

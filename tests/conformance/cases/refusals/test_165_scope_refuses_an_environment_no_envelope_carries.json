@@ -1,0 +1,42 @@
+{
+  "test_id": "test_165_scope_refuses_an_environment_no_envelope_carries",
+  "description": "A rule's scope.environments takes only the envelope's environments (dev, stage, prod); 'staging' is refused at its index, naming it (policy_format.md 2.10; HTL-20 row 147).",
+  "policy_set": {
+    "version": "v1.0.0",
+    "name": "payments_policy",
+    "description": "Payment controls",
+    "scope": {
+      "org_id": "org_devlocal0000000000",
+      "environment": "dev"
+    },
+    "rules": [
+      {
+        "name": "allow_small_payments",
+        "priority": 100,
+        "conditions": {
+          "field": "parameters.amount",
+          "operator": "less_than_or_equal",
+          "value": 500
+        },
+        "decision": "ALLOW",
+        "reason_code": "SMALL_PAYMENT_ALLOWED",
+        "description": "Payments up to 500 are allowed",
+        "scope": {
+          "environments": [
+            "prod",
+            "staging"
+          ]
+        }
+      }
+    ]
+  },
+  "expected_refusal": {
+    "artifact": "policy_set",
+    "at": [
+      "rules.0.scope.environments.1"
+    ],
+    "names": [
+      "staging"
+    ]
+  }
+}

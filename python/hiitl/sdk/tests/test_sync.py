@@ -14,11 +14,14 @@ import os
 import threading
 import time
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch, PropertyMock
 
 import httpx
 import pytest
 
+from hiitl._version import __version__
+from hiitl.core.canonical import canonical_hash
 from hiitl.sdk.circuit_breaker import CircuitBreaker, CircuitState
 from hiitl.sdk.sync_cache import SyncCache
 from hiitl.sdk.sync_client import (
@@ -176,7 +179,7 @@ class TestSyncCacheDiskPersistence:
         cache = SyncCache(str(tmp_path), "org_test", "dev")
         switches = [{"action": "process_payment", "active": True}]
 
-        cache.update_kill_switches(switches)
+        cache.update_kill_switches({"kill_switches": switches, "policy_set": None, "server_time": ""})   # the tick
 
         assert cache.get_kill_switches() == switches
 
@@ -185,7 +188,8 @@ class TestSyncCacheDiskPersistence:
         cache1 = SyncCache(str(tmp_path), "org_test", "dev")
         cache1.update_policies({"policies": [{"name": "p1"}], "version": "v1"}, etag="e1")
         cache1.update_routes([{"name": "r1"}], etag="e2")
-        cache1.update_kill_switches([{"action": "blocked_action"}])
+        cache1.update_kill_switches({"kill_switches": [{"action": "blocked_action"}], "policy_set": None,
+                                     "server_time": ""})
 
         # Second instance loads from disk
         cache2 = SyncCache(str(tmp_path), "org_test", "dev")
@@ -214,10 +218,15 @@ class TestSyncCacheAgeTracking:
         cache = SyncCache(str(tmp_path), "org_test", "dev")
         assert cache.get_policies_age_seconds() == float("inf")
 
-    def test_policies_age_resets_on_update(self, tmp_path):
+    def test_policies_age_resets_on_update(self, tmp_path, monkeypatch):
+        clock = [100.0]
+        monkeypatch.setattr("hiitl.sdk.sync_cache.time", SimpleNamespace(monotonic=lambda: clock[0], time=time.time))
         cache = SyncCache(str(tmp_path), "org_test", "dev")
         cache.update_policies({"policies": []}, etag="e1")
-        assert cache.get_policies_age_seconds() < 1.0
+        clock[0] += 23.0
+        assert cache.get_policies_age_seconds() == 23.0
+        cache.update_policies({"policies": []}, etag="e2")
+        assert cache.get_policies_age_seconds() == 0.0
 
     def test_routes_age_infinite_when_never_set(self, tmp_path):
         cache = SyncCache(str(tmp_path), "org_test", "dev")
@@ -238,13 +247,16 @@ class TestSyncCacheStatus:
         assert status["routes"]["cached"] is False
         assert status["kill_switches"]["cached"] is False
 
-    def test_status_with_data(self, tmp_path):
+    def test_status_with_data(self, tmp_path, monkeypatch):
+        clock = [100.0]
+        monkeypatch.setattr("hiitl.sdk.sync_cache.time", SimpleNamespace(monotonic=lambda: clock[0], time=time.time))
         cache = SyncCache(str(tmp_path), "org_test", "dev")
         cache.update_policies({"policies": []}, etag="e1")
+        clock[0] += 7.0
         status = cache.status()
         assert status["policies"]["cached"] is True
         assert status["policies"]["etag"] == "e1"
-        assert status["policies"]["age_seconds"] < 1.0
+        assert status["policies"]["age_seconds"] == 7.0
 
 
 class TestSyncCacheOrgIsolation:
@@ -314,31 +326,31 @@ class TestSyncCacheDiskDivergence:
 class TestSyncCacheWarmStartAge:
     """Test that warm start preserves actual file age."""
 
-    def test_warm_start_age_reflects_file_age(self, tmp_path):
-        """Loaded cache age should reflect actual file age, not zero."""
+    def test_warm_start_age_reflects_file_age(self, tmp_path, monkeypatch):
+        """Loaded cache age is the file's age, not zero."""
         cache1 = SyncCache(str(tmp_path), "org_test", "dev")
         cache1.update_policies({"version": "v1"}, etag="e1")
 
-        # Backdate the file mtime by 120 seconds
+        # Backdate the file's mtime, and hold the cache's clocks at whole seconds so no time passes during the read;
+        # the monotonic reading is past the backdate, so the file's stamp on it is after 0 (the never-updated mark)
+        backdate = 120
+        wall, mono = float(int(time.time())), float(int(time.monotonic()) + backdate + 1)
         policy_file = tmp_path / "org_test" / "dev" / "policies.json"
-        import os as _os
-        old_mtime = _os.path.getmtime(str(policy_file)) - 120
-        _os.utime(str(policy_file), (old_mtime, old_mtime))
+        os.utime(policy_file, (wall - backdate, wall - backdate))
+        monkeypatch.setattr("hiitl.sdk.sync_cache.time", SimpleNamespace(time=lambda: wall, monotonic=lambda: mono))
 
         # Load in new instance
         cache2 = SyncCache(str(tmp_path), "org_test", "dev")
         cache2.load_from_disk()
 
-        age = cache2.get_policies_age_seconds()
-        # Age should be approximately 120 seconds (with some tolerance)
-        assert age >= 100.0, f"Expected age >= 100s, got {age:.1f}s"
-        assert age < 200.0, f"Expected age < 200s, got {age:.1f}s"
+        assert cache2.get_policies_age_seconds() == backdate
 
-    def test_fresh_update_age_near_zero(self, tmp_path):
-        """Freshly updated cache should have age near zero."""
+    def test_fresh_update_age_near_zero(self, tmp_path, monkeypatch):
+        """No elapsed time since the update means zero age."""
+        monkeypatch.setattr("hiitl.sdk.sync_cache.time", SimpleNamespace(monotonic=lambda: 100.0, time=time.time))
         cache = SyncCache(str(tmp_path), "org_test", "dev")
         cache.update_policies({"version": "v1"})
-        assert cache.get_policies_age_seconds() < 1.0
+        assert cache.get_policies_age_seconds() == 0.0
 
 
 class TestSyncCacheMaxStale:
@@ -441,8 +453,9 @@ class TestSyncCacheIntegrity:
         assert cache2.get_policies() is None
         assert any("CACHE_INTEGRITY_VIOLATION" in r.message for r in caplog.records)
 
-    def test_integrity_graceful_without_hash_file(self, tmp_path):
-        """Data should load if hash file doesn't exist (backward compat)."""
+    def test_integrity_discards_without_hash_file(self, tmp_path, caplog):
+        """A file whose hash file is absent is discarded: an absent hash proves nothing (sync_engine.md §4
+        "Integrity"; HTL-29 row 137)."""
         cache = SyncCache(str(tmp_path), "org_test", "dev")
         cache.update_policies({"version": "v1"})
 
@@ -451,9 +464,10 @@ class TestSyncCacheIntegrity:
         hash_file.unlink()
 
         cache2 = SyncCache(str(tmp_path), "org_test", "dev")
-        loaded = cache2.load_from_disk()
-        assert loaded is True
-        assert cache2.get_policies() == {"version": "v1"}
+        with caplog.at_level(logging.ERROR):
+            cache2.load_from_disk()
+        assert cache2.get_policies() is None
+        assert any("CACHE_INTEGRITY_VIOLATION" in r.message for r in caplog.records)
 
 
 class TestSyncCacheOrphanCleanup:
@@ -532,7 +546,7 @@ class TestSyncClientHeaders:
         assert headers["Authorization"] == "Bearer sk_test_123"
         assert headers["X-HIITL-Org-Id"] == "org_testorg1234567890"
         assert headers["X-HIITL-Environment"] == "dev"
-        assert "X-HIITL-SDK-Version" in headers
+        assert headers["X-HIITL-SDK-Version"] == __version__
         assert headers["X-HIITL-SDK-Language"] == "python"
         client.close()
 
@@ -818,9 +832,10 @@ class TestSyncEngineInitialSync:
         # Mock client to return policies
         engine._client = MagicMock()
         engine._client.download_policies.return_value = PolicyDownloadResult(
-            policies=[{"name": "test_policy", "content": {}, "active": True}],
+            policies=[{"name": "test_policy", "content": {}, "content_hash": canonical_hash({}), "active": True}],
             version="v1",
             etag="e1",
+            redaction_policy={"manual_redact_fields": []},
         )
         engine._client.download_routes.return_value = RouteDownloadResult(
             routes=[],
@@ -1003,12 +1018,11 @@ class TestSyncEnginePolicyIntegrity:
             environment="dev",
         )
 
-        # Create a policy with a valid content hash
-        import hashlib
-        content = {"version": "1.0", "name": "test", "rules": []}
-        content_hash = hashlib.sha256(
-            json.dumps(content, sort_keys=True, separators=(",", ":")).encode()
-        ).hexdigest()
+        # The server's digest of the conformance case (sync_engine.md §2.2): a content the older sorted-key forms
+        # hash to other digests, so the check is shown to read the one form
+        case = json.loads((Path(__file__).resolve().parents[4] / "tests" / "conformance" / "policy_hash" /
+                           "case_001_fixed_policy.json").read_text(encoding="utf-8"))
+        content, content_hash = case["content"], case["expected"]["content_hash"]
 
         engine._client = MagicMock()
         engine._client.download_policies.return_value = PolicyDownloadResult(
@@ -1020,9 +1034,13 @@ class TestSyncEnginePolicyIntegrity:
             }],
             version="v1",
             etag="e1",
+            redaction_policy={"manual_redact_fields": []},
         )
 
-        result = engine._sync_policies()
+        try:
+            result = engine._sync_policies()
+        except SyncError as e:
+            pytest.fail(f"the server's digest of the case was refused: {e}")
         assert result is True
         assert cache.get_policies() is not None
         engine._client.close()
@@ -1054,6 +1072,7 @@ class TestSyncEnginePolicyIntegrity:
             }],
             version="v1",
             etag="e1",
+            redaction_policy={"manual_redact_fields": []},
         )
 
         with pytest.raises(SyncError) as exc_info:
@@ -1194,11 +1213,11 @@ class TestSyncConfig:
 
     def test_custom_values(self):
         config = SyncConfig(
-            server_url="https://custom.hiitl.com",
+            server_url="https://custom.example.com",
             audit_sync_interval=10,
             circuit_breaker_threshold=3,
         )
-        assert config.server_url == "https://custom.hiitl.com"
+        assert config.server_url == "https://custom.example.com"
         assert config.audit_sync_interval == 10
         assert config.circuit_breaker_threshold == 3
 

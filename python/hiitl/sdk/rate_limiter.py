@@ -10,15 +10,13 @@ Design principles:
 - Automatic cleanup: Old events are removed automatically
 - Scope-based keys: Support for different rate limit scopes
 
-Security tier 1 requirements:
+Security Tier 1:
 - Rate limiting prevents abuse in local mode
-- Configurable limits per policy metadata
+- Limits are the windowed RATE_LIMIT rules the evaluator lists (T47)
 
 Example:
     >>> limiter = RateLimiter()
-    >>> rate_limited = limiter.check_and_increment(
-    ...     envelope, decision, rate_config
-    ... )
+    >>> rate_limited = limiter.check_and_increment(envelope, decision)
     >>> if rate_limited:
     ...     print(f"Rate limited! {rate_limited.reason_codes}")
 """
@@ -29,7 +27,8 @@ from datetime import datetime, timedelta, timezone
 from threading import Lock
 from typing import Optional
 
-from hiitl.core.types import Decision, DecisionType, Envelope, RateLimit
+from hiitl.core.rate_limits import counter_state, limit_exceeded, rule_limit_config, tightest
+from hiitl.core.types import Decision, DecisionType, Envelope
 
 
 @dataclass
@@ -54,10 +53,10 @@ class RateLimiter:
 
     The sliding window algorithm:
     1. Store timestamps of all events
-    2. On check: remove events older than window
-    3. Compare count to limit
-    4. If under limit: add new event and allow
-    5. If at/over limit: block and return RateLimit info
+    2. On check: remove events older than each window
+    3. Compare every window's count to its limit, before counting any
+    4. If all are under: add the new event to every window and allow
+    5. If one is at/over: refuse, counting nothing, and return its counter state
 
     Thread safety:
     - All counter updates are protected by a lock
@@ -73,131 +72,45 @@ class RateLimiter:
         self._counters: dict[str, Counter] = {}
         self._lock = Lock()
 
-    def check_and_increment(
-        self,
-        envelope: Envelope,
-        decision: Decision,
-        rate_config: Optional[dict] = None
-    ) -> Optional[Decision]:
-        """Check rate limits and increment counter if allowed.
+    def check_and_increment(self, envelope: Envelope, decision: Decision) -> Optional[Decision]:
+        """Read every windowed RATE_LIMIT rule the decision lists, then count the call in all of them or in none
+        (policy_format.md "Rate-limit rules"; R-0056: counted "on ALLOW decisions only").
 
-        This method:
-        1. Only checks ALLOW decisions (don't rate limit BLOCK/etc)
-        2. Extracts rate limit config from rate_config or policy metadata
-        3. Builds scope key from envelope fields
-        4. Checks if limit exceeded
-        5. Returns modified RATE_LIMIT decision if exceeded, None if OK
-
-        Args:
-            envelope: Execution envelope
-            decision: Policy decision (only ALLOW is rate-limited)
-            rate_config: Optional rate limit configuration dict
-
-        Returns:
-            RATE_LIMIT decision if exceeded, None if allowed
-
-        Rate config format:
-            {
-                "rate_limits": [
-                    {
-                        "scope": "agent_id",
-                        "limit": 100,
-                        "window": "hour",
-                        "window_seconds": 3600  # alternative to window name
-                    }
-                ]
-            }
+        Only an ALLOW is counted. The rules come from the evaluator (`decision.rate_limit_rules`) — one representation,
+        the rule's (T47): a set's `metadata.rate_limits` is compiled to such rules when the set loads, so the limiter
+        reads nothing else. A window exceeded: the RATE_LIMIT decision for the first such window in listed order, and
+        the call is counted in no window — it did not proceed. None exceeded: the call is counted in every window, the
+        ALLOW's `rate_limit` is set to the window with the least headroom left (R-0008), and None is returned.
         """
-        # Only rate limit ALLOW decisions
-        if decision.decision != DecisionType.ALLOW:
+        if decision.decision != DecisionType.ALLOW or not decision.rate_limit_rules:
             return None
+        configs = [rule_limit_config(r) for r in decision.rate_limit_rules]
 
-        # If no rate config, don't rate limit
-        if not rate_config or 'rate_limits' not in rate_config:
-            return None
+        with self._lock:
+            now = datetime.now(timezone.utc)
+            read = []
+            for config in configs:
+                counter = self._window(envelope, config, now)
+                reset_at = (counter.events[0] if counter.events else now) + timedelta(seconds=counter.window_seconds)
+                if len(counter.events) >= counter.limit:
+                    return limit_exceeded(decision, config["rule"], len(counter.events), reset_at)
+                read.append((config["rule"], counter, reset_at))
 
-        rate_limits = rate_config.get('rate_limits', [])
-        if not rate_limits:
-            return None
-
-        # Window name to seconds mapping
-        window_name_to_seconds = {
-            "second": 1,
-            "minute": 60,
-            "hour": 3600,
-            "day": 86400,
-        }
-
-        # Check each rate limit config (first exceeded wins)
-        for config in (rate_limits if isinstance(rate_limits, list) else [rate_limits]):
-            result = self._check_single_limit(envelope, decision, config, window_name_to_seconds)
-            if result is not None:
-                return result
-
+            for _, counter, _ in read:
+                counter.events.append(now)
+            decision.rate_limit = tightest([counter_state(rule, len(c.events), reset_at) for rule, c, reset_at in read])
         return None
 
-    def _check_single_limit(
-        self,
-        envelope: Envelope,
-        decision: Decision,
-        config: dict,
-        window_name_to_seconds: dict
-    ) -> Optional[Decision]:
-        """Check a single rate limit configuration."""
-        scope = config.get('scope', 'org')
-        limit = config.get('limit', 1000)
-        window = config.get('window', 'hour')
-        window_seconds = config.get('window_seconds') or window_name_to_seconds.get(window, 3600)
-
-        # Build scope key from envelope
-        scope_key = self._build_scope_key(envelope, scope)
-
-        # Check and increment with lock
-        with self._lock:
-            # Get or create counter
-            if scope_key not in self._counters:
-                self._counters[scope_key] = Counter(
-                    events=[],
-                    limit=limit,
-                    window_seconds=window_seconds
-                )
-
-            counter = self._counters[scope_key]
-            now = datetime.now(timezone.utc)
-
-            # Remove old events (sliding window cleanup)
-            cutoff = now - timedelta(seconds=counter.window_seconds)
-            counter.events = [
-                event for event in counter.events
-                if event > cutoff
-            ]
-
-            # Check if limit exceeded
-            current_count = len(counter.events)
-
-            if current_count >= counter.limit:
-                # Rate limit exceeded - return RATE_LIMIT decision
-                reset_at = counter.events[0] + timedelta(seconds=counter.window_seconds)
-
-                return Decision(
-                    action_id=decision.action_id,
-                    decision=DecisionType.RATE_LIMIT,
-                    allowed=False,
-                    reason_codes=["RATE_LIMIT_EXCEEDED"],
-                    policy_version=decision.policy_version,
-                    timing=decision.timing,
-                    rate_limit=RateLimit(
-                        scope=scope,
-                        window=window,
-                        limit=counter.limit,
-                        current=current_count,
-                        reset_at=reset_at
-                    )
-                )
-
-            # Under limit - increment and allow
-            counter.events.append(now)
-            return None  # No rate limit, allow action
+    def _window(self, envelope: Envelope, config: dict, now: datetime) -> Counter:
+        """A rule's window (a config from `rule_limit_config`), counted under `rule:<name>:<scope key>`, its calls
+        older than the window dropped. The caller holds the lock."""
+        scope_key = config["key_prefix"] + self._build_scope_key(envelope, config["scope"])
+        counter = self._counters.setdefault(
+            scope_key, Counter(events=[], limit=config["limit"], window_seconds=config["window_seconds"]))
+        counter.limit, counter.window_seconds = config["limit"], config["window_seconds"]
+        cutoff = now - timedelta(seconds=counter.window_seconds)
+        counter.events = [event for event in counter.events if event > cutoff]
+        return counter
 
     def _build_scope_key(self, envelope: Envelope, scope: str) -> str:
         """Build scope key from envelope fields.

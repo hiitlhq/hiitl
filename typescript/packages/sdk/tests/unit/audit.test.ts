@@ -7,11 +7,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { AuditLogger } from '../../src/audit.js';
 import { AuditLogError } from '../../src/exceptions.js';
+import { ENVELOPE_SCHEMA_VERSION } from '@hiitl/core';
 import type { Envelope, Decision } from '@hiitl/core';
 
 // Test envelope
 const testEnvelope: Envelope = {
-  schema_version: 'v1.0',
+  schema_version: ENVELOPE_SCHEMA_VERSION,
   org_id: 'org_test000000000000000',
   environment: 'dev',
   agent_id: 'test-agent',
@@ -153,7 +154,7 @@ describe('AuditLogger', () => {
       expect(record!.action_id).toBe(testEnvelope.action_id);
       expect(record!.policy_version).toBe(testDecision.policy_version);
       expect(record!.decision_type).toBe(testDecision.decision);
-      expect(record!.tool_name).toBe(testEnvelope.action);
+      expect(record!.action).toBe(testEnvelope.action);
       expect(record!.agent_id).toBe(testEnvelope.agent_id);
     });
 
@@ -166,7 +167,7 @@ describe('AuditLogger', () => {
       const record = logger.get(eventId);
 
       expect(record).toBeDefined();
-      expect(record!.tool_name).toBeNull();
+      expect(record!.action).toBeNull();
       expect(record!.agent_id).toBeNull();
     });
 
@@ -359,6 +360,101 @@ describe('AuditLogger', () => {
       const logger2 = new AuditLogger(tempDbPath);
       expect(logger2.count()).toBe(1);
       logger2.close();
+    });
+  });
+
+  // ─── sync engine drain surface (Block 5e) ───────────────────────────
+  // The sync engine calls these two methods to upload unsynced records
+  // and mark them as transmitted. Parity target:
+  // python/hiitl/sdk/tests/test_audit.py — same semantics.
+
+  describe('Sync drain surface', () => {
+    it('getUnsynced returns rows oldest-first, with envelope/decision parsed', () => {
+      const logger = new AuditLogger(':memory:');
+      logger.write(testEnvelope, testDecision);
+      logger.write(testEnvelope, testDecision);
+
+      const rows = logger.getUnsynced(100);
+      expect(rows).toHaveLength(2);
+      // envelope and decision were stored as JSON strings; getUnsynced
+      // re-parses them so the sync client can re-serialize the batch.
+      expect(typeof rows[0].envelope).toBe('object');
+      expect(typeof rows[0].decision).toBe('object');
+    });
+
+    it('getUnsynced respects the limit parameter', () => {
+      const logger = new AuditLogger(':memory:');
+      for (let i = 0; i < 5; i++) logger.write(testEnvelope, testDecision);
+      expect(logger.getUnsynced(3)).toHaveLength(3);
+      expect(logger.getUnsynced(100)).toHaveLength(5);
+    });
+
+    it('markSynced flips records out of the unsynced queue', () => {
+      const logger = new AuditLogger(':memory:');
+      const id1 = logger.write(testEnvelope, testDecision);
+      const id2 = logger.write(testEnvelope, testDecision);
+
+      const updated = logger.markSynced([id1]);
+      expect(updated).toBe(1);
+
+      const remaining = logger.getUnsynced(100);
+      expect(remaining).toHaveLength(1);
+      expect(remaining[0].event_id).toBe(id2);
+    });
+
+    it('markSynced is a no-op for empty list (returns 0)', () => {
+      const logger = new AuditLogger(':memory:');
+      expect(logger.markSynced([])).toBe(0);
+    });
+
+    it('markSynced for unknown IDs returns 0 (no rows match)', () => {
+      const logger = new AuditLogger(':memory:');
+      logger.write(testEnvelope, testDecision);
+      expect(logger.markSynced(['evt_never_existed'])).toBe(0);
+    });
+
+    it('schema migration: existing DB without synced column gets it added', () => {
+      // Open an in-memory DB, write rows, close. Then re-open with the
+      // SAME path — the migration probes PRAGMA table_info and adds the
+      // column if missing. For in-memory we can't re-open the same DB,
+      // so we simulate the legacy state with a tempfile.
+      const tmpPath = path.join(__dirname, '../fixtures', 'migration_test.db');
+      try {
+        // Build a pre-migration DB by hand using better-sqlite3 directly.
+        const Database = require('better-sqlite3');
+        const legacyDb = new Database(tmpPath);
+        legacyDb.exec(`
+          CREATE TABLE audit_log (
+            event_id TEXT PRIMARY KEY,
+            timestamp TEXT NOT NULL,
+            org_id TEXT NOT NULL,
+            environment TEXT NOT NULL,
+            action_id TEXT NOT NULL,
+            envelope TEXT NOT NULL,
+            decision TEXT NOT NULL,
+            policy_version TEXT NOT NULL,
+            decision_type TEXT NOT NULL,
+            tool_name TEXT,
+            agent_id TEXT,
+            content_hash TEXT NOT NULL
+          )
+        `);
+        legacyDb.close();
+
+        // Now open with the current AuditLogger — should detect missing
+        // `synced` column and ALTER TABLE.
+        const logger = new AuditLogger(tmpPath);
+        logger.write(testEnvelope, testDecision);
+        const rows = logger.getUnsynced(100);
+        expect(rows).toHaveLength(1);
+        logger.close();
+      } finally {
+        try {
+          fs.unlinkSync(tmpPath);
+        } catch {
+          // ignore
+        }
+      }
     });
   });
 });

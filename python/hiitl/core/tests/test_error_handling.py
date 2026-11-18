@@ -15,6 +15,7 @@ from pydantic import ValidationError
 
 from hiitl.core.evaluator import PolicyEvaluator
 from hiitl.core.types import (
+    ENVELOPE_SCHEMA_VERSION,
     Condition,
     ConditionOperator,
     Decision,
@@ -35,7 +36,7 @@ class TestSchemaValidation:
     def test_envelope_missing_required_field(self):
         """Missing required field in envelope should raise ValidationError."""
         invalid_envelope = {
-            "schema_version": "v1.0",
+            "schema_version": ENVELOPE_SCHEMA_VERSION,
             "org_id": "org_test000000000000",
             # Missing action_id, environment, agent_id, etc.
         }
@@ -49,13 +50,13 @@ class TestSchemaValidation:
     def test_envelope_invalid_environment(self):
         """Invalid environment value should raise ValidationError."""
         invalid_envelope = {
-            "schema_version": "v1.0",
+            "schema_version": ENVELOPE_SCHEMA_VERSION,
             "org_id": "org_test000000000000",
             "environment": "production",  # Must be "prod", not "production"
             "agent_id": "agent_test",
             "action_id": "act_test00000000000000000",
             "timestamp": "2026-02-15T10:00:00Z",
-            "tool_name": "test_tool",
+            "action": "test_tool",
             "operation": "execute",
             "parameters": {},
             "idempotency_key": "idem_test",
@@ -72,13 +73,13 @@ class TestSchemaValidation:
     def test_envelope_invalid_action_id_format(self):
         """Invalid action_id format should raise ValidationError."""
         invalid_envelope = {
-            "schema_version": "v1.0",
+            "schema_version": ENVELOPE_SCHEMA_VERSION,
             "org_id": "org_test000000000000",
             "environment": "dev",
             "agent_id": "agent_test",
             "action_id": "act_short",  # Too short (< 20 chars after "act_")
             "timestamp": "2026-02-15T10:00:00Z",
-            "tool_name": "test_tool",
+            "action": "test_tool",
             "operation": "execute",
             "parameters": {},
             "idempotency_key": "idem_test",
@@ -94,13 +95,14 @@ class TestSchemaValidation:
     def test_policy_invalid_operator(self):
         """Invalid operator in condition should raise ValidationError."""
         invalid_policy = {
-            "version": "1.0.0",
+            "version": "v1.0.0",
+            "description": "Policy invalid operator",
+            "scope": {"org_id": "org_test000000000000", "environment": "dev"},
             "name": "test_policy",
             "rules": [
                 {
                     "name": "test_rule",
                     "priority": 100,
-                    "enabled": True,
                     "conditions": {
                         "field": "parameters.amount",
                         "operator": "greater_or_equal",  # Invalid (should be "greater_than_or_equal")
@@ -121,13 +123,14 @@ class TestSchemaValidation:
     def test_policy_invalid_decision_type(self):
         """Invalid decision type should raise ValidationError."""
         invalid_policy = {
-            "version": "1.0.0",
+            "version": "v1.0.0",
+            "description": "Policy invalid decision type",
+            "scope": {"org_id": "org_test000000000000", "environment": "dev"},
             "name": "test_policy",
             "rules": [
                 {
                     "name": "test_rule",
                     "priority": 100,
-                    "enabled": True,
                     "conditions": {
                         "field": "parameters.amount",
                         "operator": "less_than",
@@ -148,7 +151,9 @@ class TestSchemaValidation:
     def test_policy_missing_required_rule_fields(self):
         """Missing required fields in rule should raise ValidationError."""
         invalid_policy = {
-            "version": "1.0.0",
+            "version": "v1.0.0",
+            "description": "Policy missing required rule fields",
+            "scope": {"org_id": "org_test000000000000", "environment": "dev"},
             "name": "test_policy",
             "rules": [
                 {
@@ -168,64 +173,16 @@ class TestSchemaValidation:
 class TestRuntimeErrorHandling:
     """Test runtime error handling during evaluation."""
 
-    def test_invalid_regex_pattern_handled_gracefully(self):
-        """Invalid regex pattern should return False, not raise exception."""
-        envelope = Envelope(
-            schema_version="v1.0",
-            org_id="org_test000000000000",
-            environment="dev",
-            agent_id="agent_test",
-            action_id="act_test00000000000000000",
-            timestamp="2026-02-15T10:00:00Z",
-            tool_name="test_tool",
-            operation="execute",
-            parameters={"query": "SELECT * FROM users"},
-            idempotency_key="idem_test_regex",
-            target={},
-            signature="0" * 64,
-        )
-
-        policy = PolicySet(
-            version="1.0.0",
-            name="test_policy",
-            rules=[
-                Rule(
-                    name="invalid_regex_rule",
-                    priority=100,
-                    enabled=True,
-                    conditions=Condition(
-                        field="parameters.query",
-                        operator=ConditionOperator.MATCHES,
-                        value="[invalid(regex",  # Invalid regex pattern
-                    ),
-                    decision=DecisionType.BLOCK,
-                    reason_code="INVALID_REGEX",
-                    description="Rule with invalid regex",
-                )
-            ],
-        )
-
-        evaluator = PolicyEvaluator()
-        decision = evaluator.evaluate(envelope, policy)
-
-        # Should not raise exception - invalid regex returns False, so no match
-        assert decision.decision == "BLOCK"
-        assert "NO_MATCHING_RULE" in decision.reason_codes
-
     def test_type_mismatch_in_numeric_comparison(self):
-        """Type mismatch in numeric comparison should raise TypeError.
-
-        Note: This documents current behavior. Future versions might handle
-        this gracefully by returning False instead of raising.
-        """
+        """The declared numeric kind mismatch is a located policy failure (fc00ed9a)."""
         envelope = Envelope(
-            schema_version="v1.0",
+            schema_version=ENVELOPE_SCHEMA_VERSION,
             org_id="org_test000000000000",
             environment="dev",
             agent_id="agent_test",
             action_id="act_test00000000000000000",
             timestamp="2026-02-15T10:00:00Z",
-            tool_name="test_tool",
+            action="test_tool",
             operation="execute",
             parameters={"amount": "100"},  # String, not number
             idempotency_key="idem_test_type_mismatch",
@@ -234,13 +191,14 @@ class TestRuntimeErrorHandling:
         )
 
         policy = PolicySet(
-            version="1.0.0",
+            version="v1.0.0",
+            description="Type mismatch in numeric comparison",
+            scope={"org_id": "org_test000000000000", "environment": "dev"},
             name="test_policy",
             rules=[
                 Rule(
                     name="numeric_comparison_rule",
                     priority=100,
-                    enabled=True,
                     conditions=Condition(
                         field="parameters.amount",
                         operator=ConditionOperator.GREATER_THAN,
@@ -255,21 +213,20 @@ class TestRuntimeErrorHandling:
 
         evaluator = PolicyEvaluator()
 
-        # Current behavior: raises TypeError
-        # Future behavior might: return False gracefully
-        with pytest.raises(TypeError):
+        from hiitl.core.operator_kinds import OperatorKindError
+        with pytest.raises(OperatorKindError, match='greater_than.*parameters.amount'):
             evaluator.evaluate(envelope, policy)
 
     def test_nonexistent_field_comparison(self):
         """Comparing nonexistent field should return False (no match)."""
         envelope = Envelope(
-            schema_version="v1.0",
+            schema_version=ENVELOPE_SCHEMA_VERSION,
             org_id="org_test000000000000",
             environment="dev",
             agent_id="agent_test",
             action_id="act_test00000000000000000",
             timestamp="2026-02-15T10:00:00Z",
-            tool_name="test_tool",
+            action="test_tool",
             operation="execute",
             parameters={},  # No 'amount' field
             idempotency_key="idem_test_nonexistent",
@@ -278,13 +235,14 @@ class TestRuntimeErrorHandling:
         )
 
         policy = PolicySet(
-            version="1.0.0",
+            version="v1.0.0",
+            description="Nonexistent field comparison",
+            scope={"org_id": "org_test000000000000", "environment": "dev"},
             name="test_policy",
             rules=[
                 Rule(
                     name="nonexistent_field_rule",
                     priority=100,
-                    enabled=True,
                     conditions=Condition(
                         field="parameters.amount",  # Field doesn't exist
                         operator=ConditionOperator.GREATER_THAN,
@@ -317,13 +275,13 @@ class TestRuntimeErrorHandling:
             return LogicalCondition(all_of=[create_nested_condition(depth - 1)])
 
         envelope = Envelope(
-            schema_version="v1.0",
+            schema_version=ENVELOPE_SCHEMA_VERSION,
             org_id="org_test000000000000",
             environment="dev",
             agent_id="agent_test",
             action_id="act_test00000000000000000",
             timestamp="2026-02-15T10:00:00Z",
-            tool_name="test_tool",
+            action="test_tool",
             operation="execute",
             parameters={"amount": 100},
             idempotency_key="idem_test_deep_nesting",
@@ -332,13 +290,14 @@ class TestRuntimeErrorHandling:
         )
 
         policy = PolicySet(
-            version="1.0.0",
+            version="v1.0.0",
+            description="Deeply nested logical conditions",
+            scope={"org_id": "org_test000000000000", "environment": "dev"},
             name="test_policy",
             rules=[
                 Rule(
                     name="deeply_nested_rule",
                     priority=100,
-                    enabled=True,
                     conditions=create_nested_condition(50),
                     decision=DecisionType.ALLOW,
                     reason_code="DEEP_NESTING",
@@ -363,13 +322,13 @@ class TestEdgeCaseErrorHandling:
     def test_empty_policy_rules(self):
         """Policy with no rules should return BLOCK with NO_MATCHING_RULE."""
         envelope = Envelope(
-            schema_version="v1.0",
+            schema_version=ENVELOPE_SCHEMA_VERSION,
             org_id="org_test000000000000",
             environment="dev",
             agent_id="agent_test",
             action_id="act_test00000000000000000",
             timestamp="2026-02-15T10:00:00Z",
-            tool_name="test_tool",
+            action="test_tool",
             operation="execute",
             parameters={},
             idempotency_key="idem_test_empty_rules",
@@ -378,7 +337,9 @@ class TestEdgeCaseErrorHandling:
         )
 
         policy = PolicySet(
-            version="1.0.0",
+            version="v1.0.0",
+            description="Empty policy rules",
+            scope={"org_id": "org_test000000000000", "environment": "dev"},
             name="test_policy",
             rules=[],  # No rules
         )
@@ -393,13 +354,13 @@ class TestEdgeCaseErrorHandling:
     def test_all_rules_disabled(self):
         """Policy with all rules disabled should return BLOCK."""
         envelope = Envelope(
-            schema_version="v1.0",
+            schema_version=ENVELOPE_SCHEMA_VERSION,
             org_id="org_test000000000000",
             environment="dev",
             agent_id="agent_test",
             action_id="act_test00000000000000000",
             timestamp="2026-02-15T10:00:00Z",
-            tool_name="test_tool",
+            action="test_tool",
             operation="execute",
             parameters={"amount": 100},
             idempotency_key="idem_test_all_disabled",
@@ -408,13 +369,15 @@ class TestEdgeCaseErrorHandling:
         )
 
         policy = PolicySet(
-            version="1.0.0",
+            version="v1.0.0",
+            description="All rules disabled",
+            scope={"org_id": "org_test000000000000", "environment": "dev"},
             name="test_policy",
             rules=[
                 Rule(
                     name="disabled_rule",
                     priority=100,
-                    enabled=False,  # Disabled
+                    lifecycle_stage="disabled",  # Disabled
                     conditions=Condition(
                         field="parameters.amount",
                         operator=ConditionOperator.LESS_THAN,

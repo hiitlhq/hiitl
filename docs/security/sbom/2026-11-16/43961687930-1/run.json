@@ -1,0 +1,136 @@
+{
+  "source_commit": "d32f5b0f306b615db5c4d5552395f212e0f69ccc",
+  "run_attempt": "1",
+  "run_url": "https://github.com/hiitlhq/hiitl/actions/runs/43961687930",
+  "commands": [
+    {
+      "name": "python-sbom",
+      "command": [
+        "cyclonedx-py",
+        "environment",
+        "--of",
+        "JSON",
+        "--output-file",
+        "/home/runner/work/hiitl/hiitl/docs/security/sbom/2026-11-16/43961687930-1/python.cdx.json",
+        "/home/runner/work/_temp/hiitl-sbom-python/bin/python"
+      ],
+      "cwd": ".",
+      "returncode": 0
+    },
+    {
+      "name": "python-list",
+      "command": [
+        "/home/runner/work/_temp/hiitl-sbom-python/bin/python",
+        "-m",
+        "pip",
+        "list",
+        "--format",
+        "json"
+      ],
+      "cwd": ".",
+      "returncode": 0
+    },
+    {
+      "name": "python-freeze",
+      "command": [
+        "/home/runner/work/_temp/hiitl-sbom-python/bin/python",
+        "-m",
+        "pip",
+        "freeze",
+        "--all",
+        "--exclude",
+        "hiitl"
+      ],
+      "cwd": ".",
+      "returncode": 0
+    },
+    {
+      "name": "python-audit",
+      "command": [
+        "pip-audit",
+        "--requirement",
+        "/home/runner/work/hiitl/hiitl/docs/security/sbom/2026-11-16/43961687930-1/python.requirements.txt",
+        "--disable-pip",
+        "--no-deps",
+        "--format",
+        "json",
+        "--output",
+        "/home/runner/work/hiitl/hiitl/docs/security/sbom/2026-11-16/43961687930-1/python.audit.json"
+      ],
+      "cwd": ".",
+      "returncode": 0
+    },
+    {
+      "name": "core-sbom",
+      "command": [
+        "npx",
+        "--yes",
+        "@cyclonedx/cyclonedx-npm@6.0.1",
+        "--output-format",
+        "JSON",
+        "--output-file",
+        "/home/runner/work/hiitl/hiitl/docs/security/sbom/2026-11-16/43961687930-1/core.cdx.json"
+      ],
+      "cwd": "typescript/packages/core",
+      "returncode": 0
+    },
+    {
+      "name": "core-audit",
+      "command": [
+        "npm",
+        "audit",
+        "--json"
+      ],
+      "cwd": "typescript/packages/core",
+      "returncode": 0
+    },
+    {
+      "name": "sdk-sbom",
+      "command": [
+        "npx",
+        "--yes",
+        "@cyclonedx/cyclonedx-npm@6.0.1",
+        "--output-format",
+        "JSON",
+        "--output-file",
+        "/home/runner/work/hiitl/hiitl/docs/security/sbom/2026-11-16/43961687930-1/sdk.cdx.json"
+      ],
+      "cwd": "typescript/packages/sdk",
+      "returncode": 0
+    },
+    {
+      "name": "sdk-audit",
+      "command": [
+        "npm",
+        "audit",
+        "--json"
+      ],
+      "cwd": "typescript/packages/sdk",
+      "returncode": 0
+    }
+  ],
+  "errors": [],
+  "tools_passed": true,
+  "licence_review": "requires_review",
+  "sha256": {
+    "core-audit.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "core-sbom.stderr.txt": "21e9ed8510fee3af3cfc71b1fcd72b003d5b9e7e347266fcf081335c0dfa3d37",
+    "core.audit.json": "59791506704fa2c94b68aab97413a790a62516509e6063a8ccf2a43e7c641a92",
+    "core.cdx.json": "906111ddc1bacb378c34d8216aa62c13ce327760164cd2348388c77be217d909",
+    "license-review.md": "6360a2a30ecfb63b727fe9c9e6ee74768c58db484e89eca333802101284fa91e",
+    "licenses.json": "cba3dffe4c67a4fa8c1b1c670c161c17855b9be0df81ec10647be36e61c33b3f",
+    "python-audit.stderr.txt": "79d30422388543b2563e1dde76bb7e7857d7ef0c6fdf05c8c71598633ca07e1e",
+    "python-freeze.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "python-list.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "python-sbom.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "python.audit.json": "59ea937ba5934bb9b605c8f3cc290908af5a2273e3b164c6227cb68eab60007a",
+    "python.cdx.json": "9a2ed4978114828f8f0bb6224a75c521b9e5cf11dd88dfaa2ec917cd432d831a",
+    "python.coverage.json": "7d69887d0c7bb8916ea3302159be2bdb9e5530074bbf119b1fa336f6d59f3be2",
+    "python.installed.json": "97aa19323789b9ee789eebc72ab7272c78393c2aa2ef9942fb3699b6ec11aacc",
+    "python.requirements.txt": "a82b33b30d39278e82081cbca79b9283f6f477ae3d7efe4019ae6013b0e7b991",
+    "sdk-audit.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sdk-sbom.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sdk.audit.json": "713ec054dfb717329e6685858661349ee911b561345a518d3eba2b06352c5cea",
+    "sdk.cdx.json": "02306540acc5170e802432cac897e05234ca3b990fd82208a56d593ed4a9f434"
+  }
+}

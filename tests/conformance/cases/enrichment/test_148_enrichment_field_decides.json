@@ -1,0 +1,67 @@
+{
+  "test_id": "test_148_enrichment_field_decides",
+  "description": "A sync route's answer, read as external.<source>.<field> from the enrichment context, decides (policy_format 2.7).",
+  "envelope": {
+    "schema_version": "v2.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_ops_bot",
+    "action_id": "act_test1480000000000000000",
+    "timestamp": "2026-10-11T10:00:00Z",
+    "operation": "execute",
+    "parameters": {
+      "body": "hello"
+    },
+    "idempotency_key": "idem_test_148",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "publish_post"
+  },
+  "policy_set": {
+    "version": "v1.0.0",
+    "description": "A sync route's answer, read as external.<source>.<field> from the enrichment context, decides (policy_format 2.7).",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "block_rejected",
+        "priority": 800,
+        "conditions": {
+          "field": "external.content-check.verdict",
+          "operator": "equals",
+          "value": "rejected"
+        },
+        "decision": "BLOCK",
+        "reason_code": "CONTENT_REJECTED",
+        "description": "Rule: block_rejected"
+      },
+      {
+        "name": "allow_otherwise",
+        "priority": 1,
+        "conditions": {
+          "field": "action",
+          "operator": "exists",
+          "value": true
+        },
+        "decision": "ALLOW",
+        "reason_code": "ALLOWED",
+        "description": "Rule: allow_otherwise"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "BLOCK",
+    "allowed": false,
+    "reason_codes": [
+      "CONTENT_REJECTED"
+    ]
+  },
+  "enrichment": {
+    "content-check": {
+      "verdict": "rejected"
+    }
+  }
+}

@@ -12,7 +12,7 @@
       "action": "evaluate",
       "agent_id": "data-access-agent",
       "envelope": {
-        "tool": "manage_records",
+        "action": "manage_records",
         "operation": "delete",
         "target": {"table": "users", "record_id": "rec_001"},
         "parameters": {"cascade": true}
@@ -30,7 +30,7 @@
       "action": "evaluate",
       "agent_id": "data-access-agent",
       "envelope": {
-        "tool": "query_database",
+        "action": "query_database",
         "operation": "read",
         "target": {"table": "users"},
         "parameters": {"limit": 100}
@@ -47,7 +47,7 @@
       "action": "evaluate",
       "agent_id": "automation-agent",
       "envelope": {
-        "tool": "run_batch_job",
+        "action": "run_batch_job",
         "operation": "execute",
         "target": {"job_id": "job_nightly_cleanup"},
         "parameters": {"dry_run": false}

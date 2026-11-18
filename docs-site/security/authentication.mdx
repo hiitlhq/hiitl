@@ -5,34 +5,42 @@ description: "API keys, scoping, and rotation"
 
 ## API key authentication
 
-All hosted-mode requests require a Bearer token in the `Authorization` header.
+Authenticate each request to the hosted service with an API key, sent as a Bearer token in the `Authorization` header.
 
 ```bash
-curl -H "Authorization: Bearer hiitl_prod_abc123..." \
-  https://api.hiitl.com/v1/evaluate
+curl -H "Authorization: Bearer sk_prod_..." \
+  https://api.hiitl.com/v1/policies
 ```
+
+An unknown or revoked key gets a `401`, and so does a key past its `expires_at` (`401 API_KEY_EXPIRED`). See [Common errors](/api/overview#common-errors) for the other authentication errors.
 
 In the SDK:
 
 <CodeGroup>
 
 ```python Python
+from hiitl import HIITL
+
 hiitl = HIITL(
-    api_key="hiitl_prod_abc123...",
+    api_key="sk_prod_...",
     environment="prod",
-    agent_id="payment-agent"
+    agent_id="payment-agent",
 )
 ```
 
 ```typescript TypeScript
+import { HIITL } from '@hiitl/sdk';
+
 const hiitl = new HIITL({
-  apiKey: 'hiitl_prod_abc123...',
+  api_key: 'sk_prod_...',
   environment: 'prod',
-  agentId: 'payment-agent',
+  agent_id: 'payment-agent',
 });
 ```
 
 </CodeGroup>
+
+With an API key, the SDK runs in hybrid mode: it evaluates each action in-process and uses the key to sync with the hosted service in the background. To call the hosted service for every evaluation instead, see [Python configuration](/sdk/python-configuration) or [TypeScript configuration](/sdk/typescript-configuration).
 
 <Note>
 Local mode does not require an API key. The SDK runs evaluation entirely in-process.
@@ -40,46 +48,47 @@ Local mode does not require an API key. The SDK runs evaluation entirely in-proc
 
 ## API key scopes
 
-Every API key has an explicit scope that limits what it can do.
+Every API key has one or more scopes that limit what it can do.
 
 | Scope | Permissions | Use case |
 |-------|-------------|----------|
-| `evaluate` | Submit envelopes for evaluation | Agent runtime (production) |
-| `read` | Query audit logs and policies | Monitoring, dashboards |
-| `admin` | Modify policies, toggle kill switches | Operations, deployment |
-| `full` | All permissions | Development only |
+| `evaluate` | Submit actions for evaluation (`POST /v1/evaluate`), and every hybrid-mode sync channel | Agent runtime, hybrid and hosted mode |
+| `read` | Read policies, policy changes, audit records, kill switches, and API keys | Monitoring, dashboards |
+| `admin` | Create policy versions, activate and deactivate kill switches, create and revoke API keys | Operations, deployment |
+| `full` | Every permission above | Development only |
+
+In hybrid mode, the SDK's background sync takes the agent runtime's own `evaluate` key: it downloads policies, routes, and kill switches, and uploads audit records and telemetry, with `evaluate`. An audit upload submits what was evaluated.
 
 <Warning>
-**Never use `full` scope keys in production.** Use the narrowest scope required. An agent only needs `evaluate` scope. A dashboard only needs `read` scope.
+**Never use `full` scope keys in production.** Use the narrowest scopes each service needs. An agent that calls the hosted service for each evaluation needs only `evaluate`. A dashboard needs only `read`.
 </Warning>
 
 Requests with insufficient scope receive a `403` response:
 
 ```json
 {
-  "error": {
-    "code": "INSUFFICIENT_SCOPE",
-    "message": "This API key has 'evaluate' scope. The requested operation requires 'admin' scope."
+  "detail": {
+    "error": "INSUFFICIENT_SCOPE",
+    "message": "Insufficient permissions. Required scope: admin. Use an API key that has the 'admin' or 'full' scope."
   }
 }
 ```
 
+A key grants only the scopes it holds. To create an `evaluate` key, use a key that holds `admin` and `evaluate`, or `full`. Naming a scope the creating key does not hold is refused with `403 INSUFFICIENT_SCOPE`, and `details.scopes_not_held` lists each one. Revoking is bounded the same way: a key revokes only keys whose scopes it holds, so revoking an `evaluate` key takes a key that holds `admin` and `evaluate`, or `full`.
+
 ## Key format
 
-API keys follow the pattern: `hiitl_{environment}_{random}`
+API keys start with `sk_` and a short environment tag, for example `sk_prod_...` for a production key and `sk_dev_...` for a development key.
 
-- `hiitl_prod_abc123...` -- production key
-- `hiitl_dev_xyz789...` -- development key
-
-Keys are scoped to a single `org_id` and `environment`. A production key cannot access development data, and vice versa.
+Each key belongs to one organization (`org_id`) and one environment, set when the key is created: the environment of the key that creates it. Only a key holding `full`, or a user signed in to the dashboard, creates a key in another environment, or creates a `full` key; otherwise the request is refused with `403 TENANT_MISMATCH` or `403 INSUFFICIENT_SCOPE`. The service keeps a SHA-256 hash of the key, not the key itself, so the full key is shown only once, when you create it.
 
 ## Key rotation
 
-API keys support zero-downtime rotation with overlapping validity windows.
+Rotate a key without downtime: create the new key, move your services to it, then revoke the old one. Both keys work until you revoke the old one.
 
 <Steps>
   <Step title="Create a new key">
-    Generate a new API key with the same scope via the admin API or dashboard.
+    Create a key with the same scopes and environment, with the API or in the dashboard. The response shows the new key once: store it now.
   </Step>
   <Step title="Deploy the new key">
     Update your application to use the new key. Both old and new keys are valid during this window.
@@ -94,7 +103,11 @@ API keys support zero-downtime rotation with overlapping validity windows.
 curl -X POST \
   -H "Authorization: Bearer $ADMIN_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"scope": "evaluate", "description": "payment-agent-v2"}' \
+  -d '{"name": "payment-agent-v2", "scopes": ["evaluate"], "environment": "prod"}' \
+  https://api.hiitl.com/v1/api-keys
+
+# List your organization's active keys (the keys themselves are never returned)
+curl -H "Authorization: Bearer $READ_API_KEY" \
   https://api.hiitl.com/v1/api-keys
 
 # Revoke old key
@@ -103,16 +116,21 @@ curl -X DELETE \
   https://api.hiitl.com/v1/api-keys/{key_id}
 ```
 
+Create the new key with a key from the same environment that holds `admin` and every scope the new key grants; `environment` may be left out, and is then the creating key's. The create call returns `201` with the new key in `raw_key`, and its `key_id`, `name`, `scopes`, `environment`, `created_at`, and `expires_at` (set it to have the key stop working at that time). An `expires_at` must be ahead of now; one without a time zone is UTC, and one already past is refused with `422`, naming `expires_at`. The list returns the keys of the environments the calling key may create keys in: its own, or every environment when it holds `full`; signed in to the dashboard, every environment's. The revoke call returns `{"key_id": "...", "revoked": true}`. A `key_id` that is unknown, already revoked, or in another environment than the calling key's returns `404 KEY_NOT_FOUND`. Revoking a key that holds a scope the calling key does not is refused with `403 INSUFFICIENT_SCOPE`, `details.scopes_not_held` naming each one, and the key stays active.
+
+Each create and each revoke is recorded with the change: who made it (the calling key, or your dashboard sign-in), when, and the key's id, environment and scopes. The record never holds the key or its signing secret. If the record cannot be written, the change is refused with `503 API_KEY_CHANGE_NOT_RECORDED`: the key is not created, or stays active. Retry the request.
+
 <Warning>
 Revoked keys stop working **immediately**. Ensure all services have migrated to the new key before revoking.
 </Warning>
 
 ## Environment separation
 
-API keys enforce environment isolation:
+Each API key is bound to one environment (`dev`, `stage`, or `prod`):
 
-- A `dev` key can only access `dev` environment data
-- A `prod` key can only access `prod` environment data
-- Cross-environment requests are rejected with `ENVIRONMENT_MISMATCH`
+- `POST /v1/evaluate` evaluates against the active policy for the key's environment
+- A new policy version must name the key's environment in its `scope`, or it is refused with `400 POLICY_VALIDATION_ERROR`
+- Kill switches are activated and deactivated in the key's environment
+- API keys are revoked in the key's environment. A key holding `full` lists and creates keys in every environment of its organization; any other key lists and creates them in its own
 
-This means a misconfigured development service cannot accidentally evaluate against production policies or write to the production audit log.
+Use a separate key for each environment, so that a development service evaluates against development policies.

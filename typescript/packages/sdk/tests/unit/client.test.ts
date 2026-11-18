@@ -2,7 +2,7 @@
  * Tests for HIITL Client - main SDK API.
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { HIITL } from '../../src/client.js';
@@ -20,6 +20,7 @@ describe('HIITL Client', () => {
 
   afterEach(() => {
     hiitl?.close();
+    vi.restoreAllMocks();
   });
 
   describe('Constructor', () => {
@@ -133,7 +134,7 @@ describe('HIITL Client', () => {
       expect(decision).toBeDefined();
       expect(decision.decision).toBe('ALLOW');
       expect(decision.allowed).toBe(true);
-      expect(decision.reason_codes).toContain('SMALL_AMOUNT');
+      expect(decision.reason_codes).toEqual(['SMALL_AMOUNT']);
     });
 
     it('should return BLOCK decision for large amount', () => {
@@ -145,14 +146,14 @@ describe('HIITL Client', () => {
       expect(decision).toBeDefined();
       expect(decision.decision).toBe('BLOCK');
       expect(decision.allowed).toBe(false);
-      expect(decision.reason_codes).toContain('NO_MATCHING_RULE');
+      expect(decision.reason_codes).toEqual(['NO_MATCHING_RULE']);
     });
 
     it('should work with action-only (no parameters)', () => {
       const decision = hiitl.evaluate({ action: 'test_tool' });
 
-      expect(decision).toBeDefined();
-      expect(decision.decision).toBeDefined();
+      expect([decision.decision, decision.reason_codes, decision.allowed])
+        .toEqual(['BLOCK', ['NO_MATCHING_RULE'], false]);
     });
   });
 
@@ -258,77 +259,18 @@ describe('HIITL Client', () => {
       });
     });
 
-    it('should accept user_id', () => {
+    it.each([
+      ['user_id', 'user_alice'], ['session_id', 'session_xyz'], ['confidence', 0.95],
+      ['reason', 'Automated test payment'], ['sensitivity', ['pii', 'money']],
+      ['cost_estimate', { tokens: 1000, dollars: 0.5 }], ['agent_id', 'override-agent'],
+    ] as const)('records the supplied %s unchanged', (field, value) => {
       const decision = hiitl.evaluate({
-        action: 'test_tool',
-        parameters: { amount: 100 },
-        user_id: 'user_alice',
+        action: 'test_tool', parameters: { amount: 100 }, [field]: value,
       });
-
-      expect(decision).toBeDefined();
-    });
-
-    it('should accept session_id', () => {
-      const decision = hiitl.evaluate({
-        action: 'test_tool',
-        parameters: { amount: 100 },
-        session_id: 'session_xyz',
-      });
-
-      expect(decision).toBeDefined();
-    });
-
-    it('should accept confidence', () => {
-      const decision = hiitl.evaluate({
-        action: 'test_tool',
-        parameters: { amount: 100 },
-        confidence: 0.95,
-      });
-
-      expect(decision).toBeDefined();
-    });
-
-    it('should accept reason', () => {
-      const decision = hiitl.evaluate({
-        action: 'test_tool',
-        parameters: { amount: 100 },
-        reason: 'Automated test payment',
-      });
-
-      expect(decision).toBeDefined();
-    });
-
-    it('should accept sensitivity labels', () => {
-      const decision = hiitl.evaluate({
-        action: 'test_tool',
-        parameters: { amount: 100 },
-        sensitivity: ['pii', 'money'],
-      });
-
-      expect(decision).toBeDefined();
-    });
-
-    it('should accept cost_estimate', () => {
-      const decision = hiitl.evaluate({
-        action: 'test_tool',
-        parameters: { amount: 100 },
-        cost_estimate: {
-          tokens: 1000,
-          usd_cents: 50,
-        },
-      });
-
-      expect(decision).toBeDefined();
-    });
-
-    it('should accept per-call agent_id override', () => {
-      const decision = hiitl.evaluate({
-        action: 'test_tool',
-        parameters: { amount: 100 },
-        agent_id: 'override-agent',
-      });
-
-      expect(decision).toBeDefined();
+      const records = hiitl.queryAudit({ action_id: decision.action_id });
+      expect(records.map((record) => ({ action_id: record.action_id,
+        value: JSON.parse(record.envelope)[field] })))
+        .toEqual([{ action_id: decision.action_id, value }]);
     });
   });
 
@@ -393,19 +335,14 @@ describe('HIITL Client', () => {
     });
 
     it('should use cached policy on second evaluation', () => {
-      const decision1 = hiitl.evaluate({
-        action: 'test_tool',
-        parameters: { amount: 100 },
-      });
-
-      const decision2 = hiitl.evaluate({
-        action: 'test_tool',
-        parameters: { amount: 100 },
-      });
-
-      // Both should succeed (policy cached)
-      expect(decision1).toBeDefined();
-      expect(decision2).toBeDefined();
+      const reads = vi.spyOn(fs, 'readFileSync');
+      const first = hiitl.evaluate({ action: 'test_tool', parameters: { amount: 100 } });
+      const policyReads = () => reads.mock.calls.filter(([file]) => file === VALID_POLICY).map(([file]) => file);
+      const afterFirst = policyReads();
+      const second = hiitl.evaluate({ action: 'test_tool', parameters: { amount: 100 } });
+      expect(policyReads()).toEqual(afterFirst);
+      expect([first, second].map((d) => [d.decision, d.reason_codes, d.allowed]))
+        .toEqual([['ALLOW', ['SMALL_AMOUNT'], true], ['ALLOW', ['SMALL_AMOUNT'], true]]);
     });
   });
 
@@ -415,13 +352,14 @@ describe('HIITL Client', () => {
       const tempPolicyPath = path.join(FIXTURES_DIR, 'rate_limit_policy.json');
       const ratePolicy = {
         name: 'rate-limit-policy',
-        version: '1.0',
+        version: 'v1.0.0',
+        description: 'Apply rate limiting when enabled',
+        scope: { org_id: 'org_devlocal0000000000', environment: 'dev' },
         rules: [
           {
             name: 'allow-all',
             description: 'Allow all',
             priority: 100,
-            enabled: true,
             decision: 'ALLOW',
             reason_code: 'OK',
             conditions: {

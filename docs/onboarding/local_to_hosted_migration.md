@@ -14,32 +14,32 @@ How to migrate from local evaluation to hosted evaluation with the ECP server.
 - Multi-instance deployments
 - Persistent rate limiting across instances
 - Centralized audit log (PostgreSQL)
-- Team collaboration (UI, webhooks, alerts)
+- Team collaboration (dashboard)
 - Compliance audit trail
 
 ## How Mode Detection Works
 
-The SDK automatically determines evaluation mode based on which parameters you provide:
+The SDK determines evaluation mode from its resolved settings: a constructor argument, else its `HIITL_*` environment variable (see [Step 6](#step-6-update-environment-variables)). Both SDKs use the same table.
 
-| Parameters Provided | Evaluation Mode | Description |
-|---------------------|-----------------|-------------|
-| `policy_path` only (no `api_key`) | **Local** | In-process evaluation against local policy files |
-| `api_key` + `server_url` | **Hosted** | Evaluation delegated to the ECP server |
-| `api_key` only (no `server_url`) | **Hybrid** | Local evaluation now, sync support in a future release |
-| `api_key` + `server_url` + `sync=False` | **Local (forced)** | Local evaluation even with credentials present |
+| Settings | Evaluation Mode | Description |
+|----------|-----------------|-------------|
+| no `api_key` | **Local** | In-process evaluation against local policy files |
+| `api_key` + `server_url` + remote evaluation | **Hosted** | Evaluation delegated to the hosted service |
+| `api_key` (with or without `server_url`) | **Hybrid** | In-process evaluation against policies synced from the hosted service |
+| `api_key` + `sync` false | **Local (forced)** | Local evaluation even with a key at hand |
 
-There is no explicit `mode` parameter. The SDK infers the right behavior from your configuration.
+The switch for hosted evaluation is the `evaluation` setting: `"local"` by default, `"remote"` for hosted (`evaluation="remote"` in Python, `evaluation: 'remote'` in TypeScript, or `HIITL_EVALUATION=remote`). In hybrid mode, `server_url` sets the address the SDK syncs with (default `https://api.hiitl.com`).
 
 ## Migration Overview
 
-Migration requires adding two parameters to your constructor. No code changes to your `evaluate()` calls.
+Migration requires adding `api_key`, `server_url` and remote evaluation to your constructor or its environment. Your `evaluate()` calls stay the same; in TypeScript, `await` every call, because hosted and hybrid evaluation return a Promise.
 
 | Component | Local | Hosted | Migration Effort |
 |-----------|-------|--------|------------------|
-| **SDK Code** | `policy_path` only | Add `api_key` + `server_url` | 2 parameters |
-| **Policy** | YAML file | API-managed or file | Low |
+| **SDK Code** | `policy_path` only | Add `api_key` + `server_url` + `evaluation` remote | 3 parameters |
+| **Policy** | YAML file | API-managed | Low |
 | **Audit Log** | SQLite (local) | PostgreSQL (hosted) | Automatic |
-| **Rate Limiting** | In-memory | Redis (hosted) | Automatic |
+| **Rate Limiting** | In-memory | Hosted database (shared) | Automatic |
 | **API Key** | None | Required | Sign up |
 
 **Time required**: 15-30 minutes
@@ -48,17 +48,16 @@ Migration requires adding two parameters to your constructor. No code changes to
 
 ## Step-by-Step Migration
 
-### Step 1: Sign Up for Hosted HIITL
+### Step 1: Sign Up for Hosted hiitl
 
-1. Go to https://hiitl.ai
-2. Create an account
-3. Create an organization
-4. Copy your API key and server URL
+1. Go to https://app.hiitl.com and sign up (your organization is created with your account)
+2. Under **Settings → API Keys**, create a key for the environment you are migrating (`dev`, `stage` or `prod`). A key holds one environment and the scopes you pick: hosted evaluation needs `evaluate`; uploading policies needs `admin`
+3. Copy your API key and org ID
 
 **Environment variables**:
 ```bash
-export HIITL_API_KEY="sk_live_..."
-export HIITL_SERVER_URL="https://api.hiitl.ai"
+export HIITL_API_KEY="sk_prod_..."
+export HIITL_SERVER_URL="https://api.hiitl.com"
 export HIITL_ORG_ID="org_abc123..."  # From dashboard
 ```
 
@@ -75,7 +74,6 @@ from hiitl import HIITL
 hiitl = HIITL(
     environment="dev",
     agent_id="my-agent",
-    org_id="org_local",
     policy_path="./policy.yaml",
     audit_db_path="./hiitl_audit.db",
 )
@@ -87,12 +85,14 @@ import os
 from hiitl import HIITL
 
 hiitl = HIITL(
-    api_key=os.getenv("HIITL_API_KEY"),       # Triggers hosted evaluation
-    server_url=os.getenv("HIITL_SERVER_URL"),  # ECP server endpoint
+    api_key=os.getenv("HIITL_API_KEY"),
+    server_url=os.getenv("HIITL_SERVER_URL"),  # Hosted service endpoint
+    evaluation="remote",                       # Triggers hosted evaluation
+    signature_key=os.getenv("HIITL_SIGNATURE_KEY"),  # the API key's signing secret, shown when the key was created
     environment="prod",  # Or "dev"/"stage"
     agent_id="my-agent",
     org_id=os.getenv("HIITL_ORG_ID"),  # Real org ID from dashboard
-    # No policy_path needed - managed via API/dashboard
+    # No policy_path needed - managed via the API
     # No audit_db_path needed - managed by hosted service
 )
 ```
@@ -105,10 +105,9 @@ import { HIITL } from '@hiitl/sdk';
 
 const hiitl = new HIITL({
   environment: 'dev',
-  agentId: 'my-agent',
-  orgId: 'org_local',
-  policyPath: './policy.yaml',
-  auditDbPath: './hiitl_audit.db',
+  agent_id: 'my-agent',
+  policy_path: './policy.yaml',
+  audit_db_path: './hiitl_audit.db',
 });
 ```
 
@@ -117,34 +116,34 @@ const hiitl = new HIITL({
 import { HIITL } from '@hiitl/sdk';
 
 const hiitl = new HIITL({
-  apiKey: process.env.HIITL_API_KEY,       // Triggers hosted evaluation
-  serverUrl: process.env.HIITL_SERVER_URL, // ECP server endpoint
+  api_key: process.env.HIITL_API_KEY,
+  server_url: process.env.HIITL_SERVER_URL, // Hosted service endpoint
+  signature_key: process.env.HIITL_SIGNATURE_KEY, // the API key's signing secret, shown when the key was created
+  evaluation: 'remote',                     // Triggers hosted evaluation
   environment: 'prod',  // Or 'dev'/'stage'
-  agentId: 'my-agent',
-  orgId: process.env.HIITL_ORG_ID,  // Real org ID from dashboard
-  // No policyPath needed - managed via API/dashboard
-  // No auditDbPath needed - managed by hosted service
+  agent_id: 'my-agent',
+  org_id: process.env.HIITL_ORG_ID,  // Real org ID from dashboard
+  // No policy_path needed - managed via the API
+  // No audit_db_path needed - managed by hosted service
 });
 ```
 
-**That's it!** Your `evaluate()` calls stay exactly the same. The SDK detects hosted mode automatically from the presence of `api_key` and `server_url`.
+Hosted mode in TypeScript requires `environment`, `agent_id` and `org_id`.
+
+**That's it!** Your `evaluate()` calls stay the same (in TypeScript, make sure each one is awaited). Python selects hosted mode from `api_key` with `evaluation="remote"` (and needs `server_url`); TypeScript selects it from `api_key` with `server_url`. Leave out `evaluation="remote"` (Python) or `server_url` (TypeScript) and the SDK runs in hybrid mode instead: see Option C below.
 
 ---
 
 ### Step 3: Upload Your Policy
 
-#### Option A: Upload via Dashboard (Easiest)
+#### Option A: Dashboard
 
-1. Log in to https://hiitl.ai
-2. Navigate to **Policies**
-3. Click **Create Policy**
-4. Paste your YAML file contents
-5. Click **Save**
+The dashboard's **Policies** page (https://app.hiitl.com) lists the policies you have uploaded. It does not create them: upload through the API (Option B).
 
 #### Option B: Upload via API
 
 ```bash
-curl -X POST https://api.hiitl.ai/v1/policies \
+curl -X POST https://api.hiitl.com/v1/policies \
   -H "Authorization: Bearer $HIITL_API_KEY" \
   -H "Content-Type: application/json" \
   -d @- <<EOF
@@ -162,52 +161,83 @@ curl -X POST https://api.hiitl.ai/v1/policies \
 EOF
 ```
 
-#### Option C: Hybrid Mode (Keep Local Policy File)
+The body is JSON, so convert your YAML file first. The upload needs a key with the `admin` scope, and its change record names that key; for hosted evaluation, give your agents a separate `evaluate` key. `scope.org_id` and `scope.environment` must be the key's own organization and environment, or the upload is refused with `400 POLICY_VALIDATION_ERROR`. Each upload becomes the active policy for that organization and environment.
 
-If you want hosted connectivity but still load policies from a file, provide both `api_key` and `policy_path`:
+#### Option C: Hybrid Mode (Keep Evaluating In-Process)
+
+With an `api_key` and no hosted switch (no `evaluation="remote"` in Python, no `server_url` in TypeScript), the SDK runs in hybrid mode: it evaluates in-process against policies it syncs from the hosted service. A `policy_path` is a fallback, not an override:
 
 ```python
 hiitl = HIITL(
     api_key=os.getenv("HIITL_API_KEY"),
-    server_url=os.getenv("HIITL_SERVER_URL"),
-    policy_path="./policy.yaml",  # Local file takes precedence
+    policy_path="./policy.yaml",  # Fallback while no synced policy is available
     ...
 )
 ```
 
+- **Policy source**: a synced policy takes precedence. Python reads the file only when the first sync fails and there is no cached policy on disk; TypeScript reads it whenever the cache holds no policy.
+- **What syncs**: the SDK pulls policies and routes (every 300 seconds by default) and uploads the not-yet-uploaded records in its current audit file (every 30 seconds by default). The Python SDK also uploads telemetry; the TypeScript SDK does not.
+- **Cache**: synced policies are kept on disk in `cache_dir` (default `~/.hiitl/cache/`), so a restart evaluates from the cache before its first sync.
+- **Cold start**: with no cache and no fallback file, if the first sync fails or times out, `cold_start_behavior` decides: `"warn-and-observe"` (default) logs a warning and carries on with no policy until a sync succeeds (under the default `OBSERVE_ALL` mode, every action is observed), `"observe-silent"` does the same without the warning, and `"fail-closed"` raises `ColdStartError` (Python from the constructor, TypeScript from the first `evaluate()`).
+- **Rate limits**: counted in memory, per process, as in local mode.
+
 **Trade-off**:
-- Dashboard/API: Centralized, versioned, team collaboration
+- API: Centralized, versioned, team collaboration
 - File: Simple, no network dependency, works offline
 
 ---
 
 ### Step 4: Update Policy Scope
 
-**Important**: Change `org_id` from `"org_local"` to your real org ID.
+**Important**: A policy you upload must name your real org ID and the environment of the key you upload it with. Every set names a well-formed scope (an `org_id` in the envelope's form, `org_` and 16 or more letters and digits, and one of `dev`, `stage`, `prod`); the local SDK does not compare it with the call, so in a local file the SDK's own default org, `org_devlocal0000000000`, will do.
 
 **Before** (`policy.yaml` for local evaluation):
 ```yaml
 policy_set:
+  name: "payments-policy"
+  version: "v1.0.0"
+  description: "Payment controls"
   scope:
-    org_id: "org_local"  # Local testing value
+    org_id: "org_devlocal0000000000"  # Local testing value
     environment: "dev"
-  rules: [...]
+  rules:
+    - name: "allow-payments"
+      description: "Payments proceed"
+      priority: 100
+      conditions:
+        field: "action"
+        operator: "equals"
+        value: "process_payment"
+      decision: "ALLOW"
+      reason_code: "PAYMENT_ALLOWED"
 ```
 
 **After** (for hosted evaluation):
 ```yaml
 policy_set:
+  name: "payments-policy"
+  version: "v1.0.0"
+  description: "Payment controls"
   scope:
-    org_id: "org_abc123..."  # Real org ID from dashboard
+    org_id: "org_8f3a2c1d9e7b4a60"  # Real org ID from dashboard
     environment: "prod"  # Or "dev"/"stage"
-  rules: [...]
+  rules:
+    - name: "allow-payments"
+      description: "Payments proceed"
+      priority: 100
+      conditions:
+        field: "action"
+        operator: "equals"
+        value: "process_payment"
+      decision: "ALLOW"
+      reason_code: "PAYMENT_ALLOWED"
 ```
 
 ---
 
-### Step 5: Migrate Audit Logs (Optional)
+### Step 5: Keep Your Local Audit Logs (Optional)
 
-If you need historical audit records in hosted mode:
+If you need the audit records from before the migration:
 
 #### Export from SQLite
 
@@ -220,49 +250,38 @@ SELECT * FROM audit_log;
 EOF
 ```
 
-#### Import to Hosted (via API)
+#### Archive the Export
 
-```python
-import json
-import requests
+The hosted service has no endpoint for importing audit records. Keep `audit_export.json` (or the SQLite file itself) as the record of your local period. From the migration on, hosted evaluation records each decision in the hosted audit log, and a hybrid-mode SDK uploads the records it writes.
 
-with open('audit_export.json') as f:
-    records = json.load(f)
-
-for record in records:
-    requests.post(
-        'https://api.hiitl.ai/v1/audit/import',
-        headers={'Authorization': f'Bearer {api_key}'},
-        json=record
-    )
-```
-
-**Note**: This is optional. Most use cases don't need historical data migrated.
+**Note**: This is optional. Most use cases don't need the historical data.
 
 ---
 
 ### Step 6: Update Environment Variables
 
-The SDK auto-detects evaluation mode from the environment. If `HIITL_API_KEY` and `HIITL_SERVER_URL` are both set, hosted evaluation is used. If neither is set, local evaluation is used.
+Both SDKs read their settings from `HIITL_*` variables when the constructor leaves them unset, and the mode follows: `HIITL_API_KEY` alone is hybrid mode, and with `HIITL_SERVER_URL` and `HIITL_EVALUATION=remote` it is hosted. Set the variables per deployment and the same constructor serves each one (see [Mixed-Environment Deployment](#mixed-environment-deployment)).
 
 **Development** (`.env.dev`):
 ```bash
-# No HIITL_API_KEY or HIITL_SERVER_URL - local evaluation is used automatically
+# No HIITL_API_KEY - evaluation is local
 HIITL_ENVIRONMENT=dev
 ```
 
 **Staging** (`.env.stage`):
 ```bash
-HIITL_API_KEY=sk_stage_...
-HIITL_SERVER_URL=https://api.hiitl.ai
+HIITL_API_KEY=sk_stag_...
+HIITL_SERVER_URL=https://api.hiitl.com
+HIITL_EVALUATION=remote
 HIITL_ORG_ID=org_abc123...
 HIITL_ENVIRONMENT=stage
 ```
 
 **Production** (`.env.prod` or secrets manager):
 ```bash
-HIITL_API_KEY=sk_live_...
-HIITL_SERVER_URL=https://api.hiitl.ai
+HIITL_API_KEY=sk_prod_...
+HIITL_SERVER_URL=https://api.hiitl.com
+HIITL_EVALUATION=remote
 HIITL_ORG_ID=org_abc123...
 HIITL_ENVIRONMENT=prod
 ```
@@ -273,8 +292,8 @@ HIITL_ENVIRONMENT=prod
 
 Before deploying to production:
 
-1. Create a `stage` environment policy in dashboard
-2. Set staging env vars with `HIITL_API_KEY` and `HIITL_SERVER_URL`
+1. Upload a `stage` policy with a `stage` key (Step 3, Option B)
+2. Set staging env vars with `HIITL_API_KEY`, `HIITL_SERVER_URL` and `HIITL_EVALUATION=remote`
 3. Run integration tests
 4. Verify audit logs appear in dashboard
 5. Check rate limiting works across instances
@@ -284,13 +303,15 @@ Before deploying to production:
 hiitl = HIITL(
     api_key=os.getenv("HIITL_API_KEY"),
     server_url=os.getenv("HIITL_SERVER_URL"),
+    evaluation="remote",
+    signature_key=os.getenv("HIITL_SIGNATURE_KEY"),  # the API key's signing secret, shown when the key was created
     environment="stage",
     agent_id="my-agent",
     org_id=os.getenv("HIITL_ORG_ID"),
 )
 
 decision = hiitl.evaluate(
-    tool="test_action",
+    "test_action",
     operation="execute",
     target={"test_id": "migration_test"},
     parameters={"test": True}
@@ -304,11 +325,10 @@ print("Hosted evaluation working!")
 
 ### Step 8: Deploy to Production
 
-1. Update production environment variables (add `HIITL_API_KEY` and `HIITL_SERVER_URL`)
+1. Update production environment variables (add `HIITL_API_KEY`, `HIITL_SERVER_URL` and `HIITL_EVALUATION=remote`)
 2. Deploy code (no code changes needed if you used env vars)
 3. Monitor latency (expect < 50ms vs < 10ms for local)
 4. Verify audit logs in dashboard
-5. Set up alerts (dashboard -> Alerts -> Create)
 
 ---
 
@@ -328,7 +348,8 @@ print("Hosted evaluation working!")
 | Evaluation Mode | Persistence | Coordination |
 |-----------------|-------------|--------------|
 | **Local** | In-memory (lost on restart) | Per-instance (not shared) |
-| **Hosted** | Redis (persistent) | Shared across instances |
+| **Hybrid** | In-memory (lost on restart) | Per-instance (not shared) |
+| **Hosted** | Hosted database (persistent) | Shared across instances |
 
 **Example**:
 ```python
@@ -354,8 +375,10 @@ print("Hosted evaluation working!")
 
 | Evaluation Mode | Update Process | Versioning | Collaboration |
 |-----------------|----------------|------------|---------------|
-| **Local** | Edit file, restart app | Git | File-based |
-| **Hosted** | Dashboard/API (instant) | Built-in | Team UI |
+| **Local** | Edit file (picked up on the next call) | Git | File-based |
+| **Hosted** | API upload | Built-in | Dashboard (view) |
+
+Hosted evaluation uses a newly uploaded policy from the next call. A hybrid-mode SDK picks it up at its next policy sync (every 300 seconds by default).
 
 ---
 
@@ -363,7 +386,7 @@ print("Hosted evaluation working!")
 
 If you need to rollback to local evaluation:
 
-1. Remove `api_key` and `server_url` from your constructor (or unset `HIITL_API_KEY` and `HIITL_SERVER_URL` env vars)
+1. Remove `api_key` and `server_url` from your constructor (or, if your code passes them from environment variables, unset `HIITL_API_KEY` and `HIITL_SERVER_URL`)
 2. Add back `policy_path` (and `audit_db_path` if needed)
 3. Re-deploy
 
@@ -372,7 +395,6 @@ If you need to rollback to local evaluation:
 hiitl = HIITL(
     environment="dev",
     agent_id="my-agent",
-    org_id="org_local",
     policy_path="./policy.yaml",
     audit_db_path="./hiitl_audit.db",
 )
@@ -384,55 +406,44 @@ hiitl = HIITL(
 
 ## Mixed-Environment Deployment
 
-You can run local evaluation in some environments and hosted in others. The SDK auto-detects based on which environment variables are present:
+You can run local evaluation in some environments and hosted in others. The SDK reads `HIITL_API_KEY`, `HIITL_SERVER_URL`, `HIITL_EVALUATION`, `HIITL_SIGNATURE_KEY`, `HIITL_ENVIRONMENT` and `HIITL_ORG_ID` itself when the constructor leaves them unset, so the constructor names only what is the same everywhere:
 
 ```python
-import os
 from hiitl import HIITL
 
-# The SDK auto-detects the evaluation mode:
-# - If HIITL_API_KEY and HIITL_SERVER_URL are set: hosted evaluation
-# - If neither is set: local evaluation (requires policy_path)
+# - HIITL_API_KEY, HIITL_SERVER_URL, HIITL_SIGNATURE_KEY and HIITL_EVALUATION=remote set: hosted evaluation
+# - none of them set: local evaluation (requires policy_path)
 hiitl = HIITL(
-    api_key=os.getenv("HIITL_API_KEY"),          # None in dev = local evaluation
-    server_url=os.getenv("HIITL_SERVER_URL"),     # None in dev = local evaluation
-    environment=os.getenv("HIITL_ENVIRONMENT", "dev"),
     agent_id="my-agent",
-    org_id=os.getenv("HIITL_ORG_ID", "org_local"),
     policy_path="./policy.yaml",  # Used for local; ignored when hosted
+    mode="RESPECT_POLICY",
 )
 ```
 
 ```typescript
 import { HIITL } from '@hiitl/sdk';
 
-// Same auto-detection in TypeScript
 const hiitl = new HIITL({
-  apiKey: process.env.HIITL_API_KEY,            // undefined in dev = local evaluation
-  serverUrl: process.env.HIITL_SERVER_URL,      // undefined in dev = local evaluation
-  environment: process.env.HIITL_ENVIRONMENT ?? 'dev',
-  agentId: 'my-agent',
-  orgId: process.env.HIITL_ORG_ID ?? 'org_local',
-  policyPath: './policy.yaml',  // Used for local; ignored when hosted
+  agent_id: 'my-agent',
+  policy_path: './policy.yaml',  // Used for local; ignored when hosted
+  mode: 'RESPECT_POLICY',
 });
 ```
 
-No branching logic required. The same constructor works for both modes -- just set the right environment variables per deployment target.
+The same constructor works for both modes: set the right environment variables per deployment target.
 
 ### Forcing Local Evaluation
 
-If you have `api_key` and `server_url` set but want to force local evaluation (e.g., for testing), use `sync=False`:
+If you have a key at hand but want local evaluation (e.g., for testing), pass `sync=False` (Python) or `sync: false` (TypeScript), or set `HIITL_SYNC=false`; the key is kept and nothing connects:
 
-```python
-hiitl = HIITL(
-    api_key=os.getenv("HIITL_API_KEY"),
-    server_url=os.getenv("HIITL_SERVER_URL"),
-    sync=False,  # Forces local evaluation even with credentials present
-    environment="dev",
-    agent_id="my-agent",
-    org_id=os.getenv("HIITL_ORG_ID"),
-    policy_path="./policy.yaml",
-)
+```typescript
+const hiitl = new HIITL({
+  api_key: process.env.HIITL_API_KEY,
+  sync: false,  // Forces local evaluation even with a key present
+  environment: 'dev',
+  agent_id: 'my-agent',
+  policy_path: './policy.yaml',
+});
 ```
 
 ---
@@ -445,11 +456,11 @@ hiitl = HIITL(
 - **Scaling**: Horizontal (more instances = more cost)
 
 ### Hosted Evaluation
-- **Infrastructure**: Managed by HIITL
+- **Infrastructure**: Managed by hiitl
 - **Cost**: Usage-based pricing (per evaluation)
-- **Scaling**: Automatic (managed by HIITL)
+- **Scaling**: Automatic (managed by hiitl)
 
-**See**: https://hiitl.ai/pricing for current hosted pricing
+**See**: https://hiitl.com/pricing for current hosted pricing
 
 ---
 
@@ -459,28 +470,28 @@ hiitl = HIITL(
 
 **Symptoms**:
 ```
-ConfigurationError: Invalid API key
+ServerError: ECP server error (401): [UNKNOWN_ERROR] Invalid or inactive API key
 ```
 
 **Solution**:
 1. Verify API key is correct: `echo $HIITL_API_KEY`
-2. Check key format: `sk_live_...` or `sk_dev_...`
+2. Check key format: `sk_dev_...`, `sk_stag_...` or `sk_prod_...`
 3. Ensure key is for correct environment
 
 ### "Policy not found" Error
 
-**Symptoms**:
+**Symptoms**: `evaluate()` returns `POLICY_ERROR` with reason code `POLICY_NOT_FOUND`, and `error.message` reads:
 ```
-PolicyLoadError: No policy found for org_id=..., environment=...
+No active policy found for org_id=..., environment=.... Create a policy via POST /v1/policies before evaluating envelopes.
 ```
 
 **Solution**:
 1. Verify policy exists in dashboard
-2. Check policy scope matches SDK config:
+2. The hosted service evaluates against the active policy for the API key's organization and environment (not the `org_id` and `environment` passed to the SDK). Upload the policy with a key for that environment (Step 3, Option B):
    ```yaml
    scope:
-     org_id: "org_abc123"  # Must match SDK org_id
-     environment: "prod"    # Must match SDK environment
+     org_id: "org_8f3a2c1d9e7b4a60"  # Must be the API key's org
+     environment: "prod"    # Must be the API key's environment
    ```
 
 ### High Latency (> 100ms)
@@ -492,7 +503,7 @@ PolicyLoadError: No policy found for org_id=..., environment=...
 **Solutions**:
 1. Check network latency to API:
    ```bash
-   curl -w "@-" -o /dev/null -s https://api.hiitl.ai/health <<< "
+   curl -w "@-" -o /dev/null -s https://api.hiitl.com/health <<< "
    time_total: %{time_total}s\n"
    ```
 2. Ensure using correct API region (coming soon: multi-region)
@@ -505,7 +516,7 @@ PolicyLoadError: No policy found for org_id=..., environment=...
 - Each instance has separate counters
 
 **Solution**:
-- Verify both `HIITL_API_KEY` and `HIITL_SERVER_URL` are set (so the SDK uses hosted evaluation)
+- Verify the SDK is in hosted mode (`hiitl.mode` is `"hosted"`): pass `api_key` and `server_url` (and, in Python, `evaluation="remote"`). Hybrid mode counts in memory, per process
 - Check dashboard shows activity from all instances
 
 ---
@@ -514,18 +525,18 @@ PolicyLoadError: No policy found for org_id=..., environment=...
 
 ### Pre-Migration
 
-- [ ] Sign up for HIITL hosted account
-- [ ] Create organization
+- [ ] Sign up for hiitl hosted account
+- [ ] Create API keys (an `evaluate` key per environment; an `admin` key for policy uploads)
 - [ ] Copy API key and server URL to secrets manager
-- [ ] Upload policy to dashboard
+- [ ] Upload policy through the API
 - [ ] Test in staging environment
 
 ### Code Changes
 
-- [ ] Add `api_key` parameter (or set `HIITL_API_KEY` env var)
-- [ ] Add `server_url` parameter (or set `HIITL_SERVER_URL` env var)
-- [ ] Change `org_id` from `"org_local"` to real org ID
-- [ ] Remove `policy_path` (if using dashboard-managed policies)
+- [ ] Add `api_key` parameter (read from `HIITL_API_KEY` in your code)
+- [ ] Add `server_url` parameter (read from `HIITL_SERVER_URL` in your code) and, in Python, `evaluation="remote"`
+- [ ] Set `org_id` to your real org ID
+- [ ] Remove `policy_path` (if using API-managed policies)
 - [ ] Remove `audit_db_path`
 
 ### Deployment
@@ -536,14 +547,12 @@ PolicyLoadError: No policy found for org_id=..., environment=...
 - [ ] Verify audit logs in dashboard
 - [ ] Deploy to production
 - [ ] Monitor latency and errors
-- [ ] Set up alerts in dashboard
 
 ### Post-Migration
 
 - [ ] Archive local SQLite audit logs (optional)
-- [ ] Document new policy update process (dashboard vs Git)
+- [ ] Document new policy update process (API upload vs Git)
 - [ ] Train team on dashboard features
-- [ ] Set up webhooks for critical events
 
 ---
 
@@ -551,8 +560,8 @@ PolicyLoadError: No policy found for org_id=..., environment=...
 
 **Migration is straightforward**:
 1. Sign up for hosted account
-2. Add `api_key` and `server_url` to your constructor
-3. Upload policy to dashboard (or keep local file for hybrid)
+2. Add `api_key` and `server_url` to your constructor (and, in Python, `evaluation="remote"`)
+3. Upload policy through the API (or run hybrid mode with a local fallback file)
 4. Deploy
 
 **Total time**: 15-30 minutes
@@ -566,4 +575,4 @@ PolicyLoadError: No policy found for org_id=..., environment=...
 - [TypeScript Quickstart](quickstart_typescript.md)
 - [Troubleshooting Guide](troubleshooting.md)
 - [Performance Tuning Guide](performance.md)
-- [HIITL Hosted Documentation](https://docs.hiitl.ai/hosted)
+- [Deployment modes](../../docs-site/concepts/deployment-modes.mdx)

@@ -5,6 +5,10 @@ description: "Practical policy examples for common scenarios"
 
 Copy-paste policy patterns for common scenarios. Customize thresholds and deploy.
 
+Load a policy with `HIITL(policy_path="policy.yaml", mode="RESPECT_POLICY")` to enforce it. Under `RESPECT_POLICY`, an action no rule matches is blocked with `NO_MATCHING_RULE`, so a policy needs `ALLOW` rules for the calls that should proceed. Under the default mode, `OBSERVE_ALL`, a decision other than `ALLOW` or `SANDBOX` comes back as `OBSERVE`, with the rule's decision in `would_be`.
+
+Every rule needs a `description`. A rule is active unless its `lifecycle_stage` says otherwise (`disabled`, for example).
+
 ## Payment approval workflows
 
 ### Simple amount threshold
@@ -12,9 +16,15 @@ Copy-paste policy patterns for common scenarios. Customize thresholds and deploy
 Require approval for payments over $500. Auto-approve below.
 
 ```yaml
+name: "payments"
+version: "v1.0.0"
+description: "Simple amount threshold"
+scope:
+  org_id: "org_devlocal0000000000"
+  environment: "dev"
 rules:
   - name: "require-approval-high-value"
-    enabled: true
+    description: "Require finance approval for payments over $500"
     priority: 100
     conditions:
       all_of:
@@ -31,7 +41,7 @@ rules:
       reviewer_role: "finance_approver"
 
   - name: "allow-low-value-payments"
-    enabled: true
+    description: "Allow payments up to $500"
     priority: 1
     conditions:
       all_of:
@@ -47,9 +57,15 @@ rules:
 Different reviewers at different amounts.
 
 ```yaml
+name: "payments-tiered"
+version: "v1.0.0"
+description: "Tiered approval thresholds"
+scope:
+  org_id: "org_devlocal0000000000"
+  environment: "dev"
 rules:
   - name: "executive-approval"
-    enabled: true
+    description: "Require CFO approval for payments over $10,000"
     priority: 200
     conditions:
       all_of:
@@ -66,7 +82,7 @@ rules:
       reviewer_role: "cfo"
 
   - name: "manager-approval"
-    enabled: true
+    description: "Require finance manager approval for payments over $1,000"
     priority: 150
     conditions:
       all_of:
@@ -83,7 +99,7 @@ rules:
       reviewer_role: "finance_manager"
 
   - name: "allow-small-payments"
-    enabled: true
+    description: "Allow payments up to $1,000"
     priority: 1
     conditions:
       all_of:
@@ -98,7 +114,7 @@ rules:
 
 ## Rate limiting
 
-Rate limits are configured at the **policy-set level** via `metadata.rate_limits`, not as individual rules. They apply post-evaluation to ALLOW decisions only.
+A rate limit is a windowed `RATE_LIMIT` rule: `decision: "RATE_LIMIT"` with `rate_limit: {limit, window_seconds, scope}`. A policy set's `metadata.rate_limits` is a shorthand that is compiled to such rules when the policy loads; each entry applies to every action the set evaluates. Either way, the limiter runs after evaluation and counts only calls that come back `ALLOW`, in either mode. The call past the limit comes back `RATE_LIMIT` with `allowed` false.
 
 ### Per-agent rate limit
 
@@ -106,9 +122,10 @@ Rate limits are configured at the **policy-set level** via `metadata.rate_limits
 policy_set:
   name: "agent-rate-limited"
   version: "v1.0.0"
+  description: "Per-agent rate limit"
   scope:
-    org_id: "org_abc123def456ghi7"
-    environment: "prod"
+    org_id: "org_devlocal0000000000"
+    environment: "dev"
 
   metadata:
     rate_limits:
@@ -118,7 +135,7 @@ policy_set:
 
   rules:
     - name: "allow-payments"
-      enabled: true
+      description: "Allow payments"
       priority: 1
       conditions:
         all_of:
@@ -129,7 +146,42 @@ policy_set:
       reason_code: "PAYMENT_ALLOWED"
 ```
 
-When an action is ALLOW'd by the rules, the rate limiter checks if the agent has exceeded 100 actions in the current hour. If so, the decision is overridden to `RATE_LIMIT`.
+When an action is ALLOW'd by the rules, the rate limiter checks whether the agent already has 100 allowed actions in the last hour. If so, the decision is overridden to `RATE_LIMIT`.
+
+The same limit as a rule, which can also carry conditions of its own:
+
+```yaml
+name: "agent-rate-limited"
+version: "v1.0.0"
+description: "Per-agent rate limit"
+scope:
+  org_id: "org_devlocal0000000000"
+  environment: "dev"
+rules:
+  - name: "rate-limit-payments-per-agent"
+    description: "Allow each agent 100 payments per hour"
+    priority: 100
+    conditions:
+      field: "action"
+      operator: "equals"
+      value: "process_payment"
+    decision: "RATE_LIMIT"
+    reason_code: "PAYMENT_RATE_LIMIT"
+    rate_limit:
+      limit: 100
+      window_seconds: 3600
+      scope: "agent"
+
+  - name: "allow-payments"
+    description: "Allow payments"
+    priority: 1
+    conditions:
+      field: "action"
+      operator: "equals"
+      value: "process_payment"
+    decision: "ALLOW"
+    reason_code: "PAYMENT_ALLOWED"
+```
 
 ### Multiple simultaneous limits
 
@@ -150,13 +202,14 @@ metadata:
 
 ## Kill switches
 
-Kill switches are regular policy rules with `decision: "KILL_SWITCH"` and `priority: 1000`. Set `enabled: false` by default and toggle to `true` during incidents.
+Kill switches are regular policy rules with `decision: "KILL_SWITCH"`. A matching active kill switch wins over every other decision, whatever its priority. Set `lifecycle_stage: disabled` by default and set it to `active` during incidents. Add these rules to a policy's `rules:` list.
 
 ### Emergency payment stop
 
 ```yaml
 - name: "kill-switch-all-payments"
-  enabled: false
+  description: "Stop all payments during an incident"
+  lifecycle_stage: disabled
   priority: 1000
   conditions:
     all_of:
@@ -171,7 +224,8 @@ Kill switches are regular policy rules with `decision: "KILL_SWITCH"` and `prior
 
 ```yaml
 - name: "kill-switch-agent-123"
-  enabled: false
+  description: "Stop every action from agent-123"
+  lifecycle_stage: disabled
   priority: 1000
   conditions:
     all_of:
@@ -188,11 +242,13 @@ See the [Kill Switch Runbook](/patterns/kill-switch-runbook) for operational pro
 
 ## Permission escalation
 
-### Block admin grants
+Add these rules to a policy's `rules:` list.
+
+### Require approval for admin grants
 
 ```yaml
 - name: "require-approval-admin-grants"
-  enabled: true
+  description: "Require security team approval for admin-level grants"
   priority: 200
   conditions:
     all_of:
@@ -213,7 +269,7 @@ See the [Kill Switch Runbook](/patterns/kill-switch-runbook) for operational pro
 
 ```yaml
 - name: "block-pii-from-untrusted-agents"
-  enabled: true
+  description: "Block actions on PII from agents outside the trusted list"
   priority: 900
   conditions:
     all_of:
@@ -231,12 +287,14 @@ See the [Kill Switch Runbook](/patterns/kill-switch-runbook) for operational pro
 
 ## Environment-based controls
 
+Add these rules to a policy's `rules:` list.
+
 ### Sandbox everything in dev
 
 ```yaml
 - name: "sandbox-all-in-dev"
-  enabled: true
-  priority: 10
+  description: "Sandbox every action in dev"
+  priority: 800
   conditions:
     all_of:
       - field: "environment"
@@ -246,11 +304,13 @@ See the [Kill Switch Runbook](/patterns/kill-switch-runbook) for operational pro
   reason_code: "DEV_ENVIRONMENT_SANDBOX"
 ```
 
+Its priority puts it above the approval and allow rules in this cookbook. `BLOCK` and `KILL_SWITCH` rules still win in dev.
+
 ### Block irreversible actions in dev
 
 ```yaml
 - name: "block-irreversible-in-dev"
-  enabled: true
+  description: "Block irreversible actions in dev"
   priority: 900
   conditions:
     all_of:
@@ -274,9 +334,10 @@ A complete payment policy with all layers.
 policy_set:
   name: "comprehensive-payment-policy"
   version: "v2.0.0"
+  description: "Comprehensive example"
   scope:
-    org_id: "org_abc123def456ghi7"
-    environment: "prod"
+    org_id: "org_devlocal0000000000"
+    environment: "dev"
 
   metadata:
     rate_limits:
@@ -287,7 +348,8 @@ policy_set:
   rules:
     # Layer 1: Kill switch (priority 1000)
     - name: "kill-switch-all-payments"
-      enabled: false
+      description: "Stop all payments during an incident"
+      lifecycle_stage: disabled
       priority: 1000
       conditions:
         all_of:
@@ -299,7 +361,7 @@ policy_set:
 
     # Layer 2: Block suspended agents (priority 900)
     - name: "block-suspended-agents"
-      enabled: true
+      description: "Block payments from suspended agents"
       priority: 900
       conditions:
         all_of:
@@ -308,13 +370,13 @@ policy_set:
             value: "process_payment"
           - field: "agent_id"
             operator: "in"
-            value: []
+            value: []   # add the IDs of suspended agents
       decision: "BLOCK"
       reason_code: "AGENT_SUSPENDED"
 
     # Layer 3: Approval for high-value (priority 100)
     - name: "require-approval-high-value"
-      enabled: true
+      description: "Require finance approval for payments over $1,000"
       priority: 100
       conditions:
         all_of:
@@ -332,7 +394,7 @@ policy_set:
 
     # Layer 4: Default allow (priority 1)
     - name: "allow-standard-payments"
-      enabled: true
+      description: "Allow payments up to $1,000"
       priority: 1
       conditions:
         all_of:
@@ -343,7 +405,7 @@ policy_set:
       reason_code: "STANDARD_PAYMENT"
 ```
 
-Rules evaluate top-to-bottom by priority: kill switch, then blocks, then approvals, then allow. Only ALLOW decisions are checked against rate limits.
+Precedence is deny-wins: an active kill switch first, then blocks, then the other rules by priority (here the approval, then the allow). Only ALLOW decisions are counted against rate limits.
 
 ---
 
@@ -356,8 +418,10 @@ Rules evaluate top-to-bottom by priority: kill switch, then blocks, then approva
 | 100 - 399 | Threshold checks | Amount limits, approval workflows |
 | 1 - 99 | Allow rules | Default allow, standard operations |
 
+A matching kill switch or `BLOCK` rule wins over every other decision whatever its priority; priority orders rules within each class. These ranges keep a policy readable.
+
 <Note>
-Rate limiting is configured at the policy-set level via `metadata.rate_limits`, not as individual rules with priorities.
+A windowed `RATE_LIMIT` rule meters calls rather than deciding them, so its priority does not compete with the rules above. `metadata.rate_limits` compiles to such rules.
 </Note>
 
 ## Policy deployment workflow

@@ -1,0 +1,305 @@
+{
+  "source": "988ca711",
+  "source_manifest_sha256": "2202c9a6bfaad2b1a64781b1e6bcc891de423dcece29c968c63da753ffd4cb9e",
+  "measurement_driver_sha256": "89483fa9259717b6dc50f24ca726a134db4c87be6ff6bd42f4cc651a26011863",
+  "runtime": "3.12.13 (main, Mar  3 2026, 12:39:30) [Clang 21.0.0 (clang-2100.0.123.102)]",
+  "iterations": 1500,
+  "warmup": 200,
+  "rows": [
+    {
+      "shape": "tiny_active",
+      "core": {
+        "p50_ms": 0.018667,
+        "p95_ms": 0.019875,
+        "p99_ms": 0.02370883,
+        "numeric_visits": 36,
+        "admission_roots": 2,
+        "root_paths": [
+          [
+            "envelope"
+          ],
+          [
+            "policy"
+          ]
+        ]
+      },
+      "sdk": {
+        "p50_ms": 0.6520414999999999,
+        "p95_ms": 0.78905415,
+        "p99_ms": 0.88514292,
+        "numeric_visits": 41,
+        "admission_roots": 2,
+        "root_paths": [
+          [],
+          [
+            "policy"
+          ]
+        ]
+      },
+      "sdk_pull": {
+        "p50_ms": 0.759271,
+        "p95_ms": 0.88088925,
+        "p99_ms": 1.01505533,
+        "numeric_visits": 62,
+        "admission_roots": 3,
+        "root_paths": [
+          [],
+          [],
+          [
+            "policy"
+          ]
+        ]
+      },
+      "sdk_disk": {
+        "p50_ms": 0.7658339999999999,
+        "p95_ms": 0.92121425,
+        "p99_ms": 1.058133,
+        "numeric_visits": 62,
+        "admission_roots": 3,
+        "root_paths": [
+          [],
+          [],
+          [
+            "policy"
+          ]
+        ]
+      }
+    },
+    {
+      "shape": "small_active",
+      "core": {
+        "p50_ms": 0.04025,
+        "p95_ms": 0.043377099999999995,
+        "p99_ms": 0.05229974999999999,
+        "numeric_visits": 80,
+        "admission_roots": 2,
+        "root_paths": [
+          [
+            "envelope"
+          ],
+          [
+            "policy"
+          ]
+        ]
+      },
+      "sdk": {
+        "p50_ms": 0.672438,
+        "p95_ms": 0.78865,
+        "p99_ms": 0.8706259199999999,
+        "numeric_visits": 89,
+        "admission_roots": 2,
+        "root_paths": [
+          [],
+          [
+            "policy"
+          ]
+        ]
+      },
+      "sdk_pull": {
+        "p50_ms": 1.0317505,
+        "p95_ms": 1.1428497,
+        "p99_ms": 1.23904667,
+        "numeric_visits": 158,
+        "admission_roots": 3,
+        "root_paths": [
+          [],
+          [],
+          [
+            "policy"
+          ]
+        ]
+      },
+      "sdk_disk": {
+        "p50_ms": 1.0795415,
+        "p95_ms": 1.32813335,
+        "p99_ms": 1.41922617,
+        "numeric_visits": 158,
+        "admission_roots": 3,
+        "root_paths": [
+          [],
+          [],
+          [
+            "policy"
+          ]
+        ]
+      }
+    },
+    {
+      "shape": "medium_with_scope",
+      "core": {
+        "p50_ms": 0.15,
+        "p95_ms": 0.158833,
+        "p99_ms": 0.18021483,
+        "numeric_visits": 345,
+        "admission_roots": 2,
+        "root_paths": [
+          [
+            "envelope"
+          ],
+          [
+            "policy"
+          ]
+        ]
+      },
+      "sdk": {
+        "p50_ms": 0.7541665,
+        "p95_ms": 0.88238955,
+        "p99_ms": 1.01536883,
+        "numeric_visits": 369,
+        "admission_roots": 2,
+        "root_paths": [
+          [],
+          [
+            "policy"
+          ]
+        ]
+      },
+      "sdk_pull": {
+        "p50_ms": 2.6202294999999998,
+        "p95_ms": 2.8438191,
+        "p99_ms": 3.04933983,
+        "numeric_visits": 718,
+        "admission_roots": 3,
+        "root_paths": [
+          [],
+          [],
+          [
+            "policy"
+          ]
+        ]
+      },
+      "sdk_disk": {
+        "p50_ms": 2.6590205,
+        "p95_ms": 3.1155079999999997,
+        "p99_ms": 4.02661491,
+        "numeric_visits": 718,
+        "admission_roots": 3,
+        "root_paths": [
+          [],
+          [],
+          [
+            "policy"
+          ]
+        ]
+      }
+    },
+    {
+      "shape": "medium_with_staged",
+      "core": {
+        "p50_ms": 0.129834,
+        "p95_ms": 0.137125,
+        "p99_ms": 0.15096259,
+        "numeric_visits": 256,
+        "admission_roots": 2,
+        "root_paths": [
+          [
+            "envelope"
+          ],
+          [
+            "policy"
+          ]
+        ]
+      },
+      "sdk": {
+        "p50_ms": 0.8950210000000001,
+        "p95_ms": 1.0188372,
+        "p99_ms": 1.11742699,
+        "numeric_visits": 281,
+        "admission_roots": 2,
+        "root_paths": [
+          [],
+          [
+            "policy"
+          ]
+        ]
+      },
+      "sdk_pull": {
+        "p50_ms": 2.3243954999999996,
+        "p95_ms": 2.53969165,
+        "p99_ms": 2.67516324,
+        "numeric_visits": 542,
+        "admission_roots": 3,
+        "root_paths": [
+          [],
+          [],
+          [
+            "policy"
+          ]
+        ]
+      },
+      "sdk_disk": {
+        "p50_ms": 2.2513335000000003,
+        "p95_ms": 2.4309743499999996,
+        "p99_ms": 2.6381325,
+        "numeric_visits": 542,
+        "admission_roots": 3,
+        "root_paths": [
+          [],
+          [],
+          [
+            "policy"
+          ]
+        ]
+      }
+    },
+    {
+      "shape": "large_with_staged",
+      "core": {
+        "p50_ms": 0.568459,
+        "p95_ms": 0.589125,
+        "p99_ms": 0.6232704099999999,
+        "numeric_visits": 1136,
+        "admission_roots": 2,
+        "root_paths": [
+          [
+            "envelope"
+          ],
+          [
+            "policy"
+          ]
+        ]
+      },
+      "sdk": {
+        "p50_ms": 1.632708,
+        "p95_ms": 1.78905655,
+        "p99_ms": 2.08459542,
+        "numeric_visits": 1241,
+        "admission_roots": 2,
+        "root_paths": [
+          [],
+          [
+            "policy"
+          ]
+        ]
+      },
+      "sdk_pull": {
+        "p50_ms": 7.951562,
+        "p95_ms": 8.62134165,
+        "p99_ms": 12.194109169999994,
+        "numeric_visits": 2462,
+        "admission_roots": 3,
+        "root_paths": [
+          [],
+          [],
+          [
+            "policy"
+          ]
+        ]
+      },
+      "sdk_disk": {
+        "p50_ms": 8.016229500000001,
+        "p95_ms": 8.570081599999998,
+        "p99_ms": 9.01620967,
+        "numeric_visits": 2462,
+        "admission_roots": 3,
+        "root_paths": [
+          [],
+          [],
+          [
+            "policy"
+          ]
+        ]
+      }
+    }
+  ]
+}

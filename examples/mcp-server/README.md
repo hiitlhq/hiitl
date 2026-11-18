@@ -5,9 +5,11 @@ Add hiitl to an MCP (Model Context Protocol) server. Every tool call is evaluate
 ## Run
 
 ```bash
-pip install hiitl mcp
+pip install hiitl
 python server.py
 ```
+
+The tool handlers are simulated, so the example runs without the `mcp` package. It ships no policy file, so it runs in observe mode: every call proceeds and is recorded. To enforce, write a `policy.yaml` with an `ALLOW` rule for each tool call it lets through, and uncomment `policy_path` and `mode` in `server.py`.
 
 ## What this demonstrates
 

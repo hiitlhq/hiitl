@@ -56,13 +56,16 @@ def simulate_agent_actions():
             target=act.get("target", {}),
         )
 
-        status = "OBSERVED"
-        would_be = decision.would_be or "ALLOW (no matching rule)"
+        # With no policy, every call comes back OBSERVE, and would_be is what
+        # enforcement would decide: BLOCK (NO_MATCHING_RULE), because no rule
+        # allows the action yet. A decision that allows the call (ALLOW,
+        # SANDBOX) comes back as itself, with no would_be.
+        would_be = decision.would_be or decision.decision
 
         print(f"{i}. {act['action']}")
-        print(f"   Allowed: {decision.allowed} (always true in OBSERVE mode)")
-        print(f"   Would be: {would_be}")
-        print(f"   Reason codes: {decision.reason_codes}")
+        print(f"   Decision: {decision.decision} (observed: {decision.observed})")
+        print(f"   Allowed: {decision.allowed} (true for every call here: there is no policy yet)")
+        print(f"   Would be: {would_be} {decision.would_be_reason_codes or decision.reason_codes}")
         print()
 
     print("=== Observations ===")
@@ -72,7 +75,7 @@ def simulate_agent_actions():
     print("  - issue_refund > $50 → REQUIRE_APPROVAL (financial control)")
     print("  - query_database → ALLOW (read-only, low risk)")
     print()
-    print("See the payment-agent example for a policy that enforces these rules.")
+    print("See the payment-agent example for a policy that enforces payment and refund rules.")
 
 
 if __name__ == "__main__":

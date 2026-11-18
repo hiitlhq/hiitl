@@ -1,8 +1,8 @@
 {
   "test_id": "test_031_priority_ordering",
-  "description": "Higher priority rule matches first",
+  "description": "A BLOCK (priority 50) and an ALLOW (priority 100) both match: DENY wins (R-0846) \u2014 the BLOCK binds though its priority is lower. Corrected 2026-10-08 from first-match-by-priority (expected ALLOW).",
   "envelope": {
-    "schema_version": "v1.0",
+    "schema_version": "v2.0",
     "org_id": "org_1234567890abcdef",
     "environment": "prod",
     "agent_id": "agent_finance_bot",
@@ -19,13 +19,17 @@
     "action": "transfer_money"
   },
   "policy_set": {
-    "version": "1.0.0",
+    "version": "v1.0.0",
+    "description": "A BLOCK (priority 50) and an ALLOW (priority 100) both match: DENY wins (R-0846) — the BLOCK binds though its priority is lower. Corrected 2026-10-08 from first-match-by-priority (expected ALLOW).",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
     "name": "test_policy",
     "rules": [
       {
         "name": "low_priority_block",
         "priority": 50,
-        "enabled": true,
         "conditions": {
           "field": "parameters.currency",
           "operator": "equals",
@@ -38,7 +42,6 @@
       {
         "name": "high_priority_allow",
         "priority": 100,
-        "enabled": true,
         "conditions": {
           "field": "parameters.amount",
           "operator": "less_than_or_equal",
@@ -51,10 +54,10 @@
     ]
   },
   "expected_decision": {
-    "decision": "ALLOW",
-    "allowed": true,
+    "decision": "BLOCK",
+    "allowed": false,
     "reason_codes": [
-      "HIGH_PRIORITY_RULE"
+      "LOW_PRIORITY_RULE"
     ]
   }
 }

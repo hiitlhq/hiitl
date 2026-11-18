@@ -1,21 +1,22 @@
 # @hiitl/core
 
-**HIITL Policy Evaluator** - Core runtime enforcement engine for TypeScript.
+**hiitl Policy Evaluator** — the deterministic enforcement engine that decides whether an action proceeds.
 
-Deterministic policy evaluation for execution control. Evaluates policies (JSON objects) against execution envelopes and returns allow/block decisions.
+Evaluates policies (JSON / YAML) against execution envelopes and returns `ALLOW`, `BLOCK`, `PAUSE`, `REQUIRE_APPROVAL`, `OBSERVE`, or one of seven other decision types — with timing metadata, matched-rule attribution, and structured remediation guidance.
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3+-blue.svg)](https://www.typescriptlang.org/)
-[![Tests](https://img.shields.io/badge/tests-146%2F146-brightgreen.svg)](https://github.com/hiitlhq/hiitl)
-[![Conformance](https://img.shields.io/badge/conformance-54%2F54-brightgreen.svg)](https://github.com/hiitlhq/hiitl)
-[![Performance](https://img.shields.io/badge/performance-%3C0.1ms-brightgreen.svg)](https://github.com/hiitlhq/hiitl)
+[![Conformance](https://img.shields.io/badge/conformance-shared_fixtures-brightgreen.svg)](https://github.com/hiitlhq/hiitl/tree/main/tests/conformance)
+[![Performance](https://img.shields.io/badge/performance-%3C0.5ms-brightgreen.svg)](https://github.com/hiitlhq/hiitl)
 
 ## Features
 
-✅ **100% Behavioral Parity** with Python evaluator (54/54 conformance tests pass)
-⚡ **Sub-millisecond Performance** (<0.1ms average for simple policies)
-🔒 **Type-safe** with full TypeScript types and Zod schema validation
-🎯 **Deterministic** - same (envelope, policy) always produces same decision
-🧪 **Well-tested** - 146 tests passing (91 unit + 55 conformance)
+**Shared conformance fixtures** compare the Python and TypeScript evaluators against the same declared answers; see the [current cases](https://github.com/hiitlhq/hiitl/tree/main/tests/conformance/cases).
+⚡ **Sub-millisecond evaluation** — typical decisions in <0.5ms, well under the < 1ms requirement
+🔒 **Type-safe** — full TypeScript types and Zod schema validation
+🎯 **Deterministic** — the same complete inputs, including the evaluation clock, produce the same decision
+🧪 **Shared cases** — the conformance runner reads the current cases from `tests/conformance/cases`
+🪜 **Per-rule lifecycle** — `active` / `staged` / `draft` / `disabled` / `archived` stages drive the observe → stage → enforce workflow
+🎚️ **Scope filters** — per-rule whitelists on agents / users / environments, deterministic SHA-256 percentage rollouts, temporal `valid_from` / `valid_to` windows
 
 ## Installation
 
@@ -32,13 +33,13 @@ const evaluator = new PolicyEvaluator();
 
 // Define your execution envelope
 const envelope = {
-  schema_version: 'v1.0',
+  schema_version: 'v2.0',
   org_id: 'org_abc123def456ghi789',
   environment: 'prod',
   agent_id: 'payment-agent',
   action_id: 'act_01HQZ6X8Z9P5ABCDEFGHIJK',
   idempotency_key: 'idem_payment_123',
-  tool_name: 'process_payment',
+  action: 'process_payment',
   operation: 'execute',
   target: { account_id: 'acct_source' },
   parameters: {
@@ -47,19 +48,20 @@ const envelope = {
     recipient_account_id: 'acct_recipient',
   },
   timestamp: '2024-01-15T10:30:00Z',
-  signature: 'a1b2c3d4...',
+  signature: 'a3f1c9e27b4d8f60e5a2c7b91d3f4e8a6c0b2d5f7e9a1c3b5d7f9e0a2c4b6d8e', // 64 hex chars (HMAC-SHA256)
 };
 
 // Define your policy
 const policy = {
   name: 'payment-controls',
-  version: '1.0',
+  version: 'v1.0.0',
+  description: 'Payment controls for this example',
+  scope: { org_id: 'org_abc123def456ghi789', environment: 'prod' },
   rules: [
     {
       name: 'allow-small-amounts',
       description: 'Allow payments under $5000',
       priority: 100,
-      enabled: true,
       decision: 'ALLOW',
       reason_code: 'SMALL_AMOUNT',
       conditions: {
@@ -71,7 +73,7 @@ const policy = {
   ],
 };
 
-// Evaluate and get decision
+// Evaluate and get decision (the evaluator enforces by default: RESPECT_POLICY)
 const decision = evaluator.evaluate(envelope, policy);
 
 if (decision.allowed) {
@@ -95,11 +97,15 @@ class PolicyEvaluator {
    *
    * @param envelope - Execution envelope (validated against envelope schema)
    * @param policy - Policy set (validated against policy schema)
+   * @param mode - 'RESPECT_POLICY' (default) enforces; 'OBSERVE_ALL' observes
+   * @param enrichment - Answers from sync routes, read as external.<route>.<field> (optional)
    * @returns Decision response with action decision, reason codes, and timing
    */
   evaluate(
     envelope: Envelope | Record<string, unknown>,
-    policy: PolicySet | Record<string, unknown>
+    policy: PolicySet | Record<string, unknown>,
+    mode?: 'OBSERVE_ALL' | 'RESPECT_POLICY',
+    enrichment?: Enrichment | null
   ): Decision;
 }
 ```
@@ -108,8 +114,14 @@ class PolicyEvaluator {
 - `decision`: Decision type (`'ALLOW'`, `'BLOCK'`, `'PAUSE'`, etc.)
 - `allowed`: Boolean (true if allowed)
 - `reason_codes`: Array of reason codes
+- `policy_version`: Version of the policy set evaluated
 - `timing`: Performance metrics (`ingest_ms`, `evaluation_ms`, `total_ms`)
 - `matched_rules`: Array of matched rules (if any)
+- `remediation`: Guidance on how to fix a blocked call, when the rule defines it
+- `would_be`, `would_be_reason_codes`: Under `OBSERVE_ALL`, what enforcement would decide when the call comes back `OBSERVE`
+- `staged_observations`: Staged rules that matched (they are observed, never bound)
+
+Under `OBSERVE_ALL`, a decision that allows the call (`ALLOW`, `SANDBOX`) comes back as itself. Any other decision comes back `OBSERVE`, with `allowed` true, `reason_codes` `['OBSERVED']`, and `would_be` set to the rule's decision.
 
 ### evaluate()
 
@@ -123,7 +135,7 @@ const decision = evaluate(envelope, policy);
 
 ## Condition Operators
 
-The evaluator supports 14 condition operators:
+The evaluator supports these condition operators:
 
 ### Equality
 - `equals` - Field equals value
@@ -140,7 +152,6 @@ The evaluator supports 14 condition operators:
 - `not_contains` - Inverse of contains
 - `starts_with` - String starts with prefix
 - `ends_with` - String ends with suffix
-- `matches` - Regex pattern matching
 
 ### Set Operations
 - `in` - Field value is in array
@@ -148,6 +159,9 @@ The evaluator supports 14 condition operators:
 
 ### Existence
 - `exists` - Field exists (not null/undefined)
+
+### Schema
+- `conforms_to` - Field value conforms to a parameter schema (a JSON Schema subset; never a regex)
 
 ## Logical Operators
 
@@ -193,16 +207,22 @@ Access nested fields using dot notation:
 }
 ```
 
-## Priority and First-Match Semantics
+## Precedence: DENY Wins
 
-Rules are evaluated by priority (descending order). **First-match wins**:
+When several rules match, the decision is chosen in this order:
+
+1. `KILL_SWITCH` beats everything
+2. `BLOCK` beats every other decision
+3. Among the rest, the highest `priority` wins
+4. On equal priority, the rule defined first wins
+
+A matching `BLOCK` beats a higher-priority rule of any other decision:
 
 ```typescript
 {
   rules: [
-    { name: 'high-priority', priority: 200, ... },  // Evaluated first
-    { name: 'medium-priority', priority: 100, ... },
-    { name: 'low-priority', priority: 50, ... },
+    { name: 'allow-payments', priority: 200, decision: 'ALLOW', ... },
+    { name: 'block-frozen-account', priority: 10, decision: 'BLOCK', ... },  // Wins when both match
   ]
 }
 ```
@@ -212,7 +232,13 @@ Rules are evaluated by priority (descending order). **First-match wins**:
 If no rule matches, the evaluator returns `BLOCK` with reason code `NO_MATCHING_RULE`:
 
 ```typescript
-const decision = evaluator.evaluate(envelope, { rules: [] });
+const decision = evaluator.evaluate(envelope, {
+  name: 'empty',
+  version: 'v1.0.0',
+  description: 'An empty policy denies every action',
+  scope: { org_id: 'org_abc123def456ghi789', environment: 'prod' },
+  rules: [],
+});
 // decision.decision === 'BLOCK'
 // decision.reason_codes === ['NO_MATCHING_RULE']
 ```
@@ -275,19 +301,19 @@ All evaluations are **well under 1ms**, matching Python evaluator performance.
 
 ## Conformance Testing
 
-This TypeScript evaluator maintains **100% behavioral parity** with the Python evaluator:
-- ✅ 54/54 conformance tests pass
+The shared conformance suite checks both evaluators against the same declared answers:
+- Shared conformance cases run against both evaluators
 - ✅ Identical decision logic
 - ✅ Identical null handling
 - ✅ Identical priority ordering
 
 ## Design Principles
 
-1. **Deterministic** - Same (envelope, policy) always produces same decision
+1. **Deterministic** - The same envelope, policy, evaluation clock and supplied route answers produce the same decision
 2. **Side-effect free** - Evaluation does not modify state
 3. **Fast** - Sub-millisecond evaluation using native JavaScript features
 4. **Type-safe** - Full TypeScript types with Zod validation
-5. **Well-tested** - 146 tests (91 unit + 55 conformance)
+5. **Shared cases** - The conformance runner reads the current cases from `tests/conformance/cases`
 
 ## Examples
 
@@ -296,13 +322,14 @@ This TypeScript evaluator maintains **100% behavioral parity** with the Python e
 ```typescript
 const policy = {
   name: 'transaction-limits',
-  version: '1.0',
+  version: 'v1.0.0',
+  description: 'Payment controls for this example',
+  scope: { org_id: 'org_abc123def456ghi789', environment: 'prod' },
   rules: [
     {
       name: 'block-large-amounts',
       description: 'Block transactions over $10,000',
       priority: 100,
-      enabled: true,
       decision: 'BLOCK',
       reason_code: 'AMOUNT_TOO_LARGE',
       conditions: {
@@ -320,13 +347,14 @@ const policy = {
 ```typescript
 const policy = {
   name: 'risk-controls',
-  version: '1.0',
+  version: 'v1.0.0',
+  description: 'Payment controls for this example',
+  scope: { org_id: 'org_abc123def456ghi789', environment: 'prod' },
   rules: [
     {
       name: 'require-approval-for-money',
       description: 'Require approval for money operations',
       priority: 100,
-      enabled: true,
       decision: 'REQUIRE_APPROVAL',
       reason_code: 'SENSITIVE_OPERATION',
       conditions: {
@@ -344,13 +372,14 @@ const policy = {
 ```typescript
 const policy = {
   name: 'production-safeguards',
-  version: '1.0',
+  version: 'v1.0.0',
+  description: 'Payment controls for this example',
+  scope: { org_id: 'org_abc123def456ghi789', environment: 'prod' },
   rules: [
     {
       name: 'block-prod-delete',
       description: 'Block delete operations in production',
       priority: 200,
-      enabled: true,
       decision: 'BLOCK',
       reason_code: 'PROD_DELETE_FORBIDDEN',
       conditions: {
@@ -366,10 +395,10 @@ const policy = {
 
 ## License
 
-MIT
+Apache-2.0
 
 ## Links
 
 - [GitHub Repository](https://github.com/hiitlhq/hiitl)
-- [Documentation](https://hiitl.ai/docs)
+- [Documentation](https://hiitl.com/docs)
 - [Conformance Test Suite](https://github.com/hiitlhq/hiitl/tree/main/tests/conformance)

@@ -1,7 +1,7 @@
 {
   "name": "@hiitl/core",
-  "version": "0.1.0",
-  "description": "HIITL Policy Evaluator - Core runtime enforcement engine for TypeScript",
+  "version": "0.2.0",
+  "description": "The control point for software that can act \u2014 deterministic policy evaluator for TypeScript.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -14,39 +14,52 @@
   "files": [
     "dist",
     "README.md",
-    "LICENSE"
+    "CHANGELOG.md",
+    "LICENSE",
+    "NOTICE"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:conformance": "vitest run tests/conformance",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "prepublishOnly": "npm run build && npm test"
   },
   "keywords": [
     "hiitl",
     "policy",
     "evaluator",
     "execution-control",
-    "authorization"
+    "authorization",
+    "ai-agents",
+    "governance",
+    "guardrails"
   ],
-  "author": "HIITL, Inc.",
-  "license": "MIT",
+  "author": "hiitl",
+  "license": "Apache-2.0",
+  "homepage": "https://hiitl.com",
   "repository": {
     "type": "git",
-    "url": "https://github.com/hiitlhq/hiitl.git",
+    "url": "git+https://github.com/hiitlhq/hiitl.git",
     "directory": "typescript/packages/core"
   },
-  "homepage": "https://github.com/hiitlhq/hiitl#readme",
   "bugs": {
     "url": "https://github.com/hiitlhq/hiitl/issues"
   },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=22"
+  },
   "dependencies": {
-    "zod": "^3.22.4"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@types/node": "^20.11.0",
+    "@types/node": "^22.20.5",
     "typescript": "^5.3.3",
-    "vitest": "^1.2.0"
+    "vitest": "^5.1.0",
+    "vite": "^8.3.8"
   }
 }

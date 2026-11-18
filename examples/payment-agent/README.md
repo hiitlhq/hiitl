@@ -1,6 +1,6 @@
 # Payment Agent Example
 
-A payment processing agent with approval policies. Demonstrates policy enforcement, decision handling, and the observe-to-enforce progression.
+A payment processing agent with approval policies. Demonstrates policy enforcement and decision handling: the enforce step that follows [observe-first](../observe-first/).
 
 ## Run
 
@@ -15,4 +15,4 @@ python main.py
 - `RESPECT_POLICY` mode — policies are enforced
 - Handling different decision types (`ALLOW`, `BLOCK`, `REQUIRE_APPROVAL`)
 - Using `decision.needs_approval`, `decision.blocked`, `decision.reason_codes`
-- Progressive enrichment (parameters, target, sensitivity)
+- Context on each call (`parameters`, `target`)

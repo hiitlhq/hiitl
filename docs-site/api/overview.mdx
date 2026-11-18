@@ -1,27 +1,29 @@
 ---
 title: "API Reference"
-description: "REST API for hosted mode"
+description: "REST API of the hosted service"
 ---
 
-The hiitl REST API is used in hosted mode for evaluation, policy management, and audit log access.
+The hiitl REST API is the hosted service's interface for evaluation, policy management, and audit log access.
 
 <Note>
-In local mode, the SDK runs evaluation in-process and does not call the API. The API is only relevant for hosted deployments.
+In local mode, the SDK runs evaluation in-process and does not call the API. In hybrid mode, the SDK also evaluates in-process, and downloads policies and kill switches from the hosted service in the background. Remote evaluation (hosted mode) calls `POST /v1/evaluate` for each action.
 </Note>
 
 ## Base URL
 
 ```
-https://api.hiitl.com/v1
+https://api.hiitl.com
 ```
+
+Every path below starts with `/v1/`.
 
 ## Authentication
 
-All requests require a Bearer token in the `Authorization` header:
+Authenticate each request with an API key, sent as a Bearer token in the `Authorization` header:
 
 ```bash
-curl -H "Authorization: Bearer hiitl_prod_abc123..." \
-  https://api.hiitl.com/v1/evaluate
+curl -H "Authorization: Bearer sk_prod_..." \
+  https://api.hiitl.com/v1/policies
 ```
 
 See [Authentication](/security/authentication) for details on API key scopes and rotation.
@@ -36,61 +38,106 @@ Content-Type: application/json
 
 ## Endpoints
 
+This reference covers these endpoints:
+
 | Method | Path | Scope required | Description |
 |--------|------|----------------|-------------|
 | `POST` | [`/v1/evaluate`](/api/evaluate) | `evaluate` | Evaluate an action against policy |
-| `GET` | [`/v1/policies`](/api/policies) | `read` | List active policies |
+| `POST` | [`/v1/actions/{action_id}/result`](/api/evaluate#recording-the-result) | `evaluate` | Record what happened when an allowed action ran (a new result is not yet written) |
+| `GET` | [`/v1/policies`](/api/policies) | `read` | List policies |
 | `POST` | [`/v1/policies`](/api/policies) | `admin` | Create a new policy version |
-| `GET` | [`/v1/policies/{id}`](/api/policies) | `read` | Get a specific policy |
+| `GET` | [`/v1/policies/{policy_id}`](/api/policies) | `read` | Get a specific policy |
+| `GET` | [`/v1/policies/changes`](/api/policies) | `read` | List policy change records |
 | `GET` | [`/v1/audit`](/api/audit) | `read` | Query the audit trail |
-| `GET` | [`/v1/audit/{id}`](/api/audit) | `read` | Get a single audit record |
+| `GET` | [`/v1/audit/{event_id}`](/api/audit) | `read` | Get a single audit record |
 | `GET` | `/v1/kill-switches` | `read` | List kill switch rules |
-| `POST` | `/v1/kill-switches/{name}/activate` | `admin` | Activate a kill switch |
-| `POST` | `/v1/kill-switches/{name}/deactivate` | `admin` | Deactivate a kill switch |
+| `POST` | `/v1/kill-switches/{rule_name}/activate` | `admin` | Activate a kill switch |
+| `POST` | `/v1/kill-switches/{rule_name}/deactivate` | `admin` | Deactivate a kill switch |
+| `POST` | [`/v1/api-keys`](/security/authentication) | `admin` | Create an API key |
+| `GET` | [`/v1/api-keys`](/security/authentication) | `read` | List API keys |
+| `DELETE` | [`/v1/api-keys/{key_id}`](/security/authentication) | `admin` | Revoke an API key |
+| `GET` | [`/v1/redaction-policy`](/security/data-handling#redaction) | `read` | The fields the organization's stored records redact |
+| `PUT` | [`/v1/redaction-policy`](/security/data-handling#redaction) | `admin` | Set them: `{"manual_redact_fields": ["parameters.account_number"]}` |
+
+A key with the `full` scope can call every endpoint above.
 
 ## Error format
 
-All errors follow a consistent structure:
+Errors come back with a 4xx or 5xx status and a JSON body with a `detail` field. For every error hiitl names, `detail` is an object with a machine-readable `error` code, a human-readable `message`, and, where there is more to say, `details`:
 
 ```json
 {
-  "error": {
-    "code": "INSUFFICIENT_SCOPE",
-    "message": "This API key has 'evaluate' scope. The requested operation requires 'admin' scope."
+  "detail": {
+    "error": "POLICY_NOT_FOUND",
+    "message": "No active policy found for org_id=org_northwindpay0001, environment=prod. Create a policy via POST /v1/policies before evaluating envelopes.",
+    "details": { "org_id": "org_northwindpay0001", "environment": "prod" }
   }
 }
 ```
 
-### Common error codes
+Request validation errors (422) list each problem, with the location of the field:
 
-| Code | HTTP Status | Description |
-|------|-------------|-------------|
-| `UNAUTHORIZED` | 401 | Missing or invalid API key |
-| `INSUFFICIENT_SCOPE` | 403 | API key lacks required scope |
-| `TENANT_MISMATCH` | 403 | API key org/environment does not match request |
-| `NOT_FOUND` | 404 | Resource does not exist |
-| `VALIDATION_ERROR` | 422 | Request body failed validation |
-| `RATE_LIMITED` | 429 | API rate limit exceeded |
-| `INTERNAL_ERROR` | 500 | Server error |
+```json
+{
+  "detail": [
+    {
+      "type": "missing",
+      "loc": ["body", "action"],
+      "msg": "Field required",
+      "input": { "parameters": {} }
+    }
+  ]
+}
+```
+
+The caller is read before the request's shape, on every endpoint: a request without a valid key is answered 401, and a key without the endpoint's scope 403, whatever its query or body carries. Only a caller the endpoint admits is told its shape (the 422 list). A webhook's caller is its signature.
+
+A server error (5xx) carries its code and message, and `details` holds only `request_id`: the cause is logged under that id, so report it with the id.
+
+`POST /v1/evaluate` answers an envelope it could not evaluate with a decision, not this shape: the error decision is the body, at the status the table below gives its cause, with `error.code` the decision and the cause its reason code ([Errors are decisions](/api/evaluate#errors-are-decisions)).
+
+### Common errors
+
+| HTTP Status | Code or message | Description |
+|-------------|-----------------|-------------|
+| 401 | `AUTH_REQUIRED` | The request has no `Authorization` header. The message names what to send |
+| 401 | `MALFORMED_AUTHORIZATION_HEADER` | The `Authorization` header is not `Bearer <api_key>` |
+| 401 | `INVALID_API_KEY` | The key is unknown or has been revoked |
+| 401 | `API_KEY_EXPIRED` | The key's `expires_at` has passed. The message names when; create a new key |
+| 403 | `INSUFFICIENT_SCOPE` | The API key lacks the required scope. The message names it |
+| 403 | `SIGNATURE_INVALID` | The envelope has no `envelope_signature`, or it does not verify under the API key's signing secret: the decision `SIGNATURE_INVALID`. See [Envelope Signing](/security/envelope-signing) |
+| 403 | `TENANT_MISMATCH` | The envelope's `org_id` or `environment` is not the API key's (the decision `VALIDATION_ERROR`); or `POST /v1/api-keys` names another environment than the creating key's, which only a `full` key may |
+| 403 | `INSUFFICIENT_SCOPE` | `POST /v1/api-keys` names a scope the creating key does not hold, or `DELETE /v1/api-keys/{key_id}` revokes a key holding one the calling key does not. `details.scopes_not_held` lists each one |
+| 400 | `ROUTE_VALIDATION_ERROR` | The route config is invalid. `details.validation_errors` names each problem |
+| 400 | `KILL_SWITCH_INVALID_RULE` | The named rule's decision is not `KILL_SWITCH` |
+| 400 | `KILL_SWITCH_ALREADY_IN_STATE` | The kill switch is already in the requested state |
+| 400 | `PRINCIPAL_VERIFIER_NOT_CONFIGURED` | On `POST /v1/evaluate`, a principal token was sent and the organization has no principal verifier: the decision `VALIDATION_ERROR` |
+| 403 | `TIMESTAMP_OUT_OF_WINDOW` | The envelope's `timestamp` is further than the dedup window (24 hours) from the service's clock: the decision `VALIDATION_ERROR` |
+| 400 | `POLICY_VALIDATION_ERROR` | The policy set is invalid, or its scope does not match the API key. On `POST /v1/evaluate`, the active policy does not parse: the decision `POLICY_ERROR` |
+| 422 | `POLICY_VALIDATION_ERROR` | The set a write would store does not load, though the set sent did: a first `POST /v1/policies` whose rule takes the onboarding default's name, or a lifecycle transition or kill switch of a stored set that does not load. `details.validation_errors` names each problem. Nothing is written |
+| 422 | `ALWAYS_BLOCK` | `POST /v1/policies` would leave the set allowing no action (every call ends in a block or awaits a review) where the active version allowed some, or there was none. `details.findings` carries the lint's findings and `details.held` the rules the promotion gate held `staged`. Nothing is written |
+| 400 | `SIGNATURE_VERSION_UNSUPPORTED` | The envelope's `signature_version` names a version other than `hmac-sha256-v1`: the decision `SIGNATURE_INVALID` |
+| 404 | `POLICY_NOT_FOUND` | No active policy for the key's environment (on `POST /v1/evaluate`, the decision `POLICY_ERROR`), or no policy with that `policy_id` |
+| 404 | `AUDIT_EVENT_NOT_FOUND` | No audit record with that `event_id` |
+| 404 | `ACTION_NOT_FOUND` | No decision is recorded for that `action_id` in the key's organization and environment, so a result has nothing to attach to |
+| 409 | `RESULT_ON_UNALLOWED_DECISION` | The action's decision did not allow it and no review case let it run, so it never ran and has no result |
+| 409 | `RESULT_ALREADY_RECORDED` | A different result is already recorded for the action; the same result again returns its record |
+| 404 | `ROUTE_NOT_FOUND` | No route config with that name in the key's environment |
+| 404 | `KILL_SWITCH_NOT_FOUND` | No `KILL_SWITCH` rule with that name in the active policy |
+| 404 | `KEY_NOT_FOUND` | No active API key with that `key_id` in the calling key's environment (any environment for a `full` key) |
+| 422 | Validation error list (the SDKs raise it as `VALIDATION_ERROR`) | A required field or header is missing, a field has the wrong type, the body has a field the endpoint does not accept, or the query has a parameter the endpoint does not define (located under `query`). On `POST /v1/evaluate` the list answers a body that is not a JSON object, has no string `action_id`, or carries a number outside the numeric domain. The numeric refusal names the field and its declared type and range, recommending text only where text is admitted; even with a string `action_id`, it leaves no decision or audit record |
+| 422 | `RESULT_INVALID` | The result's `status` is not `succeeded`, `failed` or `canceled`, its `error` is not a string, its `duration_ms` is not a non-negative number, or the body has another member. A number outside the numeric admission rule is refused before projection, naming its body path and declared type and range, recommending text only where text is admitted; text is not a numeric duration |
+| 422 | `ENVELOPE_VALIDATION_ERROR` | On `POST /v1/evaluate`, a field the envelope schema refuses, checked after the signature: the decision `VALIDATION_ERROR`, its message locating each field under `body` |
+| 500 | `POLICY_INTEGRITY_VIOLATION` | The stored policy failed its content-hash check, so it was not used: the decision `POLICY_ERROR` |
+| 500 | `POLICY_EVALUATION_FAILED` | The active policy could not be evaluated against the envelope: the decision `POLICY_ERROR` |
+| 500 | `AUDIT_WRITE_FAILED` | The evaluation's audit record could not be written: the decision `BLOCK`, with no record |
+| 500 | `AUDIT_READ_FAILED` | On `POST /v1/evaluate`, the audit store could not be read for the first decision under the envelope's `idempotency_key`: the decision `BLOCK`, recorded where the store answers |
+| 500 | `EVALUATION_FAILED` | On `POST /v1/evaluate`, an unexpected failure once the body is an envelope: the decision `BLOCK`, recorded where the store answers |
+| 500 | `DATABASE_ERROR` | A store operation failed. The message names the operation |
+| 500 | `INTERNAL_SERVER_ERROR` | Server error. On `POST /v1/evaluate`, only before the body is an envelope |
+
+Responses carry an `X-Request-ID` header. Send your own `X-Request-ID` and the service echoes it back, so you can match a response to a request.
 
 ## Versioning
 
 The API is versioned via the URL path (`/v1/`). Breaking changes require a new version. Additive changes (new optional fields) are made within the current version.
-
-## Rate limits
-
-The API itself has rate limits separate from policy-level rate limits:
-
-| Scope | Limit |
-|-------|-------|
-| Evaluate endpoint | 10,000 requests/minute per org |
-| Read endpoints | 1,000 requests/minute per org |
-| Admin endpoints | 100 requests/minute per org |
-
-Rate limit headers are included in every response:
-
-```
-X-RateLimit-Limit: 10000
-X-RateLimit-Remaining: 9842
-X-RateLimit-Reset: 1709164800
-```

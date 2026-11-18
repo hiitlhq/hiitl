@@ -32,7 +32,11 @@ if decision.allowed:
   | `"RATE_LIMIT"` | `False` | Rate limit exceeded |
   | `"KILL_SWITCH"` | `False` | Emergency stop active |
   | `"ESCALATE"` | `False` | Escalated for review |
-  | `"ROUTE"` | `False` | Routed to a specific handler |
+  | `"ROUTE"` | `False` | Waiting on a sync route's answer: the route was not asked or did not answer |
+  | `"SIGNATURE_INVALID"` | `False` | The envelope's signature does not verify; it was not evaluated |
+  | `"VALIDATION_ERROR"` | `False` | The envelope is not one the control point admits (hosted mode) |
+  | `"POLICY_ERROR"` | `False` | The policy could not be loaded, read or evaluated |
+  | `"CONTROL_PLANE_UNAVAILABLE"` | `False` | The hosted service could not be reached (hosted mode), with `metadata`; `True` only under `fail_mode="FAIL_OPEN"` |
 </ResponseField>
 
 <ResponseField name="allowed" type="bool" required>
@@ -40,7 +44,7 @@ if decision.allowed:
 </ResponseField>
 
 <ResponseField name="reason_codes" type="list[str]" required>
-  List of reason codes explaining the decision. Comes from matched policy rules (e.g., `["PAYMENT_TOO_HIGH"]`) or system defaults (e.g., `["DEFAULT_ALLOW"]`).
+  List of reason codes explaining the decision. Comes from matched policy rules (e.g., `["PAYMENT_TOO_HIGH"]`) or system codes (e.g., `["NO_MATCHING_RULE"]`, `["OBSERVED"]`, `["RATE_LIMIT_EXCEEDED"]`).
 </ResponseField>
 
 <ResponseField name="action_id" type="str" required>
@@ -58,9 +62,9 @@ if decision.allowed:
 
   | Field | Type | Description |
   |-------|------|-------------|
-  | `timing.ingest_ms` | `float` | Time to build and validate the envelope |
+  | `timing.ingest_ms` | `float` | Locally: from the call to `evaluate()`: admitting its input, building the envelope (and checking its signature, when a `signature_key` is set), and the evaluator's read of the envelope and policy. Hosted: time the service spent loading the policy and writing the audit record |
   | `timing.evaluation_ms` | `float` | Time to evaluate the policy |
-  | `timing.total_ms` | `float` | Total end-to-end time |
+  | `timing.total_ms` | `float` | Locally: the evaluator's time. Hosted: the service's time for the request. Network time is not included |
 
   ```python
   print(f"Evaluated in {decision.timing.evaluation_ms:.2f}ms")
@@ -71,7 +75,7 @@ if decision.allowed:
 ### Observe mode fields
 
 <ResponseField name="would_be" type="str | None">
-  When `decision` is `"OBSERVE"`, this shows what the decision *would have been* under enforcement. For example, `"BLOCK"` or `"REQUIRE_APPROVAL"`.
+  When `decision` is `"OBSERVE"`, this shows what the decision *would have been* under enforcement. For example, `"BLOCK"` or `"REQUIRE_APPROVAL"`. `OBSERVE` comes only from the `OBSERVE_ALL` mode.
 </ResponseField>
 
 <ResponseField name="would_be_reason_codes" type="list[str] | None">
@@ -85,7 +89,7 @@ if decision.allowed:
 </ResponseField>
 
 <ResponseField name="envelope_hash" type="str | None">
-  SHA-256 hash of the evaluated envelope. Allows the caller to verify that the server evaluated the exact envelope that was submitted.
+  Hosted mode only. SHA-256 hash of the envelope the service evaluated.
 </ResponseField>
 
 ### Escalation fields
@@ -95,21 +99,17 @@ if decision.allowed:
 </ResponseField>
 
 <ResponseField name="route_ref" type="str | None">
-  Route configuration name from the matched rule. Used internally to resolve escalation routing.
+  Route configuration name from the matched rule. Present when `decision` is `REQUIRE_APPROVAL`, `PAUSE`, `ESCALATE` or `ROUTE`. Used internally to resolve escalation routing.
 </ResponseField>
 
 <ResponseField name="escalation_context" type="dict | None">
-  Resolved escalation routing details. Populated by the SDK when a route config is available. Contains information like webhook URLs, reviewer roles, and SLA expectations.
-</ResponseField>
-
-<ResponseField name="approval_metadata" type="ApprovalMetadata | None">
-  Approval workflow details when `decision` is `REQUIRE_APPROVAL`. Contains `approval_id`, optional `sla_hours`, `reviewer_role`, and `resume_url`.
+  Resolved escalation routing details. Populated by the SDK when it has the named route loaded (`routes_path`). Contains the route's `endpoint` and `protocol`, its SLA `timeout` and `timeout_action`, the reviewer's `decision_options`, the `fields` the reviewer sees, the risk framing's `severity` and `summary`, the `escalation_ladder`, and the `token_field` the resume token travels in, as the route defines them; a key the route leaves unset is absent.
 </ResponseField>
 
 ### Rate limit fields
 
 <ResponseField name="rate_limit" type="RateLimit | None">
-  Rate limit state when `decision` is `RATE_LIMIT`. Contains `scope`, `window`, `limit`, `current` count, and `reset_at` timestamp.
+  The counter state of a rate-limit window. On a `RATE_LIMIT`, or an `OBSERVE` whose `would_be` is `RATE_LIMIT`, it is the exceeded window. On an `ALLOW` the limiter counted, it is the window with the least headroom left, this call included; on a tie, the first listed. Contains `scope`, `window`, `limit`, `current` count, and `reset_at` timestamp. Absent when no windowed rule matched.
 
   ```python
   if decision.decision == "RATE_LIMIT":
@@ -119,16 +119,10 @@ if decision.allowed:
   ```
 </ResponseField>
 
-### Sandbox fields
-
-<ResponseField name="sandbox_metadata" type="SandboxMetadata | None">
-  Sandbox routing details when `decision` is `SANDBOX`. Contains `sandbox_endpoint` and optional `sandbox_environment`.
-</ResponseField>
-
 ### Error and remediation
 
 <ResponseField name="error" type="ErrorDetail | None">
-  Present when ECP itself failed (not when policy enforcement blocked an action). Contains `code` (machine-readable) and `message` (human-readable with guidance).
+  Present when ECP itself failed (not when policy enforcement blocked an action). Contains `code` (machine-readable) and `message` (human-readable with guidance). On an error decision (`SIGNATURE_INVALID`, `VALIDATION_ERROR`, `POLICY_ERROR`, `CONTROL_PLANE_UNAVAILABLE`) `code` is the decision and the cause is the reason code. When the SDK's rate limiter fails, the decision is `BLOCK` with `RATE_LIMIT_SERVICE_ERROR`; when the audit record cannot be written, `BLOCK` with `AUDIT_WRITE_FAILED`. Under `OBSERVE_ALL` a failed limiter's block is observed, and `error` is kept; a failed audit write is never observed. The message never carries the caught exception's text: the cause is logged.
 
   ```python
   if decision.error:
@@ -137,7 +131,7 @@ if decision.allowed:
 </ResponseField>
 
 <ResponseField name="remediation" type="Remediation | None">
-  Present when a policy intentionally blocked or rate-limited an action. Contains `message`, `suggestion`, `type`, and optional `details`. Mutually exclusive with `error`.
+  Present when the binding rule defines remediation and its decision is not allowed, for example `BLOCK`. Contains `message`, `suggestion`, `type`, and optional `details`, as the rule writes them, except a detail that states a fact of the call, which is computed from the call: `blocked_fields` written as `{ref, filter}`, a threshold's `current_value` and a temporal `current_time` (see [Remediation](/concepts/policies#remediation)). A `RATE_LIMIT` from a windowed rule carries that rule's remediation; a `rate_limit` remediation's details are the window's counter state. Mutually exclusive with `error`.
 
   ```python
   if decision.remediation:
@@ -149,6 +143,38 @@ if decision.allowed:
 <Note>
   `error` and `remediation` are mutually exclusive. `error` means ECP failed. `remediation` means ECP worked and intentionally enforced a policy.
 </Note>
+
+### Staged and rate-limit rules
+
+<ResponseField name="staged_observations" type="list[StagedObservation]" required>
+  What each matching staged rule would have decided. Each entry has `rule_name`, `policy_set`, `priority`, `would_be_decision`, `would_be_reason_codes` and `would_be_binding`. Always a list; empty when no staged rule matched.
+</ResponseField>
+
+<ResponseField name="rate_limit_rules" type="list[RateLimitRule]" required>
+  The matching rate-limit rules with a window. Each entry has `rule_name`, `policy_set`, `priority`, `reason_code`, `limit`, `window_seconds`, `scope` and, when the rule writes one, `remediation`. They do not bind. When the decision is `ALLOW`, the SDK reads every window before it counts any, so a call one window refuses is counted in none. Always a list.
+</ResponseField>
+
+### Sync route fields
+
+<ResponseField name="enrichment" type="dict | None">
+  The sync-route answers that re-entered evaluation, as `{route: {field: value}}`.
+</ResponseField>
+
+<ResponseField name="routes" type="list[RouteAsked] | None">
+  Each sync route asked. Each entry has `rule_name`, `route`, `outcome` (`"answered"`, `"unanswered"` or `"failed_open"`), `fields` and `error`.
+</ResponseField>
+
+### Cache state
+
+<ResponseField name="cache_status" type="str | None">
+  Hybrid mode only. The state of the SDK's policy cache: `"synced"` (synced in this process), `"from_disk"` (loaded from the disk cache, not yet synced) or `"empty"` (no policies yet).
+</ResponseField>
+
+### Outage
+
+<ResponseField name="metadata" type="DecisionMetadata | None">
+  Hosted mode only, present on `CONTROL_PLANE_UNAVAILABLE`. `fail_mode` is the client's `fail_mode` setting. Under `"FAIL_CLOSED"`, the default, the action was not evaluated and is not allowed; under `"FAIL_OPEN"`, opt-in, `allowed` is `True` and `error.message` is the warning, logged and recorded. `circuit_breaker_state` is the hosted client's circuit breaker after the call: `"closed"`, `"open"` or `"half_open"`. Once it opens, calls fail fast with `CIRCUIT_BREAKER_OPEN` and are not sent until its reset interval passes. The reason code names the cause: `CONTROL_PLANE_TIMEOUT`, `CONTROL_PLANE_UNREACHABLE` or `CIRCUIT_BREAKER_OPEN`.
+</ResponseField>
 
 ## Convenience properties
 
@@ -163,8 +189,8 @@ These properties simplify common decision-handling patterns:
 
 ```python
 # These are equivalent
-if decision.allowed:
-if decision.ok:
+if decision.allowed: ...
+if decision.ok: ...
 
 # Check specific categories
 if decision.blocked:
@@ -225,7 +251,7 @@ match decision.decision:
         execute_payment()
 
     case "SANDBOX":
-        execute_in_sandbox(decision.sandbox_metadata)
+        execute_in_sandbox()
 ```
 
 ### Logging decision details

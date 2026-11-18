@@ -1,8 +1,37 @@
 # Observe Mode: The Intelligent Control Layer
 
+> **Status (2026-05-18)**: Policy versioning direction changed.
+> The Sprint B refresh (2026-05-16) described observe-mode lifecycle
+> as **per-rule** (each rule has its own `lifecycle_stage`; staged
+> rules evaluate alongside active rules within a single active
+> policy). The corrected V1.0 model is **per-policy**: a policy is
+> in one lifecycle state; multiple policies can be active simultaneously
+> for the same `(org_id, environment)`; staged policies evaluate
+> alongside active ones; **merge** or **promote** integrates them.
+>
+> The `lifecycle_stage` field on individual rules from Block 1A
+> remains in the schema as metadata but is no longer the operational
+> mechanism. Multi-active-policy evaluation is **🟡 new architecture
+> landing in Wave 9.2.5** — the evaluator currently loads one active
+> policy per `(org_id, environment)`.
+> This spec describes the V1.0 target the dashboard and intelligence
+> layer build toward.
+>
+> See the conversation transcript on 2026-05-17/18 for the full
+> rationale: convention-based "remember to think per-rule" was the
+> wrong primary mental model. Policy-level lifecycle + composition
+> is clearer for operators ("I have a security policy, a compliance
+> policy, and a fraud policy — they compose; I'm testing a new
+> escalation policy alongside them") and easier to enforce in the
+> schema once multi-active-policy is wired.
+
 ## What This Document Is
 
 This is the concept spec for hiitl's observe mode — the core product experience that turns raw system observation into a deployable, testable, continuously improving control layer. This isn't a new idea. It's the convergence of concepts that have been evolving across sessions: the suggestion engine, the pattern repository, context enrichment suggestions, observe-first onboarding, the route ecosystem, and the developer-supplied context model. This document assembles them into the coherent product experience.
+
+**Implementation:** the suggestion engine, the analyzers and lenses (5 lenses, and the guidance analyzer of Block 4b-2),
+the rule lifecycle and the regression reports run in the hosted service; the dashboard surfaces them (suggestion cards;
+a policy's lifecycle progression and its regression reports).
 
 ## The Problem Observe Mode Solves
 
@@ -49,7 +78,22 @@ Analysis results appear as cards on the dashboard. Each card is a self-contained
 
 ## Card Types
 
-### Policy Cards
+The suggestion engine emits **eight card types** today, each backed by a specific analyzer or lens. The eight are:
+
+| `suggestion_type` | Source | Status |
+|---|---|---|
+| `policy_rule` | Behavior lenses (security, operational, ux, waste, compliance) | ✅ Built |
+| `kill_switch` | Operational lens — agent without emergency-stop coverage | ✅ Built |
+| `rate_limit` | Operational lens — observed traffic exceeds safe defaults | ✅ Built |
+| `route_sync` | Compliance / security lenses — synchronous external eval needed | ✅ Built (sync suggested; route execution Phase 1.5) |
+| `route_async` | Operational / compliance lenses — async telemetry / evidence shipping | ✅ Built |
+| `context_enrichment` | Behavior lenses — envelope fields would unlock additional policies | ✅ Built (JSON artifact; code-snippet generation is 🟡 deferred) |
+| `coverage_gap` | Coverage analyzer — actions with zero policy coverage | ✅ Built |
+| `guidance_to_policy` | Guidance analyzer (Block 4b-2) — joins scanner-uploaded guidance findings × audit events | ✅ Built; distinct UI card layout (Block 4b-3) |
+
+Each card carries a `suggestion_type`, `lens`, `priority`, structured `evidence` blob, and (when applicable) the deployable artifact: `suggested_policy`, `suggested_route`, or `context_enrichment`.
+
+### Policy Cards (`policy_rule`)
 
 A policy card contains everything needed to activate a specific policy.
 
@@ -58,84 +102,172 @@ A policy card contains everything needed to activate a specific policy.
 - **Title:** "Rate limit send_email to 60/hour per agent"
 - **Why:** "Based on 7 days of observation, your agent intake-bot averages 47 send_email calls per hour. This policy protects against runaway execution while allowing 25% headroom above normal volume."
 - **Retrospective:** "In the last 7 days, this policy would have triggered 0 times on normal traffic. It would have caught the spike on Tuesday at 2pm where your agent sent 112 emails in one hour."
-- **The policy:** Complete, deployable YAML/JSON — the actual artifact the policy engine consumes, not pseudocode.
-- **Action:** "Activate" button. One click. The policy enters staged observation (not enforcement — see lifecycle below).
+- **The policy:** Complete, deployable JSON — the actual artifact the policy engine consumes, not pseudocode.
+- **Action:** "Accept" button. One click. Accept creates a **new staged policy** containing the suggested rule (lifecycle_stage on the policy: `staged`). The new policy evaluates alongside existing active policies but does NOT bind decisions — see lifecycle below.
 
-### Envelope Enrichment Cards
-
-An envelope enrichment card contains the specific code change needed to add context to evaluate() calls.
-
-**What the developer sees:**
-
-- **Title:** "Add sensitivity flags to send_email actions"
-- **Why:** "12% of your send_email calls include parameters that appear to contain PII (email addresses, phone numbers in the body field). Declaring sensitivity enables PII-aware policies."
-- **Code snippet:** The exact change to the developer's evaluate() call, in their language (Python or TypeScript), with the new fields highlighted. Framework-specific if they're using a middleware integration.
-- **What this unlocks:** "Once you add sensitivity flags, these 3 additional policies become available" — with links to the policy cards that are currently greyed out, waiting for this envelope data.
-- **Action:** Copy snippet. Or, for framework integrations, a configuration change they can apply.
-
-### Route Cards
-
-A route card recommends a specific external service integration based on observed system behavior.
-
-**What the developer sees:**
-
-- **Title:** "Add fraud detection for payment transactions"
-- **Why:** "Your agent finance-bot processes payments ranging from $50 to $45,000. 3% of transactions exceed $10,000. A fraud detection route evaluates transaction risk before execution."
-- **Services:** Curated list of services that integrate with ECP for this use case — with brief descriptions, pricing models, and what they do. Not a generic marketplace — services specifically relevant to what the observation data shows about this developer's system.
-- **Route configuration:** Complete route config for each recommended service. Connection setup walkthrough.
-- **Estimated volume:** "Based on current traffic, this route would evaluate approximately 15 transactions per day."
-- **Action:** "Connect" button for each service. One-click route creation (after providing credentials for the external service).
-
-### Kill Switch Cards
+### Kill Switch Cards (`kill_switch`)
 
 - **Title:** "Add kill switch for agent intake-bot"
 - **Why:** "You have no emergency stop mechanism for this agent. A kill switch lets you halt all actions from intake-bot instantly without affecting other agents."
-- **Action:** One click to create. The card also shows how to trigger it — API call, dashboard button, or inbound route from a monitoring system.
+- **Status on accept:** Creates a new policy in `disabled` state containing a single KILL_SWITCH rule. Distinct from policy_rule cards because kill switches are pure off-switches — there's nothing to observe in staged mode. An operator flips the policy to `active` during an incident; until then it stays inert. (The KILL_SWITCH rule itself retains a `lifecycle_stage` field for metadata symmetry, but it has no operational meaning when the containing policy is disabled.)
 
-### Human Collaboration Cards
+### Rate Limit Cards (`rate_limit`)
 
-- **Title:** "Add human review for high-value payments"
-- **Why:** "Your agent processes payments up to $45,000. A human review route pauses payments above a configurable threshold for approval before execution."
-- **Configuration:** The route config, response schema for the reviewer, suggested threshold based on observed distribution.
-- **Estimated volume:** "At a $10,000 threshold, this would generate approximately 4 review requests per day."
-- **Action:** Activate. Creates the route and the review workflow.
+Variant of policy_rule for `RATE_LIMIT` decisions. Same lifecycle flow (accept → staged policy → merge or promote); emitted separately so the UI can present a different threshold-tuning UX.
+
+### Route Cards (`route_sync` / `route_async`)
+
+Two suggestion types because the lifecycle differs. **Sync routes** participate in the decision (the action waits for the route's response). **Async routes** never touch the hot path (observability, evidence shipping, alerting). The dashboard surfaces them in the same shape but the UX clarifies impact:
+
+**Sync route card:**
+
+- **Title:** "Add fraud detection for payment transactions"
+- **Why:** "Your agent finance-bot processes payments ranging from $50 to $45,000. 3% of transactions exceed $10,000."
+- **Estimated impact:** "+200ms p95 latency for matching transactions" — sync routes add latency by design.
+- **Suggested route config:** Complete config — endpoint, response schema, timeout, fail-mode.
+- **Action:** "Accept" — the route lands in the org's route configs and is referenced by the matching policy rule's `route` field.
+
+**Async route card:**
+
+- **Title:** "Ship audit events to Datadog"
+- **Why:** "You have 3 agents generating 2,400 actions per day. Connecting Datadog gives you real-time visibility..."
+- **Estimated impact:** "Zero — events batch every 30s; evaluate() latency unaffected."
+- **Action:** "Accept" — same.
+
+### Context Enrichment Cards (`context_enrichment`)
+
+A context-enrichment card identifies envelope fields that would unlock additional policies if the developer populated them.
+
+**What the developer sees today:**
+
+- **Title:** "Add sensitivity flags to send_email actions"
+- **Why:** "12% of your send_email calls include parameters that appear to contain PII (email addresses, phone numbers in the body field). Declaring sensitivity enables PII-aware policies."
+- **`envelope_requirements`:** Structured JSON describing the fields to add — used by future tooling to render a copy-able snippet.
+- **Action:** Accept — records the developer's intent to add the fields. **🟡 Code-snippet generation is not yet built**; the card today is informational. Snippet generation lands when there's enough framework-integration content to make the snippets reliably accurate.
+
+### Coverage Gap Cards (`coverage_gap`)
+
+- **Title:** "No policies cover `update_inventory`"
+- **Why:** "You have 1,247 actions for `update_inventory` in the last 14 days. Zero active rules match it. Even an OBSERVE rule would give you visibility."
+- **Action:** "Acknowledge" — signals the operator has seen the gap. No artifact is generated automatically (coverage gaps are flagged for human decision; auto-generating an OBSERVE rule for every uncovered action would spam policies). The card stays surfaced until the gap is closed by a manually-added rule.
+
+### Guidance-to-Policy Cards (`guidance_to_policy`) — Block 4b-2 / 4b-3
+
+The bridge between **what your instruction files say** and **what your infrastructure enforces**. Read the dedicated section below for the full workflow.
+
+**Distinct UI** (Block 4b-3): amber accent + "Guidance only" badge differentiates these from engine-inferred suggestions. Operator immediately recognizes "this is a rule I already wrote that's not yet enforced."
+
+### Planned card type: Human Collaboration
+
+> **🟡 Planned, not built.** The spec previously listed "Human Collaboration Cards" as a card type with its own dashboard treatment. The underlying capability — pausing execution for human review via routes — is fully built (Block 3a/3b: review case API, pg_notify/SSE, MCP proxy integration). What's NOT built: a dedicated suggestion card type that recommends "add human review here." Today human-review setup is route-card territory (`route_sync` with a human-review provider). A dedicated card lands when there's enough data to recommend human review based on observed value-at-stake patterns.
 
 ---
 
 ## The Policy Lifecycle
 
-No policy goes from recommended to enforced in one step. Every policy moves through a defined lifecycle, visible on the dashboard:
+No policy goes from recommended to enforced in one step. The unit of lifecycle is the **policy**, not the individual rule. A policy is in one state; the state determines whether its rules bind decisions or merely observe. Five states exist; the lifecycle UI on `PolicyDetailPage` surfaces transitions and history for each policy.
 
-### Recommended → Staged (Observe)
+> **🟡 Architecture note (Wave 9.2.5):** Multi-active-policy evaluation
+> is new architecture landing in Wave 9.2.5. The current evaluator
+> loads one active policy per `(org_id, environment)`. The model below
+> describes the V1.0 target. Until 9.2.5 lands, accept-flow UX
+> behaves as-if-but-isn't: a "staged policy" today is a staged
+> rule within the single active policy. The user-facing operations
+> (accept, merge, promote) and the conceptual model are the same
+> in both worlds; only the storage shape changes underneath.
 
-The developer clicks "Activate" on a policy card. The policy enters staged observation mode. It evaluates every matching action but does not enforce — decisions are recorded as "would have been BLOCKED" or "would have been RATE_LIMITED" but the action proceeds.
+### The five states
 
-The card updates in real time with observation data: how many times the policy would have triggered, on which actions, with what parameters. False positives are identifiable — legitimate actions that would have been incorrectly blocked.
+| State | Evaluator behavior | Typical entry path |
+|---|---|---|
+| `draft` | Skipped entirely. Visible in the UI but doesn't evaluate. | Manually authored and held back before any go-live |
+| `staged` | Evaluates against live traffic; emits "would have" decisions as `staged_observations` on every Decision; does NOT bind. | **Default landing state for accepted policy_rule / rate_limit suggestions** (creates a new staged policy). |
+| `active` | Binds decisions. The first matching active rule across all active policies (by priority within and across) drives the actual ALLOW/BLOCK/PAUSE outcome. | Promoted from `staged` after regression report review |
+| `disabled` | Skipped entirely. Distinct from `draft` — the policy was once active and was turned off. | Kill-switch policies land here; flipped to `active` during incidents |
+| `archived` | Skipped entirely. Distinct from `disabled` — explicitly retired, kept for audit history. | Old policies being replaced |
 
-### Staged (Observe) → Regression Report
+### Composition — what "multiple active policies" means
 
-After a configurable observation period (default: 7 days), the card produces a regression report:
+The evaluator walks every active policy in priority order, producing a single Decision. **Composition emerges through envelope enrichment**: a route response from one policy's rule lands as an envelope field, which a later policy's rule can match against. Example:
 
-- Total actions evaluated against this policy
-- Number of times it would have triggered
-- Breakdown of triggers: legitimate blocks vs potential false positives
-- Comparison to the developer's actual system behavior
-- Suggested adjustments if false positives were detected
-- Confidence assessment: "This policy is ready for enforcement" or "Consider adjusting threshold before enforcing"
+> Security policy fires a `route_sync` to a fraud check → fraud score lands on the envelope → compliance policy's threshold rule sees the score → routes to human review → reviewer response enriches the envelope further → audit policy emits to Datadog.
 
-### Regression Report → Enforced
+Three perspectives — security, compliance, operations — composing on one action through configuration. No integration code, no orchestration glue. **That composition story is the load-bearing differentiator** for the policy-level direction; it's why per-rule lifecycle within one mega-policy was the wrong primary model.
 
-The developer reviews the regression report, makes any adjustments, and clicks "Promote to enforce." The policy is now live. The card status updates to "Enforcing" with ongoing metrics: how many times it has triggered since enforcement, current trigger rate, any anomalies.
+Staged policies participate in this walk too, but produce `staged_observations` instead of binding the outcome.
 
-### Enforced → Refinement
+### Suggestion → Staged Policy
 
-After a policy is enforcing, the system continues to monitor. If traffic patterns change, the suggestion engine generates a refinement card:
+The developer clicks "Accept" on a `policy_rule` (or `rate_limit`) card. The engine creates **a new staged policy** containing the suggested rule(s). The new policy evaluates against live traffic immediately, but only emits `staged_observations` — none of its rules bind the actual Decision.
 
-- "Your send_email volume has increased 40% since you set this rate limit. The current limit of 60/hour triggered 12 times last week, 8 of which were legitimate traffic."
-- Suggested adjustment with the new threshold
-- Preview: "If this adjustment had been active last week, here's what would have happened"
+This is the **side-by-side evaluation** model: active policies and staged policies walk together in a single pass. The Decision response carries `staged_observations: [...]` (always an array; empty when no staged policy matched). Filters (scope / temporal / percentage) apply identically to staged and active policies.
 
-The refinement follows the same lifecycle: staged observation → regression report → promote. Nothing changes enforcement without data-backed testing first.
+### Staged → Regression Report
+
+Each staged policy carries an `observation_window_days` (default 7). After the window, an auto-trigger or manual trigger generates a regression report comparing what the staged policy would have decided against what the active policies actually decided over the window.
+
+The regression report stores:
+- Total envelope volume in the window
+- Staged-policy match count + would-be decision distribution
+- Divergence count (cases where the staged policy would have BLOCKed but the active set ALLOWed, or vice versa)
+- Per-divergence envelope snapshots (capped) so the operator can spot-check
+- `promotion_safety` heuristic: `safe` / `review` / `risky` based on divergence magnitude
+
+Regression reports are **stored artifacts**, not ephemeral one-shots — the full history of staged → active (or staged → merged) transitions is queryable for the audit trail.
+
+### Regression Report → Two integration paths
+
+The operator reviews the regression report on `PolicyDetailPage`, then chooses how to integrate the staged policy:
+
+**Promote** — make the staged policy active as its own thing. State transitions `staged → active`. It joins the set of active policies, composes with them, binds decisions on matching envelopes. Used when the staged policy represents a distinct concern that should evolve independently (a new security policy, a new compliance overlay).
+
+**Merge** — fold the staged policy's rules into an existing active policy as a new policy version. The staged policy ends in `archived`; the target active policy gets a version bump containing the merged rules. Used when the staged policy is an incremental refinement of an existing concern (a tighter threshold, an additional matching condition).
+
+The default choice on `PolicyDetailPage` is Promote unless the staged policy was generated as a refinement card (in which case Merge is offered first). Both record who did it and when, and link back to the regression report that justified the transition.
+
+### Active → Disabled / Archived (rollback paths)
+
+If an active policy misbehaves in production, the operator can flip it to `disabled` (pause, retain) or `archived` (retire, replace). Both are skip-from-evaluator semantically; the distinction matters for humans reading the policy history.
+
+Auto-rollback (Block 4b-1) operates at policy level: if a policy's BLOCK rate spikes above a cooldown threshold within a window of being promoted, the system flips the whole policy back to `staged` automatically and surfaces a notification. Operator review required to re-promote.
+
+### Refinement loop
+
+After a policy is `active`, the engine continues observing. If traffic patterns shift, a refinement card surfaces — typically as a new staged policy proposing a variant. The same flow applies: staged → regression report → promote or merge. Nothing changes enforcement without a regression report behind it.
+
+### What about the per-rule `lifecycle_stage` field?
+
+Block 1A added a `lifecycle_stage` field on individual rules. With the policy-level direction, that field stays in the rule schema as **metadata** (useful for human reading of who-tweaked-what within a policy version, and for compatibility with the existing dashboard rendering) but **is not the operational mechanism**. The evaluator gates evaluation by the containing policy's state, not by per-rule stage.
+
+A future cleanup may remove the per-rule field entirely. Until then, treat it as informational. The dashboard's RuleCard component reads it for display continuity.
+
+---
+
+## Guidance-to-Policy: The Scanner Bridge (Block 4b-2 / 4b-3)
+
+A workflow the spec didn't originally describe but which is now central to observe-mode value.
+
+### The problem it solves
+
+Developers write rules in coding-agent memory files, `.cursorrules`, system prompts, MCP configs, and other instruction files. These are intent — "the agent should never X" or "always Y" — but they have no architectural enforcement. The agent might follow them; the agent might not. There's no audit trail proving compliance.
+
+The scanner (Ring 5.5) extracts these guidance rules from the codebase. Each finding includes the rule text, source location (file + line), rule type, and which Ring 3/4 actions it likely governs.
+
+### The workflow
+
+1. **Scan.** Developer runs `hiitl scan --upload --hiitl-key sk_...` against their codebase. Findings POST to `/v1/guidance-findings/bulk` (org-scoped, environment-scoped, idempotent per scan_id).
+
+2. **Analyze.** The guidance analyzer joins the findings against `audit_events` over a configurable window (default 14 days). For each finding, it counts how many times the related actions actually ran. If `violation_count > 0` and `confidence_band ∈ {high, medium}`, a `guidance_to_policy` suggestion is emitted.
+
+3. **Surface.** Suggestion appears on the dashboard with a distinct amber-accent card (Block 4b-3) so the operator immediately recognizes "this is a rule I wrote that's being violated." Card shows: source location, rule text, retrospective ("would have caught all N invocations in the last X days"), violations-observed table with timestamps + parameter snippets, and a proposed policy preview.
+
+4. **Activate.** Operator clicks "Activate" — same flow as a normal policy suggestion. Rule lands in `staged` mode for the standard observation window before binding.
+
+For rule types the analyzer can't safely auto-convert (`conditional` / `configuration` / `complex_construction`), `suggested_policy` is null. The card relabels "Activate" → "Acknowledge" and explains why the rule needs hand-writing.
+
+### Why this matters
+
+The two-disciplines thesis (context engineering for reasoning, control point for actions) lives or dies on this loop. **The scanner finds rules that belong in the control point but are stuck in the prompt.** The dashboard surfaces them with their violation evidence. The operator promotes them to enforced rules in two clicks. The rules that were probabilistic become deterministic. That's the bridge.
 
 ---
 

@@ -1,4 +1,4 @@
-"""HIITL - Human Intelligence in the Loop.
+"""hiitl - Human Intelligence in the Loop.
 
 Deterministic control point for software that can act.
 
@@ -27,31 +27,39 @@ With policy enforcement:
     ...     process_payment()
 """
 
-__version__ = "0.1.0"
+from hiitl._version import __version__
 
 # Import main SDK class
 from hiitl.sdk.client import HIITL
 
-# Import common exceptions
+# Every error the SDK raises (test_exceptions.py reads them from hiitl.sdk.exceptions)
 from hiitl.sdk.exceptions import (
     AuditLogError,
+    ColdStartError,
     ConfigurationError,
     EnvelopeValidationError,
     HIITLError,
+    LifecycleError,
     NetworkError,
     PolicyLoadError,
+    RouteLoadError,
     ServerError,
+    SyncError,
 )
 
 # Export public API
 __all__ = [
     "HIITL",
     "HIITLError",
+    "LifecycleError",
     "PolicyLoadError",
     "AuditLogError",
     "ConfigurationError",
     "EnvelopeValidationError",
     "ServerError",
     "NetworkError",
+    "RouteLoadError",
+    "SyncError",
+    "ColdStartError",
     "__version__",
 ]

@@ -1,0 +1,18 @@
+{
+  "python": [
+    {"case":"cached-policy/first","target":"local","stages":["alone","suite"],"warmup":0,"count":20},
+    {"case":"cached-policy/repeated","target":"local","stages":["alone","suite"],"warmup":0,"count":20},
+    {"case":"sdk/local-call","target":"local","stages":["suite"],"warmup":1,"count":100},
+    {"case":"core/allow/evaluation","target":"core","stages":["suite"],"warmup":200,"count":1500},
+    {"case":"core/allow/total","target":"local","stages":["suite"],"warmup":200,"count":1500},
+    {"case":"core/timing/evaluation","target":"core","stages":["suite"],"warmup":200,"count":1500},
+    {"case":"core/timing/total","target":"local","stages":["suite"],"warmup":200,"count":1500}
+  ],
+  "node": [
+    {"case":"sdk/local-call","target":"local","stages":["suite"],"warmup":1,"count":100},
+    {"case":"core/simple-atomic","target":"core","stages":["suite"],"warmup":100,"count":1000},
+    {"case":"core/logical-all-of","target":"core","stages":["suite"],"warmup":100,"count":1000},
+    {"case":"core/priority-sorting","target":"core","stages":["suite"],"warmup":100,"count":1000},
+    {"case":"core/nested-conditions","target":"core","stages":["suite"],"warmup":100,"count":1000}
+  ]
+}

@@ -1,0 +1,6212 @@
+{
+  "source_hashes": {
+    "docs/specs/envelope_schema.json": "4b6d164f63c480f76ddbeba31ab2080f278d3ea80f99408241b8cca871a49c0a",
+    "docs/specs/policy_format.md": "91b34ee19b141c4d74eeb7be363a81c449061a298f76681779c742ec0d1c628e",
+    "docs/specs/ecp_evaluate_spec.md": "c718037f0dbc1069d2197364c0a1f668f5fa9af194875a3654a90e68de5ea2b3"
+  },
+  "date_members": [
+    {
+      "path": [
+        "principal",
+        "verified_at"
+      ],
+      "address": "#/properties/principal/properties/verified_at"
+    },
+    {
+      "path": [
+        "timestamp"
+      ],
+      "address": "#/properties/timestamp"
+    }
+  ],
+  "operators": [
+    "equals",
+    "not_equals",
+    "greater_than",
+    "greater_than_or_equal",
+    "less_than",
+    "less_than_or_equal",
+    "contains",
+    "not_contains",
+    "starts_with",
+    "ends_with",
+    "in",
+    "not_in",
+    "exists",
+    "conforms_to"
+  ],
+  "cases": [
+    {
+      "id": "principal.verified_at/equals/False",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000000",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": true,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "principal.verified_at",
+              "operator": "equals",
+              "value": "2026-11-14t01:02:03.123456789+05:30"
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/equals/True",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000001",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": true,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "principal.verified_at",
+              "operator": "equals",
+              "value": {
+                "$field": "parameters.right"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/equals/date-right",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000002",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "left": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": true,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "parameters.left",
+              "operator": "equals",
+              "value": {
+                "$field": "principal.verified_at"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/not_equals/False",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000003",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": false,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "principal.verified_at",
+              "operator": "not_equals",
+              "value": "2026-11-14t01:02:03.123456789+05:30"
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/not_equals/True",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000004",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": false,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "principal.verified_at",
+              "operator": "not_equals",
+              "value": {
+                "$field": "parameters.right"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/not_equals/date-right",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000005",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "left": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": false,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "parameters.left",
+              "operator": "not_equals",
+              "value": {
+                "$field": "principal.verified_at"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/greater_than/False",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000006",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": 1
+        },
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": "error",
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "principal.verified_at",
+              "operator": "greater_than",
+              "value": 1
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/greater_than/True",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000007",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": 1
+        },
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": "error",
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "principal.verified_at",
+              "operator": "greater_than",
+              "value": {
+                "$field": "parameters.right"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/greater_than/date-right",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000008",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "left": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": "error",
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "parameters.left",
+              "operator": "greater_than",
+              "value": {
+                "$field": "principal.verified_at"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/greater_than_or_equal/False",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000009",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": 1
+        },
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": "error",
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "principal.verified_at",
+              "operator": "greater_than_or_equal",
+              "value": 1
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/greater_than_or_equal/True",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000010",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": 1
+        },
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": "error",
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "principal.verified_at",
+              "operator": "greater_than_or_equal",
+              "value": {
+                "$field": "parameters.right"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/greater_than_or_equal/date-right",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000011",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "left": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": "error",
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "parameters.left",
+              "operator": "greater_than_or_equal",
+              "value": {
+                "$field": "principal.verified_at"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/less_than/False",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000012",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": 1
+        },
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": "error",
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "principal.verified_at",
+              "operator": "less_than",
+              "value": 1
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/less_than/True",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000013",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": 1
+        },
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": "error",
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "principal.verified_at",
+              "operator": "less_than",
+              "value": {
+                "$field": "parameters.right"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/less_than/date-right",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000014",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "left": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": "error",
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "parameters.left",
+              "operator": "less_than",
+              "value": {
+                "$field": "principal.verified_at"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/less_than_or_equal/False",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000015",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": 1
+        },
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": "error",
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "principal.verified_at",
+              "operator": "less_than_or_equal",
+              "value": 1
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/less_than_or_equal/True",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000016",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": 1
+        },
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": "error",
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "principal.verified_at",
+              "operator": "less_than_or_equal",
+              "value": {
+                "$field": "parameters.right"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/less_than_or_equal/date-right",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000017",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "left": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": "error",
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "parameters.left",
+              "operator": "less_than_or_equal",
+              "value": {
+                "$field": "principal.verified_at"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/contains/False",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000018",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": true,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "principal.verified_at",
+              "operator": "contains",
+              "value": "2026-11-14t01:02:03.123456789+05:30"
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/contains/True",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000019",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": true,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "principal.verified_at",
+              "operator": "contains",
+              "value": {
+                "$field": "parameters.right"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/contains/date-right",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000020",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "left": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": true,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "parameters.left",
+              "operator": "contains",
+              "value": {
+                "$field": "principal.verified_at"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/not_contains/False",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000021",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": false,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "principal.verified_at",
+              "operator": "not_contains",
+              "value": "2026-11-14t01:02:03.123456789+05:30"
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/not_contains/True",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000022",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": false,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "principal.verified_at",
+              "operator": "not_contains",
+              "value": {
+                "$field": "parameters.right"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/not_contains/date-right",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000023",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "left": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": false,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "parameters.left",
+              "operator": "not_contains",
+              "value": {
+                "$field": "principal.verified_at"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/starts_with/False",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000024",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": true,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "principal.verified_at",
+              "operator": "starts_with",
+              "value": "2026-11-14t01:02:03.123456789+05:30"
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/starts_with/True",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000025",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": true,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "principal.verified_at",
+              "operator": "starts_with",
+              "value": {
+                "$field": "parameters.right"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/starts_with/date-right",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000026",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "left": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": true,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "parameters.left",
+              "operator": "starts_with",
+              "value": {
+                "$field": "principal.verified_at"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/ends_with/False",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000027",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": true,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "principal.verified_at",
+              "operator": "ends_with",
+              "value": "2026-11-14t01:02:03.123456789+05:30"
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/ends_with/True",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000028",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": true,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "principal.verified_at",
+              "operator": "ends_with",
+              "value": {
+                "$field": "parameters.right"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/ends_with/date-right",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000029",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "left": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": true,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "parameters.left",
+              "operator": "ends_with",
+              "value": {
+                "$field": "principal.verified_at"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/in/False",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000030",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": [
+            "2026-11-14t01:02:03.123456789+05:30"
+          ]
+        },
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": true,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "principal.verified_at",
+              "operator": "in",
+              "value": [
+                "2026-11-14t01:02:03.123456789+05:30"
+              ]
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/in/True",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000031",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": [
+            "2026-11-14t01:02:03.123456789+05:30"
+          ]
+        },
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": true,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "principal.verified_at",
+              "operator": "in",
+              "value": {
+                "$field": "parameters.right"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/in/date-right",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000032",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "left": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": "error",
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "parameters.left",
+              "operator": "in",
+              "value": {
+                "$field": "principal.verified_at"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/not_in/False",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000033",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": [
+            "2026-11-14t01:02:03.123456789+05:30"
+          ]
+        },
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": false,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "principal.verified_at",
+              "operator": "not_in",
+              "value": [
+                "2026-11-14t01:02:03.123456789+05:30"
+              ]
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/not_in/True",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000034",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": [
+            "2026-11-14t01:02:03.123456789+05:30"
+          ]
+        },
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": false,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "principal.verified_at",
+              "operator": "not_in",
+              "value": {
+                "$field": "parameters.right"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/not_in/date-right",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000035",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "left": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": "error",
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "parameters.left",
+              "operator": "not_in",
+              "value": {
+                "$field": "principal.verified_at"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/exists/False",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000036",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": true
+        },
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": true,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "principal.verified_at",
+              "operator": "exists",
+              "value": true
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/conforms_to/False",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000037",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": {}
+        },
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": "error",
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "principal.verified_at",
+              "operator": "conforms_to",
+              "value": {}
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/conforms_to/True",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000038",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": {}
+        },
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": "error",
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "principal.verified_at",
+              "operator": "conforms_to",
+              "value": {
+                "$field": "parameters.right"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/conforms_to/date-right",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000039",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "left": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": "error",
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "parameters.left",
+              "operator": "conforms_to",
+              "value": {
+                "$field": "principal.verified_at"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/different-text/2026-11-14T01:02:03.123456789+05:30",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000040",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": false,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "principal.verified_at",
+              "operator": "equals",
+              "value": "2026-11-14T01:02:03.123456789+05:30"
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/different-text/2026-11-14t01:02:03.123456+05:30",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000041",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": false,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "principal.verified_at",
+              "operator": "equals",
+              "value": "2026-11-14t01:02:03.123456+05:30"
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/greater_than/settle/False",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000042",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": false,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "all_of": [
+                {
+                  "field": "principal.verified_at",
+                  "operator": "greater_than",
+                  "value": 1
+                },
+                {
+                  "field": "action",
+                  "operator": "equals",
+                  "value": "different"
+                }
+              ]
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/greater_than/settle/True",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000043",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": false,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "all_of": [
+                {
+                  "field": "action",
+                  "operator": "equals",
+                  "value": "different"
+                },
+                {
+                  "field": "principal.verified_at",
+                  "operator": "greater_than",
+                  "value": 1
+                }
+              ]
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/greater_than_or_equal/settle/False",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000044",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": false,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "all_of": [
+                {
+                  "field": "principal.verified_at",
+                  "operator": "greater_than_or_equal",
+                  "value": 1
+                },
+                {
+                  "field": "action",
+                  "operator": "equals",
+                  "value": "different"
+                }
+              ]
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/greater_than_or_equal/settle/True",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000045",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": false,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "all_of": [
+                {
+                  "field": "action",
+                  "operator": "equals",
+                  "value": "different"
+                },
+                {
+                  "field": "principal.verified_at",
+                  "operator": "greater_than_or_equal",
+                  "value": 1
+                }
+              ]
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/less_than/settle/False",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000046",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": false,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "all_of": [
+                {
+                  "field": "principal.verified_at",
+                  "operator": "less_than",
+                  "value": 1
+                },
+                {
+                  "field": "action",
+                  "operator": "equals",
+                  "value": "different"
+                }
+              ]
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/less_than/settle/True",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000047",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": false,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "all_of": [
+                {
+                  "field": "action",
+                  "operator": "equals",
+                  "value": "different"
+                },
+                {
+                  "field": "principal.verified_at",
+                  "operator": "less_than",
+                  "value": 1
+                }
+              ]
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/less_than_or_equal/settle/False",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000048",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": false,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "all_of": [
+                {
+                  "field": "principal.verified_at",
+                  "operator": "less_than_or_equal",
+                  "value": 1
+                },
+                {
+                  "field": "action",
+                  "operator": "equals",
+                  "value": "different"
+                }
+              ]
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal.verified_at/less_than_or_equal/settle/True",
+      "member": {
+        "path": [
+          "principal",
+          "verified_at"
+        ],
+        "address": "#/properties/principal/properties/verified_at"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000049",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789+05:30"
+        }
+      },
+      "expected": false,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "all_of": [
+                {
+                  "field": "action",
+                  "operator": "equals",
+                  "value": "different"
+                },
+                {
+                  "field": "principal.verified_at",
+                  "operator": "less_than_or_equal",
+                  "value": 1
+                }
+              ]
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/equals/False",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000050",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": true,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "timestamp",
+              "operator": "equals",
+              "value": "2026-11-14t01:02:03.123456789+05:30"
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/equals/True",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000051",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": true,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "timestamp",
+              "operator": "equals",
+              "value": {
+                "$field": "parameters.right"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/equals/date-right",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000052",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "left": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": true,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "parameters.left",
+              "operator": "equals",
+              "value": {
+                "$field": "timestamp"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/not_equals/False",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000053",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": false,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "timestamp",
+              "operator": "not_equals",
+              "value": "2026-11-14t01:02:03.123456789+05:30"
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/not_equals/True",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000054",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": false,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "timestamp",
+              "operator": "not_equals",
+              "value": {
+                "$field": "parameters.right"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/not_equals/date-right",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000055",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "left": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": false,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "parameters.left",
+              "operator": "not_equals",
+              "value": {
+                "$field": "timestamp"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/greater_than/False",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000056",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": 1
+        },
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": "error",
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "timestamp",
+              "operator": "greater_than",
+              "value": 1
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/greater_than/True",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000057",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": 1
+        },
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": "error",
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "timestamp",
+              "operator": "greater_than",
+              "value": {
+                "$field": "parameters.right"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/greater_than/date-right",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000058",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "left": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": "error",
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "parameters.left",
+              "operator": "greater_than",
+              "value": {
+                "$field": "timestamp"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/greater_than_or_equal/False",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000059",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": 1
+        },
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": "error",
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "timestamp",
+              "operator": "greater_than_or_equal",
+              "value": 1
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/greater_than_or_equal/True",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000060",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": 1
+        },
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": "error",
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "timestamp",
+              "operator": "greater_than_or_equal",
+              "value": {
+                "$field": "parameters.right"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/greater_than_or_equal/date-right",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000061",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "left": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": "error",
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "parameters.left",
+              "operator": "greater_than_or_equal",
+              "value": {
+                "$field": "timestamp"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/less_than/False",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000062",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": 1
+        },
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": "error",
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "timestamp",
+              "operator": "less_than",
+              "value": 1
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/less_than/True",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000063",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": 1
+        },
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": "error",
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "timestamp",
+              "operator": "less_than",
+              "value": {
+                "$field": "parameters.right"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/less_than/date-right",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000064",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "left": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": "error",
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "parameters.left",
+              "operator": "less_than",
+              "value": {
+                "$field": "timestamp"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/less_than_or_equal/False",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000065",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": 1
+        },
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": "error",
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "timestamp",
+              "operator": "less_than_or_equal",
+              "value": 1
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/less_than_or_equal/True",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000066",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": 1
+        },
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": "error",
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "timestamp",
+              "operator": "less_than_or_equal",
+              "value": {
+                "$field": "parameters.right"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/less_than_or_equal/date-right",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000067",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "left": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": "error",
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "parameters.left",
+              "operator": "less_than_or_equal",
+              "value": {
+                "$field": "timestamp"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/contains/False",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000068",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": true,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "timestamp",
+              "operator": "contains",
+              "value": "2026-11-14t01:02:03.123456789+05:30"
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/contains/True",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000069",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": true,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "timestamp",
+              "operator": "contains",
+              "value": {
+                "$field": "parameters.right"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/contains/date-right",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000070",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "left": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": true,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "parameters.left",
+              "operator": "contains",
+              "value": {
+                "$field": "timestamp"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/not_contains/False",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000071",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": false,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "timestamp",
+              "operator": "not_contains",
+              "value": "2026-11-14t01:02:03.123456789+05:30"
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/not_contains/True",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000072",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": false,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "timestamp",
+              "operator": "not_contains",
+              "value": {
+                "$field": "parameters.right"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/not_contains/date-right",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000073",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "left": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": false,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "parameters.left",
+              "operator": "not_contains",
+              "value": {
+                "$field": "timestamp"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/starts_with/False",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000074",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": true,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "timestamp",
+              "operator": "starts_with",
+              "value": "2026-11-14t01:02:03.123456789+05:30"
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/starts_with/True",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000075",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": true,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "timestamp",
+              "operator": "starts_with",
+              "value": {
+                "$field": "parameters.right"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/starts_with/date-right",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000076",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "left": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": true,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "parameters.left",
+              "operator": "starts_with",
+              "value": {
+                "$field": "timestamp"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/ends_with/False",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000077",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": true,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "timestamp",
+              "operator": "ends_with",
+              "value": "2026-11-14t01:02:03.123456789+05:30"
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/ends_with/True",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000078",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": true,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "timestamp",
+              "operator": "ends_with",
+              "value": {
+                "$field": "parameters.right"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/ends_with/date-right",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000079",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "left": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": true,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "parameters.left",
+              "operator": "ends_with",
+              "value": {
+                "$field": "timestamp"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/in/False",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000080",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": [
+            "2026-11-14t01:02:03.123456789+05:30"
+          ]
+        },
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": true,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "timestamp",
+              "operator": "in",
+              "value": [
+                "2026-11-14t01:02:03.123456789+05:30"
+              ]
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/in/True",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000081",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": [
+            "2026-11-14t01:02:03.123456789+05:30"
+          ]
+        },
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": true,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "timestamp",
+              "operator": "in",
+              "value": {
+                "$field": "parameters.right"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/in/date-right",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000082",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "left": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": "error",
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "parameters.left",
+              "operator": "in",
+              "value": {
+                "$field": "timestamp"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/not_in/False",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000083",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": [
+            "2026-11-14t01:02:03.123456789+05:30"
+          ]
+        },
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": false,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "timestamp",
+              "operator": "not_in",
+              "value": [
+                "2026-11-14t01:02:03.123456789+05:30"
+              ]
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/not_in/True",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000084",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": [
+            "2026-11-14t01:02:03.123456789+05:30"
+          ]
+        },
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": false,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "timestamp",
+              "operator": "not_in",
+              "value": {
+                "$field": "parameters.right"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/not_in/date-right",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000085",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "left": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": "error",
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "parameters.left",
+              "operator": "not_in",
+              "value": {
+                "$field": "timestamp"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/exists/False",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000086",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": true
+        },
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": true,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "timestamp",
+              "operator": "exists",
+              "value": true
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/conforms_to/False",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000087",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": {}
+        },
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": "error",
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "timestamp",
+              "operator": "conforms_to",
+              "value": {}
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/conforms_to/True",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000088",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "right": {}
+        },
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": "error",
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "timestamp",
+              "operator": "conforms_to",
+              "value": {
+                "$field": "parameters.right"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/conforms_to/date-right",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000089",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "left": "2026-11-14t01:02:03.123456789+05:30"
+        },
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": "error",
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "parameters.left",
+              "operator": "conforms_to",
+              "value": {
+                "$field": "timestamp"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/different-text/2026-11-14T01:02:03.123456789+05:30",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000090",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": false,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "timestamp",
+              "operator": "equals",
+              "value": "2026-11-14T01:02:03.123456789+05:30"
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/different-text/2026-11-14t01:02:03.123456+05:30",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000091",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": false,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "timestamp",
+              "operator": "equals",
+              "value": "2026-11-14t01:02:03.123456+05:30"
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/greater_than/settle/False",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000092",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": false,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "all_of": [
+                {
+                  "field": "timestamp",
+                  "operator": "greater_than",
+                  "value": 1
+                },
+                {
+                  "field": "action",
+                  "operator": "equals",
+                  "value": "different"
+                }
+              ]
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/greater_than/settle/True",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000093",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": false,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "all_of": [
+                {
+                  "field": "action",
+                  "operator": "equals",
+                  "value": "different"
+                },
+                {
+                  "field": "timestamp",
+                  "operator": "greater_than",
+                  "value": 1
+                }
+              ]
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/greater_than_or_equal/settle/False",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000094",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": false,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "all_of": [
+                {
+                  "field": "timestamp",
+                  "operator": "greater_than_or_equal",
+                  "value": 1
+                },
+                {
+                  "field": "action",
+                  "operator": "equals",
+                  "value": "different"
+                }
+              ]
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/greater_than_or_equal/settle/True",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000095",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": false,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "all_of": [
+                {
+                  "field": "action",
+                  "operator": "equals",
+                  "value": "different"
+                },
+                {
+                  "field": "timestamp",
+                  "operator": "greater_than_or_equal",
+                  "value": 1
+                }
+              ]
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/less_than/settle/False",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000096",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": false,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "all_of": [
+                {
+                  "field": "timestamp",
+                  "operator": "less_than",
+                  "value": 1
+                },
+                {
+                  "field": "action",
+                  "operator": "equals",
+                  "value": "different"
+                }
+              ]
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/less_than/settle/True",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000097",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": false,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "all_of": [
+                {
+                  "field": "action",
+                  "operator": "equals",
+                  "value": "different"
+                },
+                {
+                  "field": "timestamp",
+                  "operator": "less_than",
+                  "value": 1
+                }
+              ]
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/less_than_or_equal/settle/False",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000098",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": false,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "all_of": [
+                {
+                  "field": "timestamp",
+                  "operator": "less_than_or_equal",
+                  "value": 1
+                },
+                {
+                  "field": "action",
+                  "operator": "equals",
+                  "value": "different"
+                }
+              ]
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "timestamp/less_than_or_equal/settle/True",
+      "member": {
+        "path": [
+          "timestamp"
+        ],
+        "address": "#/properties/timestamp"
+      },
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000099",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14t01:02:03.123456789+05:30",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T01:02:03Z"
+        }
+      },
+      "expected": false,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "all_of": [
+                {
+                  "field": "action",
+                  "operator": "equals",
+                  "value": "different"
+                },
+                {
+                  "field": "timestamp",
+                  "operator": "less_than_or_equal",
+                  "value": 1
+                }
+              ]
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal/equals",
+      "member": null,
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000100",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789z"
+        }
+      },
+      "expected": true,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "principal",
+              "operator": "equals",
+              "value": {
+                "sub": "review-user",
+                "verified_by": "sdk_verifier",
+                "verified_at": "2026-11-14t01:02:03.123456789z"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal/not_equals",
+      "member": null,
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000101",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789z"
+        }
+      },
+      "expected": false,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "principal",
+              "operator": "not_equals",
+              "value": {
+                "sub": "review-user",
+                "verified_by": "sdk_verifier",
+                "verified_at": "2026-11-14t01:02:03.123456789z"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal/in",
+      "member": null,
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000102",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789z"
+        }
+      },
+      "expected": true,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "principal",
+              "operator": "in",
+              "value": [
+                {
+                  "sub": "review-user",
+                  "verified_by": "sdk_verifier",
+                  "verified_at": "2026-11-14t01:02:03.123456789z"
+                }
+              ]
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal/not_in",
+      "member": null,
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000103",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {},
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789z"
+        }
+      },
+      "expected": false,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "principal",
+              "operator": "not_in",
+              "value": [
+                {
+                  "sub": "review-user",
+                  "verified_by": "sdk_verifier",
+                  "verified_at": "2026-11-14t01:02:03.123456789z"
+                }
+              ]
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal/list/contains",
+      "member": null,
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000104",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "objects": [
+            {
+              "sub": "review-user",
+              "verified_by": "sdk_verifier",
+              "verified_at": "2026-11-14t01:02:03.123456789z"
+            }
+          ]
+        },
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789z"
+        }
+      },
+      "expected": true,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "parameters.objects",
+              "operator": "contains",
+              "value": {
+                "$field": "principal"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal/list/not_contains",
+      "member": null,
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000105",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "objects": [
+            {
+              "sub": "review-user",
+              "verified_by": "sdk_verifier",
+              "verified_at": "2026-11-14t01:02:03.123456789z"
+            }
+          ]
+        },
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789z"
+        }
+      },
+      "expected": false,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "parameters.objects",
+              "operator": "not_contains",
+              "value": {
+                "$field": "principal"
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "principal/conforms_to/string",
+      "member": null,
+      "envelope": {
+        "schema_version": "v2.0",
+        "org_id": "org_1234567890abcdef",
+        "environment": "dev",
+        "agent_id": "fixture",
+        "action_id": "act_00000000000000000106",
+        "idempotency_key": "scalar",
+        "action": "read",
+        "operation": "execute",
+        "target": {},
+        "parameters": {
+          "objects": [
+            {
+              "sub": "review-user",
+              "verified_by": "sdk_verifier",
+              "verified_at": "2026-11-14t01:02:03.123456789z"
+            }
+          ]
+        },
+        "timestamp": "2026-11-14T01:02:03Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "review-user",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14t01:02:03.123456789z"
+        }
+      },
+      "expected": true,
+      "policy": {
+        "name": "scalar-policy",
+        "version": "v1.0.0",
+        "description": "equal supplied JSON objects",
+        "scope": {
+          "org_id": "org_1234567890abcdef",
+          "environment": "dev"
+        },
+        "rules": [
+          {
+            "name": "scalar-equality",
+            "description": "read declared equality",
+            "priority": 1,
+            "lifecycle_stage": "active",
+            "conditions": {
+              "field": "principal",
+              "operator": "conforms_to",
+              "value": {
+                "properties": {
+                  "verified_at": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "decision": "ALLOW",
+            "reason_code": "SCALAR_EQUAL"
+          }
+        ]
+      }
+    }
+  ]
+}

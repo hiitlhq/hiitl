@@ -3,7 +3,7 @@ title: "Audit Log"
 description: "Query the audit trail"
 ---
 
-Every action evaluated by hiitl produces an immutable audit record, including blocked actions. The audit API provides read access to these records.
+The hosted service records decisions, including blocked actions, where its audit store answers. An audit write failure leaves no record. A request refused before an envelope exists also has no decision or record: this includes a number outside the numeric domain, even when the body carries a string `action_id`. See [where errors are answered](/api/evaluate#errors-are-decisions). The audit API provides read-only access to the records that were written.
 
 ## List audit records
 
@@ -13,61 +13,63 @@ GET /v1/audit
 
 **Required scope:** `read`
 
-Returns audit records matching the specified filters, ordered by timestamp descending.
+Returns your organization's audit records that match the filters, newest first. These are the records of the API key's environment (signed in to the dashboard, the environment it shows).
 
 **Query parameters:**
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
+| `environment` | string | The API key's environment, which is also the default. Naming another is refused with `403 TENANT_MISMATCH`: read another environment's records with a key of that environment |
 | `agent_id` | string | Filter by agent ID |
-| `action` | string | Filter by action/tool name |
-| `decision` | string | Filter by decision type (`ALLOW`, `BLOCK`, etc.) |
-| `environment` | string | Filter by environment |
-| `start_date` | ISO 8601 | Records after this timestamp |
-| `end_date` | ISO 8601 | Records before this timestamp |
-| `user_id` | string | Filter by end-user ID |
-| `limit` | integer | Max records to return (default 50, max 1000) |
-| `cursor` | string | Pagination cursor from previous response |
+| `action` | string | Filter by the record's action, its envelope's `action` (`tool_name` before record format 2.0, now refused, naming `action`) |
+| `decision_type` | string | Filter by decision type (`ALLOW`, `BLOCK`, etc.) |
+| `limit` | integer | Max records to return (default 50, max 500) |
+| `offset` | integer | Number of records to skip (default 0) |
 
 **Example:**
 
 ```bash
 curl -H "Authorization: Bearer $API_KEY" \
-  "https://api.hiitl.com/v1/audit?agent_id=payment-agent&decision=BLOCK&limit=10"
+  "https://api.hiitl.com/v1/audit?agent_id=payment-agent&decision_type=BLOCK&limit=10"
 ```
 
-```json
+```jsonc
 {
-  "records": [
+  "events": [
     {
-      "id": "aud_abc123",
-      "timestamp": "2025-01-15T14:23:01Z",
-      "action": "process_payment",
-      "operation": "execute",
+      "event_id": "evt_2e90d91d713c4b878051",
+      "action_id": "act_654f4ba4360e49a8a2a4",
       "agent_id": "payment-agent",
-      "environment": "prod",
-      "decision": "BLOCK",
-      "reason_codes": ["AMOUNT_EXCEEDS_LIMIT"],
-      "policy_version": "v2.1.0",
-      "timing": {
-        "evaluation_ms": 0.6,
-        "total_ms": 11.8
-      },
-      "content_hash": "sha256:f1e2d3c4..."
+      "action": "process_payment",
+      "decision_type": "BLOCK",
+      "event_type": "action.evaluated",
+      "allowed": false,
+      "timestamp": "2026-11-04T03:57:00.959302+00:00",
+      "envelope": { /* … */ },
+      "decision": { /* … */ },
+      "content_hash": "04fa2e92dbfe9e7d6d710d42fcf2bee546e0d19a874b1c4c0c3a5405f75aca88"
     }
   ],
-  "cursor": "eyJsYXN0X2lkIjoiYXVkX2FiYzEyMyJ9",
-  "has_more": true
+  "count": 1,
+  "total": 1,
+  "limit": 10,
+  "offset": 0
 }
 ```
 
+`count` is the number of records in this page. `total` is the number of records that match the filters.
+
+Each record's `allowed` is its decision's own, and its `event_type` is computed from what it carries as it is read: on a result record (one carrying `execution_result`), `action.executed`, `action.failed` or `action.canceled` by the result's `status`; otherwise `signature.invalid` for a `SIGNATURE_INVALID` decision, `control_plane.unavailable` for `CONTROL_PLANE_UNAVAILABLE`, and `action.evaluated` for every other decision.
+
+A record carries three further members only where they apply, and leaves them out otherwise: `execution_result` on a result record ([Recording the result](/api/evaluate#recording-the-result)); `redaction`, `{"absent": [...]}`, naming each declared field the envelope held no value at; and `review`, `{"unread": "<resume_token>"}`, on a result an SDK's local store wrote for a decision held for review, naming the review it did not read. The service stored that record only after reading the action's review case and finding the action let run.
+
 ### Pagination
 
-Use cursor-based pagination for large result sets:
+Use `limit` and `offset` for large result sets. To get the next page, add `limit` to `offset`:
 
 ```bash
 curl -H "Authorization: Bearer $API_KEY" \
-  "https://api.hiitl.com/v1/audit?cursor=eyJsYXN0X2lkIjoiYXVkX2FiYzEyMyJ9&limit=50"
+  "https://api.hiitl.com/v1/audit?limit=50&offset=50"
 ```
 
 ---
@@ -75,74 +77,93 @@ curl -H "Authorization: Bearer $API_KEY" \
 ## Get audit record
 
 ```
-GET /v1/audit/{id}
+GET /v1/audit/{event_id}
 ```
 
 **Required scope:** `read`
 
-Returns a single audit record with full detail including the complete envelope and decision response.
+Returns a single audit record with full detail including the complete envelope and decision response. An `event_id` that is not a record of your organization and the key's environment returns `404 AUDIT_EVENT_NOT_FOUND`, the same as one that does not exist.
 
 **Example:**
 
 ```bash
 curl -H "Authorization: Bearer $API_KEY" \
-  https://api.hiitl.com/v1/audit/aud_abc123
+  https://api.hiitl.com/v1/audit/evt_2e90d91d713c4b878051
 ```
 
-```json
+```jsonc
 {
-  "id": "aud_abc123",
-  "timestamp": "2025-01-15T14:23:01Z",
+  "event_id": "evt_2e90d91d713c4b878051",
+  "action_id": "act_654f4ba4360e49a8a2a4",
+  "agent_id": "payment-agent",
+  "action": "process_payment",
+  "decision_type": "BLOCK",
+  "event_type": "action.evaluated",
+  "allowed": false,
+  "timestamp": "2026-11-04T03:57:00.959302+00:00",
   "envelope": {
+    "schema_version": "v2.0",
+    "org_id": "org_northwindpay0001",
+    "environment": "prod",
+    "agent_id": "payment-agent",
+    "action_id": "act_654f4ba4360e49a8a2a4",
+    "idempotency_key": "payment-8841-attempt-1",
     "action": "process_payment",
     "operation": "execute",
-    "agent_id": "payment-agent",
-    "environment": "prod",
-    "target": { "account_id": "acct_123" },
+    "timestamp": "2026-11-04T03:57:00.959302Z",
+    "target": { "account_id": "acct_8f3k2m" },
     "parameters": { "amount": 15000.00, "currency": "usd" },
-    "sensitivity": ["money"],
-    "action_id": "act_xyz789abc123def456",
-    "idempotency_key": "idem_abc123"
+    "sensitivity": ["money"]
+    /* … */
   },
   "decision": {
+    "action_id": "act_654f4ba4360e49a8a2a4",
     "decision": "BLOCK",
     "allowed": false,
     "reason_codes": ["AMOUNT_EXCEEDS_LIMIT"],
-    "policy_version": "v2.1.0",
-    "envelope_hash": "sha256:a3f2b8c9d1e4f5...",
+    "policy_version": "2.1.0",
+    "envelope_hash": "2c822cb475513b4d15861983217c9d0308645ffcb73eb27c9208a38257e884b4",
+    "matched_rules": [
+      { "rule_name": "block-large-payments", "policy_set": "payments-policy", "priority": 100 }
+    ],
     "remediation": {
       "message": "Payment amount exceeds the $10,000 limit.",
-      "suggestion": "Reduce amount to $10,000 or below.",
+      "suggestion": "Reduce amount to $10,000 or below, or request approval.",
       "type": "threshold",
-      "details": { "threshold": 10000 }
-    }
+      "details": { "field": "parameters.amount", "threshold": 10000, "max_allowed": 10000 }
+    },
+    "timing": { /* … */ }
+    /* … */
   },
-  "timing": {
-    "evaluation_ms": 0.6,
-    "total_ms": 11.8
-  },
-  "content_hash": "sha256:f1e2d3c4..."
+  "content_hash": "04fa2e92dbfe9e7d6d710d42fcf2bee546e0d19a874b1c4c0c3a5405f75aca88"
 }
 ```
+
+Fields are shortened here (`/* … */`). The `envelope` holds every envelope field, including the ones that are `null`.
 
 ---
 
 ## Record integrity
 
-Every audit record includes a SHA-256 `content_hash` computed at write time. This enables individual record tamper detection.
+Every record the hosted service writes includes a SHA-256 `content_hash` computed at write time, over the record's `event_id`, `envelope` and `decision`, then its `execution_result` and its `redaction` where it carries them. A record that carries neither hashes over the first three alone. The `decision` also carries the `envelope_hash` the service returned to the caller.
+
+To check a record, recompute its hash with the Python SDK and compare:
+
+```python
+from hiitl.core.canonical import AUDIT_FURTHER, audit_content_hash
+
+
+def record_matches_hash(record: dict) -> bool:
+    """record is the JSON body of GET /v1/audit/{event_id}."""
+    further = {m: record[m] for m in AUDIT_FURTHER if m in record}
+    computed = audit_content_hash(record["event_id"], record["envelope"], record["decision"], **further)
+    return computed == record["content_hash"]
+```
 
 <Note>
-Audit records are **append-only**. Once written, a record cannot be modified or deleted for its retention window. The `content_hash` provides cryptographic proof that a record has not been altered.
+No API endpoint changes or deletes an audit record. The audit API is read-only.
 </Note>
 
 ## Retention
 
-Audit records are retained according to org-level configuration:
-
-| Tier | Default retention |
-|------|-------------------|
-| Free | 7 days |
-| Starter | 30 days |
-| Enterprise | Configurable (up to indefinite) |
-
-Records past their retention window are automatically purged.
+How long audit records are kept is set by your plan.

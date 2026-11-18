@@ -17,18 +17,19 @@ import logging
 import random
 import time
 from dataclasses import dataclass, field
+from typing import Optional
 
 import httpx
 
-from hiitl.sdk.exceptions import SyncError
+from hiitl._version import __version__ as _SDK_VERSION
+from hiitl.core.transport import https_refusal
+from hiitl.sdk.exceptions import ConfigurationError, SyncError
+from hiitl.sdk.http_client import _validation_problem
 
 logger = logging.getLogger(__name__)
 
 # Retryable HTTP status codes
 _RETRYABLE_STATUS_CODES = {429, 502, 503, 504}
-
-# SDK version for headers
-_SDK_VERSION = "0.1.0"
 
 
 @dataclass
@@ -45,6 +46,9 @@ class PolicyDownloadResult:
     policies: list = field(default_factory=list)
     version: str = ""
     etag: str = ""
+    # The org's redaction policy, `{"manual_redact_fields": [...]}` (event_format.md §Redaction, row 163(a)); None when
+    # the response carries none
+    redaction_policy: dict | None = None
 
 
 @dataclass
@@ -56,15 +60,24 @@ class RouteDownloadResult:
 
 @dataclass
 class KillSwitchResult:
-    """Result of a kill switch poll."""
+    """Result of a kill switch poll: the tick (sync_engine.md 2.4)."""
     kill_switches: list = field(default_factory=list)
     server_time: str = ""
+    # The version the set is read from, as far as its live switches go (HTL-29 row 240); None when the org has none
+    policy_set: Optional[dict] = None
 
 
 @dataclass
 class TelemetryUploadResult:
     """Result of a telemetry upload."""
     accepted: int = 0
+
+
+from hiitl.sdk.admission import admit_configuration
+from hiitl.core.numeric_domain import validate_numeric_domain, NumericDomainError
+from hiitl.sdk.admission import admit_sync, sync_channel
+from hiitl.sdk.sync_numbers import TELEMETRY_UPLOAD_SHAPE, _sync_numeric_shapes
+
 
 
 class SyncClient:
@@ -88,6 +101,11 @@ class SyncClient:
         timeout: float = 10.0,
         max_retries: int = 3,
     ):
+        admit_configuration(type(self).__init__, {"timeout": timeout, "max_retries": max_retries})
+        _sync_numeric_shapes()
+        refusal = https_refusal(server_url, "server_url")      # the API key goes there (sync_engine.md section 8)
+        if refusal:
+            raise ConfigurationError(refusal)
         self._server_url = server_url.rstrip("/")
         self._org_id = org_id
         self._environment = environment
@@ -96,6 +114,7 @@ class SyncClient:
         self._client = httpx.Client(
             base_url=self._server_url,
             timeout=timeout,
+            follow_redirects=False,     # a redirect is the service's answer, not a hop (sync_engine.md section 8)
             headers={
                 "Authorization": f"Bearer {api_key}",
                 "Content-Type": "application/json",
@@ -130,6 +149,8 @@ class SyncClient:
             "sync_sequence": sync_sequence,
         }
 
+        # Stored records already have their content and hash; only this new frame is input.
+        admit_sync('audit', sync_sequence, ('sync_sequence',), shape={'type':'integer'})
         body = json.dumps(payload).encode()
 
         # Compress if > 1KB
@@ -148,6 +169,7 @@ class SyncClient:
 
         if response.status_code == 200:
             data = response.json()
+            admit_sync('audit', data)
             return AuditUploadResult(
                 accepted=data.get("accepted", 0),
                 duplicates=data.get("duplicates", 0),
@@ -190,10 +212,12 @@ class SyncClient:
 
         if response.status_code == 200:
             data = response.json()
+            admit_sync('policy', data)
             return PolicyDownloadResult(
                 policies=data.get("policies", []),
                 version=data.get("version", ""),
                 etag=data.get("etag", ""),
+                redaction_policy=data.get("redaction_policy"),
             )
 
         raise SyncError(
@@ -232,6 +256,7 @@ class SyncClient:
 
         if response.status_code == 200:
             data = response.json()
+            admit_sync('routes', data)
             return RouteDownloadResult(
                 routes=data.get("routes", []),
                 etag=data.get("etag", ""),
@@ -256,9 +281,11 @@ class SyncClient:
 
         if response.status_code == 200:
             data = response.json()
+            admit_sync('kill_switches', data)
             return KillSwitchResult(
                 kill_switches=data.get("kill_switches", []),
                 server_time=data.get("server_time", ""),
+                policy_set=data.get("policy_set"),
             )
 
         raise SyncError(
@@ -287,6 +314,7 @@ class SyncClient:
             "sdk_version": _SDK_VERSION,
         }
 
+        admit_sync('telemetry', payload, shape=TELEMETRY_UPLOAD_SHAPE)
         body = json.dumps(payload).encode()
 
         # Compress if > 1KB
@@ -305,6 +333,7 @@ class SyncClient:
 
         if response.status_code == 200:
             data = response.json()
+            admit_sync('telemetry', data)
             return TelemetryUploadResult(
                 accepted=data.get("accepted", len(records)),
             )
@@ -339,6 +368,13 @@ class SyncClient:
                     headers=headers,
                 )
                 response = self._client.send(request)
+                if response.status_code != 200:
+                    try:
+                        current = response.json()
+                    except ValueError:
+                        current = None
+                    # Parse failure is distinct from a located numeric refusal.
+                    admit_sync(sync_channel(path), current)
 
                 # Success or non-retryable error
                 if response.status_code not in _RETRYABLE_STATUS_CODES:
@@ -402,14 +438,15 @@ def _backoff_with_jitter(attempt: int) -> float:
 
 
 def _extract_error(response: httpx.Response) -> str:
-    """Extract error message from response body."""
+    """The message of the documented error shapes (docs-site/api/overview.mdx "Error format"), read as the hosted
+    client reads them; the TypeScript sync client gives the same text."""
     try:
         data = response.json()
-        if isinstance(data, dict):
-            detail = data.get("detail", data)
-            if isinstance(detail, dict):
-                return detail.get("message", str(detail))
-            return str(detail)
-        return str(data)
+        detail = data.get("detail", data) if isinstance(data, dict) else data
+        if isinstance(detail, dict) and isinstance(detail.get("message"), str):
+            return detail["message"]
+        if isinstance(detail, list):
+            return "; ".join(_validation_problem(p) for p in detail)
+        return detail if isinstance(detail, str) else json.dumps(detail, separators=(",", ":"), ensure_ascii=False)
     except Exception:
         return response.text[:200] if response.text else "No response body"

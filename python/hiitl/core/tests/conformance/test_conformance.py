@@ -9,6 +9,10 @@ Each test case contains:
 - expected_decision: Expected decision output
 
 The runner validates that actual decision matches expected decision exactly.
+
+A refusal case carries one artifact (envelope, policy_set or route) and `expected_refusal` in place of
+`expected_decision`: the artifact is refused where the case says, naming what it says (R-0872, "no field is
+ever silently dropped"), and nothing is evaluated.
 """
 
 import json
@@ -18,8 +22,10 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 import pytest
+from pydantic import ValidationError
 
 from hiitl.core.evaluator import PolicyEvaluator
+from hiitl.core.route_types import Route
 from hiitl.core.types import Decision, Envelope, PolicySet
 
 
@@ -162,9 +168,75 @@ def compare_decisions(actual: Decision, expected: Dict[str, Any]) -> tuple[bool,
         if actual_wb_codes != expected_wb_codes:
             errors.append(f"would_be_reason_codes: expected {expected_wb_codes}, got {actual_wb_codes}")
 
+    # Optional: Compare staged_observations if present in expected.
+    # Block 5b conformance fixtures validated binding behavior but not
+    # the staged_observations payload itself — both runners just
+    # ignored the field. TICKET-109 / Sprint item 4 closes that gap:
+    # when `expected_decision.staged_observations` is present, the
+    # actual decision must match it element-for-element. This is the
+    # only cross-language guarantee for side-by-side staged-rule
+    # behavior — without it, would_be_binding semantics could diverge
+    # silently between Python and TS.
+    if "staged_observations" in expected:
+        expected_obs = expected["staged_observations"]
+        actual_obs_raw = actual.staged_observations or []
+        # Normalize actual to plain dicts for comparison (Python model
+        # uses Pydantic; would_be_decision is a DecisionType enum or
+        # str depending on use_enum_values config).
+        actual_obs = []
+        for o in actual_obs_raw:
+            decision_val = o.would_be_decision
+            if hasattr(decision_val, "value"):
+                decision_val = decision_val.value
+            actual_obs.append({
+                "rule_name": o.rule_name,
+                "policy_set": o.policy_set,
+                "priority": o.priority,
+                "would_be_decision": decision_val,
+                "would_be_reason_codes": list(o.would_be_reason_codes),
+                "would_be_binding": o.would_be_binding,
+            })
+        if len(actual_obs) != len(expected_obs):
+            errors.append(
+                f"staged_observations count: expected {len(expected_obs)}, got {len(actual_obs)}"
+            )
+        else:
+            for i, (e, a) in enumerate(zip(expected_obs, actual_obs)):
+                if e != a:
+                    errors.append(f"staged_observations[{i}]: expected {e}, got {a}")
+
+    # rate_limit_rules (R-0852): matching windowed RATE_LIMIT rules, in walk order, element-for-element.
+    if "rate_limit_rules" in expected:
+        actual_rl = [r.model_dump(exclude_none=True) for r in (actual.rate_limit_rules or [])]
+        if actual_rl != expected["rate_limit_rules"]:
+            errors.append(f"rate_limit_rules: expected {expected['rate_limit_rules']}, got {actual_rl}")
+
+    # missing_fields (HTL-22 row 176): each rule an absent field left unread, element-for-element; null means absent
+    if "missing_fields" in expected:
+        actual_mf = None if actual.missing_fields is None else [m.model_dump() for m in actual.missing_fields]
+        if actual_mf != expected["missing_fields"]:
+            errors.append(f"missing_fields: expected {expected['missing_fields']}, got {actual_mf}")
+
     if errors:
         return False, "\n  ".join(errors)
     return True, ""
+
+
+# The artifacts a refusal case reads, each through its model
+ARTIFACTS = {"envelope": Envelope, "policy_set": PolicySet, "route": Route}
+
+
+def check_refusal(test_case: Dict[str, Any]) -> None:
+    """The case's artifact is refused at exactly the paths it names (dotted; an undefined key's path ends in the
+    key), and the refusal names each of its `names`."""
+    refusal = test_case["expected_refusal"]
+    artifact = refusal["artifact"]
+    with pytest.raises(ValidationError) as caught:
+        ARTIFACTS[artifact].model_validate(test_case[artifact])
+    located = sorted({".".join(str(p) for p in e["loc"]) for e in caught.value.errors()})
+    assert located == sorted(refusal["at"]), f"{test_case['test_id']}: refused at {located}, expected {refusal['at']}"
+    for name in refusal.get("names", []):
+        assert name in str(caught.value), f"{test_case['test_id']}: the refusal does not name {name!r}"
 
 
 # Load all test cases
@@ -182,6 +254,10 @@ def test_conformance(test_file: Path, test_case: Dict[str, Any]):
         test_file: Path to test case file
         test_case: Test case dictionary
     """
+    if "expected_refusal" in test_case:
+        check_refusal(test_case)
+        return
+
     # Extract test data
     test_id = test_case["test_id"]
     description = test_case.get("description", "")
@@ -202,7 +278,7 @@ def test_conformance(test_file: Path, test_case: Dict[str, Any]):
     # Run evaluator
     evaluator = PolicyEvaluator()
     try:
-        actual_decision = evaluator.evaluate(envelope, policy, mode=mode)
+        actual_decision = evaluator.evaluate(envelope, policy, mode=mode, enrichment=test_case.get("enrichment"))
     except Exception as e:
         pytest.fail(f"Evaluator raised exception for test {test_id}: {e}")
 

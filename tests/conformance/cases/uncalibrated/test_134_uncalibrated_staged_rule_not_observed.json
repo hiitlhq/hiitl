@@ -1,0 +1,71 @@
+{
+  "test_id": "test_134_uncalibrated_staged_rule_not_observed",
+  "description": "A staged rule carrying the placeholder is never observed \u2014 a placeholder cannot be replayed (C6).",
+  "envelope": {
+    "schema_version": "v2.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_finance_bot",
+    "action_id": "act_test1340000000000000",
+    "timestamp": "2026-02-14T10:00:00Z",
+    "operation": "execute",
+    "parameters": {
+      "amount": 500,
+      "currency": "USD"
+    },
+    "idempotency_key": "idem_test_134_uncalibrated_staged_rule_not_observed",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "transfer_money"
+  },
+  "policy_set": {
+    "version": "v1.0.0",
+    "description": "A staged rule carrying the placeholder is never observed — a placeholder cannot be replayed (C6).",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "block_amount",
+        "priority": 900,
+        "conditions": {
+          "none_of": [
+            {
+              "field": "parameters.amount",
+              "operator": "less_than",
+              "value": {
+                "$uncalibrated": "the distribution of parameters.amount on transfer_money"
+              }
+            }
+          ]
+        },
+        "decision": "BLOCK",
+        "reason_code": "BLOCK_AMOUNT",
+        "description": "Rule: block_amount",
+        "lifecycle_stage": "staged"
+      },
+      {
+        "name": "allow_usd",
+        "priority": 100,
+        "conditions": {
+          "field": "parameters.currency",
+          "operator": "equals",
+          "value": "USD"
+        },
+        "decision": "ALLOW",
+        "reason_code": "ALLOW_USD",
+        "description": "Rule: allow_usd"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "ALLOW",
+    "allowed": true,
+    "reason_codes": [
+      "ALLOW_USD"
+    ],
+    "staged_observations": []
+  }
+}

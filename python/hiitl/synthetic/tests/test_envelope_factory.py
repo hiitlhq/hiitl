@@ -1,5 +1,10 @@
 """Tests for synthetic envelope generation."""
 
+import json
+import re
+from pathlib import Path
+from unittest.mock import Mock
+
 import pytest
 
 from hiitl.core.types import Envelope
@@ -84,23 +89,27 @@ class TestEnvelopeFactory:
         assert len(batch) == 20
         assert all(isinstance(e, Envelope) for e in batch)
 
-    def test_tool_distribution(self):
-        """Over many samples, tool distribution matches weights."""
-        factory = EnvelopeFactory(_make_agent(), seed=42)
-        batch = factory.generate_batch(1000)
-        tool_a_count = sum(1 for e in batch if e.action == "tool_a")
-        # 70% expected, allow 60-80% range
-        assert 600 <= tool_a_count <= 800
+    @pytest.mark.parametrize("selected", ["tool_a", "tool_b"])
+    def test_tool_distribution(self, selected, monkeypatch):
+        """The weighted choice receives the persona's whole declaration and returns its selected tool."""
+        agent = _make_agent()
+        factory = EnvelopeFactory(agent, seed=42)
+        choices = Mock(return_value=[selected])
+        monkeypatch.setattr(factory._rng, "choices", choices)
+        assert factory._pick_tool() == selected
+        choices.assert_called_once_with(list(agent.action_frequency), weights=list(agent.action_frequency.values()), k=1)
 
     def test_exponential_distribution_clamping(self):
         """Exponential distribution values are clamped to [min, max]."""
-        factory = EnvelopeFactory(_make_agent(), seed=42)
+        agent = _make_agent()
+        spec = agent.parameter_distributions["tool_a"]["amount"]
+        factory = EnvelopeFactory(agent, seed=42)
         batch = factory.generate_batch(100)
         for env in batch:
             if env.action == "tool_a":
                 amount = env.parameters.get("amount")
                 if amount is not None:
-                    assert 10 <= amount <= 500
+                    assert spec["min"] <= amount <= spec["max"]
 
     def test_categorical_distribution(self):
         """Categorical values come from the defined set."""
@@ -121,11 +130,12 @@ class TestEnvelopeFactory:
         assert target_id.startswith("tgt_")
 
     def test_action_id_pattern(self):
-        """Action ID matches required pattern."""
+        """Action ID matches the pattern the envelope schema defines."""
+        schema = json.loads((Path(__file__).resolve().parents[4] / "docs" / "specs" / "envelope_schema.json")
+                            .read_text(encoding="utf-8"))
         factory = EnvelopeFactory(_make_agent(), seed=42)
         env = factory.generate_one()
-        assert env.action_id.startswith("act_")
-        assert len(env.action_id) >= 24  # act_ + 20+ chars
+        assert re.fullmatch(schema["properties"]["action_id"]["pattern"], env.action_id), env.action_id
 
     def test_sensitivity_from_persona(self):
         """Sensitivity flags come from the agent persona."""

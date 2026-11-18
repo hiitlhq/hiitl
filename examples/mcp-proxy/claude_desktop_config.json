@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "hiitl": {
+      "command": "hiitl-mcp-proxy",
+      "args": [
+        "--config",
+        "/absolute/path/to/hiitl-mcp.yaml"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "ghp_replace_me"
+      }
+    }
+  }
+}

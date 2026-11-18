@@ -9,7 +9,7 @@ tags: ["database", "query", "data-access", "pii"]
 
 evaluate_examples:
   python: |
-    result = hiitl.evaluate("query_database", {
+    result = hiitl.evaluate("query_database", parameters={
         "query_type": "select",
         "table": "customers",
         "fields": ["name", "email", "phone"],
@@ -21,15 +21,15 @@ evaluate_examples:
             fields=["name", "email", "phone"],
         )
   typescript: |
-    const result = hiitl.evaluate({
+    const result = await hiitl.evaluate({
       action: 'query_database',
-      params: {
+      parameters: {
         query_type: 'select',
         table: 'customers',
         fields: ['name', 'email', 'phone'],
       },
     });
-    if (result.ok) {
+    if (result.allowed) {
       const rows = await executeQuery({
         queryType: 'select',
         table: 'customers',
@@ -43,7 +43,7 @@ context_enrichment:
     example: "user_5jR9mK2nP7"
   - field: "sensitivity"
     why: "Marks queries against regulated tables so data protection policies apply automatically"
-    example: "regulated"
+    example: ["regulated"]
   - field: "target.database"
     why: "Database identifier enables environment-specific controls and prevents cross-environment access"
     example: "production_main"
@@ -58,7 +58,6 @@ starter_policies:
   - name: "allow-read-queries"
     description: "Auto-approve SELECT queries in production — standard read path"
     priority: 200
-    enabled: true
     conditions:
       all_of:
         - field: "action"
@@ -70,14 +69,13 @@ starter_policies:
     decision: "ALLOW"
     reason_code: "QUERY_READ_APPROVED"
     remediation:
-      type: "static"
+      type: "custom"
       message: "Read query auto-approved"
       suggestion: "No action needed"
 
   - name: "sandbox-dev-queries"
     description: "Route all queries in dev environment to sandbox to prevent accidental production data access"
-    priority: 180
-    enabled: true
+    priority: 300
     conditions:
       all_of:
         - field: "action"
@@ -89,36 +87,35 @@ starter_policies:
     decision: "SANDBOX"
     reason_code: "DEV_QUERY_SANDBOXED"
     remediation:
-      type: "static"
+      type: "custom"
       message: "Queries in the dev environment are routed to the sandbox database to prevent accidental production data access"
       suggestion: "This is expected behavior. Your query will execute against the sandbox database with synthetic data. To query production, change your environment configuration."
 
   - name: "approve-pii-access"
     description: "Require approval when querying tables or fields that contain personally identifiable information"
-    priority: 120
-    enabled: true
+    priority: 250
     conditions:
       all_of:
         - field: "action"
           operator: "equals"
           value: "query_database"
-        - field: "parameters.table"
-          operator: "in"
-          value: ["customers", "users", "employees", "contacts", "patients"]
-        - field: "sensitivity"
-          operator: "equals"
-          value: "regulated"
+        - any_of:
+            - field: "parameters.table"
+              operator: "in"
+              value: ["customers", "users", "employees", "contacts", "patients"]
+            - field: "sensitivity"
+              operator: "contains"
+              value: "pii"
     decision: "REQUIRE_APPROVAL"
     reason_code: "PII_ACCESS_NEEDS_APPROVAL"
     remediation:
-      type: "static"
+      type: "custom"
       message: "Queries against PII-containing tables require data protection officer approval"
       suggestion: "Submit a data access request explaining the business need. If possible, use anonymized or aggregated data instead. Consider whether you can achieve your goal by querying a non-PII view."
 
   - name: "block-write-operations"
     description: "Block all write operations (INSERT, UPDATE, DELETE) by automated agents — writes must go through dedicated mutation APIs"
     priority: 100
-    enabled: true
     conditions:
       all_of:
         - field: "action"
@@ -130,22 +127,25 @@ starter_policies:
     decision: "BLOCK"
     reason_code: "WRITE_QUERY_BLOCKED"
     remediation:
-      type: "static"
+      type: "custom"
       message: "Automated agents cannot execute write operations directly against the database"
       suggestion: "Use the dedicated mutation APIs (create_record, update_record, delete_records) instead of raw database queries. These APIs have their own access controls and audit trails."
 
   - name: "rate-limit-queries"
     description: "Limit each agent to 500 queries per minute to prevent resource exhaustion and data scraping"
     priority: 50
-    enabled: true
     conditions:
       field: "action"
       operator: "equals"
       value: "query_database"
     decision: "RATE_LIMIT"
     reason_code: "QUERY_RATE_EXCEEDED"
+    rate_limit:
+      limit: 500
+      window_seconds: 60
+      scope: "agent"
     remediation:
-      type: "static"
+      type: "rate_limit"
       message: "This agent has exceeded the maximum of 500 database queries per minute"
       suggestion: "Reduce query frequency or batch your data needs. If you need higher throughput, consider using a cached data source or request a rate limit increase for this agent."
 

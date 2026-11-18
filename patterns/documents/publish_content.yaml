@@ -9,7 +9,7 @@ tags: ["documents", "publishing", "content", "public"]
 
 evaluate_examples:
   python: |
-    result = hiitl.evaluate("publish_content", {
+    result = hiitl.evaluate("publish_content", parameters={
         "content_type": "blog_post",
         "audience": "public",
         "channel": "company_blog",
@@ -17,15 +17,15 @@ evaluate_examples:
     if result.ok:
         publish_to_channel()
   typescript: |
-    const result = hiitl.evaluate({
+    const result = await hiitl.evaluate({
       action: 'publish_content',
-      params: {
+      parameters: {
         content_type: 'blog_post',
         audience: 'public',
         channel: 'company_blog',
       },
     });
-    if (result.ok) {
+    if (result.allowed) {
       await publishToChannel();
     }
 
@@ -37,8 +37,8 @@ context_enrichment:
     why: "The publishing channel determines audience reach and risk level — social media has higher blast radius than internal wiki"
     example: "company_blog"
   - field: "sensitivity"
-    why: "Public-facing content carries reputational risk; internal content has lower sensitivity"
-    example: "public"
+    why: "Published content cannot be fully recalled once readers have seen it; mark public publishing irreversible"
+    example: ["irreversible"]
   - field: "parameters.audience"
     why: "Audience classification drives the approval workflow — public content requires more review than internal"
     example: "public"
@@ -50,7 +50,6 @@ starter_policies:
   - name: "allow-internal-content"
     description: "Allow publishing to internal channels without additional approval"
     priority: 500
-    enabled: true
     conditions:
       all_of:
         - field: "action"
@@ -62,14 +61,13 @@ starter_policies:
     decision: "ALLOW"
     reason_code: "INTERNAL_PUBLISH_ALLOWED"
     remediation:
-      type: "static"
+      type: "custom"
       message: "Internal content publishing permitted"
       suggestion: "No action needed"
 
   - name: "require-approval-public-content"
     description: "Require editorial or communications team approval before publishing any public-facing content"
     priority: 200
-    enabled: true
     conditions:
       all_of:
         - field: "action"
@@ -81,14 +79,13 @@ starter_policies:
     decision: "REQUIRE_APPROVAL"
     reason_code: "PUBLIC_CONTENT_REQUIRES_APPROVAL"
     remediation:
-      type: "static"
+      type: "custom"
       message: "Public-facing content requires editorial approval before publishing to prevent reputational risk"
       suggestion: "Route the content to your editorial or communications team for review. Include a preview link and the target channel in the approval request. Typical review turnaround is 1-4 hours."
 
   - name: "sandbox-draft-content"
     description: "Route draft content to a sandbox environment for preview instead of publishing live"
-    priority: 300
-    enabled: true
+    priority: 600
     conditions:
       all_of:
         - field: "action"
@@ -100,14 +97,13 @@ starter_policies:
     decision: "SANDBOX"
     reason_code: "DRAFT_CONTENT_SANDBOXED"
     remediation:
-      type: "static"
+      type: "custom"
       message: "Draft content has been routed to a sandbox for preview rather than published live"
       suggestion: "Review the content in the sandbox environment. When ready to publish, update the content_type to remove the draft designation and re-submit."
 
   - name: "block-publish-in-dev"
     description: "Block all content publishing from non-production environments to prevent accidental live posts"
     priority: 100
-    enabled: true
     conditions:
       all_of:
         - field: "action"
@@ -119,29 +115,32 @@ starter_policies:
     decision: "BLOCK"
     reason_code: "NON_PROD_PUBLISH_BLOCKED"
     remediation:
-      type: "static"
+      type: "custom"
       message: "Content publishing is only permitted from the production environment. Publishing from dev or staging is blocked to prevent accidental live posts."
       suggestion: "Switch to the production environment to publish content. If you are testing the publishing flow, use the sandbox decision mode or dry-run mode instead."
 
   - name: "rate-limit-publishing"
     description: "Limit publishing frequency to prevent spam and catch runaway automation"
     priority: 350
-    enabled: true
     conditions:
       field: "action"
       operator: "equals"
       value: "publish_content"
     decision: "RATE_LIMIT"
     reason_code: "PUBLISHING_RATE_LIMITED"
+    rate_limit:
+      limit: {"$uncalibrated": "publish_content calls per agent per hour, set from your own traffic"}
+      window_seconds: 3600
+      scope: "agent"
     remediation:
-      type: "static"
+      type: "rate_limit"
       message: "Content publishing rate limit exceeded. This safeguard prevents spam and detects runaway automation."
       suggestion: "Wait for the rate limit window to reset before publishing additional content. If you need to perform bulk publishing, schedule a batch window with your administrator."
 
 remediation:
   block_message: "Content publishing was blocked by policy. Check the reason_code — common causes include attempting to publish from a non-production environment or exceeding rate limits."
   developer_action: "Inspect the decision reason_codes. For environment blocks, ensure you are targeting the production environment. For approval requirements, implement an approval callback handler. For sandboxed content, provide a sandbox preview URL to the user."
-  approval_message: "This content requires editorial approval before publishing. The request has been routed to your configured review team. Public-facing content typically requires communications team sign-off."
+  approval_message: "This content requires editorial approval before publishing. Send it to your review team. Public-facing content typically requires communications team sign-off."
 
 compliance:
   - regulation: "Brand and Communications Guidelines"

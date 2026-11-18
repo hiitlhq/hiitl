@@ -26,7 +26,7 @@ describe('PolicyLoader', () => {
 
       expect(policy).toBeDefined();
       expect(policy.name).toBe('test-policy');
-      expect(policy.version).toBe('1.0');
+      expect(policy.version).toBe('v1.0.0');
       expect(policy.rules).toHaveLength(1);
       expect(policy.rules[0].name).toBe('allow-small-amounts');
     });
@@ -37,7 +37,7 @@ describe('PolicyLoader', () => {
 
       expect(policy).toBeDefined();
       expect(policy.name).toBe('test-policy');
-      expect(policy.version).toBe('1.0');
+      expect(policy.version).toBe('v1.0.0');
       expect(policy.rules).toHaveLength(1);
       expect(policy.rules[0].name).toBe('allow-small-amounts');
     });
@@ -48,7 +48,7 @@ describe('PolicyLoader', () => {
 
       expect(policy).toBeDefined();
       expect(policy.name).toBe('wrapped-policy');
-      expect(policy.version).toBe('1.0');
+      expect(policy.version).toBe('v1.0.0');
       expect(policy.rules).toHaveLength(1);
     });
 
@@ -80,7 +80,9 @@ describe('PolicyLoader', () => {
       const tempPath = path.join(FIXTURES_DIR, 'temp_policy.json');
       const policy1 = {
         name: 'version-1',
-        version: '1.0',
+        version: 'v1.0.0',
+        description: 'Invalidate cache after file modification',
+        scope: { org_id: 'org_devlocal0000000000', environment: 'dev' },
         rules: [],
       };
       fs.writeFileSync(tempPath, JSON.stringify(policy1));
@@ -95,7 +97,9 @@ describe('PolicyLoader', () => {
         // Modify file
         const policy2 = {
           name: 'version-2',
-          version: '2.0',
+          version: 'v2.0.0',
+          description: 'Invalidate cache after file modification',
+          scope: { org_id: 'org_devlocal0000000000', environment: 'dev' },
           rules: [],
         };
         fs.writeFileSync(tempPath, JSON.stringify(policy2));
@@ -235,7 +239,9 @@ describe('PolicyLoader', () => {
         tempPath,
         JSON.stringify({
           name: 'no-ext-policy',
-          version: '1.0',
+          version: 'v1.0.0',
+          description: 'Auto-detect JSON format (no extension)',
+          scope: { org_id: 'org_devlocal0000000000', environment: 'dev' },
           rules: [],
         })
       );
@@ -254,7 +260,8 @@ describe('PolicyLoader', () => {
       const tempPath = path.join(FIXTURES_DIR, 'no_ext_yaml');
       fs.writeFileSync(
         tempPath,
-        'name: no-ext-yaml-policy\nversion: "1.0"\nrules: []'
+        'name: no-ext-yaml-policy\nversion: "v1.0.0"\ndescription: A YAML set with no rules\n' +
+        'scope:\n  org_id: org_devlocal0000000000\n  environment: dev\nrules: []'
       );
 
       const loader = new PolicyLoader(tempPath);
@@ -287,7 +294,8 @@ describe('PolicyLoader', () => {
       const tempPath = path.join(FIXTURES_DIR, 'test.yml');
       fs.writeFileSync(
         tempPath,
-        'name: yml-policy\nversion: "1.0"\nrules: []'
+        'name: yml-policy\nversion: "v1.0.0"\ndescription: A YAML set with no rules\n' +
+        'scope:\n  org_id: org_devlocal0000000000\n  environment: dev\nrules: []'
       );
 
       const loader = new PolicyLoader(tempPath);

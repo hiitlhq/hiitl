@@ -1,0 +1,425 @@
+{
+  "provenance": "Data-only controls retained from the HTL-43 measurement. Expected answers are regenerated from current canonical sources, never copied from measurement results or runtime models.",
+  "witnesses": [
+    {
+      "id": "envelope-000",
+      "input": {
+        "schema_version": "v2.0",
+        "org_id": "org_mmmmmmmmmmmmmmmm",
+        "environment": "dev",
+        "agent_id": "sample",
+        "action_id": "act_mmmmmmmmmmmmmmmmmmmm",
+        "idempotency_key": "sample",
+        "action": "sample",
+        "timestamp": "2026-11-14T12:00:00Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "id": "envelope-001",
+      "input": {
+        "schema_version": "v2.0",
+        "org_id": "org_mmmmmmmmmmmmmmmm",
+        "environment": "dev",
+        "agent_id": "sample",
+        "action_id": "act_mmmmmmmmmmmmmmmmmmmm",
+        "idempotency_key": "sample",
+        "action": "sample",
+        "timestamp": "2026-11-14T12:00:00Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "agent_instance_id": "sample"
+      }
+    },
+    {
+      "id": "envelope-002",
+      "input": {
+        "schema_version": "v2.0",
+        "org_id": "org_mmmmmmmmmmmmmmmm",
+        "environment": "dev",
+        "agent_id": "sample",
+        "action_id": "act_mmmmmmmmmmmmmmmmmmmm",
+        "idempotency_key": "sample",
+        "action": "sample",
+        "timestamp": "2026-11-14T12:00:00Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "user_id": "sample"
+      }
+    },
+    {
+      "id": "envelope-003",
+      "input": {
+        "schema_version": "v2.0",
+        "org_id": "org_mmmmmmmmmmmmmmmm",
+        "environment": "dev",
+        "agent_id": "sample",
+        "action_id": "act_mmmmmmmmmmmmmmmmmmmm",
+        "idempotency_key": "sample",
+        "action": "sample",
+        "timestamp": "2026-11-14T12:00:00Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "session_id": "sample"
+      }
+    },
+    {
+      "id": "envelope-004",
+      "input": {
+        "schema_version": "v2.0",
+        "org_id": "org_mmmmmmmmmmmmmmmm",
+        "environment": "dev",
+        "agent_id": "sample",
+        "action_id": "act_mmmmmmmmmmmmmmmmmmmm",
+        "idempotency_key": "sample",
+        "action": "sample",
+        "timestamp": "2026-11-14T12:00:00Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "correlation_id": "sample"
+      }
+    },
+    {
+      "id": "envelope-005",
+      "input": {
+        "schema_version": "v2.0",
+        "org_id": "org_mmmmmmmmmmmmmmmm",
+        "environment": "dev",
+        "agent_id": "sample",
+        "action_id": "act_mmmmmmmmmmmmmmmmmmmm",
+        "idempotency_key": "sample",
+        "action": "sample",
+        "timestamp": "2026-11-14T12:00:00Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "trace_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    },
+    {
+      "id": "envelope-006",
+      "input": {
+        "schema_version": "v2.0",
+        "org_id": "org_mmmmmmmmmmmmmmmm",
+        "environment": "dev",
+        "agent_id": "sample",
+        "action_id": "act_mmmmmmmmmmmmmmmmmmmm",
+        "idempotency_key": "sample",
+        "action": "sample",
+        "timestamp": "2026-11-14T12:00:00Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "action_type": "sample"
+      }
+    },
+    {
+      "id": "envelope-007",
+      "input": {
+        "schema_version": "v2.0",
+        "org_id": "org_mmmmmmmmmmmmmmmm",
+        "environment": "dev",
+        "agent_id": "sample",
+        "action_id": "act_mmmmmmmmmmmmmmmmmmmm",
+        "idempotency_key": "sample",
+        "action": "sample",
+        "timestamp": "2026-11-14T12:00:00Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "operation": "read"
+      }
+    },
+    {
+      "id": "envelope-008",
+      "input": {
+        "schema_version": "v2.0",
+        "org_id": "org_mmmmmmmmmmmmmmmm",
+        "environment": "dev",
+        "agent_id": "sample",
+        "action_id": "act_mmmmmmmmmmmmmmmmmmmm",
+        "idempotency_key": "sample",
+        "action": "sample",
+        "timestamp": "2026-11-14T12:00:00Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "target": {}
+      }
+    },
+    {
+      "id": "envelope-009",
+      "input": {
+        "schema_version": "v2.0",
+        "org_id": "org_mmmmmmmmmmmmmmmm",
+        "environment": "dev",
+        "agent_id": "sample",
+        "action_id": "act_mmmmmmmmmmmmmmmmmmmm",
+        "idempotency_key": "sample",
+        "action": "sample",
+        "timestamp": "2026-11-14T12:00:00Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "parameters": {}
+      }
+    },
+    {
+      "id": "envelope-010",
+      "input": {
+        "schema_version": "v2.0",
+        "org_id": "org_mmmmmmmmmmmmmmmm",
+        "environment": "dev",
+        "agent_id": "sample",
+        "action_id": "act_mmmmmmmmmmmmmmmmmmmm",
+        "idempotency_key": "sample",
+        "action": "sample",
+        "timestamp": "2026-11-14T12:00:00Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "sensitivity": [
+          "money"
+        ]
+      }
+    },
+    {
+      "id": "envelope-011",
+      "input": {
+        "schema_version": "v2.0",
+        "org_id": "org_mmmmmmmmmmmmmmmm",
+        "environment": "dev",
+        "agent_id": "sample",
+        "action_id": "act_mmmmmmmmmmmmmmmmmmmm",
+        "idempotency_key": "sample",
+        "action": "sample",
+        "timestamp": "2026-11-14T12:00:00Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "cost_estimate": {}
+      }
+    },
+    {
+      "id": "envelope-012",
+      "input": {
+        "schema_version": "v2.0",
+        "org_id": "org_mmmmmmmmmmmmmmmm",
+        "environment": "dev",
+        "agent_id": "sample",
+        "action_id": "act_mmmmmmmmmmmmmmmmmmmm",
+        "idempotency_key": "sample",
+        "action": "sample",
+        "timestamp": "2026-11-14T12:00:00Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "cost_estimate": {
+          "tokens": 1
+        }
+      }
+    },
+    {
+      "id": "envelope-013",
+      "input": {
+        "schema_version": "v2.0",
+        "org_id": "org_mmmmmmmmmmmmmmmm",
+        "environment": "dev",
+        "agent_id": "sample",
+        "action_id": "act_mmmmmmmmmmmmmmmmmmmm",
+        "idempotency_key": "sample",
+        "action": "sample",
+        "timestamp": "2026-11-14T12:00:00Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "cost_estimate": {
+          "dollars": 1
+        }
+      }
+    },
+    {
+      "id": "envelope-014",
+      "input": {
+        "schema_version": "v2.0",
+        "org_id": "org_mmmmmmmmmmmmmmmm",
+        "environment": "dev",
+        "agent_id": "sample",
+        "action_id": "act_mmmmmmmmmmmmmmmmmmmm",
+        "idempotency_key": "sample",
+        "action": "sample",
+        "timestamp": "2026-11-14T12:00:00Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "cost_estimate": {
+          "api_calls": 1
+        }
+      }
+    },
+    {
+      "id": "envelope-015",
+      "input": {
+        "schema_version": "v2.0",
+        "org_id": "org_mmmmmmmmmmmmmmmm",
+        "environment": "dev",
+        "agent_id": "sample",
+        "action_id": "act_mmmmmmmmmmmmmmmmmmmm",
+        "idempotency_key": "sample",
+        "action": "sample",
+        "timestamp": "2026-11-14T12:00:00Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "confidence": 1
+      }
+    },
+    {
+      "id": "envelope-016",
+      "input": {
+        "schema_version": "v2.0",
+        "org_id": "org_mmmmmmmmmmmmmmmm",
+        "environment": "dev",
+        "agent_id": "sample",
+        "action_id": "act_mmmmmmmmmmmmmmmmmmmm",
+        "idempotency_key": "sample",
+        "action": "sample",
+        "timestamp": "2026-11-14T12:00:00Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "requested_scopes": [
+          "sample"
+        ]
+      }
+    },
+    {
+      "id": "envelope-017",
+      "input": {
+        "schema_version": "v2.0",
+        "org_id": "org_mmmmmmmmmmmmmmmm",
+        "environment": "dev",
+        "agent_id": "sample",
+        "action_id": "act_mmmmmmmmmmmmmmmmmmmm",
+        "idempotency_key": "sample",
+        "action": "sample",
+        "timestamp": "2026-11-14T12:00:00Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "sample",
+          "verified_by": "sdk_verifier"
+        }
+      }
+    },
+    {
+      "id": "envelope-018",
+      "input": {
+        "schema_version": "v2.0",
+        "org_id": "org_mmmmmmmmmmmmmmmm",
+        "environment": "dev",
+        "agent_id": "sample",
+        "action_id": "act_mmmmmmmmmmmmmmmmmmmm",
+        "idempotency_key": "sample",
+        "action": "sample",
+        "timestamp": "2026-11-14T12:00:00Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "sample",
+          "verified_by": "sdk_verifier",
+          "scopes": [
+            "sample"
+          ]
+        }
+      }
+    },
+    {
+      "id": "envelope-019",
+      "input": {
+        "schema_version": "v2.0",
+        "org_id": "org_mmmmmmmmmmmmmmmm",
+        "environment": "dev",
+        "agent_id": "sample",
+        "action_id": "act_mmmmmmmmmmmmmmmmmmmm",
+        "idempotency_key": "sample",
+        "action": "sample",
+        "timestamp": "2026-11-14T12:00:00Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "sample",
+          "verified_by": "sdk_verifier",
+          "iss": "sample"
+        }
+      }
+    },
+    {
+      "id": "envelope-020",
+      "input": {
+        "schema_version": "v2.0",
+        "org_id": "org_mmmmmmmmmmmmmmmm",
+        "environment": "dev",
+        "agent_id": "sample",
+        "action_id": "act_mmmmmmmmmmmmmmmmmmmm",
+        "idempotency_key": "sample",
+        "action": "sample",
+        "timestamp": "2026-11-14T12:00:00Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "sample",
+          "verified_by": "sdk_verifier",
+          "aud": "sample"
+        }
+      }
+    },
+    {
+      "id": "envelope-021",
+      "input": {
+        "schema_version": "v2.0",
+        "org_id": "org_mmmmmmmmmmmmmmmm",
+        "environment": "dev",
+        "agent_id": "sample",
+        "action_id": "act_mmmmmmmmmmmmmmmmmmmm",
+        "idempotency_key": "sample",
+        "action": "sample",
+        "timestamp": "2026-11-14T12:00:00Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "principal": {
+          "sub": "sample",
+          "verified_by": "sdk_verifier",
+          "verified_at": "2026-11-14T12:00:00Z"
+        }
+      }
+    },
+    {
+      "id": "envelope-022",
+      "input": {
+        "schema_version": "v2.0",
+        "org_id": "org_mmmmmmmmmmmmmmmm",
+        "environment": "dev",
+        "agent_id": "sample",
+        "action_id": "act_mmmmmmmmmmmmmmmmmmmm",
+        "idempotency_key": "sample",
+        "action": "sample",
+        "timestamp": "2026-11-14T12:00:00Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "reason": "sample"
+      }
+    },
+    {
+      "id": "envelope-023",
+      "input": {
+        "schema_version": "v2.0",
+        "org_id": "org_mmmmmmmmmmmmmmmm",
+        "environment": "dev",
+        "agent_id": "sample",
+        "action_id": "act_mmmmmmmmmmmmmmmmmmmm",
+        "idempotency_key": "sample",
+        "action": "sample",
+        "timestamp": "2026-11-14T12:00:00Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "prompt_hash": "sample"
+      }
+    },
+    {
+      "id": "envelope-024",
+      "input": {
+        "schema_version": "v2.0",
+        "org_id": "org_mmmmmmmmmmmmmmmm",
+        "environment": "dev",
+        "agent_id": "sample",
+        "action_id": "act_mmmmmmmmmmmmmmmmmmmm",
+        "idempotency_key": "sample",
+        "action": "sample",
+        "timestamp": "2026-11-14T12:00:00Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "signature_version": "hmac-sha256-v1"
+      }
+    },
+    {
+      "id": "envelope-025",
+      "input": {
+        "schema_version": "v2.0",
+        "org_id": "org_mmmmmmmmmmmmmmmm",
+        "environment": "dev",
+        "agent_id": "sample",
+        "action_id": "act_mmmmmmmmmmmmmmmmmmmm",
+        "idempotency_key": "sample",
+        "action": "sample",
+        "timestamp": "2026-11-14T12:00:00Z",
+        "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+        "metadata": {}
+      }
+    }
+  ]
+}

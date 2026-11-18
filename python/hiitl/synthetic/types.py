@@ -7,11 +7,22 @@ Defines Pydantic models for:
 - Run reports (top-level JSON output for UI consumption)
 """
 
+import inspect
 from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+from hiitl._version import __version__
+from hiitl.core.types import ENVELOPE_RENAMED, Envelope
+from hiitl.sdk.client import HIITL
+
+# A step's envelope is a call to evaluate(): it takes each keyword evaluate() names that the envelope carries, read
+# from the call, and requires those the call requires (synthetic/README.md "Step Types"; row 233, ruled 2026-11-09)
+_CALL = {n: p for n, p in inspect.signature(HIITL.evaluate).parameters.items() if n != "self"}
+STEP_TAKES = [n for n in _CALL if n in Envelope.model_fields]
+STEP_REQUIRES = [n for n in STEP_TAKES if _CALL[n].default is inspect.Parameter.empty]
 
 
 # ============================================================================
@@ -23,13 +34,15 @@ class StepAction(str, Enum):
     """Valid step action types."""
 
     EVALUATE = "evaluate"
-    APPROVE = "approve"  # Phase 2 — skipped in Phase 1
-    EXECUTE = "execute"  # Phase 2 — skipped in Phase 1
-    VERIFY_AUDIT = "verify_audit"  # Phase 2 — skipped in Phase 1
+    APPROVE = "approve"  # not run by the synthetic runner (it evaluates only): reported as skipped
+    EXECUTE = "execute"  # not run by the synthetic runner: reported as skipped
+    VERIFY_AUDIT = "verify_audit"  # not run by the synthetic runner: reported as skipped
 
 
 class ScenarioAssertion(BaseModel):
     """A single assertion on a step result.
+
+    A member the format does not define is refused (R-0872): a misspelled operator would otherwise check nothing.
 
     Supports field path resolution (dot notation) and multiple comparison types.
 
@@ -39,6 +52,8 @@ class ScenarioAssertion(BaseModel):
         {"field": "decision.timing.evaluation_ms", "less_than": 10}
         {"field": "decision.resume_token", "exists": true}
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     field: str
     equals: Optional[Any] = None
@@ -52,6 +67,8 @@ class ScenarioAssertion(BaseModel):
 class ScenarioStep(BaseModel):
     """A single step in a scenario."""
 
+    model_config = ConfigDict(extra="forbid")
+
     step: int
     name: str
     action: StepAction
@@ -59,9 +76,8 @@ class ScenarioStep(BaseModel):
     envelope: Optional[Dict[str, Any]] = None
     expected_decision: Optional[str] = None
     expected_reason_codes: Optional[List[str]] = None
-    expected_approval_metadata: Optional[Dict[str, Any]] = None
     assertions: Optional[List[ScenarioAssertion]] = None
-    # Phase 2 fields (present in scenario JSON but skipped in Phase 1)
+    # Fields of the step types the runner does not run (present in scenario JSON, not read)
     approval_id: Optional[str] = None
     approver: Optional[Dict[str, Any]] = None
     approval_decision: Optional[str] = None
@@ -72,9 +88,28 @@ class ScenarioStep(BaseModel):
     expected_audit_records: Optional[int] = None
     expected_events: Optional[List[Dict[str, Any]]] = None
 
+    @model_validator(mode="after")
+    def _envelope_is_a_call(self) -> "ScenarioStep":
+        """The envelope names only the members evaluate() takes, and an evaluate step names those it requires."""
+        for member in self.envelope or {}:
+            if member in STEP_TAKES:
+                continue
+            why = (f" ('{member}' was renamed '{ENVELOPE_RENAMED[member]}')" if member in ENVELOPE_RENAMED else
+                   " (a keyword evaluate() takes that the envelope does not carry)" if member in _CALL else "")
+            raise ValueError(f"step {self.step}'s envelope names '{member}'{why}; a step's envelope takes "
+                             f"{', '.join(STEP_TAKES)}")
+        if self.action == StepAction.EVALUATE:
+            for member in STEP_REQUIRES:
+                if member not in (self.envelope or {}):
+                    raise ValueError(f"step {self.step} evaluates, and its envelope names no '{member}', which "
+                                     f"evaluate() requires")
+        return self
+
 
 class ScenarioVariation(BaseModel):
     """A variation of a scenario (alternative paths)."""
+
+    model_config = ConfigDict(extra="forbid")
 
     description: str
     change_at_step: int
@@ -84,6 +119,8 @@ class ScenarioVariation(BaseModel):
 
 class Scenario(BaseModel):
     """A complete test scenario."""
+
+    model_config = ConfigDict(extra="forbid")
 
     scenario_id: str
     name: str
@@ -147,6 +184,7 @@ class ScenarioResult(BaseModel):
     total_latency_ms: float
     started_at: datetime
     completed_at: datetime
+    grading: Optional["GradingReport"] = None  # the scenario's policy, graded over its steps
 
 
 # ============================================================================
@@ -226,10 +264,12 @@ class GradingReport(BaseModel):
 class RunReport(BaseModel):
     """Complete run report — JSON output consumable by UI Testing page."""
 
-    runner_version: str = "0.1.0"
+    runner_version: str = __version__
     run_id: str
     mode: str  # "local" or "hosted"
     timestamp: datetime
     scenarios: List[ScenarioResult]
-    grading: Optional[GradingReport] = None
     summary: Dict[str, Any]
+
+
+ScenarioResult.model_rebuild()  # resolves its forward reference to GradingReport

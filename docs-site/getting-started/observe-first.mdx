@@ -58,7 +58,7 @@ hiitl gives you instant visibility. Add one line per action, and see every tool 
 
     ```typescript TypeScript
     async function handleAgentAction(actionName: string, params: Record<string, unknown>) {
-      const decision = hiitl.evaluate({ action: actionName, parameters: params });
+      const decision = await hiitl.evaluate({ action: actionName, parameters: params });
       if (decision.allowed) {
         return await executeTool(actionName, params);
       }
@@ -73,7 +73,7 @@ hiitl gives you instant visibility. Add one line per action, and see every tool 
 
 ## What OBSERVE mode returns
 
-With no policies loaded, every action is allowed. The decision object tells you it was observed, not enforced:
+With no policies loaded, every action is allowed. The decision object tells you it was observed, not enforced, and what enforcing would have done: with no rules, an action no rule matches would be blocked.
 
 <CodeGroup>
 
@@ -83,22 +83,25 @@ decision = hiitl.evaluate("send_email", parameters={
     "subject": "Order update",
 })
 
-print(decision.allowed)    # True
-print(decision.decision)   # "ALLOW"
-print(decision.observed)   # True — this action was observed, not enforced
-print(decision.timing)     # {"evaluation_ms": 0.3, "total_ms": 0.6}
+print(decision.allowed)                # True
+print(decision.decision)               # OBSERVE
+print(decision.observed)               # True — this action was observed, not enforced
+print(decision.would_be)               # BLOCK
+print(decision.would_be_reason_codes)  # ['NO_MATCHING_RULE']
+print(decision.timing)                 # ingest_ms=... evaluation_ms=... total_ms=...
 ```
 
 ```typescript TypeScript
-const decision = hiitl.evaluate({
+const decision = await hiitl.evaluate({
   action: 'send_email',
   parameters: { to: 'user@example.com', subject: 'Order update' },
 });
 
-console.log(decision.allowed);    // true
-console.log(decision.decision);   // "ALLOW"
-console.log(decision.observed);   // true — this action was observed, not enforced
-console.log(decision.timing);     // { evaluation_ms: 0.3, total_ms: 0.6 }
+console.log(decision.allowed);                // true
+console.log(decision.decision);               // OBSERVE — observed, not enforced
+console.log(decision.would_be);               // BLOCK
+console.log(decision.would_be_reason_codes);  // [ 'NO_MATCHING_RULE' ]
+console.log(decision.timing);                 // { ingest_ms: ..., evaluation_ms: ..., total_ms: ... }
 ```
 
 </CodeGroup>
@@ -174,7 +177,7 @@ const hiitl = new HIITL();
 
 async function handleCustomerRequest(request: CustomerRequest) {
   // Look up the customer
-  const d1 = hiitl.evaluate({
+  const d1 = await hiitl.evaluate({
     action: 'query_customer',
     parameters: {
       customerId: request.customerId,
@@ -185,7 +188,7 @@ async function handleCustomerRequest(request: CustomerRequest) {
   const customer = await db.getCustomer(request.customerId);
 
   // Send a response email
-  const d2 = hiitl.evaluate({
+  const d2 = await hiitl.evaluate({
     action: 'send_email',
     parameters: {
       to: customer.email,
@@ -198,7 +201,7 @@ async function handleCustomerRequest(request: CustomerRequest) {
 
   // Issue a refund if requested
   if (request.wantsRefund) {
-    const d3 = hiitl.evaluate({
+    const d3 = await hiitl.evaluate({
       action: 'issue_refund',
       parameters: {
         amount: request.refundAmount,
@@ -217,8 +220,8 @@ async function handleCustomerRequest(request: CustomerRequest) {
 </CodeGroup>
 
 After running for a day, your audit trail shows:
-- `query_customer` called 340 times, all ALLOW
-- `send_email` called 280 times, all ALLOW
+- `query_customer` called 340 times, all OBSERVE
+- `send_email` called 280 times, all OBSERVE
 - `issue_refund` called 45 times, amounts range $5 -- $890
 
 Now you have the data to make informed decisions about what guardrails to add.
@@ -242,38 +245,62 @@ After observing, you'll naturally spot patterns that need guardrails. Common fir
   </Card>
 </CardGroup>
 
-When you're ready, add a policy file. Here's the refund example:
+When you're ready, add a policy file. Once you enforce, an action no rule matches is blocked, so the policy allows the agent's actions as well as holding the large refunds:
 
 ```yaml policy.yaml
 policy_set:
-  name: "refund-controls"
+  name: "support-controls"
   version: "v1.0.0"
+  description: "Support agent controls, enforced after observation"
+  scope:
+    org_id: "org_devlocal0000000000"
+    environment: "dev"
   rules:
     - name: "approve-large-refunds"
-      enabled: true
+      description: "Refunds over $500 wait for a person"
       priority: 100
       conditions:
         all_of:
+          - field: "action"
+            operator: "equals"
+            value: "issue_refund"
           - field: "parameters.amount"
             operator: "greater_than"
             value: 500
       decision: "REQUIRE_APPROVAL"
       reason_code: "LARGE_REFUND"
+    - name: "allow-support-actions"
+      description: "The support agent's actions proceed"
+      priority: 10
+      conditions:
+        field: "action"
+        operator: "in"
+        value: ["query_customer", "send_email", "issue_refund"]
+      decision: "ALLOW"
+      reason_code: "SUPPORT_ACTION"
 ```
 
 <CodeGroup>
 
 ```python Python
+# Still observing: everything proceeds, and each decision says what the policy would do
 hiitl = HIITL(policy_path="./policy.yaml")
+
+# Enforcing
+hiitl = HIITL(policy_path="./policy.yaml", mode="RESPECT_POLICY")
 ```
 
 ```typescript TypeScript
-const hiitl = new HIITL({ policyPath: './policy.yaml' });
+// Still observing: everything proceeds, and each decision says what the policy would do
+let hiitl = new HIITL({ policy_path: './policy.yaml' });
+
+// Enforcing
+hiitl = new HIITL({ policy_path: './policy.yaml', mode: 'RESPECT_POLICY' });
 ```
 
 </CodeGroup>
 
-The `evaluate()` calls in your application code don't change at all. The policy is applied automatically.
+The `evaluate()` calls in your application code don't change at all. With the policy loaded and still observing, a $890 refund comes back `OBSERVE` with `would_be` `REQUIRE_APPROVAL`. Once you enforce, it comes back `REQUIRE_APPROVAL` with `allowed` false, and the other actions come back `ALLOW`.
 
 ## Adding more context over time
 
@@ -299,23 +326,23 @@ decision = hiitl.evaluate("process_payment", parameters={"amount": 150.00},
 
 ```typescript TypeScript
 // Basic: action name and parameters
-const d1 = hiitl.evaluate({
+const d1 = await hiitl.evaluate({
   action: 'process_payment',
   parameters: { amount: 150.00 },
 });
 
 // With user context: enables per-user rate limits
-const d2 = hiitl.evaluate({
+const d2 = await hiitl.evaluate({
   action: 'process_payment',
   parameters: { amount: 150.00 },
-  userId: 'user_123',
+  user_id: 'user_123',
 });
 
 // With target: enables resource-level policies
-const d3 = hiitl.evaluate({
+const d3 = await hiitl.evaluate({
   action: 'process_payment',
   parameters: { amount: 150.00 },
-  userId: 'user_123',
+  user_id: 'user_123',
   target: { accountId: 'acct_456' },
 });
 ```
@@ -326,17 +353,17 @@ const d3 = hiitl.evaluate({
   None of the extra context is required upfront. Start with just the action name and parameters. Add `user_id`, `target`, and `sensitivity` when your policies need them.
 </Tip>
 
-## Local mode vs hosted
+## Local mode vs hybrid
 
-Observe mode works in both local and hosted configurations:
+Observe mode is the default in local and hybrid mode alike:
 
 | Mode | Setup | Audit storage | Best for |
 |------|-------|---------------|----------|
 | **Local** | `HIITL()` | SQLite on disk | Development, quick evaluation |
-| **Hosted** | `HIITL(api_key=..., server_url=...)` | Managed PostgreSQL | Team visibility, production |
+| **Hybrid** | `HIITL(api_key=...)` | SQLite on disk, synced to the hosted service | Team visibility, production |
 
 <Warning>
-  Local audit records are stored in SQLite. For team-wide observability and production use, switch to hosted mode by adding an API key and server URL.
+  Local audit records stay in SQLite on the machine that wrote them. For team-wide observability and production use, add an API key: evaluation stays in-process, and the audit records sync to the hosted service.
 </Warning>
 
 ## Next steps

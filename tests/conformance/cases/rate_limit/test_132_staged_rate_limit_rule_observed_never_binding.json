@@ -1,0 +1,82 @@
+{
+  "test_id": "test_132_staged_rate_limit_rule_observed_never_binding",
+  "description": "A staged windowed RATE_LIMIT rule is observed with would_be_binding false \u2014 it meters, it never binds \u2014 and is not listed in rate_limit_rules (only active rules meter).",
+  "envelope": {
+    "schema_version": "v2.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_finance_bot",
+    "action_id": "act_test1320000000000000",
+    "timestamp": "2026-02-14T10:00:00Z",
+    "operation": "execute",
+    "parameters": {
+      "amount": 500,
+      "currency": "USD"
+    },
+    "idempotency_key": "idem_test_132_staged_rate_limit_rule_observed_never_binding",
+    "target": {},
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+    "action": "transfer_money"
+  },
+  "policy_set": {
+    "version": "v1.0.0",
+    "description": "A staged windowed RATE_LIMIT rule is observed with would_be_binding false — it meters, it never binds — and is not listed in rate_limit_rules (only active rules meter).",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
+    "name": "test_policy",
+    "rules": [
+      {
+        "name": "refund_rate",
+        "priority": 600,
+        "conditions": {
+          "field": "parameters.currency",
+          "operator": "equals",
+          "value": "USD"
+        },
+        "decision": "RATE_LIMIT",
+        "reason_code": "REFUND_RATE",
+        "description": "Rule: refund_rate",
+        "rate_limit": {
+          "limit": 20,
+          "window_seconds": 3600,
+          "scope": "agent"
+        },
+        "lifecycle_stage": "staged"
+      },
+      {
+        "name": "allow_usd",
+        "priority": 100,
+        "conditions": {
+          "field": "parameters.currency",
+          "operator": "equals",
+          "value": "USD"
+        },
+        "decision": "ALLOW",
+        "reason_code": "ALLOW_USD",
+        "description": "Rule: allow_usd"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "ALLOW",
+    "allowed": true,
+    "reason_codes": [
+      "ALLOW_USD"
+    ],
+    "rate_limit_rules": [],
+    "staged_observations": [
+      {
+        "rule_name": "refund_rate",
+        "policy_set": "test_policy",
+        "priority": 600,
+        "would_be_decision": "RATE_LIMIT",
+        "would_be_reason_codes": [
+          "REFUND_RATE"
+        ],
+        "would_be_binding": false
+      }
+    ]
+  }
+}

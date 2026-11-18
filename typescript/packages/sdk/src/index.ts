@@ -1,16 +1,19 @@
 /**
- * @hiitl/sdk - TypeScript SDK for HIITL policy evaluation.
+ * @hiitl/sdk - TypeScript SDK for hiitl policy evaluation.
  *
- * This package provides a TypeScript SDK for HIITL (Human-in-the-Loop) policy
- * evaluation. It supports local/edge mode with embedded evaluation, and hosted
- * mode via the ECP server.
+ * This package provides a TypeScript SDK for hiitl policy evaluation. It
+ * supports local mode with embedded evaluation, hybrid mode (embedded
+ * evaluation with background sync), and hosted mode via the ECP server.
+ *
+ * `evaluate()` returns a Decision in local mode and a Promise in hybrid and
+ * hosted mode; `await` every call.
  *
  * @example Zero-config (OBSERVE_ALL mode)
  * ```typescript
  * import { HIITL } from '@hiitl/sdk';
  *
  * const hiitl = new HIITL();
- * const decision = hiitl.evaluate({ action: 'send_email' });
+ * const decision = await hiitl.evaluate({ action: 'send_email' });
  * if (decision.allowed) {
  *   sendEmail();
  * }
@@ -23,7 +26,7 @@
  *   mode: 'RESPECT_POLICY',
  * });
  *
- * const decision = hiitl.evaluate({
+ * const decision = await hiitl.evaluate({
  *   action: 'payment_transfer',
  *   parameters: { amount: 500, currency: 'USD' },
  * });
@@ -67,6 +70,7 @@ export type {
   HostedModeConfig,
   HostedModeConfigInput,
   HIITLConfigInput,
+  TelemetryLevel,
 } from './config.js';
 
 /**
@@ -100,6 +104,9 @@ export {
   EnvelopeValidationError,
   ServerError,
   NetworkError,
+  SyncError,
+  ColdStartError,
+  LifecycleError,
 } from './exceptions.js';
 
 // =============================================================================
@@ -122,6 +129,7 @@ export type {
   // Decision types
   Decision,
   DecisionType,
+  StagedObservation,
   // Policy types
   PolicySet,
   Rule,
@@ -147,5 +155,47 @@ export { RouteLoader, resolveEscalationContext } from './route-loader.js';
 export type { EscalationContext } from './route-loader.js';
 export { AuditLogger } from './audit.js';
 export { RateLimiter } from './rate-limiter.js';
-export type { RateLimitConfig } from './rate-limiter.js';
 export { HostedClient } from './http-client.js';
+
+// =============================================================================
+// Hybrid Mode Sync Engine (Block 5c-5e)
+// =============================================================================
+
+/**
+ * Background sync engine for hybrid mode. Orchestrates audit upload +
+ * policy / route / kill-switch download against the hosted backend
+ * while evaluate() continues to run locally at zero-network-cost
+ * latency. Mirrors the Python SDK's hybrid architecture exactly.
+ *
+ * Most users won't construct these directly — they're surfaced for
+ * advanced scenarios (custom audit stores, alternate transport,
+ * test instrumentation).
+ *
+ * @see https://github.com/hiitlhq/hiitl/blob/main/docs/specs/sync_engine_spec.md
+ */
+export { SyncEngine } from './sync-engine.js';
+export type {
+  SyncConfig,
+  SyncEngineOptions,
+  AuditDrainSink,
+  TelemetryCollectorSink,
+} from './sync-engine.js';
+
+export { SyncCache } from './sync-cache.js';
+export type { SyncCacheOptions, SyncCacheStatus } from './sync-cache.js';
+
+export { SyncClient, backoffWithJitter } from './sync-client.js';
+export type {
+  SyncClientOptions,
+  AuditUploadResult,
+  PolicyDownloadResult,
+  RouteDownloadResult,
+  KillSwitchResult,
+  TelemetryUploadResult,
+} from './sync-client.js';
+
+export { CircuitBreaker, CircuitState } from './circuit-breaker.js';
+export type { CircuitBreakerStatus } from './circuit-breaker.js';
+
+export type { Logger } from './logger.js';
+export { consoleLogger } from './logger.js';

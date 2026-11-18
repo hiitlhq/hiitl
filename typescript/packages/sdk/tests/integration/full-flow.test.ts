@@ -14,10 +14,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { HIITL } from '../../src/client.js';
 import type { Decision } from '@hiitl/core';
+import { recordMeasurement } from '../../../../test-support/measurements.js';
+import { latencyRun, recordLatency, timeCalls } from '../../../../test-support/latency.js';
 
 const FIXTURES_DIR = path.join(__dirname, '../fixtures');
 const TEST_POLICY = path.join(FIXTURES_DIR, 'valid_policy.json');
 const TEST_DB = path.join(FIXTURES_DIR, 'integration_test.db');
+const SOURCE = 'typescript/packages/sdk/tests/integration/full-flow.test.ts';
 
 describe('Integration: Full Flow', () => {
   let hiitl: HIITL;
@@ -89,14 +92,20 @@ describe('Integration: Full Flow', () => {
         limit: 10,
       });
 
+      // Each decision's record, found by its identity (action_id). Two evaluations in one
+      // millisecond share a timestamp, so their order in a time-ordered query is not theirs.
       expect(records).toHaveLength(2);
-      expect(records[0].action_id).toBe(decision2.action_id); // Most recent first
-      expect(records[1].action_id).toBe(decision1.action_id);
+      const byId = new Map(records.map((r) => [r.action_id, r]));
+      for (const [d, amount] of [[decision1, 100], [decision2, 200]] as const) {
+        const rec = byId.get(d.action_id);
+        expect(rec).toBeDefined();
+        expect(JSON.parse(rec!.envelope).parameters.amount).toBe(amount);
+      }
     });
   });
 
   describe('Performance Requirements', () => {
-    it('should complete evaluation in < 10ms (average)', () => {
+    it('records the local call population the release gate reads', () => {
       hiitl = new HIITL({
         environment: 'dev',
         agent_id: 'perf-test',
@@ -106,34 +115,20 @@ describe('Integration: Full Flow', () => {
         mode: 'RESPECT_POLICY',
       });
 
-      const durations: number[] = [];
-
-      // Warm up (first call loads policy)
-      hiitl.evaluate({
+      // d001d308: the declared p95 of these samples, asserted only under the release switch.
+      // HTL-17 19d576ee: the warmup and run it had before HTL-45, as the timing catalogue declares.
+      const run = latencyRun('sdk/local-call');
+      const call = () => hiitl.evaluate({
         action: 'test_tool',
         parameters: { amount: 100 },
       });
-
-      // Measure 100 evaluations
-      for (let i = 0; i < 100; i++) {
-        const start = performance.now();
-        hiitl.evaluate({
-          action: 'test_tool',
-          parameters: { amount: 100 },
-        });
-        durations.push(performance.now() - start);
-      }
-
-      const avg = durations.reduce((a, b) => a + b) / durations.length;
-      const p95 = durations.sort((a, b) => a - b)[Math.floor(durations.length * 0.95)];
-
-      console.log(`Performance: avg=${avg.toFixed(2)}ms, p95=${p95.toFixed(2)}ms`);
-
-      expect(avg).toBeLessThan(10);
-      expect(p95).toBeLessThan(10);
+      // Warm up (first call loads policy)
+      const warmup = timeCalls(run.warmup, call);
+      const samples = timeCalls(run.count, call);
+      recordLatency('sdk/local-call', samples, 'local', warmup);
     });
 
-    it('should have sub-millisecond cache hits', () => {
+    it('records first and cached whole-evaluation durations', () => {
       hiitl = new HIITL({
         environment: 'dev',
         agent_id: 'cache-test',
@@ -164,11 +159,15 @@ describe('Integration: Full Flow', () => {
 
       console.log(`Cache: first=${firstCall.toFixed(2)}ms, avg=${avgCache.toFixed(2)}ms`);
 
-      // Cache hits should be significantly faster
-      expect(avgCache).toBeLessThan(firstCall);
+      recordMeasurement({ metric: 'first local evaluation duration', unit: 'ms',
+        source: `${SOURCE}#cached-whole-evaluation`, value: firstCall, statistic: 'single call' });
+      recordMeasurement({ metric: 'cached whole-evaluation duration', unit: 'ms',
+        source: `${SOURCE}#cached-whole-evaluation`, value: avgCache,
+        sample_count: cacheDurations.length, statistic: 'arithmetic mean' });
+      // This measures the complete SDK call, not the declared from-disk cache-read boundary.
     });
 
-    it('should handle 1000 evaluations with good throughput', () => {
+    it('records evaluation throughput', () => {
       hiitl = new HIITL({
         environment: 'dev',
         agent_id: 'throughput-test',
@@ -181,7 +180,8 @@ describe('Integration: Full Flow', () => {
 
       const start = performance.now();
 
-      for (let i = 0; i < 1000; i++) {
+      const iterations = 1000;
+      for (let i = 0; i < iterations; i++) {
         hiitl.evaluate({
           action: 'test_tool',
           parameters: { amount: i },
@@ -189,12 +189,14 @@ describe('Integration: Full Flow', () => {
       }
 
       const elapsed = performance.now() - start;
-      const throughput = 1000 / (elapsed / 1000); // ops/sec
+      const throughput = iterations / (elapsed / 1000); // ops/sec
 
       console.log(`Throughput: ${throughput.toFixed(0)} ops/sec (${elapsed.toFixed(0)}ms for 1000 ops)`);
 
-      // Should complete 1000 evaluations in reasonable time
-      expect(elapsed).toBeLessThan(10000); // < 10 seconds
+      recordMeasurement({ metric: 'evaluation batch duration', unit: 'ms', source: `${SOURCE}#throughput`,
+        value: elapsed, sample_count: iterations, statistic: 'whole batch' });
+      recordMeasurement({ metric: 'evaluation throughput', unit: 'operations/second', source: `${SOURCE}#throughput`,
+        value: throughput, sample_count: iterations, statistic: 'count / elapsed seconds' });
     });
   });
 
@@ -203,13 +205,14 @@ describe('Integration: Full Flow', () => {
       // Create policy with rate limiting
       const rateLimitPolicy = {
         name: 'rate-limit-integration',
-        version: '1.0',
+        version: 'v1.0.0',
+        description: 'Enforce rate limits across multiple calls',
+        scope: { org_id: 'org_test000000000000000', environment: 'dev' },
         rules: [
           {
             name: 'allow-all',
             description: 'Allow all',
             priority: 100,
-            enabled: true,
             decision: 'ALLOW',
             reason_code: 'OK',
             conditions: {

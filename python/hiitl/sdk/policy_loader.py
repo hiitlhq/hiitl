@@ -8,7 +8,7 @@ Per docs/specs/policy_format.md:
 Design:
 - Format detection by file extension (.json, .yaml, .yml)
 - Fallback: try JSON first (faster), then YAML
-- mtime-based caching to avoid re-parsing unchanged files
+- File identity/change-metadata caching to avoid re-parsing unchanged files
 - Helpful error messages pointing to policy_format.md
 
 Example:
@@ -19,6 +19,8 @@ Example:
 """
 
 import json
+import logging
+import re
 from pathlib import Path
 from typing import Optional
 
@@ -26,7 +28,69 @@ import yaml
 from pydantic import ValidationError
 
 from hiitl.core.types import PolicySet
+from hiitl.core.numeric_domain import NumericDomainError, validate_numeric_domain, admitted_numbers
+from hiitl.core.input_declarations import policy_shape
+from hiitl.core.types import Envelope
 from hiitl.sdk.exceptions import PolicyLoadError
+from hiitl.sdk.file_clock import read_file_clock
+
+logger = logging.getLogger(__name__)
+
+_TIMESTAMP = "tag:yaml.org,2002:timestamp"
+
+
+class YAMLForm(yaml.SafeLoader):
+    """A policy's or route's YAML, read as the JSON it converts to ("a thin parsing layer that converts to JSON",
+    policy_format.md). JSON has no timestamp, so YAML's is not resolved: a date-time written in YAML is the string
+    written, which the core reads as it reads the JSON's (ecp_evaluate_spec.md "A date-time is read by RFC 3339's
+    grammar"), and an explicit `!!timestamp` is refused. Mirrors typescript/packages/sdk/src/policy-loader.ts's
+    `YAML_FORM`."""
+
+
+# YAML1.2.2 §10.3.2, in first-match order; preserve unrelated safe tags.
+_CORE = {
+    "null": r"(?:null|Null|NULL|~|)",
+    "bool": r"(?:true|True|TRUE|false|False|FALSE)",
+    "int": r"(?:[-+]?[0-9]+|0o[0-7]+|0x[0-9a-fA-F]+)",
+    "float": r"(?:[-+]?(?:\.[0-9]+|[0-9]+(?:\.[0-9]*)?)(?:[eE][-+]?[0-9]+)?|[-+]?(?:\.inf|\.Inf|\.INF)|\.nan|\.NaN|\.NAN)",
+}
+_REPLACED = {_TIMESTAMP, *("tag:yaml.org,2002:" + kind for kind in _CORE)}
+YAMLForm.yaml_implicit_resolvers = {first: [(tag, form) for tag, form in resolvers if tag not in _REPLACED]
+                                    for first, resolvers in yaml.SafeLoader.yaml_implicit_resolvers.items()}
+YAMLForm.yaml_constructors = {tag: c for tag, c in yaml.SafeLoader.yaml_constructors.items() if tag != _TIMESTAMP}
+
+
+def _core_scalar(kind):
+    expression = re.compile(_CORE[kind])
+    def construct(loader, node):
+        raw = loader.construct_scalar(node)
+        if expression.fullmatch(raw) is None:
+            raise yaml.constructor.ConstructorError(None, None, f"invalid YAML1.2 Core {kind}: {raw!r}", node.start_mark)
+        if kind == "null": return None
+        if kind == "bool": return raw.lower() == "true"
+        if kind == "int":
+            if raw.startswith("0o"): return int(raw[2:], 8)
+            if raw.startswith("0x"): return int(raw[2:], 16)
+            return int(raw, 10)
+        lower = raw.lower()
+        if lower.lstrip("+-") == ".inf": return float("-inf" if lower.startswith("-") else "inf")
+        if lower == ".nan": return float("nan")
+        return float(raw)
+    return construct
+
+
+for _kind, _form in _CORE.items():
+    _tag = "tag:yaml.org,2002:" + _kind
+    YAMLForm.add_implicit_resolver(_tag, re.compile("^(?:" + _form + ")$"), None)
+    YAMLForm.add_constructor(_tag, _core_scalar(_kind))
+
+
+def load_yaml(stream, *, admit=True):
+    """Read the ruled Core scalars, then admit the whole held JSON tree."""
+    value = yaml.load(stream, Loader=YAMLForm)
+    if admit:
+        validate_numeric_domain(value)
+    return value
 
 
 class PolicyLoader:
@@ -35,7 +99,7 @@ class PolicyLoader:
     This loader supports both JSON (primary format) and YAML (convenience layer).
     Policies are parsed into PolicySet objects and validated with Pydantic.
 
-    The loader maintains an mtime-based cache to avoid re-parsing unchanged files.
+    The loader holds a reading while file identity and change metadata agree.
     This is critical for performance in high-throughput scenarios.
 
     Attributes:
@@ -53,12 +117,15 @@ class PolicyLoader:
         self.policy_path = Path(policy_path)
         self._cached_policy: Optional[PolicySet] = None
         self._cached_mtime: Optional[float] = None
+        self._cached_metadata: Optional[tuple] = None
+        self._cached_content: Optional[str] = None
+        self._timestamps_distinguish = False
 
     def load(self) -> PolicySet:
-        """Load policy from JSON or YAML file with mtime-based caching.
+        """Load policy from JSON or YAML file with metadata-based caching.
 
         This method:
-        1. Checks file modification time
+        1. Checks file identity and change metadata
         2. Returns cached policy if file unchanged
         3. Otherwise, parses file (JSON or YAML)
         4. Validates with Pydantic PolicySet schema
@@ -80,23 +147,46 @@ class PolicyLoader:
             raise PolicyLoadError(
                 f"Policy file not found: {self.policy_path}\n\n"
                 "Make sure the path is correct and the file exists.\n"
-                "See docs/specs/policy_format.md for policy file format."
+                "See docs/specs/policy_format.md for policy file format.",
+                reason="POLICY_NOT_FOUND",
             )
 
-        # Get current file modification time
+        # Record the metadata before reading: a change during parsing must not
+        # bless that reading as the next file's. atime is not change metadata.
         try:
-            current_mtime = self.policy_path.stat().st_mtime
+            current = self.policy_path.stat()
+            current_mtime = current.st_mtime
+            current_metadata = (current.st_dev, current.st_ino, current.st_size,
+                                current.st_mtime_ns, current.st_ctime_ns, current.st_mode,
+                                current.st_uid, current.st_gid, current.st_nlink,
+                                getattr(current, 'st_flags', None))
         except OSError as e:
             raise PolicyLoadError(
-                f"Cannot access policy file {self.policy_path}: {e}"
+                f"Cannot access policy file {self.policy_path}: {e}", reason="POLICY_LOAD_FAILED"
             ) from e
 
         # Return cached policy if file unchanged
-        if self._cached_policy and self._cached_mtime == current_mtime:
+        if self._cached_policy and self._cached_metadata == current_metadata and self._timestamps_distinguish:
             return self._cached_policy
 
-        # Parse file to Python dict
-        policy_dict = self._parse_file()
+        # Timestamp before the content read: a write during/after it must not be
+        # blessed by a later timestamp. A tied clock requires confirmation again.
+        read_time = read_file_clock(current)
+        content = self._read_file()
+        distinguish = read_time is not None and current.st_ctime_ns < read_time
+        if self._cached_policy and self._cached_metadata == current_metadata and self._cached_content == content:
+            self._timestamps_distinguish = distinguish
+            return self._cached_policy
+
+        # Parse and admit only changed content, at its source.
+        policy_dict = self._parse_file(content)
+        shape = policy_shape(PolicySet, Envelope)
+        if isinstance(policy_dict, dict) and 'policy_set' in policy_dict:
+            shape = {**shape, 'properties': {'policy_set': shape}}
+        try:
+            validate_numeric_domain(policy_dict, shape=shape)
+        except NumericDomainError as error:
+            raise PolicyLoadError(f"Invalid policy numeric value in {self.policy_path}: {error}") from error
 
         # Handle optional "policy_set" wrapper
         # Some policy files wrap the policy in {"policy_set": {...}}
@@ -105,10 +195,11 @@ class PolicyLoader:
 
         # Validate with Pydantic PolicySet schema
         try:
-            policy = PolicySet(**policy_dict)
+            with admitted_numbers():
+                policy = PolicySet.model_validate(policy_dict)
         except ValidationError as e:
             raise PolicyLoadError(
-                f"Invalid policy format in {self.policy_path}:\n\n{e}\n\n"
+                f"Invalid policy format at <root> in {self.policy_path}:\n\n{e}\n\n"
                 "The policy file doesn't match the required schema.\n"
                 "Check docs/specs/policy_format.md for the correct format.\n\n"
                 "Note: JSON is the primary format; YAML is a convenience layer.\n"
@@ -120,13 +211,33 @@ class PolicyLoader:
                 "Check that the file contains valid JSON or YAML."
             ) from e
 
+        # The lint runs on load; its findings are logged, never block a load.
+        if policy.rules:
+            from hiitl.core.lint import lint
+            self.lint_findings = lint(policy)
+            for f in self.lint_findings:
+                if f.severity != "info":
+                    logger.warning("policy lint %s (%s) in %s: %s", f.code, f.severity, self.policy_path, f.message)
+
         # Cache for next call
         self._cached_policy = policy
         self._cached_mtime = current_mtime
+        self._cached_metadata = current_metadata
+        self._cached_content = content
+        self._timestamps_distinguish = distinguish
 
         return policy
 
-    def _parse_file(self) -> dict:
+    def _read_file(self) -> str:
+        try:
+            with open(self.policy_path, 'r', encoding='utf-8') as stream:
+                return stream.read()
+        except OSError as error:
+            raise PolicyLoadError(
+                f"Cannot read policy file {self.policy_path}: {error}", reason="POLICY_LOAD_FAILED"
+            ) from error
+
+    def _parse_file(self, content=None) -> dict:
         """Parse policy file to Python dict (JSON or YAML).
 
         Format detection:
@@ -143,7 +254,8 @@ class PolicyLoader:
         suffix = self.policy_path.suffix.lower()
 
         try:
-            with open(self.policy_path, 'r', encoding='utf-8') as f:
+            from io import StringIO
+            with StringIO(self._read_file() if content is None else content) as f:
                 # JSON format (primary)
                 if suffix == '.json':
                     try:
@@ -158,11 +270,11 @@ class PolicyLoader:
                 # YAML format (convenience layer)
                 elif suffix in ('.yaml', '.yml'):
                     try:
-                        policy_dict = yaml.safe_load(f)
+                        policy_dict = load_yaml(f, admit=False)
                         if not isinstance(policy_dict, dict):
                             raise PolicyLoadError(
                                 f"Invalid YAML in {self.policy_path}: "
-                                "YAML file must contain a mapping/dict, "
+                                "YAML file at <root> policy root must contain a mapping/dict, "
                                 f"but got {type(policy_dict).__name__}"
                             )
                         return policy_dict
@@ -185,11 +297,11 @@ class PolicyLoader:
 
                     # Try YAML as fallback
                     try:
-                        policy_dict = yaml.safe_load(content)
+                        policy_dict = load_yaml(content, admit=False)
                         if not isinstance(policy_dict, dict):
                             raise PolicyLoadError(
                                 f"Invalid policy file {self.policy_path}: "
-                                "File must contain JSON object or YAML mapping, "
+                                "File at <root> must contain JSON object or YAML mapping, "
                                 f"but got {type(policy_dict).__name__}"
                             )
                         return policy_dict
@@ -202,7 +314,7 @@ class PolicyLoader:
 
         except OSError as e:
             raise PolicyLoadError(
-                f"Cannot read policy file {self.policy_path}: {e}"
+                f"Cannot read policy file {self.policy_path}: {e}", reason="POLICY_LOAD_FAILED"
             ) from e
 
     def invalidate_cache(self):
@@ -213,3 +325,4 @@ class PolicyLoader:
         """
         self._cached_policy = None
         self._cached_mtime = None
+        self._cached_metadata = None

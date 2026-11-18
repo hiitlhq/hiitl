@@ -3,7 +3,7 @@
   "description": "OBSERVE_ALL mode: ALLOW decisions pass through unchanged (not wrapped in OBSERVE)",
   "mode": "OBSERVE_ALL",
   "envelope": {
-    "schema_version": "v1.0",
+    "schema_version": "v2.0",
     "org_id": "org_1234567890abcdef",
     "environment": "prod",
     "agent_id": "agent_test",
@@ -17,13 +17,17 @@
     "signature": "0000000000000000000000000000000000000000000000000000000000000000"
   },
   "policy_set": {
-    "version": "1.0.0",
+    "version": "v1.0.0",
+    "description": "OBSERVE_ALL mode: ALLOW decisions pass through unchanged (not wrapped in OBSERVE)",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
     "name": "test_policy",
     "rules": [
       {
         "name": "allow_reads",
         "priority": 100,
-        "enabled": true,
         "conditions": {
           "field": "action",
           "operator": "equals",
@@ -38,6 +42,8 @@
   "expected_decision": {
     "decision": "ALLOW",
     "allowed": true,
-    "reason_codes": ["READ_ALLOWED"]
+    "reason_codes": [
+      "READ_ALLOWED"
+    ]
   }
 }

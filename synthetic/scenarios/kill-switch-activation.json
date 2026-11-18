@@ -12,7 +12,7 @@
       "action": "evaluate",
       "agent_id": "payment-agent",
       "envelope": {
-        "tool": "process_payment",
+        "action": "process_payment",
         "operation": "execute",
         "target": {"account_id": "acct_test_001"},
         "parameters": {"amount": 25.00, "currency": "usd"}
@@ -30,7 +30,7 @@
       "action": "evaluate",
       "agent_id": "payment-agent",
       "envelope": {
-        "tool": "check_balance",
+        "action": "check_balance",
         "operation": "read",
         "target": {"account_id": "acct_test_001"},
         "parameters": {}

@@ -47,6 +47,7 @@
       "group": "Getting Started",
       "pages": [
         "getting-started/overview",
+        "getting-started/guarantees",
         "getting-started/quickstart-python",
         "getting-started/quickstart-typescript",
         "getting-started/observe-first"
@@ -59,8 +60,23 @@
         "concepts/envelope",
         "concepts/policies",
         "concepts/decisions",
-        "concepts/audit-trail",
-        "concepts/deployment-modes"
+        "concepts/audit-trail"
+      ]
+    },
+    {
+      "group": "Deployment",
+      "pages": [
+        "concepts/deployment-modes",
+        "deployment/self-hosted",
+        "deployment/operations"
+      ]
+    },
+    {
+      "group": "Configuration",
+      "pages": [
+        "configuration/modes-and-scope",
+        "configuration/routes",
+        "configuration/approvals"
       ]
     },
     {
@@ -100,7 +116,11 @@
       "pages": [
         "security/authentication",
         "security/envelope-signing",
-        "security/tenant-isolation"
+        "security/tenant-isolation",
+        "security/data-handling",
+        "security/whitepaper",
+        "security/shared-responsibility",
+        "security/secure-development"
       ]
     },
     {
@@ -121,6 +141,13 @@
         "patterns/communication",
         "patterns/iam",
         "patterns/infrastructure"
+      ]
+    },
+    {
+      "group": "Reference",
+      "pages": [
+        "reference/limits-and-roadmap",
+        "reference/licensing-and-support"
       ]
     }
   ],

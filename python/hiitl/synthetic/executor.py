@@ -1,8 +1,7 @@
 """Scenario executor — runs scenario steps and collects results.
 
-Phase 1 implementation:
 - "evaluate" steps: Execute via PolicyEvaluator, validate assertions
-- "approve", "execute", "verify_audit" steps: SKIPPED (Phase 2 Reviewer Cockpit)
+- "approve", "execute", "verify_audit" steps: not run (the runner evaluates only); reported as skipped
 
 Uses PolicyEvaluator directly (not the HIITL SDK client) for fast, lightweight
 testing without audit DB creation or rate limiter state.
@@ -15,7 +14,7 @@ from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
 from hiitl.core.evaluator import PolicyEvaluator
-from hiitl.core.types import Decision, Envelope, PolicySet
+from hiitl.core.types import ENVELOPE_SCHEMA_VERSION, Decision, Envelope, PolicySet
 
 from .assertions import validate_all_assertions
 from .grader import PolicyGrader
@@ -28,8 +27,8 @@ from .types import (
     StepResult,
 )
 
-# Phase 2 step types that are skipped in Phase 1
-_PHASE2_ACTIONS = {"approve", "execute", "verify_audit"}
+# Step types the runner does not run: it evaluates only
+_NOT_RUN_ACTIONS = {"approve", "execute", "verify_audit"}
 
 # Variable reference pattern: ${step_N_response.field.path}
 _VAR_PATTERN = re.compile(r"\$\{step_(\d+)_response\.(.+?)\}")
@@ -118,10 +117,10 @@ class ScenarioExecutor:
 
         if action == "evaluate":
             return self._execute_evaluate_step(step)
-        elif action in _PHASE2_ACTIONS:
+        elif action in _NOT_RUN_ACTIONS:
             return self._skip_step(
                 step,
-                f"Phase 2: '{action}' action requires Reviewer Cockpit API (not available in Phase 1)",
+                f"'{action}' is not run by the synthetic runner: it evaluates only",
             )
         else:
             return StepResult(
@@ -246,43 +245,25 @@ class ScenarioExecutor:
             )
 
     def _build_envelope_from_step(self, step: ScenarioStep) -> Envelope:
-        """Build a complete Envelope from the partial fields in a scenario step.
+        """Build a complete Envelope from a step's envelope, as evaluate() builds one from its keywords.
 
-        Scenario steps use developer-facing field names (tool, operation, target, parameters).
-        This method fills in all required Envelope fields.
+        The step's envelope names the members evaluate() takes (STEP_TAKES, checked when the step loads); each is
+        carried, a member it does not name takes the envelope's default (the call's: the cells hold the two together),
+        and its agent_id overrides the step's.
         """
-        env_data = step.envelope or {}
-
-        # Map scenario field names to Envelope field names
-        # Prefer "action", fall back to "tool" or "tool_name" for backward compat
-        action_name = env_data.get("action") or env_data.get("tool") or env_data.get("tool_name", "unknown_tool")
-        operation = env_data.get("operation", "execute")
-        target = env_data.get("target", {})
-        parameters = env_data.get("parameters", {})
-        sensitivity = env_data.get("sensitivity")
-        reason = env_data.get("reason")
-
-        # Resolve variable references in values
-        target = self._substitute_variables(target)
-        parameters = self._substitute_variables(parameters)
-
-        agent_id = step.agent_id or "synthetic-agent"
-
+        given = {k: self._substitute_variables(v) for k, v in (step.envelope or {}).items()}
         return Envelope(
-            schema_version="v1.0",
+            schema_version=ENVELOPE_SCHEMA_VERSION,
             org_id=self._org_id,
             environment=self._environment,
-            agent_id=agent_id,
             action_id=f"act_{uuid4().hex[:20]}",
-            idempotency_key=f"idem_scenario_step_{step.step}_{uuid4().hex[:8]}",
-            action=action_name,
-            operation=operation,
-            target=target,
-            parameters=parameters,
             timestamp=datetime.now(timezone.utc),
             signature="0" * 64,
-            sensitivity=sensitivity,
-            reason=reason,
+            **{
+                **given,
+                "agent_id": given.get("agent_id") or step.agent_id or "synthetic-agent",
+                "idempotency_key": given.get("idempotency_key") or f"idem_scenario_step_{step.step}_{uuid4().hex[:8]}",
+            },
         )
 
     def _substitute_variables(self, value: Any) -> Any:
@@ -318,7 +299,7 @@ class ScenarioExecutor:
         return d
 
     def _skip_step(self, step: ScenarioStep, reason: str) -> StepResult:
-        """Return a skipped StepResult for Phase 2 step types."""
+        """Return a skipped StepResult for a step type the runner does not run."""
         action = step.action if isinstance(step.action, str) else step.action.value
         return StepResult(
             step=step.step,

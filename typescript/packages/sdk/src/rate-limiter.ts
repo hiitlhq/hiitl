@@ -10,23 +10,24 @@
  *
  * Sliding Window Algorithm:
  * 1. Store timestamps of all events in array
- * 2. On check: filter out events older than window
- * 3. Compare count to limit
- * 4. If under limit: add event, allow
- * 5. If at/over limit: return RATE_LIMIT decision
+ * 2. On check: filter out events older than each window
+ * 3. Compare every window's count to its limit, before counting any
+ * 4. If all are under: add the event to every window, allow
+ * 5. If one is at/over: return the RATE_LIMIT decision, counting nothing
  *
  * @example
  * ```typescript
  * import { RateLimiter } from '@hiitl/sdk';
  *
  * const limiter = new RateLimiter();
- * const rateLimited = limiter.checkAndIncrement(envelope, decision, rateConfig);
+ * const rateLimited = limiter.checkAndIncrement(envelope, decision);
  * if (rateLimited) {
  *   console.log('Rate limited!', rateLimited.rate_limit.reset_at);
  * }
  * ```
  */
 
+import { counterState, limitExceeded, tightest } from '@hiitl/core';
 import type { Envelope, Decision } from '@hiitl/core';
 
 /**
@@ -38,25 +39,16 @@ interface Counter {
   windowSeconds: number; // Window duration in seconds
 }
 
-/**
- * Rate limit configuration from policy metadata.
- */
-export interface RateLimitConfig {
-  scope: string; // "org", "user", "tool", "user:tool"
-  limit: number; // Max events in window
-  window_seconds: number; // Window duration
-}
+// A rule's scope -> the limiter's scope-key form (mirrors hiitl/core/rate_limits.py).
+const RULE_SCOPE: Record<'action' | 'agent' | 'user' | 'org' | 'user_action', string> = {
+  action: 'tool',
+  agent: 'agent_id',
+  user: 'user',
+  org: 'org',
+  user_action: 'user:tool',
+};
 
-/**
- * Rate limit metadata in decision response.
- */
-export interface RateLimitMetadata {
-  scope: string;
-  window: string; // e.g., "60s"
-  limit: number;
-  current: number;
-  reset_at: string; // ISO 8601 timestamp
-}
+type ListedRule = NonNullable<Decision['rate_limit_rules']>[number];
 
 /**
  * In-memory sliding window rate limiter.
@@ -74,99 +66,61 @@ export interface RateLimitMetadata {
  * ```typescript
  * const limiter = new RateLimiter();
  *
- * const rateConfig = {
- *   scope: 'user',
- *   limit: 100,
- *   window_seconds: 60,
- * };
- *
- * const rateLimited = limiter.checkAndIncrement(envelope, decision, { rate_limits: [rateConfig] });
+ * // decision.rate_limit_rules: the windowed RATE_LIMIT rules the evaluator listed
+ * const rateLimited = limiter.checkAndIncrement(envelope, decision);
  * ```
  */
 export class RateLimiter {
   private counters = new Map<string, Counter>();
 
   /**
-   * Check rate limit and increment counter if under limit.
+   * Read every windowed RATE_LIMIT rule the decision lists, then count the call in all of them or in none
+   * (policy_format.md "Rate-limit rules"; R-0056: counted "on ALLOW decisions only"). Mirrors the Python limiter.
    *
-   * This method:
-   * 1. Skips non-ALLOW decisions (only rate limit allowed actions)
-   * 2. Extracts rate limit config from policy metadata
-   * 3. Builds scope key from envelope
-   * 4. Cleans up old events (sliding window)
-   * 5. Checks if count >= limit
-   * 6. If at limit: returns RATE_LIMIT decision
-   * 7. If under limit: adds event, returns null
+   * Only an ALLOW is counted. The rules come from the evaluator (decision.rate_limit_rules) — one representation, the
+   * rule's (T47): a set's metadata.rate_limits is compiled to such rules when the set loads. A window exceeded: the
+   * RATE_LIMIT decision for the first such window in listed order, and the call is counted in no window — it did not
+   * proceed. None exceeded: the call is counted in every window, the ALLOW's `rate_limit` is set to the window with
+   * the least headroom left (R-0008), and null is returned.
    *
    * @param envelope - Execution envelope
    * @param decision - Policy decision
-   * @param rateConfig - Rate limit configuration from policy metadata
-   * @returns Modified decision if rate limited, null if under limit
+   * @returns The refusal if a window is exceeded, null otherwise
    */
-  checkAndIncrement(
-    envelope: Envelope,
-    decision: Decision,
-    rateConfig?: { rate_limits?: RateLimitConfig[] }
-  ): Decision | null {
-    // Only rate limit ALLOW decisions
-    if (decision.decision !== 'ALLOW') {
+  checkAndIncrement(envelope: Envelope, decision: Decision): Decision | null {
+    if (decision.decision !== 'ALLOW' || !decision.rate_limit_rules?.length) {
       return null;
     }
-
-    // Extract rate limit config
-    const config = rateConfig?.rate_limits?.[0];
-    if (!config) {
-      return null; // No rate limiting configured
+    const now = new Date();
+    const read: Array<{ rule: ListedRule; counter: Counter; resetAt: Date }> = [];
+    for (const rule of decision.rate_limit_rules) {
+      const counter = this._window(envelope, rule, now);
+      const resetAt = new Date((counter.events[0] ?? now).getTime() + counter.windowSeconds * 1000);
+      if (counter.events.length >= counter.limit) {
+        return limitExceeded(decision, rule, counter.events.length, resetAt);
+      }
+      read.push({ rule, counter, resetAt });
     }
+    for (const { counter } of read) {
+      counter.events.push(now);
+    }
+    decision.rate_limit = tightest(read.map(({ rule, counter, resetAt }) => counterState(rule, counter.events.length, resetAt)));
+    return null;
+  }
 
-    const { scope, limit, window_seconds } = config;
-    const scopeKey = this._buildScopeKey(envelope, scope);
-
-    // Get or create counter
+  /** A rule's window, counted under `rule:<name>:<scope key>`, its calls older than the window dropped. */
+  private _window(envelope: Envelope, rule: ListedRule, now: Date): Counter {
+    const scopeKey = `rule:${rule.rule_name}:` + this._buildScopeKey(envelope, RULE_SCOPE[rule.scope]);
     let counter = this.counters.get(scopeKey);
     if (!counter) {
-      counter = {
-        events: [],
-        limit,
-        windowSeconds: window_seconds,
-      };
+      counter = { events: [], limit: rule.limit, windowSeconds: rule.window_seconds };
       this.counters.set(scopeKey, counter);
     }
-
-    // Sliding window cleanup: remove events older than window
-    const now = new Date();
+    counter.limit = rule.limit;
+    counter.windowSeconds = rule.window_seconds;
     const cutoff = new Date(now.getTime() - counter.windowSeconds * 1000);
     counter.events = counter.events.filter((eventTime) => eventTime > cutoff);
-
-    // Check limit
-    const currentCount = counter.events.length;
-    if (currentCount >= counter.limit) {
-      // Rate limit exceeded
-      const resetAt = new Date(
-        counter.events[0].getTime() + counter.windowSeconds * 1000
-      );
-
-      const rateLimitMetadata: RateLimitMetadata = {
-        scope,
-        window: `${counter.windowSeconds}s`,
-        limit: counter.limit,
-        current: currentCount,
-        reset_at: resetAt.toISOString(),
-      };
-
-      // Return modified decision with RATE_LIMIT type
-      return {
-        ...decision,
-        decision: 'RATE_LIMIT',
-        allowed: false,
-        reason_codes: ['RATE_LIMIT_EXCEEDED'],
-        rate_limit: rateLimitMetadata,
-      } as Decision;
-    }
-
-    // Under limit - add event and allow
-    counter.events.push(now);
-    return null;
+    return counter;
   }
 
   /**
@@ -175,8 +129,8 @@ export class RateLimiter {
    * Scope types:
    * - "org": org_id
    * - "user": org_id:user_id
-   * - "tool": org_id:tool_name
-   * - "user:tool": org_id:user_id:tool_name
+   * - "tool": org_id:action
+   * - "user:tool": org_id:user_id:action
    *
    * @param envelope - Execution envelope
    * @param scope - Scope type
@@ -190,7 +144,12 @@ export class RateLimiter {
       case 'org':
         return orgId;
 
-      case 'user': {
+      case 'agent_id': {
+        return `${orgId}:${envelope.agent_id ?? 'unknown'}`;
+      }
+
+      case 'user':
+      case 'user_id': {
         const userId = envelope.user_id ?? 'anonymous';
         return `${orgId}:${userId}`;
       }

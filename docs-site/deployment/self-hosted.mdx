@@ -1,0 +1,70 @@
+---
+title: "Self-hosted deployment"
+description: "Running the open-source core entirely inside your own environment, in local mode, with nothing vendor-hosted"
+---
+
+hiitl has two planes. The **open-source core** is what you run: the evaluator in your agent's process (the SDK), the MCP gateway in front of your tool servers, policies and routes as files, and the decision record on your own disk. The **hosted service** is what hiitl operates (hybrid and hosted modes; see [Deployment modes](/concepts/deployment-modes)).
+
+A deployment that must be entirely inside your own environment runs the core in **local mode**. This page describes that deployment: what runs where, what it needs, what it does not do. The example is Google Cloud; the shape is the same anywhere.
+
+## What runs where
+
+| Component | Form | Where it runs | What it holds |
+|---|---|---|---|
+| **Evaluator (SDK)** | a library in the agent's process (Python or TypeScript) | wherever the agent runs | the policy set and routes, loaded from files; the decision record, in a SQLite file |
+| **MCP gateway** (`hiitl-mcp-proxy`) | a process in front of your MCP tool servers | beside the agent | nothing persistent; it calls `evaluate()` through the Python SDK |
+| **Policies and routes** | YAML files | your repository, deployed to every agent host | the rules, each with its lifecycle stage; the routes to your own endpoints |
+| **The decision record** | a SQLite file per SDK instance | the host's disk, shipped to your own store | each new evaluation; retries reuse the first decision |
+| **Your reviewer endpoint** (optional) | a service you build | your project | the surface a route delivers approvals to, answering back to the route |
+
+There is no hiitl server in this deployment. "Central policies" means one policy set, versioned in your repository under your change control and deployed to every agent host; a change is a commit, reviewed and recorded like any other.
+
+## Dependencies
+
+- **Python SDK:** Python 3.10 or later; `pydantic`, `pydantic-settings`, `PyYAML` and `httpx`; SQLite through the standard library.
+- **TypeScript SDK:** Node 22 or later; the package-declared `better-sqlite3` native addon. Check the release runtime matrix for the versions verified with that addon.
+- **Gateway:** the Python SDK and the MCP reference library; upstream tool servers in any language, over stdio or SSE.
+- **No database server, no model provider, no identity provider.** The control point calls no language model.
+
+## Configuration
+
+**Python.** `HIITL()` reads its settings from constructor arguments, then the corresponding `HIITL_*` environment variables, then defaults. For local mode: `policy_path` (the policy file), `mode="RESPECT_POLICY"` (the default `OBSERVE_ALL` observes everything), `routes_path` (the directory of route files), `audit_db_path` (where the record is written; `./hiitl_audit.db` in the working directory by default), `signature_key` (the HMAC key envelopes are signed with), and `agent_id`, `org_id`, `environment` (the identity written into every envelope and record). With no `api_key`, nothing in the SDK connects anywhere except the routes you configure.
+
+**TypeScript.** `new HIITL({...})` takes the same settings in snake_case (`policy_path`, `mode`, `routes_path`, `audit_db_path`, `signature_key`, `agent_id`, `org_id`, `environment`). The TypeScript SDK also reads `HIITL_*` environment variables for these settings; an explicit option wins. The mode follows the resolved options and environment settings: an API key enables hybrid sync; remote evaluation is an explicit opt-in with `evaluation: 'remote'` and `server_url`.
+
+**Gateway.** `hiitl-mcp.yaml` takes `policy_path`, `routes_path`, `mode` and `audit_db_path`, passed through to the SDK it embeds; with a policy file and no `api_key` it runs `RESPECT_POLICY`. The signing key is read from `HIITL_SIGNATURE_KEY` in the gateway's environment and is refused in the YAML file.
+
+See the SDK configuration pages for every option.
+
+## Identity
+
+- **Agents** are identified by `agent_id` and `org_id` in every envelope and record. There are no API keys in local mode because there is no server to authenticate to.
+- **Envelopes** carry an HMAC-SHA256 signature when a `signature_key` is given, in the one signing form the SDKs and the hosted service share. In local mode the SDK checks it before evaluating, so an envelope changed after signing receives a recorded `SIGNATURE_INVALID` refusal; the record is on your own disk, written by the same process that signs.
+- **People** act through your reviewer endpoint and your repository: who may approve is your endpoint's authentication; who may change a policy is your repository's review.
+
+## Network
+
+- The local SDK sends only to the sync routes you configure. The gateway also connects to configured upstream tool servers, which may be remote over HTTPS SSE; forwarded tools can make their own network calls. In local mode the telemetry collector has no destination and sends nothing.
+- Ingress: none. Nothing listens.
+
+## What the record holds
+
+Each new evaluation of an admitted envelope has a row: the envelope as the integrating system built it, the decision, the matched rules, the reason codes, timestamps, and a content hash of the row. Through the gateway the envelope's `parameters` are the tool call's arguments as the model made the call, so the record on that path holds what the tool was asked to do, including any content in those arguments. In local mode that file stays on your host. A repeated idempotency key within the dedup window returns the first decision without another row. An audit write failure blocks the action with `AUDIT_WRITE_FAILED` in every mode and cannot itself be recorded. Each field in the client's `redact_fields` is stored as `[REDACTED]`, and through the gateway each argument is stored as its hash unless `recorded_arguments` names it ([Data handling](/security/data-handling#redaction)).
+
+A numeric value refused before an envelope exists leaves no decision or record. The refusal names the field and its declared type and range, recommending text only where text is admitted; this also applies to the hosted entry even when the request has a string `action_id` ([error responses](/api/evaluate#errors-are-decisions)).
+
+## Sizing
+
+The evaluator runs in-process and adds no network hop to the action path. The record grows with new evaluations and appended lifecycle results; ship and rotate the SQLite file with your other logs. The gateway adds one process per agent host.
+
+## Infrastructure as code
+
+The resources are the agent hosts you already have, the files in your repository, and the reviewer endpoint if you build one. Nothing hiitl-specific needs provisioning. The record's store and retention are your log pipeline's.
+
+## Upgrades
+
+The SDKs and the gateway are versioned together per release; roll the version in the agent hosts. Policies and routes are data: an upgrade never changes them. See [Operations](/deployment/operations).
+
+## The hosted service, for comparison
+
+Hybrid mode adds the hosted service: policies synced from it, the record uploaded to it in batches, the dashboard, regression reports and gated promotion, the review-case queue the gateway uses. The evaluator still runs in your process and keeps deciding from its cached policies if the service is unreachable. A deployment may start in local mode and add the service later, or never.

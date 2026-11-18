@@ -1,0 +1,248 @@
+{
+  "provenance": "HTL-39 valid structural witnesses; answers come only from spec schema defaults and decision context descriptions.",
+  "witnesses": [
+    {
+      "id": "bidirectional-present-parents",
+      "input": {
+        "name": "defaults-review",
+        "version": "v1.0.0",
+        "direction": "bidirectional",
+        "timing": "sync",
+        "endpoint": "https://review.example.test/decision",
+        "response_schema": {
+          "decision_options": [
+            "approve",
+            "deny"
+          ]
+        },
+        "sla": {
+          "timeout": "1m",
+          "timeout_action": "fail_closed"
+        },
+        "auth": {
+          "type": "bearer_token",
+          "secret_ref": "env:HTL39_ROUTE_FIXTURE"
+        },
+        "context": {
+          "fields": [
+            {
+              "field_path": "action",
+              "label": ""
+            },
+            {
+              "field_path": "agent_id"
+            }
+          ],
+          "risk_framing": {
+            "summary": ""
+          }
+        },
+        "escalation_ladder": {},
+        "correlation": {}
+      }
+    },
+    {
+      "id": "outbound-async",
+      "input": {
+        "name": "defaults-outbound",
+        "version": "v1.0.0",
+        "direction": "outbound",
+        "timing": "async",
+        "endpoint": "https://review.example.test/events",
+        "auth": {
+          "type": "bearer_token",
+          "secret_ref": "env:HTL39_ROUTE_FIXTURE"
+        },
+        "retry": {},
+        "queue": {}
+      }
+    },
+    {
+      "id": "inbound-peer-permissions",
+      "input": {
+        "name": "defaults-inbound",
+        "version": "v1.0.0",
+        "direction": "inbound",
+        "timing": "async",
+        "inbound": {
+          "permissions": {
+            "can_enforce": true,
+            "can_propose": true,
+            "can_signal": true
+          }
+        }
+      }
+    },
+    {
+      "id": "optional-parents-absent",
+      "input": {
+        "name": "defaults-review",
+        "version": "v1.0.0",
+        "direction": "bidirectional",
+        "timing": "sync",
+        "endpoint": "https://review.example.test/decision",
+        "response_schema": {
+          "decision_options": [
+            "approve",
+            "deny"
+          ]
+        },
+        "sla": {
+          "timeout": "1m",
+          "timeout_action": "fail_closed"
+        }
+      }
+    },
+    {
+      "id": "empty-fields-and-levels",
+      "input": {
+        "name": "defaults-review",
+        "version": "v1.0.0",
+        "direction": "bidirectional",
+        "timing": "sync",
+        "endpoint": "https://review.example.test/decision",
+        "response_schema": {
+          "decision_options": [
+            "approve",
+            "deny"
+          ]
+        },
+        "sla": {
+          "timeout": "1m",
+          "timeout_action": "fail_closed"
+        },
+        "context": {
+          "fields": []
+        },
+        "escalation_ladder": {
+          "levels": []
+        }
+      }
+    },
+    {
+      "id": "ladder-level-without-max-depth",
+      "input": {
+        "name": "defaults-review",
+        "version": "v1.0.0",
+        "direction": "bidirectional",
+        "timing": "sync",
+        "endpoint": "https://review.example.test/decision",
+        "response_schema": {
+          "decision_options": [
+            "approve",
+            "deny"
+          ]
+        },
+        "sla": {
+          "timeout": "1m",
+          "timeout_action": "fail_closed"
+        },
+        "escalation_ladder": {
+          "levels": [
+            {
+              "level": 1,
+              "route": "next-review",
+              "after": "1m"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "explicit-bidirectional-values",
+      "input": {
+        "name": "defaults-review",
+        "version": "v1.0.0",
+        "direction": "bidirectional",
+        "timing": "sync",
+        "endpoint": "https://review.example.test/decision",
+        "response_schema": {
+          "decision_options": [
+            "approve",
+            "deny"
+          ],
+          "required_fields": [
+            "decision",
+            "reason"
+          ]
+        },
+        "sla": {
+          "timeout": "1m",
+          "timeout_action": "fail_closed"
+        },
+        "auth": {
+          "type": "bearer_token",
+          "secret_ref": "env:HTL39_ROUTE_FIXTURE",
+          "header": "X-Review-Auth",
+          "hmac_header": "X-Review-Signature"
+        },
+        "context": {
+          "fields": [
+            {
+              "field_path": "action",
+              "label": "",
+              "format": "json"
+            },
+            {
+              "field_path": "agent_id"
+            }
+          ],
+          "risk_framing": {
+            "summary": ""
+          },
+          "include_policy_ref": false,
+          "include_audit_context": true
+        },
+        "escalation_ladder": {
+          "final_timeout_action": "fail_open"
+        },
+        "correlation": {
+          "token_field": "review_token"
+        },
+        "protocol": "http"
+      }
+    },
+    {
+      "id": "explicit-async-values",
+      "input": {
+        "name": "defaults-outbound",
+        "version": "v1.0.0",
+        "direction": "outbound",
+        "timing": "async",
+        "endpoint": "https://review.example.test/events",
+        "auth": {
+          "type": "bearer_token",
+          "secret_ref": "env:HTL39_ROUTE_FIXTURE"
+        },
+        "retry": {
+          "max_attempts": 4,
+          "backoff": "linear",
+          "initial_delay_ms": 2000
+        },
+        "queue": {
+          "batch_size": 50,
+          "flush_interval": "1m"
+        }
+      }
+    },
+    {
+      "id": "explicit-inbound-value",
+      "input": {
+        "name": "defaults-inbound",
+        "version": "v1.0.0",
+        "direction": "inbound",
+        "timing": "async",
+        "inbound": {
+          "permissions": {
+            "can_enforce": true,
+            "can_propose": true,
+            "can_signal": true
+          },
+          "acceptance_mode": "auto_accept"
+        }
+      },
+      "omit_defaults": false,
+      "reason": "Explicit auto_accept requires can_propose=true; this preservation case is not a valid can_propose omission witness."
+    }
+  ]
+}

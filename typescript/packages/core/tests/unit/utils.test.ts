@@ -16,13 +16,12 @@ describe('resolveFieldPath', () => {
     expect(resolveFieldPath(envelope, 'operation')).toBe('execute');
   });
 
-  it('should alias tool_name to action in field paths', () => {
+  it('reads a path as written: tool_name is no alias of action (policy_format.md 2.17, row 225)', () => {
     const envelope = {
       action: 'payment_transfer',
     };
 
-    // tool_name field path resolves to action (backward compat)
-    expect(resolveFieldPath(envelope, 'tool_name')).toBe('payment_transfer');
+    expect(resolveFieldPath(envelope, 'tool_name')).toBeNull();
   });
 
   it('should resolve nested fields (2 levels)', () => {
@@ -110,7 +109,7 @@ describe('resolveFieldPath', () => {
   it('should resolve boolean fields', () => {
     const envelope = {
       parameters: {
-        enabled: false, // False value should be returned
+        enabled: false, // Envelope parameter value being tested, not a rule field
       },
     };
 

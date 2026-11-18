@@ -1,8 +1,8 @@
 {
   "test_id": "test_106_sparse_missing_field_skips_rule",
-  "description": "Sparse envelope: rule references parameters.amount but no parameters provided — rule doesn't match, falls through to default BLOCK",
+  "description": "Sparse envelope: rule references parameters.amount but no parameters provided \u2014 rule doesn't match, falls through to default BLOCK",
   "envelope": {
-    "schema_version": "v1.0",
+    "schema_version": "v2.0",
     "org_id": "org_1234567890abcdef",
     "environment": "prod",
     "agent_id": "agent_test",
@@ -13,13 +13,17 @@
     "signature": "0000000000000000000000000000000000000000000000000000000000000000"
   },
   "policy_set": {
-    "version": "1.0.0",
+    "version": "v1.0.0",
+    "description": "Sparse envelope: rule references parameters.amount but no parameters provided — rule doesn't match, falls through to default BLOCK",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
     "name": "test_policy",
     "rules": [
       {
         "name": "allow_small_payments",
         "priority": 100,
-        "enabled": true,
         "conditions": {
           "all_of": [
             {
@@ -43,6 +47,8 @@
   "expected_decision": {
     "decision": "BLOCK",
     "allowed": false,
-    "reason_codes": ["NO_MATCHING_RULE"]
+    "reason_codes": [
+      "NO_MATCHING_RULE"
+    ]
   }
 }

@@ -4,7 +4,7 @@
  * Updated for routes.md spec: Route model types with direction-aware validation.
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { RouteLoader, resolveEscalationContext } from '../../src/route-loader.js';
@@ -14,6 +14,18 @@ import { HIITL } from '../../src/client.js';
 const FIXTURES_DIR = path.join(__dirname, '../fixtures');
 const ROUTES_DIR = path.join(FIXTURES_DIR, 'routes');
 const ESCALATION_POLICY = path.join(FIXTURES_DIR, 'escalation_policy.json');
+
+// finance-review.yaml declares `secret_ref: env:REVIEW_API_KEY`: the process that loads it holds the secret it sends
+// (routes.md Validation Rules, "The party that sends reads the `auth`"; row 140)
+let reviewKey: string | undefined;
+beforeAll(() => {
+  reviewKey = process.env.REVIEW_API_KEY;
+  process.env.REVIEW_API_KEY = 'review-test-key';
+});
+afterAll(() => {
+  if (reviewKey === undefined) delete process.env.REVIEW_API_KEY;
+  else process.env.REVIEW_API_KEY = reviewKey;
+});
 
 // Helper: minimal valid bidirectional route YAML
 function validBidirectionalYaml(name: string, overrides: Record<string, string> = {}): string {
@@ -446,13 +458,14 @@ describe('Client Escalation Integration', () => {
     const tempPolicyPath = path.join(FIXTURES_DIR, 'missing_config_policy.json');
     fs.writeFileSync(tempPolicyPath, JSON.stringify({
       name: 'missing-config-policy',
-      version: '1.0',
+      version: 'v1.0.0',
+      description: 'Handle missing config file gracefully (non-fatal)',
+      scope: { org_id: 'org_test000000000000000', environment: 'dev' },
       rules: [
         {
           name: 'escalate-all',
           description: 'Escalate everything',
           priority: 10,
-          enabled: true,
           decision: 'REQUIRE_APPROVAL',
           reason_code: 'NEEDS_REVIEW',
           route: 'nonexistent-config',
@@ -508,9 +521,14 @@ describe('Client Escalation Integration', () => {
 
     // Query audit to verify record was written
     const records = hiitl.queryAudit({ action_id: decision.action_id });
-    expect(records.length).toBeGreaterThan(0);
-
-    const record = records[0];
-    expect(record.decision_type).toBe('REQUIRE_APPROVAL');
+    expect(records.map((record) => ({
+      action_id: record.action_id, decision_type: record.decision_type,
+      decision: JSON.parse(record.decision), envelope: JSON.parse(record.envelope),
+    }))).toEqual([{
+      action_id: decision.action_id, decision_type: decision.decision,
+      decision: JSON.parse(JSON.stringify(decision)),
+      envelope: expect.objectContaining({ action: 'payment_transfer', target: { account_id: 'acct_123' },
+        parameters: { amount: 5000 } }),
+    }]);
   });
 });

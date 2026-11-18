@@ -1,0 +1,73 @@
+{
+  "test_id": "test_189_a_condition_on_tool_name_reads_an_absent_field_exists_false_matches",
+  "description": "tool_name, renamed action at envelope schema 1.1, has no alias from 2.0 (row 225), so no call carries it and a condition on it reads an absent field. exists: false reads that absence: a 1.x guard that blocks a call naming no tool now blocks every call (policy_format.md 2.17, 'A field the call does not carry'; HTL-27, Codex's review condition 1).",
+  "envelope": {
+    "schema_version": "v2.0",
+    "org_id": "org_1234567890abcdef",
+    "environment": "prod",
+    "agent_id": "agent_support_mailer",
+    "action_id": "act_test18900000000000000000",
+    "timestamp": "2026-11-09T10:00:00Z",
+    "action": "send_email",
+    "operation": "execute",
+    "parameters": {
+      "to": "customer@example.com",
+      "subject": "Your invoice for October"
+    },
+    "idempotency_key": "idem_test_189",
+    "target": {
+      "mailbox": "support"
+    },
+    "signature": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "policy_set": {
+    "name": "tool_guard_policy",
+    "version": "v1.0.0",
+    "description": "Every call names its tool; email is allowed",
+    "scope": {
+      "org_id": "org_1234567890abcdef",
+      "environment": "prod"
+    },
+    "rules": [
+      {
+        "name": "block_calls_naming_no_tool",
+        "description": "A call that names no tool is refused",
+        "priority": 300,
+        "conditions": {
+          "field": "tool_name",
+          "operator": "exists",
+          "value": false
+        },
+        "decision": "BLOCK",
+        "reason_code": "NO_TOOL_NAMED"
+      },
+      {
+        "name": "allow_email",
+        "description": "The support agent may send email",
+        "priority": 100,
+        "conditions": {
+          "field": "action",
+          "operator": "equals",
+          "value": "send_email"
+        },
+        "decision": "ALLOW",
+        "reason_code": "EMAIL_ALLOWED"
+      }
+    ]
+  },
+  "expected_decision": {
+    "decision": "BLOCK",
+    "allowed": false,
+    "reason_codes": [
+      "NO_TOOL_NAMED"
+    ],
+    "matched_rules": [
+      {
+        "rule_name": "block_calls_naming_no_tool",
+        "policy_set": "tool_guard_policy",
+        "priority": 300
+      }
+    ],
+    "missing_fields": null
+  }
+}

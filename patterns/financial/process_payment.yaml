@@ -9,7 +9,7 @@ tags: ["payment", "financial", "pci-dss", "money"]
 
 evaluate_examples:
   python: |
-    result = hiitl.evaluate("process_payment", {
+    result = hiitl.evaluate("process_payment", parameters={
         "amount": 250.00,
         "currency": "usd",
         "account_id": "acct_8x7kQ2nR4m",
@@ -17,15 +17,15 @@ evaluate_examples:
     if result.ok:
         process_payment(amount=250.00, currency="usd", account_id="acct_8x7kQ2nR4m")
   typescript: |
-    const result = hiitl.evaluate({
+    const result = await hiitl.evaluate({
       action: 'process_payment',
-      params: {
+      parameters: {
         amount: 250.00,
         currency: 'usd',
         account_id: 'acct_8x7kQ2nR4m',
       },
     });
-    if (result.ok) {
+    if (result.allowed) {
       await processPayment({ amount: 250.00, currency: 'usd', accountId: 'acct_8x7kQ2nR4m' });
     }
 
@@ -35,10 +35,10 @@ context_enrichment:
     example: "user_9f3hJ7kLm2"
   - field: "sensitivity"
     why: "Marks the action as involving money so policies can apply financial-specific controls"
-    example: "money"
+    example: ["money"]
   - field: "cost_estimate"
     why: "Provides the transaction amount as a cost signal for budget-based policies and spend tracking"
-    example: 250.00
+    example: {"dollars": 250.00}
   - field: "target.merchant_category"
     why: "Merchant category code enables policies that restrict payments to specific business types"
     example: "5411"
@@ -50,7 +50,6 @@ starter_policies:
   - name: "allow-small-payments"
     description: "Auto-approve payments under $100 — low risk, fast path"
     priority: 200
-    enabled: true
     conditions:
       all_of:
         - field: "action"
@@ -62,14 +61,13 @@ starter_policies:
     decision: "ALLOW"
     reason_code: "PAYMENT_AUTO_APPROVED"
     remediation:
-      type: "static"
+      type: "threshold"
       message: "Payment auto-approved (under $100 threshold)"
       suggestion: "No action needed"
 
   - name: "approve-medium-payments"
     description: "Require human approval for payments between $100 and $1,000"
     priority: 150
-    enabled: true
     conditions:
       all_of:
         - field: "action"
@@ -84,14 +82,13 @@ starter_policies:
     decision: "REQUIRE_APPROVAL"
     reason_code: "PAYMENT_NEEDS_APPROVAL"
     remediation:
-      type: "static"
+      type: "threshold"
       message: "Payments between $100 and $1,000 require human approval before processing"
       suggestion: "Submit this payment for manager review, or reduce the amount below $100 for auto-approval"
 
   - name: "block-large-payments"
     description: "Block payments exceeding $1,000 — requires manual processing outside automated systems"
     priority: 100
-    enabled: true
     conditions:
       all_of:
         - field: "action"
@@ -103,14 +100,14 @@ starter_policies:
     decision: "BLOCK"
     reason_code: "PAYMENT_EXCEEDS_LIMIT"
     remediation:
-      type: "static"
+      type: "threshold"
       message: "Payments over $1,000 cannot be processed by automated agents"
       suggestion: "Route this payment through the manual processing workflow or contact a financial administrator to adjust the threshold"
 
   - name: "payment-kill-switch"
     description: "Emergency kill switch to halt all payment processing immediately"
     priority: 10
-    enabled: false
+    lifecycle_stage: disabled
     conditions:
       field: "action"
       operator: "equals"
@@ -118,22 +115,25 @@ starter_policies:
     decision: "KILL_SWITCH"
     reason_code: "PAYMENTS_SUSPENDED"
     remediation:
-      type: "static"
+      type: "custom"
       message: "All payment processing has been suspended by an administrator"
       suggestion: "Contact the operations team to check the status of the payment kill switch and understand when processing will resume"
 
   - name: "rate-limit-payments"
     description: "Limit each agent to 50 payments per hour to prevent runaway charge loops"
     priority: 50
-    enabled: true
     conditions:
       field: "action"
       operator: "equals"
       value: "process_payment"
     decision: "RATE_LIMIT"
     reason_code: "PAYMENT_RATE_EXCEEDED"
+    rate_limit:
+      limit: 50
+      window_seconds: 3600
+      scope: "agent"
     remediation:
-      type: "static"
+      type: "rate_limit"
       message: "This agent has exceeded the maximum of 50 payments per hour"
       suggestion: "Wait for the rate limit window to reset, or contact an administrator to increase the limit for this agent if the volume is expected"
 
@@ -148,4 +148,4 @@ compliance:
     note: "Ensure card numbers are never included in envelope parameters — use tokenized references only. Audit trail must capture all payment attempts including blocked ones."
   - regulation: "SOX"
     relevance: "Financial transaction controls must be documented and auditable for Sarbanes-Oxley compliance"
-    note: "The immutable audit trail satisfies SOX Section 404 requirements for transaction-level controls. Policy versions attached to each decision provide evidence of control effectiveness."
+    note: "The audit trail satisfies SOX Section 404 requirements for transaction-level controls. Policy versions attached to each decision provide evidence of control effectiveness."

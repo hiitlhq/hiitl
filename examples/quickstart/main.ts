@@ -1,9 +1,9 @@
 /**
  * Quickstart: Minimal hiitl integration.
  *
- * Run:
+ * Run (Node.js 22.18 or later runs TypeScript directly):
  *   npm install @hiitl/sdk
- *   npx ts-node main.ts
+ *   node main.ts
  */
 
 import { HIITL } from '@hiitl/sdk';
@@ -18,7 +18,7 @@ async function sendEmail(to: string, subject: string): Promise<void> {
 
 async function main() {
   // Evaluate an action before executing it
-  const decision = hiitl.evaluate({
+  const decision = await hiitl.evaluate({
     action: 'send_email',
     parameters: {
       to: 'user@example.com',

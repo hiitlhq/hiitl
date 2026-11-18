@@ -1,0 +1,90 @@
+[
+  {
+    "when": "construction",
+    "fault": "missing",
+    "decision": "POLICY_ERROR",
+    "reasons": [
+      "POLICY_NOT_FOUND"
+    ],
+    "record_decisions": [
+      "POLICY_ERROR"
+    ]
+  },
+  {
+    "when": "construction",
+    "fault": "unreadable",
+    "decision": "POLICY_ERROR",
+    "reasons": [
+      "POLICY_LOAD_FAILED"
+    ],
+    "record_decisions": [
+      "POLICY_ERROR"
+    ]
+  },
+  {
+    "when": "construction",
+    "fault": "unparsable",
+    "decision": "POLICY_ERROR",
+    "reasons": [
+      "POLICY_VALIDATION_ERROR"
+    ],
+    "record_decisions": [
+      "POLICY_ERROR"
+    ]
+  },
+  {
+    "when": "construction",
+    "fault": "unparsable-same-mtime",
+    "decision": "POLICY_ERROR",
+    "reasons": [
+      "POLICY_VALIDATION_ERROR"
+    ],
+    "record_decisions": [
+      "POLICY_ERROR"
+    ]
+  },
+  {
+    "when": "after-construction",
+    "fault": "missing",
+    "decision": "POLICY_ERROR",
+    "reasons": [
+      "POLICY_NOT_FOUND"
+    ],
+    "record_decisions": [
+      "POLICY_ERROR"
+    ]
+  },
+  {
+    "when": "after-construction",
+    "fault": "unreadable",
+    "decision": "POLICY_ERROR",
+    "reasons": [
+      "POLICY_LOAD_FAILED"
+    ],
+    "record_decisions": [
+      "POLICY_ERROR"
+    ]
+  },
+  {
+    "when": "after-construction",
+    "fault": "unparsable",
+    "decision": "POLICY_ERROR",
+    "reasons": [
+      "POLICY_VALIDATION_ERROR"
+    ],
+    "record_decisions": [
+      "POLICY_ERROR"
+    ]
+  },
+  {
+    "when": "after-construction",
+    "fault": "unparsable-same-mtime",
+    "decision": "POLICY_ERROR",
+    "reasons": [
+      "POLICY_VALIDATION_ERROR"
+    ],
+    "record_decisions": [
+      "POLICY_ERROR"
+    ]
+  }
+]
